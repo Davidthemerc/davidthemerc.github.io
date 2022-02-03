@@ -1,0 +1,44 @@
+.mainheader {
+  color: rgb(12, 12, 151);
+}
+
+table,
+th,
+td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  padding: 3px;
+}
+
+.tableheader {
+  color: rgb(12, 12, 151);
+  padding: 0px;
+  margin: 0px;
+}
+
+.faves {
+  font-weight: bold;
+  color: red;
+}
+
+p {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+img {
+  border-style: double;
+  color: black;
+  background-color: wheat;
+  border-width: 25px;
+  border-radius: 25px;
+}
+
+button {
+  padding: 15px;
+  margin: 15px;
+  border-style: dotted;
+  border-color: rgb(12, 12, 151);
+  color: black;
+  background-color: cornflowerblue;
+}
