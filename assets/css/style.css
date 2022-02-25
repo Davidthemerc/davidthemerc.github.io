@@ -1245,3 +1245,9 @@ footer .credits {
 footer .credits a {
   color: #fff;
 }
+
+/* Example Images
+*/
+.exampleimgs {
+  padding: 75px 25px 25px 25px;
+}
