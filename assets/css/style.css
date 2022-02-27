@@ -977,22 +977,41 @@ a:hover {
 
 .ow-h1 {
   text-align: center;
-  font-size: 48pt;
+  font-size: 36pt;
   font-weight: bold;
   font-style: oblique;
   color: rgb(226, 151, 12);
   padding-bottom: 1rem;
 }
 
+.description {
+  color: black;
+  padding-left: 1rem;
+}
+
+.icecream {
+  color: black;
+  font-weight: bold;
+}
+
+.icecounter {
+  font-weight: bold;
+}
+
 /*--------------------------------------------------------------
 # Orange Works Box
 --------------------------------------------------------------*/
 .ow-box-title {
-  color: white;
+  color: black;
   font-style: italic;
   padding-top: 1rem;
   text-align: center;
 }
+
+.ojbg {
+  background-color: rgb(255, 255, 255);
+}
+
 .ow-box {
   color: #fff;
   text-align: center;
