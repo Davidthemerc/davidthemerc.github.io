@@ -134,6 +134,23 @@ a:hover {
 .sect-ow {
   padding-top: 8rem;
 }
+
+.sect-cg {
+  padding-top: 8rem;
+}
+
+.sect-dp {
+  padding-top: 8rem;
+}
+
+.sect-sc {
+  padding-top: 8rem;
+}
+
+.sect-td {
+  padding-top: 8rem;
+}
+
 .sect-pt4 {
   padding-top: 4rem;
 }
@@ -972,8 +989,9 @@ a:hover {
   padding: 0;
 }
 
-/* Orange Works Main
-*/
+/* --------------------------------------------------------------
+Orange Works Main
+--------------------------------------------------------------*/
 
 .ow-h1 {
   text-align: center;
@@ -1017,32 +1035,10 @@ a:hover {
   text-align: center;
   padding-bottom: 1rem;
 }
-.ow-box .author-test {
-  margin-top: 1rem;
-}
-.ow-box .author-test img {
+.ow-box .slider-img img {
   margin: 0 auto;
   width: 25%;
   height: 25%;
-}
-.ow-box .author {
-  color: #fff;
-  text-transform: uppercase;
-  font-weight: 600;
-  margin: 1rem 0;
-  display: block;
-  font-size: 1.4rem;
-}
-.ow-box .comit {
-  font-size: 2rem;
-  color: #0078ff;
-  background-color: #fff;
-  width: 52px;
-  height: 52px;
-  display: block;
-  margin: 0 auto;
-  border-radius: 50%;
-  line-height: 1.6;
 }
 @media (min-width: 768px) {
   .ow-box .description {
@@ -1058,6 +1054,177 @@ a:hover {
   .ow-box .description {
     padding: 0 13rem;
   }
+}
+
+/* --------------------------------------------------------------
+Colorado Grill Main
+--------------------------------------------------------------*/
+
+.cg-h1 {
+  text-align: center;
+  font-size: 36pt;
+  font-weight: bold;
+  font-style: oblique;
+  color: rgb(30, 75, 48);
+  padding-bottom: 1rem;
+}
+
+.coloradogrillmenu {
+  color: black;
+  font-weight: bold;
+}
+
+.cg-box {
+  color: #fff;
+  text-align: center;
+  padding-bottom: 1rem;
+}
+
+.cg-box-title {
+  color: black;
+  font-style: italic;
+  padding-top: 1rem;
+  text-align: center;
+}
+
+.cg-box .slider-img img {
+  margin: 0 auto;
+  width: 25%;
+  height: 25%;
+}
+
+/* --------------------------------------------------------------
+Don Pepe's Main
+--------------------------------------------------------------*/
+
+.dp-h1 {
+  text-align: center;
+  font-size: 36pt;
+  font-weight: bold;
+  font-style: oblique;
+  color: rgb(177, 56, 26);
+  padding-bottom: 1rem;
+}
+
+.donpepesmenu {
+  color: black;
+  font-weight: bold;
+}
+
+.dp-box {
+  color: #fff;
+  text-align: center;
+  padding-bottom: 1rem;
+}
+
+.dp-box-title {
+  color: black;
+  font-style: italic;
+  padding-top: 1rem;
+  text-align: center;
+}
+
+.dp-box .slider-img img {
+  margin: 0 auto;
+  width: 25%;
+  height: 25%;
+}
+
+/* --------------------------------------------------------------
+Splash Cafe Main
+--------------------------------------------------------------*/
+
+.sc-h1 {
+  text-align: center;
+  font-size: 36pt;
+  font-weight: bold;
+  font-style: oblique;
+  color: rgb(18, 127, 146);
+  padding-bottom: 1rem;
+}
+
+.splashcafemenu {
+  color: black;
+  font-weight: bold;
+}
+
+.sc-box {
+  color: #fff;
+  text-align: center;
+  padding-bottom: 1rem;
+}
+
+.sc-box-title {
+  color: black;
+  font-style: italic;
+  padding-top: 1rem;
+  text-align: center;
+}
+
+.sc-box .slider-img img {
+  margin: 0 auto;
+  width: 25%;
+  height: 25%;
+}
+
+/* --------------------------------------------------------------
+Teriyaki Don Main
+--------------------------------------------------------------*/
+
+.td-h1 {
+  text-align: center;
+  font-size: 36pt;
+  font-weight: bold;
+  font-style: oblique;
+  color: rgb(119, 67, 57);
+  padding-bottom: 1rem;
+}
+
+.tdmenu {
+  color: black;
+  font-weight: bold;
+}
+
+.td-box {
+  color: #fff;
+  text-align: center;
+  padding-bottom: 1rem;
+}
+
+.td-box-title {
+  color: black;
+  font-style: italic;
+  padding-top: 1rem;
+  text-align: center;
+}
+
+.td-box .slider-img img {
+  margin: 0 auto;
+  width: 25%;
+  height: 25%;
+}
+
+/*--------------------------------------------------------------
+# My Life Pages
+--------------------------------------------------------------*/
+
+.life-header {
+  text-align: center;
+  font-size: 36pt;
+  font-weight: bold;
+  font-style: oblique;
+  color: rgb(45, 30, 126);
+  padding-bottom: 1rem;
+}
+
+.image75 {
+  width: 75%;
+  height: auto;
+}
+
+.image50 {
+  width: 50%;
+  height: auto;
 }
 
 /*--------------------------------------------------------------

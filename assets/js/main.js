@@ -195,9 +195,81 @@
   });
 
   /**
-   * Testimonials slider
+   * Orange Works slider
    */
   new Swiper('.ow-slider', {
+    speed: 600,
+    loop: true,
+    autoplay: {
+      delay: 12000,
+      disableOnInteraction: false,
+    },
+    slidesPerView: 'auto',
+    pagination: {
+      el: '.swiper-pagination',
+      type: 'bullets',
+      clickable: true,
+    },
+  });
+
+  /**
+   * Colorado Grill slider
+   */
+  new Swiper('.cg-slider', {
+    speed: 600,
+    loop: true,
+    autoplay: {
+      delay: 12000,
+      disableOnInteraction: false,
+    },
+    slidesPerView: 'auto',
+    pagination: {
+      el: '.swiper-pagination',
+      type: 'bullets',
+      clickable: true,
+    },
+  });
+
+  /**
+   * Don Pepe's slider
+   */
+  new Swiper('.dp-slider', {
+    speed: 600,
+    loop: true,
+    autoplay: {
+      delay: 12000,
+      disableOnInteraction: false,
+    },
+    slidesPerView: 'auto',
+    pagination: {
+      el: '.swiper-pagination',
+      type: 'bullets',
+      clickable: true,
+    },
+  });
+
+  /**
+   * Splash Cafe slider
+   */
+  new Swiper('.sc-slider', {
+    speed: 600,
+    loop: true,
+    autoplay: {
+      delay: 12000,
+      disableOnInteraction: false,
+    },
+    slidesPerView: 'auto',
+    pagination: {
+      el: '.swiper-pagination',
+      type: 'bullets',
+      clickable: true,
+    },
+  });
+
+  /**
+   * Teriyaki Don slider
+   */
+  new Swiper('.td-slider', {
     speed: 600,
     loop: true,
     autoplay: {
