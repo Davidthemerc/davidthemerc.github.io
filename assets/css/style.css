@@ -148,7 +148,7 @@ a:hover {
 }
 
 .sect-td {
-  padding-top: 8rem;
+  padding-top: 3rem;
 }
 
 .sect-pt4 {
@@ -157,6 +157,10 @@ a:hover {
 
 .sect-mt4 {
   margin-top: 4rem;
+}
+
+.sect-trv {
+  padding-top: 2rem;
 }
 
 /*--/ Title s /--*/
@@ -886,7 +890,7 @@ a:hover {
 # Portfolio
 --------------------------------------------------------------*/
 .work-box {
-  margin-bottom: 3rem;
+  margin-bottom: 1rem;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   background-color: #fff;
@@ -1225,6 +1229,33 @@ Teriyaki Don Main
 .image50 {
   width: 50%;
   height: auto;
+}
+
+/*--------------------------------------------------------------
+# My Travel Pages
+--------------------------------------------------------------*/
+
+.travel-header {
+  text-align: center;
+  font-size: 20pt;
+  color: rgb(0, 0, 0);
+  padding-bottom: 1rem;
+}
+
+.auburn-header {
+  text-align: center;
+  font-size: 48pt;
+  font-weight: bold;
+  font-style: oblique;
+  color: rgb(238, 179, 30);
+}
+
+.cambria-header {
+  text-align: center;
+  font-size: 48pt;
+  font-weight: bold;
+  font-style: oblique;
+  color: rgb(124, 156, 243);
 }
 
 /*--------------------------------------------------------------
