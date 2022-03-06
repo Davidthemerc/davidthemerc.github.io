@@ -132,11 +132,11 @@ a:hover {
 }
 
 .sect-ow {
-  padding-top: 8rem;
+  padding-top: 3rem;
 }
 
 .sect-cg {
-  padding-top: 8rem;
+  padding-top: 3rem;
 }
 
 .sect-dp {
@@ -144,7 +144,7 @@ a:hover {
 }
 
 .sect-sc {
-  padding-top: 8rem;
+  padding-top: 3rem;
 }
 
 .sect-td {
@@ -742,8 +742,23 @@ a:hover {
     font-size: 4.5rem;
   }
 }
+.hero .hero-title2 {
+  color: #f53e1e;
+  font-weight: 600;
+  font-size: 5rem;
+}
+@media (min-width: 768px) {
+  .hero .hero-title2 {
+    font-size: 6rem;
+  }
+}
 .hero .hero-subtitle {
   font-size: 1.5rem;
+  font-weight: 600;
+}
+.hero .hero-subtitle2 {
+  color: #f53e1e;
+  font-size: 2rem;
   font-weight: 600;
 }
 @media (min-width: 768px) {
@@ -984,6 +999,7 @@ Orange Works Main
   width: 25%;
   height: 25%;
 }
+
 @media (min-width: 768px) {
   .ow-box .description {
     padding: 0 5rem;
@@ -1031,10 +1047,16 @@ Colorado Grill Main
   text-align: center;
 }
 
-.cg-box .slider-img img {
+.cg-box .burger img {
   margin: 0 auto;
   width: 25%;
   height: 25%;
+}
+
+.cg-box .malt img {
+  margin: 0 auto;
+  width: 15%;
+  height: 15%;
 }
 
 /* --------------------------------------------------------------
@@ -1072,6 +1094,12 @@ Don Pepe's Main
   margin: 0 auto;
   width: 25%;
   height: 25%;
+}
+
+.dp-box .burrito img {
+  margin: 0 auto;
+  width: 45%;
+  height: 45%;
 }
 
 /* --------------------------------------------------------------
