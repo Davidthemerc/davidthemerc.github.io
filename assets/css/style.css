@@ -999,21 +999,10 @@ Orange Works Main
   width: 25%;
   height: 25%;
 }
-
-@media (min-width: 768px) {
-  .ow-box .description {
-    padding: 0 5rem;
-  }
-}
-@media (min-width: 992px) {
-  .ow-box .description {
-    padding: 0 8rem;
-  }
-}
-@media (min-width: 1200px) {
-  .ow-box .description {
-    padding: 0 13rem;
-  }
+.ow-box .cookie img {
+  margin: 0 auto;
+  width: 15%;
+  height: 15%;
 }
 
 /* --------------------------------------------------------------
@@ -1227,6 +1216,22 @@ Teriyaki Don Main
 }
 
 .glenellen-header {
+  text-align: center;
+  font-size: 48pt;
+  font-weight: bold;
+  font-style: oblique;
+  color: rgb(9, 59, 26);
+}
+
+.monterey-header {
+  text-align: center;
+  font-size: 48pt;
+  font-weight: bold;
+  font-style: oblique;
+  color: rgb(57, 95, 197);
+}
+
+.sandiego-header {
   text-align: center;
   font-size: 48pt;
   font-weight: bold;
