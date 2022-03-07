@@ -1208,16 +1208,17 @@ Teriyaki Don Main
   font-size: 36pt;
   font-weight: bold;
   font-style: oblique;
-  color: rgb(49, 58, 77);
+  color: rgb(172, 26, 26);
   padding-bottom: 1rem;
 }
 
 .metal-subheader {
   text-align: center;
-  font-size: 28pt;
+  font-family: fantasy;
+  font-size: 32pt;
   font-weight: bold;
   font-style: oblique;
-  color: rgb(49, 58, 77);
+  color: rgb(112, 14, 3);
   padding-bottom: 1rem;
 }
 
