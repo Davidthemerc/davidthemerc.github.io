@@ -1203,6 +1203,24 @@ Teriyaki Don Main
   color: rgb(30, 60, 126);
 }
 
+.metal-header {
+  text-align: center;
+  font-size: 36pt;
+  font-weight: bold;
+  font-style: oblique;
+  color: rgb(49, 58, 77);
+  padding-bottom: 1rem;
+}
+
+.metal-subheader {
+  text-align: center;
+  font-size: 28pt;
+  font-weight: bold;
+  font-style: oblique;
+  color: rgb(49, 58, 77);
+  padding-bottom: 1rem;
+}
+
 .embed-youtube {
   position: relative;
   padding-bottom: 56.25%; /* - 16:9 aspect ratio (most common) */
