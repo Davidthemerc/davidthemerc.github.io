@@ -131,6 +131,10 @@ a:hover {
   padding: 4rem 0;
 }
 
+.sect-hb {
+  padding-top: 3rem;
+}
+
 .sect-ow {
   padding-top: 3rem;
 }
@@ -1177,6 +1181,51 @@ Teriyaki Don Main
   color: rgb(45, 30, 126);
   padding-bottom: 1rem;
 }
+
+/*--------------------------------------------------------------
+# My Interest Pages
+--------------------------------------------------------------*/
+
+.interest-header {
+  text-align: center;
+  font-size: 36pt;
+  font-weight: bold;
+  font-style: oblique;
+  color: rgb(30, 60, 126);
+  padding-bottom: 1rem;
+}
+
+.interest-subheader {
+  text-align: center;
+  font-size: 28pt;
+  font-weight: bold;
+  font-style: oblique;
+  color: rgb(30, 60, 126);
+}
+
+.embed-youtube {
+  position: relative;
+  padding-bottom: 56.25%; /* - 16:9 aspect ratio (most common) */
+  /* padding-bottom: 62.5%; - 16:10 aspect ratio */
+  /* padding-bottom: 75%; - 4:3 aspect ratio */
+  padding-top: 30px;
+  height: 0;
+  overflow: hidden;
+}
+
+.embed-youtube iframe,
+.embed-youtube object,
+.embed-youtube embed {
+  border: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+/*--------------------------------------------------------------
+# Image Size Control,
+--------------------------------------------------------------*/
 
 .image75 {
   width: 75%;
