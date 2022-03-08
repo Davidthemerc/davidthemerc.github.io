@@ -90,6 +90,14 @@ a:hover {
   background-size: cover;
   background-position: center center;
 }
+
+.bg-image-alt {
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: contain;
+  background-position: center center;
+}
+
 @media (max-width: 1024px) {
   .bg-image {
     background-attachment: scroll;
