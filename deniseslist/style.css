@@ -1,0 +1,34 @@
+body {
+  background-color: rgb(224, 215, 255);
+  margin: 5px;
+}
+
+li {
+  font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+.mainheader {
+  font-weight: bold;
+}
+
+.dd {
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-size: large;
+}
+
+.rocks {
+  background: rgb(197, 188, 231);
+  padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 5px;
+}
+
+.removed {
+  font-weight: bold;
+  color: rgb(179, 38, 38);
+}
+
+.deleted {
+  font-weight: bold;
+  color: rgb(179, 38, 38);
+}
