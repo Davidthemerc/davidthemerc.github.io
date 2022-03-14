@@ -120,3 +120,31 @@ const displayText = function (listItem, elType, resultID) {
     generateResultsDOM(results);
   });
 };
+
+function confirmDeletedSaved() {
+  let confirmAction = confirm(
+    'Are you sure you want to delete all saved data?'
+  );
+  if (confirmAction) {
+    results = [];
+    saveResults(results);
+    generateResultsDOM(results);
+    alert('Saved data deleted!');
+  } else {
+    alert('Saved data not deleted!');
+  }
+}
+
+function confirmDeleteRemoved() {
+  let confirmAction = confirm(
+    'Are you sure you want to delete all removed item data?'
+  );
+  if (confirmAction) {
+    removedItems = [];
+    saveRemoved(removedItems);
+    displayRemoved(removedItems);
+    alert('Removed items data deleted!');
+  } else {
+    alert('Removed items data deleted!');
+  }
+}

@@ -1,8 +1,20 @@
-const results = getSavedResults();
-const removedItems = [];
+let results = getSavedResults();
+let removedItems = getRemovedItems();
 
 // Render results on startup
 generateResultsDOM(results);
+displayRemoved(removedItems);
+
+// Clear saved items data (powerful!)
+document.querySelector('#clearitems').addEventListener('click', function () {
+  confirmDeletedSaved();
+});
+
+// Clear removed items data (powerful!)
+document.querySelector('#clearremoved').addEventListener('click', function () {
+  confirmDeleteRemoved();
+  resetRemoved();
+});
 
 // Event listener for submit button for form
 document.querySelector('form').addEventListener('submit', function (run) {
