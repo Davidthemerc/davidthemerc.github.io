@@ -1,0 +1,25 @@
+a.mainlink {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+.rocks {
+  background: rgb(199, 197, 206);
+  padding: 1rem 1rem 1rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 15px;
+}
+
+.mainmessages {
+  font-weight: bold;
+  color: red;
+}
+
+.customerInfo {
+  font-weight: bold;
+  color: rgb(194, 108, 108);
+}
+
+button {
+  margin: 3px;
+}
