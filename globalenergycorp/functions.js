@@ -42,6 +42,7 @@ const generateCustomer = function createACustomerIfOneIsNotAvailable() {
     customerName: randomCustomerNames[ranBetween(0, 11)],
     customerPronoun: randomCustomerPronouns[ranBetween(0, 3)],
     customerMoney: ranBetween(5, 100),
+    customerEdits: 0,
     customerFuelNeeded: ranBetween(1, 15),
     customerFuelType: randomFuelGrades[ranBetween(0, 2)],
     customerWantCarWash: carWashDecision(ranBetween(0, 1)),
@@ -54,6 +55,41 @@ const generateCustomer = function createACustomerIfOneIsNotAvailable() {
 
   // Save customer data
   saveCustomers(customers);
+};
+
+// Function to catch employees modifying the transaction system
+const fraudDetection = function (change, edits) {
+  edits *= 2;
+  let chance = ((0.2 + edits) * change) ** 2;
+  console.log(`${parseInt(chance)}% of being caught`);
+  console.log(`0.2 + ${edits} times ${change} to the power of 2=${chance}`);
+  let probability = ranBetween(1, 100);
+
+  if (chance >= probability) {
+    // Looks like the fraud detection system detected the employee modifying the transaction system!
+    let messages = [];
+    messages.push(
+      `FRAUD DETECTED! What are you DOING? You CANNOT MODIFY the transaction system!`
+    );
+    displayMessages(messages, messageElement);
+    sleep(3000).then(() => {
+      // Set all arrays to blank, as the employee is fired (also prevents errors)
+      customers = [];
+      violations = [];
+      fuelPrices = [];
+      saveCustomers(customers);
+      saveViolations(violations);
+      saveFuelArray(fuelPrices);
+      let messages = [];
+      messages.push(`YOU ARE FIRED! YOU ARE FIRED! YOU ARE FIRED!`);
+      displayMessages(messages, messageElement);
+    });
+    sleep(7000).then(() => {
+      // Now send the user to the HR page and clear local storage.
+      location.assign('fired.html');
+      localStorage.clear();
+    });
+  }
 };
 
 // Function to retrieve saved violations
@@ -73,7 +109,7 @@ const saveViolations = function (array) {
 
 const checkViolations = function () {
   if (violations.length > 2) {
-    // Clear all data as the employee is fired (also prevents errors)
+    // Set all arrays to blank, as the employee is fired (also prevents errors)
     customers = [];
     violations = [];
     fuelPrices = [];
@@ -89,7 +125,8 @@ const checkViolations = function () {
       displayMessages(messages, messageElement);
     });
     sleep(5000).then(() => {
-      location.reload();
+      // Now send the user to the HR page and clear local storage.
+      location.assign('fired.html');
       localStorage.clear();
     });
   }
@@ -260,6 +297,19 @@ const carWashDecision = function (random) {
   else return false;
 };
 
+// If the customer used the car wash already, provide text for an update
+const carWashStatus = function (arrayLoop) {
+  if (arrayLoop.customerUsedCarWash) {
+    return ' Their car has been washed.';
+  } else {
+    if (arrayLoop.customerWantCarWash) {
+      return ' Their car still needs a wash.';
+    } else {
+      return '';
+    }
+  }
+};
+
 const useCarWash = (arrayLoop) => {
   let messages = [];
 
@@ -300,9 +350,9 @@ const useCarWash = (arrayLoop) => {
     messages.push(
       `${arrayLoop.customerName} used the car wash. It cost $${price}, ${arrayLoop.customerName} now has $${arrayLoop.customerMoney}.`
     );
-    renderCustomers(customers);
     displayMessages(messages, messageElement);
     arrayLoop.customerUsedCarWash = true;
+    renderCustomers(customers);
     saveCustomers(customers);
   } else {
     messages.push(
@@ -332,14 +382,17 @@ const renderCustomers = function (customerArray) {
     const serveButton = document.createElement('button');
     const carWashButton = document.createElement('button');
     const kickButton = document.createElement('button');
+
     span.textContent = `At ${arrayLoop.customerArrivalTime}, a customer, ${
       arrayLoop.customerName
     } has arrived, ${arrayLoop.customerPronoun} $${
       arrayLoop.customerMoney
     } and need(s) ${arrayLoop.customerFuelNeeded} gallons of ${
       arrayLoop.customerFuelType
-    } fuel, ${carWashLanguage(arrayLoop.customerWantCarWash)}`;
-    editLink.textContent = `Edit This Customer`;
+    } fuel, ${carWashLanguage(arrayLoop.customerWantCarWash)}${carWashStatus(
+      arrayLoop
+    )}`;
+    editLink.textContent = `Edit Transaction Data`;
     serveButton.textContent = `Fuel up ${arrayLoop.customerName}'s vehicle?`;
     carWashButton.textContent = `Send ${arrayLoop.customerName}'s vehicle to the car wash?`;
     kickButton.textContent = `End ${arrayLoop.customerName}'s transaction?`;
@@ -430,7 +483,7 @@ const renderCustomers = function (customerArray) {
       ) {
         let messages = [];
         messages.push(
-          `${arrayLoop.customerName} leaves mostly satisfied at ${endTimeForCheck}; they wanted to use the car wash, but you didn't offer it to them! You served them in ${duration}.`
+          `${arrayLoop.customerName} leaves partially satisfied at ${endTimeForCheck}; they wanted to use the car wash, but you didn't offer it to them! You served them in ${duration}.`
         );
         violations.push(
           `Sent ${arrayLoop.customerName} away when they still wanted to use the car wash.`

@@ -46,16 +46,29 @@ custName.addEventListener('change', function () {
   saveCustomers(customers);
 });
 
-// Event listener to detect changes to the customer's money
+// Event listener to detect changes to the customer's money (transaction system)
 custMoney.addEventListener('change', function () {
+  let customerMoney = editedCustomer.customerMoney;
+  let change = Math.abs(
+    parseFloat(custMoney.value) - editedCustomer.customerMoney
+  );
   editedCustomer.customerMoney = parseFloat(custMoney.value);
 
   let messages = [];
-  messages.push(
-    `The customer's funds were changed to $${editedCustomer.customerMoney}.`
-  );
+  if (editedCustomer.customerMoney > customerMoney) {
+    messages.push(
+      `The customer's funds were increased by $${change} (from $${customerMoney} to $${editedCustomer.customerMoney}).`
+    );
+  } else {
+    messages.push(
+      `The customer's funds were decreased by $${change} (from $${customerMoney} to $${editedCustomer.customerMoney}).`
+    );
+  }
   displayMessages(messages, messageElement);
   saveCustomers(customers);
+  fraudDetection(change, editedCustomer.customerEdits);
+  // Keep track of the number of times customer money is being edited
+  editedCustomer.customerEdits += 1;
 });
 
 // Event listener to detect changes to the customer's fuel quantity needed
