@@ -5,7 +5,7 @@ const ranBetween = function randomNumbersBetweenMinAndMax(min, max) {
 };
 
 const displayMessages = function (messages, messageEl) {
-  messageEl.innerHTML = messages.join(', ');
+  messageEl.innerHTML = messages.join(' ');
 };
 
 function sleep(ms) {
@@ -47,6 +47,8 @@ const generateCustomer = function createACustomerIfOneIsNotAvailable() {
     customerWantCarWash: carWashDecision(ranBetween(0, 1)),
     customerFueledUp: false,
     customerUsedCarWash: false,
+    customerArrivalTimeForCheck: moment(),
+    customerArrivalTime: moment().format('MMM Do, YYYY h:mm A'),
     id: uuidv4(),
   });
 
@@ -330,26 +332,23 @@ const renderCustomers = function (customerArray) {
     const serveButton = document.createElement('button');
     const carWashButton = document.createElement('button');
     const kickButton = document.createElement('button');
-    //const editButton = document.createElement('button');
-    span.textContent = `A customer, ${arrayLoop.customerName} has arrived, ${
-      arrayLoop.customerPronoun
-    } $${arrayLoop.customerMoney} and need(s) ${
-      arrayLoop.customerFuelNeeded
-    } gallons of ${arrayLoop.customerFuelType} fuel, ${carWashLanguage(
-      arrayLoop.customerWantCarWash
-    )}`;
+    span.textContent = `At ${arrayLoop.customerArrivalTime}, a customer, ${
+      arrayLoop.customerName
+    } has arrived, ${arrayLoop.customerPronoun} $${
+      arrayLoop.customerMoney
+    } and need(s) ${arrayLoop.customerFuelNeeded} gallons of ${
+      arrayLoop.customerFuelType
+    } fuel, ${carWashLanguage(arrayLoop.customerWantCarWash)}`;
     editLink.textContent = `Edit This Customer`;
     serveButton.textContent = `Fuel up ${arrayLoop.customerName}'s vehicle?`;
     carWashButton.textContent = `Send ${arrayLoop.customerName}'s vehicle to the car wash?`;
     kickButton.textContent = `End ${arrayLoop.customerName}'s transaction?`;
     editLink.setAttribute('href', `customer.html#${arrayLoop.id}`);
-    //editButton.textContent = `Modify Transaction Data`;
     customerEl.appendChild(span);
     customerEl.appendChild(serveButton);
     customerEl.appendChild(carWashButton);
     customerEl.appendChild(kickButton);
     customerEl.appendChild(editLink);
-    //customerEl.appendChild(editButton);
     customerEl.className = 'rocks';
     document.querySelector('#outputArea').appendChild(customerEl);
 
@@ -362,6 +361,12 @@ const renderCustomers = function (customerArray) {
     kickButton.addEventListener('click', function () {
       let price = fuelPriceCheck(arrayLoop);
       let carWashPrice = fuelPrices[3];
+      let endTime = moment();
+      let endTimeForCheck = endTime.format('MMM Do, YYYY h:mm A');
+      let duration = `${endTime.diff(
+        arrayLoop.customerArrivalTimeForCheck,
+        'seconds'
+      )} seconds`;
 
       // If you're ending the transaction, and the customer hasn't been fueled up, and they don't have enough money for 1 unit of fuel, then
       // They are broke and sending them away is the correct procedure
@@ -388,8 +393,13 @@ const renderCustomers = function (customerArray) {
       ) {
         let messages = [];
         messages.push(
-          `Great job! ${arrayLoop.customerName} leaves as a satisfied customer!`
+          `Great job! ${arrayLoop.customerName} leaves as a satisfied customer at ${endTimeForCheck}. You served them in ${duration}.`
         );
+        if (arrayLoop.customerFuelNeeded > 0) {
+          messages.push(
+            `Although, they probably wish they had a bit more cash for more fuel!`
+          );
+        }
         removeCustomer(arrayLoop.id);
         saveCustomers(customers);
         renderCustomers(customers);
@@ -404,7 +414,7 @@ const renderCustomers = function (customerArray) {
         let messages = [];
 
         messages.push(
-          `${arrayLoop.customerName} leaves mostly satisfied; they wanted to use the car wash but didn't have enough money.`
+          `${arrayLoop.customerName} leaves mostly satisfied at ${endTimeForCheck}; they wanted to use the car wash but didn't have enough money. You served them in ${duration}.`
         );
 
         removeCustomer(arrayLoop.id);
@@ -420,7 +430,7 @@ const renderCustomers = function (customerArray) {
       ) {
         let messages = [];
         messages.push(
-          `${arrayLoop.customerName} leaves mostly satisfied; they wanted to use the car wash, but you didn't offer it to them!`
+          `${arrayLoop.customerName} leaves mostly satisfied at ${endTimeForCheck}; they wanted to use the car wash, but you didn't offer it to them! You served them in ${duration}.`
         );
         violations.push(
           `Sent ${arrayLoop.customerName} away when they still wanted to use the car wash.`
@@ -440,7 +450,7 @@ const renderCustomers = function (customerArray) {
       ) {
         let messages = [];
         messages.push(
-          `You failed to fuel up ${arrayLoop.customerName}'s vehicle; they could have been a valuable customer!`
+          `You failed to fuel up ${arrayLoop.customerName}'s vehicle at ${endTimeForCheck}; they could have been a valuable customer! You sent them away after ${duration}.`
         );
         violations.push(
           `Failed to fuel up ${arrayLoop.customerName}'s vehicle.`
@@ -457,10 +467,10 @@ const renderCustomers = function (customerArray) {
       } else {
         let messages = [];
         messages.push(
-          `You sent ${arrayLoop.customerName} away without providing any services! That could have been a paying customer!`
+          `You sent ${arrayLoop.customerName} away at ${endTimeForCheck} without providing any services! That could have been a valuable paying customer!`
         );
         violations.push(
-          `Failed to provide any service to ${arrayLoop.customerName}.`
+          `Failed to provide any services to ${arrayLoop.customerName}.`
         );
         saveViolations(violations);
         removeCustomer(arrayLoop.id);
@@ -478,10 +488,5 @@ const renderCustomers = function (customerArray) {
     serveButton.addEventListener('click', function () {
       fuelUpCheck(arrayLoop);
     });
-
-    // Add event listener to customer edit button
-    // editButton.addEventListener('click', function () {
-    //   location.assign(`customer.html#${arrayLoop.id}`);
-    // });
   });
 };
