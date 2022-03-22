@@ -1,11 +1,11 @@
 const customerId = location.hash.substring(1);
 const messageElement = document.getElementById('customerInfo');
 let customers = getCustomers();
-let editedCustomer = customers.find(function (editCustomer) {
-  return editCustomer.id === customerId;
-});
+let editedCustomer = customers.find(
+  (editCustomer) => editCustomer.id === customerId
+);
 
-if (editedCustomer === undefined) {
+if (!editedCustomer) {
   location.assign('index.html');
 }
 
@@ -22,21 +22,19 @@ custFuelQuantity.value = editedCustomer.customerFuelNeeded;
 custCarWash.checked = editedCustomer.customerWantCarWash;
 
 // Event listener to update data on the Index page
-window.addEventListener('storage', function (storageCheck) {
+window.addEventListener('storage', (storageCheck) => {
   if (storageCheck.key === 'customers') {
     customers = JSON.parse(storageCheck.newValue);
-    customer = customers.find(function (customer) {
-      return customer.id === customerId;
-    });
+    customer = customers.find((customer) => customer.id === customerId);
   }
 
-  if (customer === null || customer === undefined) {
+  if (!customer) {
     location.assign('index.html');
   }
 });
 
 // Event listener to detect changes to the customer's name
-custName.addEventListener('change', function () {
+custName.addEventListener('change', () => {
   editedCustomer.customerName = custName.value;
   let messages = [];
   messages.push(
@@ -47,7 +45,7 @@ custName.addEventListener('change', function () {
 });
 
 // Event listener to detect changes to the customer's money (transaction system)
-custMoney.addEventListener('change', function () {
+custMoney.addEventListener('change', () => {
   let customerMoney = editedCustomer.customerMoney;
   let change = Math.abs(
     parseFloat(custMoney.value) - editedCustomer.customerMoney
@@ -72,7 +70,7 @@ custMoney.addEventListener('change', function () {
 });
 
 // Event listener to detect changes to the customer's fuel quantity needed
-custFuelQuantity.addEventListener('change', function () {
+custFuelQuantity.addEventListener('change', () => {
   let messages = [];
   if (Number.isInteger(parseFloat(custFuelQuantity.value)) === false) {
     messages.push(
@@ -90,7 +88,7 @@ custFuelQuantity.addEventListener('change', function () {
 });
 
 // Event listener to detect changes to the customer's car wash choice
-custCarWash.addEventListener('change', function () {
+custCarWash.addEventListener('change', () => {
   let messages = [];
   messages.push(`The customer changed their mind about using the car wash.`);
   editedCustomer.customerWantCarWash = custCarWash.checked;

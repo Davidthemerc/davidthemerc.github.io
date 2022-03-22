@@ -1,19 +1,18 @@
 // Random number function
 // Accepts minimum and maximum number as parameters
-const ranBetween = function randomNumbersBetweenMinAndMax(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
+const ranBetween = (min, max) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
 
-const displayMessages = function (messages, messageEl) {
+const displayMessages = (messages, messageEl) => {
   messageEl.innerHTML = messages.join(' ');
 };
 
-function sleep(ms) {
+const sleep = (ms) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
+};
 
 // Function to generate a customer when one is not available in local storage
-const generateCustomer = function createACustomerIfOneIsNotAvailable() {
+const generateCustomer = () => {
   // Array of possible customer names
   const randomCustomerNames = [
     'Jimmy',
@@ -28,6 +27,7 @@ const generateCustomer = function createACustomerIfOneIsNotAvailable() {
     'Charlie',
     'Andy',
     'Sam',
+    'Ruben',
   ];
 
   // Array of possible customer pronouns
@@ -39,11 +39,11 @@ const generateCustomer = function createACustomerIfOneIsNotAvailable() {
 
   // Pick a random name and pronoun
   customers.push({
-    customerName: randomCustomerNames[ranBetween(0, 11)],
+    customerName: randomCustomerNames[ranBetween(0, 12)],
     customerPronoun: randomCustomerPronouns[ranBetween(0, 3)],
-    customerMoney: ranBetween(5, 100),
+    customerMoney: ranBetween(3, 150),
     customerEdits: 0,
-    customerFuelNeeded: ranBetween(1, 15),
+    customerFuelNeeded: ranBetween(1, 20),
     customerFuelType: randomFuelGrades[ranBetween(0, 2)],
     customerWantCarWash: carWashDecision(ranBetween(0, 1)),
     customerFueledUp: false,
@@ -58,7 +58,7 @@ const generateCustomer = function createACustomerIfOneIsNotAvailable() {
 };
 
 // Function to catch employees modifying the transaction system
-const fraudDetection = function (change, edits) {
+const fraudDetection = (change, edits) => {
   edits *= 2;
   let chance = ((0.2 + edits) * change) ** 2;
   console.log(`${parseInt(chance)}% of being caught`);
@@ -84,7 +84,7 @@ const fraudDetection = function (change, edits) {
       messages.push(`YOU ARE FIRED! YOU ARE FIRED! YOU ARE FIRED!`);
       displayMessages(messages, messageElement);
     });
-    sleep(7000).then(() => {
+    sleep(6000).then(() => {
       // Now send the user to the HR page and clear local storage.
       location.assign('fired.html');
       localStorage.clear();
@@ -93,21 +93,17 @@ const fraudDetection = function (change, edits) {
 };
 
 // Function to retrieve saved violations
-const getViolations = function () {
+const getViolations = () => {
   const violationsJSON = localStorage.getItem('violations');
 
-  if (violationsJSON !== null) {
-    return JSON.parse(violationsJSON);
-  } else {
-    return [];
-  }
+  return violationsJSON ? JSON.parse(violationsJSON) : [];
 };
 
-const saveViolations = function (array) {
+const saveViolations = (array) => {
   localStorage.setItem('violations', JSON.stringify(array));
 };
 
-const checkViolations = function () {
+const checkViolations = () => {
   if (violations.length > 2) {
     // Set all arrays to blank, as the employee is fired (also prevents errors)
     customers = [];
@@ -121,10 +117,10 @@ const checkViolations = function () {
     displayMessages(messages, messageElement);
     sleep(3000).then(() => {
       messages = [];
-      messages.push(`GET OUT OF HERE!!!`);
+      messages.push(`GET OUT OF HERE!!! HAVE A NICE TIME AT HR!!!`);
       displayMessages(messages, messageElement);
     });
-    sleep(5000).then(() => {
+    sleep(8000).then(() => {
       // Now send the user to the HR page and clear local storage.
       location.assign('fired.html');
       localStorage.clear();
@@ -132,23 +128,19 @@ const checkViolations = function () {
   }
 };
 
-const updateFuelArray = function (reg, plus, prem, carWash) {
+const updateFuelArray = (reg, plus, prem, carWash) => {
   fuelPrices = [reg, plus, prem, carWash];
   saveFuelArray(fuelPrices);
 };
 
 // Function to retrieve saved fuel price values from local storage (if available)
-const getFuelArray = function () {
+const getFuelArray = () => {
   const fuelJSON = localStorage.getItem('fuelPrices');
 
-  if (fuelJSON !== null || fuelJSON !== undefined) {
-    return JSON.parse(fuelJSON);
-  } else {
-    return ['', '', '', '', ''];
-  }
+  return fuelJSON ? JSON.parse(fuelJSON) : ['', '', '', '', ''];
 };
 
-const renderFuelPrices = function () {
+const renderFuelPrices = () => {
   // Default values
   regularPrice.value = '';
   plusPrice.value = '';
@@ -157,7 +149,7 @@ const renderFuelPrices = function () {
 
   const fuelJSON = localStorage.getItem('fuelPrices');
 
-  if (fuelJSON === undefined || fuelJSON === null) {
+  if (!fuelJSON) {
     return;
   } else {
     // Values from local storage
@@ -168,11 +160,11 @@ const renderFuelPrices = function () {
   }
 };
 
-const saveFuelArray = function (array) {
+const saveFuelArray = (array) => {
   localStorage.setItem('fuelPrices', JSON.stringify(array));
 };
 
-const fuelPriceCheck = function (arrayLoop) {
+const fuelPriceCheck = (arrayLoop) => {
   if (arrayLoop.customerFuelType === 'regular') {
     return fuelPrices[0];
   } else if (arrayLoop.customerFuelType === 'plus') {
@@ -182,7 +174,7 @@ const fuelPriceCheck = function (arrayLoop) {
   }
 };
 
-const fuelUpCheck = function (arrayLoop) {
+const fuelUpCheck = (arrayLoop) => {
   let messages = [];
 
   if (arrayLoop.customerFueledUp) {
@@ -257,31 +249,27 @@ const fuelUpCheck = function (arrayLoop) {
 };
 
 // Function to retrieve saved customer data from local storage (if available)
-const getCustomers = function () {
+const getCustomers = () => {
   const customersJSON = localStorage.getItem('customers');
 
-  if (customersJSON !== null) {
-    return JSON.parse(customersJSON);
-  } else {
-    return [];
-  }
+  return customersJSON ? JSON.parse(customersJSON) : [];
 };
 
-const saveCustomers = function (customers) {
+const saveCustomers = (customers) => {
   localStorage.setItem('customers', JSON.stringify(customers));
 };
 
-const removeCustomer = function (id) {
-  const customerIndex = customers.findIndex(function (customerArray) {
-    return customerArray.id === id;
-  });
+const removeCustomer = (id) => {
+  const customerIndex = customers.findIndex(
+    (customerArray) => customerArray.id === id
+  );
 
   if (customerIndex > -1) {
     customers.splice(customerIndex, 1);
   }
 };
 
-const carWashLanguage = function (choice) {
+const carWashLanguage = (choice) => {
   if (choice) {
     return `and would like to use the car wash.`;
   } else {
@@ -289,7 +277,7 @@ const carWashLanguage = function (choice) {
   }
 };
 
-const carWashDecision = function (random) {
+const carWashDecision = (random) => {
   if (random === 0) {
     //The customer wants a car wash
     return true;
@@ -298,7 +286,7 @@ const carWashDecision = function (random) {
 };
 
 // If the customer used the car wash already, provide text for an update
-const carWashStatus = function (arrayLoop) {
+const carWashStatus = (arrayLoop) => {
   if (arrayLoop.customerUsedCarWash) {
     return ' Their car has been washed.';
   } else {
@@ -370,11 +358,16 @@ const useCarWash = (arrayLoop) => {
 };
 
 // Function to render customers on the DOM
-const renderCustomers = function (customerArray) {
+const renderCustomers = (customerArray) => {
   // Clear items already present in the output area
   document.querySelector('#outputArea').innerHTML = '';
   // Run a for each Loop to render each customer in the array
-  customerArray.forEach(function (arrayLoop) {
+  customerArray.forEach((arrayLoop) => {
+    // If the customer's name is Ruben, they only have $1
+    arrayLoop.customerName === 'Ruben'
+      ? (arrayLoop.customerMoney = 1)
+      : arrayLoop.customerMoney;
+
     // Create the text, and buttons doing into the DOM
     const customerEl = document.createElement('div');
     const span = document.createElement('span');
@@ -411,7 +404,7 @@ const renderCustomers = function (customerArray) {
     });
 
     // Add event listener to end transaction button
-    kickButton.addEventListener('click', function () {
+    kickButton.addEventListener('click', () => {
       let price = fuelPriceCheck(arrayLoop);
       let carWashPrice = fuelPrices[3];
       let endTime = moment();
@@ -538,7 +531,7 @@ const renderCustomers = function (customerArray) {
     });
 
     // Add event listener to fuel up button
-    serveButton.addEventListener('click', function () {
+    serveButton.addEventListener('click', () => {
       fuelUpCheck(arrayLoop);
     });
   });

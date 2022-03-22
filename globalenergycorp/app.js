@@ -14,7 +14,7 @@ renderCustomers(customers);
 renderFuelPrices();
 
 // Event listener for regular price input
-document.querySelector('#regular').addEventListener('change', function () {
+document.querySelector('#regular').addEventListener('change', () => {
   updateFuelArray(
     regularPrice.value,
     plusPrice.value,
@@ -23,7 +23,7 @@ document.querySelector('#regular').addEventListener('change', function () {
   );
 });
 // Event listener for plus price input
-document.querySelector('#plus').addEventListener('change', function () {
+document.querySelector('#plus').addEventListener('change', () => {
   updateFuelArray(
     regularPrice.value,
     plusPrice.value,
@@ -32,7 +32,7 @@ document.querySelector('#plus').addEventListener('change', function () {
   );
 });
 // Event listener for premium price input
-document.querySelector('#premium').addEventListener('change', function () {
+document.querySelector('#premium').addEventListener('change', () => {
   updateFuelArray(
     regularPrice.value,
     plusPrice.value,
@@ -41,7 +41,7 @@ document.querySelector('#premium').addEventListener('change', function () {
   );
 });
 // Event listener for car wash price input
-document.querySelector('#carWash').addEventListener('change', function () {
+document.querySelector('#carWash').addEventListener('change', () => {
   updateFuelArray(
     regularPrice.value,
     plusPrice.value,
@@ -51,7 +51,7 @@ document.querySelector('#carWash').addEventListener('change', function () {
 });
 
 // Event listener for add customer button
-document.querySelector('form').addEventListener('submit', function (add) {
+document.querySelector('form').addEventListener('submit', (add) => {
   add.preventDefault();
   let messages = [];
 
@@ -96,7 +96,7 @@ document.querySelector('form').addEventListener('submit', function (add) {
 });
 
 // Event listener to update data
-window.addEventListener('storage', function (e) {
+window.addEventListener('storage', (e) => {
   if (e.key === 'customers') {
     customers = JSON.parse(e.newValue);
     renderCustomers(customers);
