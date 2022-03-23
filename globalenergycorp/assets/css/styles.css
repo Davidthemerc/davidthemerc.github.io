@@ -15,6 +15,11 @@ a.mainlink {
   color: red;
 }
 
+.violations {
+  font-weight: bold;
+  color: rgb(129, 12, 12);
+}
+
 .customerInfo {
   font-weight: bold;
   color: rgb(194, 108, 108);

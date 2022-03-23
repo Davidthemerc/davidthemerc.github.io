@@ -2,6 +2,7 @@ let fuelPrices = getFuelArray();
 let customers = getCustomers();
 let violations = getViolations();
 const messageElement = document.getElementById('mainMessages');
+const violationsElement = document.getElementById('violations');
 let regularPrice = document.getElementById('regular');
 let plusPrice = document.getElementById('plus');
 let premiumPrice = document.getElementById('premium');

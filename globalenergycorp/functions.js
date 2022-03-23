@@ -3,10 +3,14 @@
 const ranBetween = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 
+// Function to display messages
 const displayMessages = (messages, messageEl) => {
   messageEl.innerHTML = messages.join(' ');
 };
 
+// Function to execute code contained within a sleep call after the specified duration in milliseconds
+// If I put 3000 ms, the code in the block runs after three seconds, if a subsequent sleep call says 7000 ms,
+// it will execute 4000 ms after the initial sleep call (7000ms in total.) They run concurrently.
 const sleep = (ms) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
@@ -34,7 +38,6 @@ const generateCustomer = () => {
   const randomCustomerPronouns = ['he has', 'she has', 'they have', 'ze has'];
 
   // Array of possible fuel grades
-
   const randomFuelGrades = ['regular', 'plus', 'premium'];
 
   // Pick a random name and pronoun
@@ -43,7 +46,7 @@ const generateCustomer = () => {
     customerPronoun: randomCustomerPronouns[ranBetween(0, 3)],
     customerMoney: ranBetween(3, 150),
     customerEdits: 0,
-    customerFuelNeeded: ranBetween(1, 20),
+    customerFuelNeeded: ranBetween(1, 18),
     customerFuelType: randomFuelGrades[ranBetween(0, 2)],
     customerWantCarWash: carWashDecision(ranBetween(0, 1)),
     customerFueledUp: false,
@@ -60,11 +63,25 @@ const generateCustomer = () => {
 // Function to catch employees modifying the transaction system
 const fraudDetection = (change, edits) => {
   edits *= 2;
+  // Starts as (0.2 + 0) times the dollar change, to the second power
+  // An initial change of $20 will have a 16% chance of being caught.
+  // A subsequent change of $20 will be calculated as follows:
+  // ((0.2 + 1) * 20 ) ^ 2 = 576% chance of being caught. Yes, 576%.
+  // That means you, and four versions of you in a nearby alternate universe
+  // would be caught immediatately, and a 5th would have a 76% chance of
+  // being caught. Global Energy Corp. does not mess around with money!
+  // The probability of being caught escalates with more edits made to
+  // the customer's money, and also by how much their money is changed
   let chance = ((0.2 + edits) * change) ** 2;
-  console.log(`${parseInt(chance)}% of being caught`);
+  console.log(`${parseFloat(chance).toFixed(2)}% of being caught`);
   console.log(`0.2 + ${edits} times ${change} to the power of 2=${chance}`);
   let probability = ranBetween(1, 100);
 
+  // If your chance of being caught is, for example 16%, represented as 16
+  // and the random number generated pulled a number 16 or lower, then you
+  // are caught. Most of the time, according to the law of probability, it
+  // will be 17-100, which is an 84% chance that this check will not pass,
+  // which means that you won't be caught.
   if (chance >= probability) {
     // Looks like the fraud detection system detected the employee modifying the transaction system!
     let messages = [];
@@ -92,17 +109,36 @@ const fraudDetection = (change, edits) => {
   }
 };
 
-// Function to retrieve saved violations
+// Function to retrieve saved violations from localstorage
 const getViolations = () => {
   const violationsJSON = localStorage.getItem('violations');
 
+  // Conditional operator! Returns the localstorage data or a blank array
   return violationsJSON ? JSON.parse(violationsJSON) : [];
 };
 
+// Function to save employee violations to localstorage
 const saveViolations = (array) => {
   localStorage.setItem('violations', JSON.stringify(array));
 };
 
+// Function to display employee violation messages/warnings
+const showViolations = () => {
+  let violationMessage = [];
+  if (violations.length === 1) {
+    violationMessage.push(`You have one violation.`);
+  } else if (violations.length === 2) {
+    violationMessage.push(
+      `You have two violations! ONE more and you're FIRED!`
+    );
+  } else if (violations.length === 3) {
+    violationMessage.push(`Three violations! UH OH!`);
+  }
+  displayMessages(violationMessage, violationsElement);
+};
+
+// Function that is called every time an employee commits a violation.
+// On the third violation, the check will pass and they will get fired.
 const checkViolations = () => {
   if (violations.length > 2) {
     // Set all arrays to blank, as the employee is fired (also prevents errors)
@@ -117,7 +153,7 @@ const checkViolations = () => {
     displayMessages(messages, messageElement);
     sleep(3000).then(() => {
       messages = [];
-      messages.push(`GET OUT OF HERE!!! HAVE A NICE TIME AT HR!!!`);
+      messages.push(`GET OUT OF HERE!!! HAVE A NICE TIME WITH HR!!!`);
       displayMessages(messages, messageElement);
     });
     sleep(8000).then(() => {
@@ -128,6 +164,8 @@ const checkViolations = () => {
   }
 };
 
+// Function to save fuel prices from the page into the fuelPrices array, and then into localstorage
+// The car wash price was added into this array last, for simplicity's sake
 const updateFuelArray = (reg, plus, prem, carWash) => {
   fuelPrices = [reg, plus, prem, carWash];
   saveFuelArray(fuelPrices);
@@ -137,33 +175,25 @@ const updateFuelArray = (reg, plus, prem, carWash) => {
 const getFuelArray = () => {
   const fuelJSON = localStorage.getItem('fuelPrices');
 
+  // Another conditional operator. Returns the local storage data or an array with blank values.
+  // This is important, because we don't want the form fields on the page to say Undefined or Null
   return fuelJSON ? JSON.parse(fuelJSON) : ['', '', '', '', ''];
 };
 
+// Function to render the fuel prices/car wash price into the DOM
 const renderFuelPrices = () => {
-  // Default values
-  regularPrice.value = '';
-  plusPrice.value = '';
-  premiumPrice.value = '';
-  carWashPrice.value = '';
-
-  const fuelJSON = localStorage.getItem('fuelPrices');
-
-  if (!fuelJSON) {
-    return;
-  } else {
-    // Values from local storage
-    regularPrice.value = fuelPrices[0];
-    plusPrice.value = fuelPrices[1];
-    premiumPrice.value = fuelPrices[2];
-    carWashPrice.value = fuelPrices[3];
-  }
+  regularPrice.value = fuelPrices[0];
+  plusPrice.value = fuelPrices[1];
+  premiumPrice.value = fuelPrices[2];
+  carWashPrice.value = fuelPrices[3];
 };
 
+// Function to save fuelPrices array into localstorage
 const saveFuelArray = (array) => {
   localStorage.setItem('fuelPrices', JSON.stringify(array));
 };
 
+// Function to return the appropriate fuel price based on the customer's need
 const fuelPriceCheck = (arrayLoop) => {
   if (arrayLoop.customerFuelType === 'regular') {
     return fuelPrices[0];
@@ -174,9 +204,11 @@ const fuelPriceCheck = (arrayLoop) => {
   }
 };
 
+// Function for fueling up the customer's vehicle, or not, depending on their ability to pay
 const fuelUpCheck = (arrayLoop) => {
   let messages = [];
 
+  // If they fueled up already, don't let them fuel up again, and add a violation
   if (arrayLoop.customerFueledUp) {
     messages.push(
       `You fueled up ${arrayLoop.customerName}'s vehicle already! Why are you trying to do it again!`
@@ -185,6 +217,7 @@ const fuelUpCheck = (arrayLoop) => {
       `Attempted to provide ${arrayLoop.customerName} with more fuel when they were already serviced!`
     );
     saveViolations(violations);
+    showViolations();
     saveCustomers(customers);
     renderCustomers(customers);
     displayMessages(messages, messageElement);
@@ -194,11 +227,32 @@ const fuelUpCheck = (arrayLoop) => {
     return;
   }
 
+  // Call function fuelPriceCheck to set local variable price equal to the price of the customer's required fuel
   let price = fuelPriceCheck(arrayLoop);
 
-  // Define cost of fuel variable to shorten references here
+  // Use of Falsy here, if price was not set by the employee, it will be a blank string and that will be false
+  // The Not Operator flips the condition, so if the price isn't set, the return value at the end of the if statement
+  // will then stop the function and the error message will be given
+  if (!price) {
+    messages.push(
+      `The price for ${arrayLoop.customerFuelType} fuel isn't set! What are you doing!`
+    );
+    displayMessages(messages, messageElement);
+    violations.push(
+      `Attempted to sell ${arrayLoop.customerFuelType} fuel to ${arrayLoop.customerName} without setting a price!`
+    );
+    saveViolations(violations);
+    showViolations();
+    sleep(2000).then(() => {
+      checkViolations();
+    });
+    return;
+  }
+
+  // Define cost of fuel variable to shorten references here, cost = fuel quantity times price
   cost = arrayLoop.customerFuelNeeded * price;
 
+  // If the customer has less money than a gallon of their required fuel, we shouldn't be serving them
   if (arrayLoop.customerMoney < price) {
     messages.push(
       `${arrayLoop.customerName} doesn't have enough money for even 1 gallon of ${arrayLoop.customerFuelType} fuel! Why did you try to serve them!`
@@ -207,13 +261,15 @@ const fuelUpCheck = (arrayLoop) => {
       `Attempted to serve ${arrayLoop.customerName} when they didn't have enough money!`
     );
     saveViolations(violations);
+    showViolations();
     saveCustomers(customers);
     renderCustomers(customers);
     displayMessages(messages, messageElement);
     sleep(2000).then(() => {
       checkViolations();
     });
-  } else if (arrayLoop.customerMoney === cost) {
+    // Else if the customer has enough money for exactly one gallon of fuel, they can buy one and only one gallon of fuel
+  } else if (arrayLoop.customerMoney === price) {
     arrayLoop.customerMoney -= cost;
     arrayLoop.customerFuelNeeded -= 1;
     messages.push(
@@ -223,7 +279,8 @@ const fuelUpCheck = (arrayLoop) => {
     saveCustomers(customers);
     renderCustomers(customers);
     displayMessages(messages, messageElement);
-  } else if (arrayLoop.customerMoney > cost) {
+    // Else if the customer has exactly enough money or more than enough money for all of the fuel they need, they can buy it
+  } else if (arrayLoop.customerMoney >= cost) {
     arrayLoop.customerMoney -= cost;
     messages.push(
       `${arrayLoop.customerName} successfully purchased ${arrayLoop.customerFuelNeeded} gallon(s) of ${arrayLoop.customerFuelType} fuel for $${cost}, ${arrayLoop.customerPronoun} $${arrayLoop.customerMoney} left.`
@@ -233,6 +290,7 @@ const fuelUpCheck = (arrayLoop) => {
     saveCustomers(customers);
     renderCustomers(customers);
     displayMessages(messages, messageElement);
+    // Else if the customer has less money than the cost of all the fuel they need, but more than one gallon, round down to the amount of fuel they can afford
   } else if (arrayLoop.customerMoney < cost) {
     let lowerAmount = Math.floor(arrayLoop.customerMoney / price);
     cost = lowerAmount * price;
@@ -255,10 +313,12 @@ const getCustomers = () => {
   return customersJSON ? JSON.parse(customersJSON) : [];
 };
 
+// Function to save customer array to localstorage
 const saveCustomers = (customers) => {
   localStorage.setItem('customers', JSON.stringify(customers));
 };
 
+// Function to remove customer data from the array
 const removeCustomer = (id) => {
   const customerIndex = customers.findIndex(
     (customerArray) => customerArray.id === id
@@ -269,23 +329,23 @@ const removeCustomer = (id) => {
   }
 };
 
+// Function to select the appropriate text, if the customer wants to use the car wash or not
+// Conditional operator is used since we're just returning a value that has two possibilities
 const carWashLanguage = (choice) => {
-  if (choice) {
-    return `and would like to use the car wash.`;
-  } else {
-    return `and does not want to use the car wash.`;
-  }
+  return choice
+    ? `and would like to use the car wash.`
+    : `and does not want to use the car wash.`;
 };
 
+// Function to randomly decide if the customer wants a car wash or not
+// Conditional operator is used since we're just returning a boolean that has two possibilities
 const carWashDecision = (random) => {
-  if (random === 0) {
-    //The customer wants a car wash
-    return true;
-  } // The customer doesn't want a car wash
-  else return false;
+  return random === 0 ? true : false;
 };
 
-// If the customer used the car wash already, provide text for an update
+// If the customer used the car wash already, provide text to show the status
+// It will be blank if they don't want a car wash at all
+// Not using the conditional operator here since there are three possibilities involved
 const carWashStatus = (arrayLoop) => {
   if (arrayLoop.customerUsedCarWash) {
     return ' Their car has been washed.';
@@ -298,11 +358,14 @@ const carWashStatus = (arrayLoop) => {
   }
 };
 
+// Function  for using the car wash, or not, depending on the customer's ability to pay, and
+// if they even want to use the car wash.
 const useCarWash = (arrayLoop) => {
   let messages = [];
 
   let price = fuelPrices[3];
 
+  // If they don't want to use the car wash, rebuke the employee and add a violation
   if (arrayLoop.customerWantCarWash === false) {
     messages.push(
       `${arrayLoop.customerName} doesn't want to use the car wash! Why are you trying to force them?`
@@ -311,6 +374,7 @@ const useCarWash = (arrayLoop) => {
       `Tried to send ${arrayLoop.customerName} through the car wash when they didn't want to use it!`
     );
     saveViolations(violations);
+    showViolations();
     displayMessages(messages, messageElement);
     sleep(2000).then(() => {
       checkViolations();
@@ -318,20 +382,25 @@ const useCarWash = (arrayLoop) => {
     return;
   }
 
+  // If they already used the car wash, rebuke the employee and add a violation
   if (arrayLoop.customerUsedCarWash === true) {
     messages.push(
-      `${arrayLoop.customerName} already used the car wash! Don't waste company resources!`
+      `${arrayLoop.customerName} already used the car wash! Are you trying to blow up our water bill?`
     );
     violations.push(
       `Tried to send ${arrayLoop.customerName} through the car wash AGAIN!`
     );
     saveViolations(violations);
+    showViolations();
     displayMessages(messages, messageElement);
     sleep(2000).then(() => {
       checkViolations();
     });
     return;
   }
+
+  // If the customer has enough moneyto use the water car, and actually wants to use it (the function hasn't)
+  // been stopped by the prior If statement, then they use the car wash.
   if (arrayLoop.customerMoney >= price) {
     arrayLoop.customerMoney -= price;
     saveCustomers(customers);
@@ -350,6 +419,7 @@ const useCarWash = (arrayLoop) => {
       `Tried to let ${arrayLoop.customerName} use the car wash when they didn't have enough money!`
     );
     saveViolations(violations);
+    showViolations();
     displayMessages(messages, messageElement);
     sleep(2000).then(() => {
       checkViolations();
@@ -366,7 +436,7 @@ const renderCustomers = (customerArray) => {
     // If the customer's name is Ruben, they only have $1
     arrayLoop.customerName === 'Ruben'
       ? (arrayLoop.customerMoney = 1)
-      : arrayLoop.customerMoney;
+      : arrayLoop.customerMoney; // Essentially do nothing otherwise;
 
     // Create the text, and buttons doing into the DOM
     const customerEl = document.createElement('div');
@@ -376,6 +446,7 @@ const renderCustomers = (customerArray) => {
     const carWashButton = document.createElement('button');
     const kickButton = document.createElement('button');
 
+    // Customer information text
     span.textContent = `At ${arrayLoop.customerArrivalTime}, a customer, ${
       arrayLoop.customerName
     } has arrived, ${arrayLoop.customerPronoun} $${
@@ -451,6 +522,8 @@ const renderCustomers = (customerArray) => {
         renderCustomers(customers);
         displayMessages(messages, messageElement);
         return;
+        // Else if, the customer fueled up, wanted to use the car wash, didn't use the car wash, and couldn't afford the car wash
+        // They'll be disappointed but not as much as if they knew they could afford it
       } else if (
         arrayLoop.customerFueledUp &&
         arrayLoop.customerUsedCarWash === false &&
@@ -468,6 +541,9 @@ const renderCustomers = (customerArray) => {
         renderCustomers(customers);
         displayMessages(messages, messageElement);
         return;
+        // Else if, the customer fueled up, wanted to use the car wash, didn't use the car wash, and COULD afford the car wash
+        // They'll be more disappointed because they weren't sent them through the car wash, especially since they could
+        // have afforded to use it. Rebuke the employee and add a violation.
       } else if (
         arrayLoop.customerFueledUp &&
         arrayLoop.customerUsedCarWash === false &&
@@ -482,6 +558,7 @@ const renderCustomers = (customerArray) => {
           `Sent ${arrayLoop.customerName} away when they still wanted to use the car wash.`
         );
         saveViolations(violations);
+        showViolations();
         removeCustomer(arrayLoop.id);
         saveCustomers(customers);
         renderCustomers(customers);
@@ -490,6 +567,8 @@ const renderCustomers = (customerArray) => {
           checkViolations();
         });
         return;
+        // Eise if the employee sends the customer away without fueling them up, but they were sent through the car wash
+        // Rebuke the employee for failing to fuel up the customer's vehicle, and add a violation
       } else if (
         arrayLoop.customerFueledUp === false &&
         arrayLoop.customerUsedCarWash
@@ -502,6 +581,7 @@ const renderCustomers = (customerArray) => {
           `Failed to fuel up ${arrayLoop.customerName}'s vehicle.`
         );
         saveViolations(violations);
+        showViolations();
         removeCustomer(arrayLoop.id);
         saveCustomers(customers);
         renderCustomers(customers);
@@ -510,6 +590,8 @@ const renderCustomers = (customerArray) => {
           checkViolations();
         });
         return;
+        // Eise if the employee sends the customer away without fueling them up OR having them use the car wash, oh boy!
+        // Rebuke the employee for not offering any services to the customer!
       } else {
         let messages = [];
         messages.push(
@@ -519,6 +601,7 @@ const renderCustomers = (customerArray) => {
           `Failed to provide any services to ${arrayLoop.customerName}.`
         );
         saveViolations(violations);
+        showViolations();
         removeCustomer(arrayLoop.id);
         saveCustomers(customers);
         renderCustomers(customers);
@@ -530,7 +613,7 @@ const renderCustomers = (customerArray) => {
       }
     });
 
-    // Add event listener to fuel up button
+    // Add event listener to fuel up button, call fuelUpCheck function
     serveButton.addEventListener('click', () => {
       fuelUpCheck(arrayLoop);
     });
