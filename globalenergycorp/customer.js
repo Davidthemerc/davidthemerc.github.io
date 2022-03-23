@@ -1,3 +1,4 @@
+'use strict';
 const customerId = location.hash.substring(1);
 const messageElement = document.getElementById('customerInfo');
 let customers = getCustomers();
@@ -12,7 +13,7 @@ if (!editedCustomer) {
 // Assign input fields to variables
 const custName = document.getElementById('editName');
 const custMoney = document.getElementById('editMoney');
-const custFuelQuantity = document.getElementById('editQuantity');
+let custFuelQuantity = document.getElementById('editQuantity');
 const custCarWash = document.getElementById('editCarWash');
 
 // Assign the customer's data to those fields
@@ -25,11 +26,11 @@ custCarWash.checked = editedCustomer.customerWantCarWash;
 window.addEventListener('storage', (storageCheck) => {
   if (storageCheck.key === 'customers') {
     customers = JSON.parse(storageCheck.newValue);
-    customer = customers.find((customer) => customer.id === customerId);
-  }
+    let customer = customers.find((customer) => customer.id === customerId);
 
-  if (!customer) {
-    location.assign('index.html');
+    if (!customer) {
+      location.assign('index.html');
+    }
   }
 });
 
@@ -72,11 +73,14 @@ custMoney.addEventListener('change', () => {
 // Event listener to detect changes to the customer's fuel quantity needed
 custFuelQuantity.addEventListener('change', () => {
   let messages = [];
+  let originalQuantity = editedCustomer.customerFuelNeeded;
   if (Number.isInteger(parseFloat(custFuelQuantity.value)) === false) {
     messages.push(
-      `The customer cannot request partial units of fuel! Please correct this immediately!`
+      `The customer cannot request partial units of fuel! Fuel quantity has been reset to previous value!`
     );
     displayMessages(messages, messageElement);
+    custFuelQuantity.value = originalQuantity;
+
     return;
   }
   editedCustomer.customerFuelNeeded = custFuelQuantity.value;

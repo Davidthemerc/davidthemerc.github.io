@@ -1,3 +1,4 @@
+'use strict';
 // Random number function
 // Accepts minimum and maximum number as parameters
 const ranBetween = (min, max) =>
@@ -166,8 +167,8 @@ const checkViolations = () => {
 
 // Function to save fuel prices from the page into the fuelPrices array, and then into localstorage
 // The car wash price was added into this array last, for simplicity's sake
-const updateFuelArray = (reg, plus, prem, carWash) => {
-  fuelPrices = [reg, plus, prem, carWash];
+const updateFuelArray = (type, price) => {
+  fuelPrices[type] = price;
   saveFuelArray(fuelPrices);
 };
 
@@ -250,7 +251,7 @@ const fuelUpCheck = (arrayLoop) => {
   }
 
   // Define cost of fuel variable to shorten references here, cost = fuel quantity times price
-  cost = arrayLoop.customerFuelNeeded * price;
+  let cost = arrayLoop.customerFuelNeeded * price;
 
   // If the customer has less money than a gallon of their required fuel, we shouldn't be serving them
   if (arrayLoop.customerMoney < price) {
@@ -433,11 +434,6 @@ const renderCustomers = (customerArray) => {
   document.querySelector('#outputArea').innerHTML = '';
   // Run a for each Loop to render each customer in the array
   customerArray.forEach((arrayLoop) => {
-    // If the customer's name is Ruben, they only have $1
-    arrayLoop.customerName === 'Ruben'
-      ? (arrayLoop.customerMoney = 1)
-      : arrayLoop.customerMoney; // Essentially do nothing otherwise;
-
     // Create the text, and buttons doing into the DOM
     const customerEl = document.createElement('div');
     const span = document.createElement('span');

@@ -1,3 +1,4 @@
+'use strict';
 let fuelPrices = getFuelArray();
 let customers = getCustomers();
 let violations = getViolations();
@@ -16,39 +17,49 @@ renderFuelPrices();
 
 // Event listener for regular price input
 document.querySelector('#regular').addEventListener('change', () => {
-  updateFuelArray(
-    regularPrice.value,
-    plusPrice.value,
-    premiumPrice.value,
-    carWashPrice.value
-  );
+  let originalPrice = fuelPrices[0];
+  if (regularPrice.value >= 100) {
+    let messages = [];
+    messages.push(
+      `Stop! You can't increase the price of regular fuel to $100 or more! The price has been reset!`
+    );
+    displayMessages(messages, messageElement);
+    regularPrice.value = originalPrice;
+    return;
+  }
+  updateFuelArray(0, regularPrice.value);
 });
 // Event listener for plus price input
 document.querySelector('#plus').addEventListener('change', () => {
-  updateFuelArray(
-    regularPrice.value,
-    plusPrice.value,
-    premiumPrice.value,
-    carWashPrice.value
-  );
+  let originalPrice = fuelPrices[1];
+  if (plusPrice.value >= 100) {
+    let messages = [];
+    messages.push(
+      `Stop! You can't increase the price of plus fuel to $100 or more! The price has been reset!`
+    );
+    displayMessages(messages, messageElement);
+    plusPrice.value = originalPrice;
+    return;
+  }
+  updateFuelArray(1, plusPrice.value);
 });
 // Event listener for premium price input
 document.querySelector('#premium').addEventListener('change', () => {
-  updateFuelArray(
-    regularPrice.value,
-    plusPrice.value,
-    premiumPrice.value,
-    carWashPrice.value
-  );
+  let originalPrice = fuelPrices[2];
+  if (premiumPrice.value >= 100) {
+    let messages = [];
+    messages.push(
+      `Stop! You can't increase the price of regular fuel to $100 or more! The price has been reset!`
+    );
+    displayMessages(messages, messageElement);
+    premiumPrice.value = originalPrice;
+    return;
+  }
+  updateFuelArray(2, premiumPrice.value);
 });
 // Event listener for car wash price input
 document.querySelector('#carWash').addEventListener('change', () => {
-  updateFuelArray(
-    regularPrice.value,
-    plusPrice.value,
-    premiumPrice.value,
-    carWashPrice.value
-  );
+  updateFuelArray(3, carWashPrice.value);
 });
 
 // Event listener for add customer button
