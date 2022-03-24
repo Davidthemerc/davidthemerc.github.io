@@ -96,6 +96,7 @@ const fraudDetection = (change, edits) => {
       violations = [];
       fuelPrices = [];
       saveCustomers(customers);
+      renderCustomers(customers);
       saveViolations(violations);
       saveFuelArray(fuelPrices);
       let messages = [];
@@ -147,6 +148,7 @@ const checkViolations = () => {
     violations = [];
     fuelPrices = [];
     saveCustomers(customers);
+    renderCustomers(customers);
     saveViolations(violations);
     saveFuelArray(fuelPrices);
     let messages = [];
@@ -497,11 +499,30 @@ const renderCustomers = (customerArray) => {
       // They are broke and sending them away is the correct procedure
       if (
         arrayLoop.customerFueledUp === false &&
-        arrayLoop.customerMoney < price
+        arrayLoop.customerMoney < price &&
+        arrayLoop.customerWantCarWash === false
       ) {
         let messages = [];
         messages.push(
           `Great job! ${arrayLoop.customerName} didn't have enough money for even 1 gallon of ${arrayLoop.customerFuelType}, you did the right thing sending them away!`
+        );
+        removeCustomer(arrayLoop.id);
+        saveCustomers(customers);
+        renderCustomers(customers);
+        displayMessages(messages, messageElement);
+        return;
+      }
+
+      // If you're ending the transaction, the customer can't afford fuel or a car wash, and haven't fueled up already, then that's OK!
+      if (
+        arrayLoop.customerMoney < price &&
+        arrayLoop.customerMoney < carWashPrice &&
+        arrayLoop.customerFueledUp === false &&
+        arrayLoop.customerUsedCarWash === false
+      ) {
+        let messages = [];
+        messages.push(
+          `Great job! ${arrayLoop.customerName} didn't have enough money for any services at all, you did the right thing sending them away!`
         );
         removeCustomer(arrayLoop.id);
         saveCustomers(customers);
@@ -517,12 +538,13 @@ const renderCustomers = (customerArray) => {
         (arrayLoop.customerFueledUp && arrayLoop.customerWantCarWash === false)
       ) {
         let messages = [];
-        messages.push(
-          `Great job! ${arrayLoop.customerName} leaves as a satisfied customer at ${endTimeForCheck}. You served them in ${duration}.`
-        );
         if (arrayLoop.customerFuelNeeded > 0) {
           messages.push(
-            `Although, they probably wish they had a bit more cash for more fuel!`
+            `Great job! ${arrayLoop.customerName} leaves partially satisfied at ${endTimeForCheck}. They wish they had a bit more money for more fuel! You served them in ${duration}.`
+          );
+        } else {
+          messages.push(
+            `Great job! ${arrayLoop.customerName} leaves as a satisfied customer at ${endTimeForCheck}. You served them in ${duration}.`
           );
         }
         removeCustomer(arrayLoop.id);
@@ -579,7 +601,8 @@ const renderCustomers = (customerArray) => {
         // Rebuke the employee for failing to fuel up the customer's vehicle, and add a violation
       } else if (
         arrayLoop.customerFueledUp === false &&
-        arrayLoop.customerUsedCarWash
+        arrayLoop.customerUsedCarWash &&
+        arrayLoop.customerMoney > price
       ) {
         let messages = [];
         messages.push(
@@ -600,10 +623,48 @@ const renderCustomers = (customerArray) => {
         return;
         // Eise if the employee sends the customer away without fueling them up OR having them use the car wash, oh boy!
         // Rebuke the employee for not offering any services to the customer!
+      } else if (
+        arrayLoop.customerWantCarWash === true &&
+        arrayLoop.customerMoney >= carWashPrice &&
+        arrayLoop.customerUsedCarWash === false
+      ) {
+        let messages = [];
+        messages.push(
+          `${arrayLoop.customerName} did not have enough money for any ${arrayLoop.customerFuelType} fuel, but they could have used the car wash! Why didn't you offer it to them!`
+        );
+        violations.push(
+          `Failed to offer a car wash to ${arrayLoop.customerName}.`
+        );
+        saveViolations(violations);
+        showViolations();
+        removeCustomer(arrayLoop.id);
+        saveCustomers(customers);
+        renderCustomers(customers);
+        displayMessages(messages, messageElement);
+        sleep(2000).then(() => {
+          checkViolations();
+        });
+        return;
+      } else if (
+        arrayLoop.customerMoney < price &&
+        arrayLoop.customerUsedCarWash === true
+      ) {
+        let messages = [];
+        messages.push(
+          `${arrayLoop.customerName} leaves partially satisfied at ${endTimeForCheck}; they did not have enough money for any ${arrayLoop.customerFuelType} fuel, but they at least were able to use the car wash. You served them in ${duration}.`
+        );
+        removeCustomer(arrayLoop.id);
+        saveCustomers(customers);
+        renderCustomers(customers);
+        displayMessages(messages, messageElement);
+        sleep(2000).then(() => {
+          checkViolations();
+        });
+        return;
       } else {
         let messages = [];
         messages.push(
-          `You sent ${arrayLoop.customerName} away at ${endTimeForCheck} without providing any services! That could have been a valuable paying customer!`
+          `You sent ${arrayLoop.customerName} away at ${endTimeForCheck} without providing any services! That could have been a valuable paying customer! What a waste of ${duration}!`
         );
         violations.push(
           `Failed to provide any services to ${arrayLoop.customerName}.`
