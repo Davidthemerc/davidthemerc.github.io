@@ -205,6 +205,15 @@ const fuelPriceCheck = (arrayLoop) => {
   }
 };
 
+// Function to deal with those awful JavaScript floating point math errors
+// Takes an affected value, such as 100.9999994, times 100, to 10099.99994, rounds up to 10100
+// then divides back by 100 to 101, which will then correctly display as $101.
+const floatFix = (arrayLoop) => {
+  arrayLoop.customerMoney = Math.round(arrayLoop.customerMoney * 100);
+  arrayLoop.customerMoney = arrayLoop.customerMoney / 100;
+  saveCustomers(customers);
+};
+
 // Function for fueling up the customer's vehicle, or not, depending on their ability to pay
 const fuelUpCheck = (arrayLoop) => {
   let messages = [];
@@ -272,6 +281,7 @@ const fuelUpCheck = (arrayLoop) => {
     // Else if the customer has enough money for exactly one gallon of fuel, they can buy one and only one gallon of fuel
   } else if (arrayLoop.customerMoney === price) {
     arrayLoop.customerMoney -= cost;
+    floatFix(arrayLoop);
     arrayLoop.customerFuelNeeded -= 1;
     messages.push(
       `${arrayLoop.customerName} could not afford all the  ${arrayLoop.customerFuelType} fuel they needed, but ${arrayLoop.customerPronoun} were able to buy 1 gallon of ${arrayLoop.customerFuelType} fuel, ${arrayLoop.customerPronoun} $${arrayLoop.customerMoney} left.`
@@ -283,6 +293,7 @@ const fuelUpCheck = (arrayLoop) => {
     // Else if the customer has exactly enough money or more than enough money for all of the fuel they need, they can buy it
   } else if (arrayLoop.customerMoney >= cost) {
     arrayLoop.customerMoney -= cost;
+    floatFix(arrayLoop);
     messages.push(
       `${arrayLoop.customerName} successfully purchased ${arrayLoop.customerFuelNeeded} gallon(s) of ${arrayLoop.customerFuelType} fuel for $${cost}, ${arrayLoop.customerPronoun} $${arrayLoop.customerMoney} left.`
     );
@@ -296,6 +307,7 @@ const fuelUpCheck = (arrayLoop) => {
     let lowerAmount = Math.floor(arrayLoop.customerMoney / price);
     cost = lowerAmount * price;
     arrayLoop.customerMoney -= cost;
+    floatFix(arrayLoop);
     arrayLoop.customerFuelNeeded -= lowerAmount;
     messages.push(
       `${arrayLoop.customerName} could not afford all the ${arrayLoop.customerFuelType}  fuel they needed, but they were able to afford ${lowerAmount} gallon(s) of ${arrayLoop.customerFuelType} fuel for $${cost}, ${arrayLoop.customerPronoun} $${arrayLoop.customerMoney} left.`

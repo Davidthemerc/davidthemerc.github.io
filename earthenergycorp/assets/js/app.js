@@ -92,14 +92,6 @@ document.querySelector('form').addEventListener('submit', (add) => {
   // Clear error messages when there is no error; the array will be empty
   displayMessages(messages, messageElement);
 
-  // Update fuel price array
-  updateFuelArray(
-    regularPrice.value,
-    plusPrice.value,
-    premiumPrice.value,
-    carWashPrice.value
-  );
-
   // Generate a customer
   generateCustomer();
 
