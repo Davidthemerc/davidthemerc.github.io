@@ -32,7 +32,8 @@
             <div class="col-12" style="background: #ffffff;">
                 <p class="pt-3">Welcome, employee, to Earth Energy Corporation Refueling Center # 9078, located in sunny
                     Kerman, California.</p>
-                <div id="mainMessages" class="mainmessages pb-3"></div>
+                <div id="mainMessages2" class="mainmessages2 d-flex justify-content-center pb-3"></div>
+                <div id="mainMessages" class="mainmessages d-flex justify-content-center pb-3"></div>
                 <p class="fs-5 fw-bold"><span style="text-decoration: underline;">Refueling Center Prices (Per
                         Gallon):</span></p>
                 <div class="container">
@@ -63,7 +64,31 @@
                                         <option value="27">$27</option>
                                         <option value="31">$31</option>
                                         <option value="35">$35</option>
-                                    </select></div>
+                                    </select></div><br>
+                                <div class="d-flex justify-content-center">
+                                    <p class="fs-6 fw-bold"><span style="text-decoration: underline;">Customer
+                                            Data Entry (Leave Blank to Randomize)</span></p>
+                                </div>
+                                <div class="input-group"><span class="input-group-text">Customer Name</span><input
+                                        class="form-control" id="customerName" type="text"
+                                        placeholder="Customer Name (optional)" minlength="1"></div>
+                                <div class="input-group"><span class="input-group-text">Customer Pronoun</span>
+                                    <select name="customerPronoun" id="customerPronoun">
+                                        <option disabled selected value> -- select an option -- </option>
+                                        <option value="he has">He</option>
+                                        <option value="she has">She</option>
+                                        <option value="they have">They</option>
+                                        <option value="ze have">Ze</option>
+                                    </select>
+                                </div>
+                                <div class="input-group"><span class="input-group-text">Customer Fuel Type</span>
+                                    <select name="customerPronoun" id="customerFuelType">
+                                        <option disabled selected value> -- select an option -- </option>
+                                        <option value="regular">Regular</option>
+                                        <option value="plus">Plus</option>
+                                        <option value="premium">Premium</option>
+                                    </select>
+                                </div>
                                 <button id="addCustomer" class="mt-2">Next Customer</button>
                             </form>
                             <div class="violations pt-3" id="violations"></div>
@@ -101,7 +126,7 @@
     <footer class="footer-dark">
         <div class="container">
             <div class="row">
-                <div class="col-md-6 item text">
+                <div class="col-6 item text">
                     <h3>Earth Energy Corporation</h3>
                     <p>Providing all of the world's energy needs - at any cost.</p>
                 </div>

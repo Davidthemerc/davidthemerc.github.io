@@ -3,17 +3,23 @@ let fuelPrices = getFuelArray();
 let customers = getCustomers();
 let violations = getViolations();
 const messageElement = document.getElementById('mainMessages');
+const messageElement2 = document.getElementById('mainMessages2');
 const violationsElement = document.getElementById('violations');
 let regularPrice = document.getElementById('regular');
 let plusPrice = document.getElementById('plus');
 let premiumPrice = document.getElementById('premium');
 let carWashPrice = document.getElementById('carWash');
+let userCustomerName = document.getElementById('customerName');
+let userCustomerPronoun = document.getElementById('customerPronoun');
+let userCustomerFuelType = document.getElementById('customerFuelType');
 
 // Render customer data from local storage
 renderCustomers(customers);
 
 // Load fuel prices into DOM
 renderFuelPrices();
+// Use of truthy/falsy to show when the gas prices were last updated, if there is such a time available in the array
+fuelPrices[4] ? timeFuelPricesUpdated(fuelPrices[4]) : '';
 
 // Event listener for regular price input
 document.querySelector('#regular').addEventListener('change', () => {
@@ -27,7 +33,17 @@ document.querySelector('#regular').addEventListener('change', () => {
     regularPrice.value = originalPrice;
     return;
   }
-  updateFuelArray(0, regularPrice.value);
+  if (!regularPrice.value) {
+    let messages = [];
+    messages.push(
+      `Please do not remove the regular fuel price without setting a new price!`
+    );
+    displayMessages(messages, messageElement);
+    regularPrice.value = originalPrice;
+
+    return;
+  }
+  updateFuelArray(0, regularPrice.value, 'regular fuel');
 });
 // Event listener for plus price input
 document.querySelector('#plus').addEventListener('change', () => {
@@ -41,7 +57,17 @@ document.querySelector('#plus').addEventListener('change', () => {
     plusPrice.value = originalPrice;
     return;
   }
-  updateFuelArray(1, plusPrice.value);
+  if (!plusPrice.value) {
+    let messages = [];
+    messages.push(
+      `Please do not remove the plus fuel price without setting a new price!`
+    );
+    displayMessages(messages, messageElement);
+    plusPrice.value = originalPrice;
+
+    return;
+  }
+  updateFuelArray(1, plusPrice.value, 'plus fuel');
 });
 // Event listener for premium price input
 document.querySelector('#premium').addEventListener('change', () => {
@@ -55,11 +81,21 @@ document.querySelector('#premium').addEventListener('change', () => {
     premiumPrice.value = originalPrice;
     return;
   }
-  updateFuelArray(2, premiumPrice.value);
+  if (!premiumPrice.value) {
+    let messages = [];
+    messages.push(
+      `Please do not remove the premium fuel price without setting a new price!`
+    );
+    displayMessages(messages, messageElement);
+    premiumPrice.value = originalPrice;
+
+    return;
+  }
+  updateFuelArray(2, premiumPrice.value, 'premium fuel');
 });
 // Event listener for car wash price input
 document.querySelector('#carWash').addEventListener('change', () => {
-  updateFuelArray(3, carWashPrice.value);
+  updateFuelArray(3, carWashPrice.value, 'car wash');
 });
 
 // Event listener for add customer button
@@ -93,11 +129,23 @@ document.querySelector('form').addEventListener('submit', (add) => {
   displayMessages(messages, messageElement);
 
   // Generate a customer
-  generateCustomer();
+  generateCustomer(
+    userCustomerName.value,
+    userCustomerPronoun.value,
+    userCustomerFuelType.value
+  );
+
+  // Clear customer customization fields
+  userCustomerName.value = '';
+  userCustomerPronoun.value = '';
+  userCustomerFuelType.value = '';
 
   // Render all stored customers
   renderCustomers(customers);
 });
+
+// Show any saved violations
+showViolations();
 
 // Event listener to update data
 window.addEventListener('storage', (e) => {

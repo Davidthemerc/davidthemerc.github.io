@@ -17,7 +17,12 @@ const sleep = (ms) => {
 };
 
 // Function to generate a customer when one is not available in local storage
-const generateCustomer = () => {
+// Can generate a name and pronoun if the user doesn't specify one
+const generateCustomer = (userName, userPronoun, userFuelType) => {
+  let localName = '';
+  let localPronoun = '';
+  let localFuelType = '';
+
   // Array of possible customer names
   const randomCustomerNames = [
     'Jimmy',
@@ -41,14 +46,26 @@ const generateCustomer = () => {
   // Array of possible fuel grades
   const randomFuelGrades = ['regular', 'plus', 'premium'];
 
+  // Conditional operator and truthy/falsy; if the data is provided, we will use it, but if the
+  // data is not provided, we will randomize the customer data, no problem!
+  userName
+    ? (localName = userName)
+    : (localName = randomCustomerNames[ranBetween(0, 12)]);
+  userPronoun
+    ? (localPronoun = userPronoun)
+    : (localPronoun = randomCustomerPronouns[ranBetween(0, 3)]);
+  userFuelType
+    ? (localFuelType = userFuelType)
+    : (localFuelType = randomFuelGrades[ranBetween(0, 2)]);
+
   // Pick a random name and pronoun
   customers.push({
-    customerName: randomCustomerNames[ranBetween(0, 12)],
-    customerPronoun: randomCustomerPronouns[ranBetween(0, 3)],
+    customerName: localName,
+    customerPronoun: localPronoun,
     customerMoney: ranBetween(3, 150),
     customerEdits: 0,
     customerFuelNeeded: ranBetween(1, 18),
-    customerFuelType: randomFuelGrades[ranBetween(0, 2)],
+    customerFuelType: localFuelType,
     customerWantCarWash: carWashDecision(ranBetween(0, 1)),
     customerFueledUp: false,
     customerUsedCarWash: false,
@@ -169,9 +186,27 @@ const checkViolations = () => {
 
 // Function to save fuel prices from the page into the fuelPrices array, and then into localstorage
 // The car wash price was added into this array last, for simplicity's sake
-const updateFuelArray = (type, price) => {
+const updateFuelArray = (type, price, name) => {
+  // Save the last price used
+  let originalPrice = fuelPrices[type];
+  let timeUpdated = moment().format('MMM Do, YYYY h:mm:ss A');
+  // Update the price to the new value and update time last updated
   fuelPrices[type] = price;
+  fuelPrices[4] = timeUpdated;
+  // Display the gas price change
+  let messages = [];
+  messages.push(
+    `The ${name} price was changed from $${originalPrice} to $${price} at ${timeUpdated}.`
+  );
+  displayMessages(messages, messageElement);
+  timeFuelPricesUpdated(timeUpdated);
   saveFuelArray(fuelPrices);
+};
+
+const timeFuelPricesUpdated = (time) => {
+  let messages = [];
+  messages.push(`Our prices were last changed at: ${time}.`);
+  displayMessages(messages, messageElement2);
 };
 
 // Function to retrieve saved fuel price values from local storage (if available)
@@ -513,7 +548,9 @@ const renderCustomers = (customerArray) => {
         return;
       }
 
-      // If you're ending the transaction, the customer can't afford fuel or a car wash, and haven't fueled up already, then that's OK!
+      // If you're ending the transaction, the customer can't afford fuel or a car wash, and hasn't already fueled up or used the car wash
+      // (meaning that they're not just broke because they fueled up and used the car wash already) then we want to give positive feedback
+      // to the employee for following procedure
       if (
         arrayLoop.customerMoney < price &&
         arrayLoop.customerMoney < carWashPrice &&
@@ -563,7 +600,7 @@ const renderCustomers = (customerArray) => {
         let messages = [];
 
         messages.push(
-          `${arrayLoop.customerName} leaves mostly satisfied at ${endTimeForCheck}; they wanted to use the car wash but didn't have enough money. You served them in ${duration}.`
+          `${arrayLoop.customerName} leaves mostly satisfied at ${endTimeForCheck}; they fueled up, but didn't have enough money to use the car wash. You served them in ${duration}.`
         );
 
         removeCustomer(arrayLoop.id);
@@ -645,6 +682,8 @@ const renderCustomers = (customerArray) => {
           checkViolations();
         });
         return;
+        // Else if the customer can't afford gas but was able to afford the car wash and was offered it, they will be
+        // partially satisfied. Most other possibilities should have been covered by other conditionals by now.
       } else if (
         arrayLoop.customerMoney < price &&
         arrayLoop.customerUsedCarWash === true
@@ -661,6 +700,8 @@ const renderCustomers = (customerArray) => {
           checkViolations();
         });
         return;
+        // The final check, if we get to this Else, then the employee most likely sent the customer away without providing
+        // any services. That is a violation, so rebuke the employee and add a violation.
       } else {
         let messages = [];
         messages.push(
