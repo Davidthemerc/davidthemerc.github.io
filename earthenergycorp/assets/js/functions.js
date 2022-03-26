@@ -1,4 +1,5 @@
 'use strict';
+
 // Random number function
 // Accepts minimum and maximum number as parameters
 const ranBetween = (min, max) =>
@@ -130,10 +131,13 @@ const fraudDetection = (change, edits) => {
 
 // Function to retrieve saved violations from localstorage
 const getViolations = () => {
-  const violationsJSON = localStorage.getItem('violations');
-
-  // Conditional operator! Returns the localstorage data or a blank array
-  return violationsJSON ? JSON.parse(violationsJSON) : [];
+  try {
+    const violationsJSON = localStorage.getItem('violations');
+    // Conditional operator! Returns the localstorage data or a blank array
+    return violationsJSON ? JSON.parse(violationsJSON) : [];
+  } catch (e) {
+    return [];
+  }
 };
 
 // Function to save employee violations to localstorage
@@ -211,11 +215,15 @@ const timeFuelPricesUpdated = (time) => {
 
 // Function to retrieve saved fuel price values from local storage (if available)
 const getFuelArray = () => {
-  const fuelJSON = localStorage.getItem('fuelPrices');
+  try {
+    const fuelJSON = localStorage.getItem('fuelPrices');
 
-  // Another conditional operator. Returns the local storage data or an array with blank values.
-  // This is important, because we don't want the form fields on the page to say Undefined or Null
-  return fuelJSON ? JSON.parse(fuelJSON) : ['', '', '', '', ''];
+    // Another conditional operator. Returns the local storage data or an array with blank values.
+    // This is important, because we don't want the form fields on the page to say Undefined or Null
+    return fuelJSON ? JSON.parse(fuelJSON) : ['', '', '', '', ''];
+  } catch (e) {
+    return [];
+  }
 };
 
 // Function to render the fuel prices/car wash price into the DOM
@@ -358,9 +366,13 @@ const fuelUpCheck = (arrayLoop) => {
 
 // Function to retrieve saved customer data from local storage (if available)
 const getCustomers = () => {
-  const customersJSON = localStorage.getItem('customers');
+  try {
+    const customersJSON = localStorage.getItem('customers');
 
-  return customersJSON ? JSON.parse(customersJSON) : [];
+    return customersJSON ? JSON.parse(customersJSON) : [];
+  } catch (e) {
+    return [];
+  }
 };
 
 // Function to save customer array to localstorage

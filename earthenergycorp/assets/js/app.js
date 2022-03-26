@@ -1,4 +1,5 @@
 'use strict';
+
 let fuelPrices = getFuelArray();
 let customers = getCustomers();
 let violations = getViolations();
@@ -150,7 +151,11 @@ showViolations();
 // Event listener to update data
 window.addEventListener('storage', (e) => {
   if (e.key === 'customers') {
-    customers = JSON.parse(e.newValue);
+    try {
+      customers = JSON.parse(storageCheck.newValue);
+    } catch (e) {
+      customers = [];
+    }
     renderCustomers(customers);
   }
 });

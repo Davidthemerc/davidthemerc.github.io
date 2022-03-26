@@ -1,4 +1,5 @@
 'use strict';
+
 const customerId = location.hash.substring(1);
 const messageElement = document.getElementById('customerInfo');
 let customers = getCustomers();
@@ -25,7 +26,11 @@ custCarWash.checked = editedCustomer.customerWantCarWash;
 // Event listener to update data on the Index page
 window.addEventListener('storage', (storageCheck) => {
   if (storageCheck.key === 'customers') {
-    customers = JSON.parse(storageCheck.newValue);
+    try {
+      customers = JSON.parse(storageCheck.newValue);
+    } catch (e) {
+      customers = [];
+    }
     let customer = customers.find((customer) => customer.id === customerId);
 
     if (!customer) {
