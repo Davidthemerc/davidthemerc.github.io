@@ -239,10 +239,10 @@ const timeFuelPricesUpdated = (time) => {
 // Function to render the fuel prices/car wash price into the DOM
 const renderFuelPrices = () => {
   gPrices.innerHTML = '';
-  for (let i = 0; i < 4; i++) {
+  for (let fuelLoop = 0; fuelLoop < 4; fuelLoop++) {
     const span = document.createElement('span');
     span.className = 'rocks2';
-    span.textContent = `${fuelName(i)} $${fuelPrices[i]} `;
+    span.textContent = `${fuelName(fuelLoop)} $${fuelPrices[fuelLoop]} `;
     gPrices.appendChild(span);
   }
 };
