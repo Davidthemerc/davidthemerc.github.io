@@ -105,7 +105,7 @@ const fraudDetection = (change, edits) => {
     // Looks like the fraud detection system detected the employee modifying the transaction system!
     let messages = [];
     messages.push(
-      `FRAUD DETECTED! What are you DOING? You CANNOT MODIFY the transaction system!`
+      `FINANCIAL FRAUD DETECTED! What are you DOING? YOU ARE FIRED! YOU ARE FIRED! YOU ARE FIRED!`
     );
     displayMessages(messages, messageElement);
     sleep(3000).then(() => {
@@ -117,9 +117,6 @@ const fraudDetection = (change, edits) => {
       renderCustomers(customers);
       saveViolations(violations);
       saveFuelArray(fuelPrices);
-      let messages = [];
-      messages.push(`YOU ARE FIRED! YOU ARE FIRED! YOU ARE FIRED!`);
-      displayMessages(messages, messageElement);
     });
     sleep(6000).then(() => {
       // Now send the user to the HR page and clear local storage.
@@ -191,17 +188,34 @@ const checkViolations = () => {
 // Function to save fuel prices from the page into the fuelPrices array, and then into localstorage
 // The car wash price was added into this array last, for simplicity's sake
 const updateFuelArray = (type, price, name) => {
+  if (parseInt(price) < 4) {
+    throw Error(
+      `You can't charge less than $4 for a gallon of ${name}! We'll lose money left and right! The price has been reset!`
+    );
+  }
+
+  if (parseInt(price) > 99.99) {
+    throw Error(
+      `You can't charge $100 or more for ${name}! The price has been reset!`
+    );
+  }
+
   // Save the last price used
   let originalPrice = fuelPrices[type];
+
   let timeUpdated = moment().format('MMM Do, YYYY h:mm:ss A');
   // Update the price to the new value and update time last updated
   fuelPrices[type] = price;
   fuelPrices[4] = timeUpdated;
   // Display the gas price change
   let messages = [];
-  messages.push(
-    `The ${name} price was changed from $${originalPrice} to $${price} at ${timeUpdated}.`
-  );
+  originalPrice
+    ? messages.push(
+        `The ${name} price was changed from $${originalPrice} to $${price} at ${timeUpdated}.`
+      )
+    : messages.push(
+        `The ${name} price was set to $${price} at ${timeUpdated}.`
+      );
   displayMessages(messages, messageElement);
   timeFuelPricesUpdated(timeUpdated);
   saveFuelArray(fuelPrices);

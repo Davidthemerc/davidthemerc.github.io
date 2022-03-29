@@ -52,20 +52,29 @@ custName.addEventListener('change', () => {
 
 // Event listener to detect changes to the customer's money (transaction system)
 custMoney.addEventListener('change', () => {
-  let customerMoney = editedCustomer.customerMoney;
+  let messages = [];
+  let originalMoneyValue = editedCustomer.customerMoney;
+  if (Number.isInteger(parseFloat(custMoney.value)) === false) {
+    messages.push(
+      `You cannot change the customer's money to an invalid value! The value has been reset!`
+    );
+    displayMessages(messages, messageElement);
+    custMoney.value = originalMoneyValue;
+
+    return;
+  }
   let change = Math.abs(
     parseFloat(custMoney.value) - editedCustomer.customerMoney
   );
   editedCustomer.customerMoney = parseFloat(custMoney.value);
 
-  let messages = [];
-  if (editedCustomer.customerMoney > customerMoney) {
+  if (editedCustomer.customerMoney > originalMoneyValue) {
     messages.push(
-      `The customer's funds were increased by $${change} (from $${customerMoney} to $${editedCustomer.customerMoney}).`
+      `The customer's funds were increased by $${change} (from $${originalMoneyValue} to $${editedCustomer.customerMoney}).`
     );
   } else {
     messages.push(
-      `The customer's funds were decreased by $${change} (from $${customerMoney} to $${editedCustomer.customerMoney}).`
+      `The customer's funds were decreased by $${change} (from $${originalMoneyValue} to $${editedCustomer.customerMoney}).`
     );
   }
   displayMessages(messages, messageElement);
@@ -81,7 +90,7 @@ custFuelQuantity.addEventListener('change', () => {
   let originalQuantity = editedCustomer.customerFuelNeeded;
   if (Number.isInteger(parseFloat(custFuelQuantity.value)) === false) {
     messages.push(
-      `The customer cannot request partial units of fuel! Fuel quantity has been reset to previous value!`
+      `The customer cannot request partial or invalid units of fuel! Fuel quantity has been reset to previous value!`
     );
     displayMessages(messages, messageElement);
     custFuelQuantity.value = originalQuantity;
