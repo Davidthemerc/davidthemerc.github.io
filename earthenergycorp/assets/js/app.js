@@ -32,10 +32,10 @@ document.querySelector('#regular').addEventListener('change', () => {
     // If there is no issue with the new fuel price, update the price
     updateFuelArray(0, regularPrice.value, 'regular fuel');
     regularPrice.value = '';
-  } catch (e) {
+  } catch (error) {
     // If there is an issue with the new fuel price, alert the employee
     let messages = [];
-    messages.push(e);
+    messages.push(error);
     displayMessages(messages, messageElement);
     regularPrice.value = '';
   }
@@ -47,9 +47,9 @@ document.querySelector('#plus').addEventListener('change', () => {
   try {
     updateFuelArray(1, plusPrice.value, 'plus fuel');
     plusPrice.value = '';
-  } catch (e) {
+  } catch (error) {
     let messages = [];
-    messages.push(e);
+    messages.push(error);
     displayMessages(messages, messageElement);
     plusPrice.value = '';
   }
@@ -61,9 +61,9 @@ document.querySelector('#premium').addEventListener('change', () => {
   try {
     updateFuelArray(2, premiumPrice.value, 'premium fuel');
     premiumPrice.value = '';
-  } catch (e) {
+  } catch (error) {
     let messages = [];
-    messages.push(e);
+    messages.push(error);
     displayMessages(messages, messageElement);
     premiumPrice.value = '';
   }
@@ -75,9 +75,9 @@ document.querySelector('#carWash').addEventListener('change', () => {
   try {
     updateFuelArray(3, carWashPrice.value, 'car wash');
     carWashPrice.value = '';
-  } catch (e) {
+  } catch (error) {
     let messages = [];
-    messages.push(e);
+    messages.push(error);
     displayMessages(messages, messageElement);
     carWashPrice.value = '';
   }
@@ -110,11 +110,11 @@ document.querySelector('form').addEventListener('submit', (add) => {
 showViolations();
 
 // Event listener to update data
-window.addEventListener('storage', (e) => {
+window.addEventListener('storage', (error) => {
   if (e.key === 'customers') {
     try {
       customers = JSON.parse(storageCheck.newValue);
-    } catch (e) {
+    } catch (error) {
       customers = [];
     }
     renderCustomers(customers);

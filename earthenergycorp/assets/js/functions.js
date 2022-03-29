@@ -132,7 +132,7 @@ const getViolations = () => {
     const violationsJSON = localStorage.getItem('violations');
     // Conditional operator! Returns the localstorage data or a blank array
     return violationsJSON ? JSON.parse(violationsJSON) : [];
-  } catch (e) {
+  } catch (error) {
     return [];
   }
 };
@@ -269,7 +269,7 @@ const getFuelArray = () => {
     // Another conditional operator. Returns the local storage data or an array with blank values.
     // This is important, because we don't want the form fields on the page to say Undefined or Null
     return fuelJSON ? JSON.parse(fuelJSON) : ['', '', '', '', ''];
-  } catch (e) {
+  } catch (error) {
     return [];
   }
 };
@@ -410,7 +410,7 @@ const getCustomers = () => {
     const customersJSON = localStorage.getItem('customers');
 
     return customersJSON ? JSON.parse(customersJSON) : [];
-  } catch (e) {
+  } catch (error) {
     return [];
   }
 };

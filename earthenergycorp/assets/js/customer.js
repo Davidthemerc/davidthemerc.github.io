@@ -28,7 +28,7 @@ window.addEventListener('storage', (storageCheck) => {
   if (storageCheck.key === 'customers') {
     try {
       customers = JSON.parse(storageCheck.newValue);
-    } catch (e) {
+    } catch (error) {
       customers = [];
     }
     let customer = customers.find((customer) => customer.id === customerId);
