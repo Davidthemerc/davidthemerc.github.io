@@ -5,6 +5,7 @@ let customers = getCustomers();
 let violations = getViolations();
 const messageElement = document.getElementById('mainMessages');
 const messageElement2 = document.getElementById('mainMessages2');
+const gPrices = document.getElementById('gprices');
 const violationsElement = document.getElementById('violations');
 let regularPrice = document.getElementById('regular');
 let plusPrice = document.getElementById('plus');
@@ -13,12 +14,11 @@ let carWashPrice = document.getElementById('carWash');
 let userCustomerName = document.getElementById('customerName');
 let userCustomerPronoun = document.getElementById('customerPronoun');
 let userCustomerFuelType = document.getElementById('customerFuelType');
+let form = document.getElementById('form');
 
 // Render customer data from local storage
 renderCustomers(customers);
 
-// Load fuel prices into DOM
-renderFuelPrices();
 // Use of truthy/falsy to show when the gas prices were last updated, if there is such a time available in the array
 fuelPrices[4] ? timeFuelPricesUpdated(fuelPrices[4]) : '';
 
@@ -31,13 +31,13 @@ document.querySelector('#regular').addEventListener('change', () => {
   try {
     // If there is no issue with the new fuel price, update the price
     updateFuelArray(0, regularPrice.value, 'regular fuel');
+    regularPrice.value = '';
   } catch (e) {
     // If there is an issue with the new fuel price, alert the employee
     let messages = [];
-    messages.push(e.message);
+    messages.push(e);
     displayMessages(messages, messageElement);
-    // Reset the price to the valid, previously stored value
-    regularPrice.value = originalPrice;
+    regularPrice.value = '';
   }
 });
 // Event listener for plus price input
@@ -46,11 +46,12 @@ document.querySelector('#plus').addEventListener('change', () => {
 
   try {
     updateFuelArray(1, plusPrice.value, 'plus fuel');
+    plusPrice.value = '';
   } catch (e) {
     let messages = [];
     messages.push(e);
     displayMessages(messages, messageElement);
-    plusPrice.value = originalPrice;
+    plusPrice.value = '';
   }
 });
 // Event listener for premium price input
@@ -59,16 +60,27 @@ document.querySelector('#premium').addEventListener('change', () => {
 
   try {
     updateFuelArray(2, premiumPrice.value, 'premium fuel');
+    premiumPrice.value = '';
   } catch (e) {
     let messages = [];
     messages.push(e);
     displayMessages(messages, messageElement);
-    premiumPrice.value = originalPrice;
+    premiumPrice.value = '';
   }
 });
 // Event listener for car wash price input
 document.querySelector('#carWash').addEventListener('change', () => {
-  updateFuelArray(3, carWashPrice.value, 'car wash');
+  let originalPrice = fuelPrices[3];
+
+  try {
+    updateFuelArray(3, carWashPrice.value, 'car wash');
+    carWashPrice.value = '';
+  } catch (e) {
+    let messages = [];
+    messages.push(e);
+    displayMessages(messages, messageElement);
+    carWashPrice.value = '';
+  }
 });
 
 // Event listener for add customer button
@@ -88,9 +100,7 @@ document.querySelector('form').addEventListener('submit', (add) => {
   );
 
   // Clear customer customization fields
-  userCustomerName.value = '';
-  userCustomerPronoun.value = '';
-  userCustomerFuelType.value = '';
+  form.reset();
 
   // Render all stored customers
   renderCustomers(customers);

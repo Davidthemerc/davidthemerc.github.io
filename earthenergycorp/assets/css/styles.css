@@ -10,6 +10,10 @@ a.mainlink {
   border-radius: 15px;
 }
 
+.rocks2 {
+  margin: 0.5rem;
+}
+
 .mainmessages {
   font-weight: bold;
   color: red;
@@ -17,7 +21,21 @@ a.mainlink {
 
 .mainmessages2 {
   font-weight: bold;
-  color: rgb(74, 74, 100);
+  text-align: center;
+  color: rgb(61, 61, 136);
+  border: 0.5rem;
+  border-style: groove;
+  border-bottom: none;
+  background-color: rgb(226, 226, 226);
+}
+
+.gprices {
+  font-weight: bold;
+  text-align: center;
+  color: white;
+  border: 0.5rem;
+  border-style: groove;
+  background-color: #7974f8;
 }
 
 .violations {

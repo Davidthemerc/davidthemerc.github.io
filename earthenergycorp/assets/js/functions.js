@@ -188,6 +188,15 @@ const checkViolations = () => {
 // Function to save fuel prices from the page into the fuelPrices array, and then into localstorage
 // The car wash price was added into this array last, for simplicity's sake
 const updateFuelArray = (type, price, name) => {
+  // Define the last valid price used
+  let originalPrice = fuelPrices[type];
+
+  if (parseInt(price) === parseInt(originalPrice)) {
+    throw Error(
+      `You can't set the ${name} price to the same price! Choose a different price!`
+    );
+  }
+
   if (parseInt(price) < 4) {
     throw Error(
       `You can't charge less than $4 for a gallon of ${name}! We'll lose money left and right! The price has been reset!`
@@ -199,9 +208,6 @@ const updateFuelArray = (type, price, name) => {
       `You can't charge $100 or more for ${name}! The price has been reset!`
     );
   }
-
-  // Save the last price used
-  let originalPrice = fuelPrices[type];
 
   let timeUpdated = moment().format('MMM Do, YYYY h:mm:ss A');
   // Update the price to the new value and update time last updated
@@ -221,10 +227,38 @@ const updateFuelArray = (type, price, name) => {
   saveFuelArray(fuelPrices);
 };
 
+// Function to render the prices changed timestamp into the DOM
 const timeFuelPricesUpdated = (time) => {
   let messages = [];
   messages.push(`Our prices were last changed at: ${time}.`);
+  messages.push(`<br>Our Current Prices:<br>`);
   displayMessages(messages, messageElement2);
+  renderFuelPrices();
+};
+
+// Function to render the fuel prices/car wash price into the DOM
+const renderFuelPrices = () => {
+  gPrices.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const span = document.createElement('span');
+    span.className = 'rocks2';
+    span.textContent = `${fuelName(i)} $${fuelPrices[i]} `;
+    gPrices.appendChild(span);
+  }
+};
+
+// Function to return name of fuel based on its position in the array
+// The positions are constant so I know for sure
+const fuelName = (position) => {
+  if (position === 0) {
+    return `Regular:`;
+  } else if (position === 1) {
+    return 'Plus:';
+  } else if (position === 2) {
+    return 'Premium:';
+  } else if (position === 3) {
+    return 'Car Wash:';
+  }
 };
 
 // Function to retrieve saved fuel price values from local storage (if available)
@@ -238,14 +272,6 @@ const getFuelArray = () => {
   } catch (e) {
     return [];
   }
-};
-
-// Function to render the fuel prices/car wash price into the DOM
-const renderFuelPrices = () => {
-  regularPrice.value = fuelPrices[0];
-  plusPrice.value = fuelPrices[1];
-  premiumPrice.value = fuelPrices[2];
-  carWashPrice.value = fuelPrices[3];
 };
 
 // Function to save fuelPrices array into localstorage
@@ -441,6 +467,20 @@ const useCarWash = (arrayLoop) => {
 
   let price = fuelPrices[3];
 
+  if (!price) {
+    messages.push(`The price for the car wash isn't set! What are you doing!`);
+    displayMessages(messages, messageElement);
+    violations.push(
+      `Attempted to send ${arrayLoop.customerName}'s vehicle through the car wash without setting a price!`
+    );
+    saveViolations(violations);
+    showViolations();
+    sleep(2000).then(() => {
+      checkViolations();
+    });
+    return;
+  }
+
   // If they don't want to use the car wash, rebuke the employee and add a violation
   if (arrayLoop.customerWantCarWash === false) {
     messages.push(
@@ -555,6 +595,44 @@ const renderCustomers = (customerArray) => {
         arrayLoop.customerArrivalTimeForCheck,
         'seconds'
       )} seconds`;
+
+      // Can we at least not send the customer away if their fuel price isn't set?
+      if (!price) {
+        let messages = [];
+        messages.push(
+          `You haven't even set the customer's fuel price yet! Don't send the customer away!`
+        );
+
+        displayMessages(messages, messageElement);
+        violations.push(
+          `Attempted to send ${arrayLoop.customerName} away without even setting the fuel prices first!`
+        );
+        saveViolations(violations);
+        showViolations();
+        sleep(2000).then(() => {
+          checkViolations();
+        });
+        return;
+      }
+
+      // Can we not send the customer away if they want a car wash and the car wash price isn't set?
+      if (!carWashPrice && arrayLoop.customerWantCarWash === true) {
+        let messages = [];
+        messages.push(
+          `You haven't even set the car wash price yet! Don't send the customer away!`
+        );
+
+        displayMessages(messages, messageElement);
+        violations.push(
+          `Attempted to send ${arrayLoop.customerName} away without even setting the car wash price first!`
+        );
+        saveViolations(violations);
+        showViolations();
+        sleep(2000).then(() => {
+          checkViolations();
+        });
+        return;
+      }
 
       // If you're ending the transaction, and the customer hasn't been fueled up, and they don't have enough money for 1 unit of fuel, then
       // They are broke and sending them away is the correct procedure
