@@ -23,6 +23,10 @@ li {
   border-radius: 5px;
 }
 
+.rocks2 {
+  font-weight: bold;
+}
+
 .removed {
   font-weight: bold;
   color: rgb(179, 38, 38);

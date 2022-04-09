@@ -10,6 +10,8 @@ const showOnPage = function (text, div, eltype) {
 const pushValues = function (listItem) {
   results.push({
     listItem: listItem,
+    category: categoryNames[category.value],
+    categoryNumber: category.value,
     id: uuidv4(),
   });
   saveResults(results);
@@ -56,13 +58,20 @@ const saveRemoved = function (removedItems) {
 // Remove a day entry from the array if the UUID matches
 const removeResult = function (id) {
   const resultIndex = results.findIndex(function (result) {
-    document.querySelector('#outputarea2').innerHTML = '';
-    showOnPage(
-      `List Item: ${result.listItem} was removed!`,
-      'outputarea2',
-      'span'
+    let confirmAction = confirm(
+      `Are you sure you want to delete "${result.listItem}"?`
     );
-    return result.id === id;
+    if (confirmAction) {
+      document.querySelector('#outputarea2').innerHTML = '';
+      showOnPage(
+        `List Item: ${result.listItem} was deleted!`,
+        'outputarea2',
+        'span'
+      );
+      return result.id === id;
+    } else {
+      alert(`${result.listItem} not deleted!`);
+    }
   });
 
   if (resultIndex > -1) {
@@ -74,7 +83,7 @@ const removeResult = function (id) {
 
 const resetRemoved = function () {
   document.querySelector('#outputarea2').innerHTML =
-    'Removed items will appear here.';
+    'Deleted items will appear here.';
 };
 
 const displayRemoved = function (removed) {
@@ -84,9 +93,22 @@ const displayRemoved = function (removed) {
   });
 };
 
+const sortItems = (array) => {
+  return array.sort((a, b) => {
+    if (a.categoryNumber < b.categoryNumber) {
+      return -1;
+    } else if (a.categoryNumber > b.categoryNumber) {
+      return 1;
+    } else {
+      return 0;
+    }
+  });
+};
+
 // Function to generate the DOM for each object in the array
 const generateResultsDOM = function (result) {
   const resultsTextEl = document.createElement('span');
+  result = sortItems(result);
 
   document.querySelector('#outputarea').innerHTML = '';
 
@@ -95,6 +117,7 @@ const generateResultsDOM = function (result) {
     // Call the displayText function to actually tell the DOM what to create
     resultsTextEl.textContent = displayText(
       resultLoop.listItem,
+      resultLoop.category,
       'span',
       resultLoop.id
     );
@@ -102,15 +125,20 @@ const generateResultsDOM = function (result) {
 };
 
 // Function to generate what I'm adding to the DOM, as well as the text of the results
-const displayText = function (listItem, elType, resultID) {
+const displayText = function (listItem, category, elType, resultID) {
   const resultsEl = document.createElement('div');
   const paragraph = document.createElement(`${elType}`);
+  const span = document.createElement('span');
   const button = document.createElement('button');
-  paragraph.textContent = `${listItem} `;
+  paragraph.textContent = `${listItem}`;
+  paragraph.className = 'item';
+  span.textContent = ` - Dept: ${category} `;
+  span.className = 'rocks2';
 
   //  Setup the removal button & paragraph and append them both to a Div I can modify with CSS
   button.textContent = 'Delete';
   resultsEl.appendChild(paragraph);
+  resultsEl.appendChild(span);
   resultsEl.appendChild(button);
   resultsEl.className = 'rocks col-sm-4';
   document.querySelector('#outputarea').appendChild(resultsEl);

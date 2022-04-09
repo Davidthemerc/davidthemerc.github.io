@@ -1,5 +1,23 @@
 let results = getSavedResults();
 let removedItems = getRemovedItems();
+let categoryNames = [
+  'Clothing',
+  'Produce/Bakery',
+  'Grocery',
+  'Dairy',
+  'Cleaning Supplies',
+  'Electronics/Home Office',
+  'Crafts/Party Supplies',
+  'Home Goods',
+  'Home Improvement',
+  'Sporting Goods',
+  'Toys',
+  'Clearance',
+  'Garden/Outdoor',
+  'Cosmetic/Health',
+  'Seasonal',
+  'Checkout Area',
+];
 
 // Render results on startup
 generateResultsDOM(results);
@@ -21,7 +39,7 @@ document.querySelector('form').addEventListener('submit', function (run) {
   run.preventDefault();
 
   // Push the form values to the array
-  pushValues(form.elements.listitem.value);
+  pushValues(form.elements.listItem.value);
   // Call the generateResultsDOM function based on the results array
   generateResultsDOM(results);
 
