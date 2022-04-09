@@ -2,9 +2,11 @@ let results = getSavedResults();
 let removedItems = getRemovedItems();
 let categoryNames = [
   'Clothing',
-  'Produce/Bakery',
-  'Grocery',
+  'Produce',
+  'Bakery',
+  'Other Grocery',
   'Dairy',
+  'Beverages',
   'Cleaning Supplies',
   'Electronics/Home Office',
   'Crafts/Party Supplies',
@@ -16,6 +18,7 @@ let categoryNames = [
   'Garden/Outdoor',
   'Cosmetic/Health',
   'Seasonal',
+  'Frozen Food',
   'Checkout Area',
 ];
 

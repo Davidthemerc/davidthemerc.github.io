@@ -11,7 +11,7 @@ const pushValues = function (listItem) {
   results.push({
     listItem: listItem,
     category: categoryNames[category.value],
-    categoryNumber: category.value,
+    categoryNumber: parseInt(category.value),
     id: uuidv4(),
   });
   saveResults(results);
@@ -93,7 +93,19 @@ const displayRemoved = function (removed) {
   });
 };
 
-const sortItems = (array) => {
+const sortItemsByAlpha = (array) => {
+  return array.sort((a, b) => {
+    if (a.listItem < b.listItem) {
+      return -1;
+    } else if (a.listItem > b.listItem) {
+      return 1;
+    } else {
+      return 0;
+    }
+  });
+};
+
+const sortItemsByCategory = (array) => {
   return array.sort((a, b) => {
     if (a.categoryNumber < b.categoryNumber) {
       return -1;
@@ -107,8 +119,9 @@ const sortItems = (array) => {
 
 // Function to generate the DOM for each object in the array
 const generateResultsDOM = function (result) {
+  result = sortItemsByAlpha(result);
+  result = sortItemsByCategory(result);
   const resultsTextEl = document.createElement('span');
-  result = sortItems(result);
 
   document.querySelector('#outputarea').innerHTML = '';
 
