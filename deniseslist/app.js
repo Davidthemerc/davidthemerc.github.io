@@ -8,6 +8,7 @@ let categoryNames = [
   'Dairy',
   'Beverages',
   'Cleaning Supplies',
+  'Pet Supplies',
   'Electronics/Home Office',
   'Crafts/Party Supplies',
   'Home Goods',
