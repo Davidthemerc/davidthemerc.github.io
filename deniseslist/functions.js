@@ -57,26 +57,24 @@ const saveRemoved = function (removedItems) {
 
 // Remove a day entry from the array if the UUID matches
 const removeResult = function (id) {
-  const resultIndex = results.findIndex(function (result) {
+  const resultIndex = results.findIndex((result) => result.id === id);
+
+  if (resultIndex > -1) {
     let confirmAction = confirm(
-      `Are you sure you want to delete "${result.listItem}"?`
+      `Are you sure you want to delete "${results[resultIndex].listItem}"?`
     );
     if (confirmAction) {
       document.querySelector('#outputarea2').innerHTML = '';
       showOnPage(
-        `List Item: ${result.listItem} was deleted!`,
+        `List Item: ${results[resultIndex].listItem} was deleted!`,
         'outputarea2',
         'span'
       );
-      return result.id === id;
+      pushRemoved(results[resultIndex].listItem);
+      results.splice(resultIndex, 1);
     } else {
-      alert(`${result.listItem} not deleted!`);
+      alert(`${results[resultIndex].listItem} not deleted!`);
     }
-  });
-
-  if (resultIndex > -1) {
-    pushRemoved(results[resultIndex].listItem);
-    results.splice(resultIndex, 1);
   }
   displayRemoved(removedItems);
 };
