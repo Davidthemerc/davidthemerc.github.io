@@ -1,0 +1,48 @@
+body {
+  background-color: rgb(224, 215, 255);
+  margin: 5px;
+}
+
+li {
+  font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+.mainheader {
+  font-weight: bold;
+}
+
+.dd {
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-size: large;
+}
+
+.rocks {
+  background: rgb(197, 188, 231);
+  margin-bottom: .5rem;
+  margin-right: .5rem;
+  padding-left: .7rem;
+  padding-right: .7rem;
+  border-radius: 5px;
+  display:inline-block; /*or display:block;*/
+}
+
+.rocks2 {
+  font-weight: bold;
+}
+
+.removed {
+  font-weight: bold;
+  color: rgb(179, 38, 38);
+}
+
+.deleted {
+  font-size: 16px;
+  font-weight: bold;
+  color: rgb(179, 38, 38);
+}
+
+.warning {
+  font-size: 12px;
+  font-weight: bold;
+  color: rgb(179, 38, 38);
+}
