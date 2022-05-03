@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="assets/css/Footer-Dark.css">
     <link rel="stylesheet" href="assets/css/styles.css">
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/img/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon-16x16.png" />
+    <link rel="manifest" href="assets/img/site.webmanifest" />
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/css/ol.css">
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/build/ol.js"></script>
 </head>
 
 <body style="background: var(--bs-secondary);">
@@ -30,31 +38,38 @@
     <div class="container">
         <div class="row">
             <div class="col-12" style="background: #ffffff;">
-                <p class="pt-3">Welcome, employee, to Earth Energy Corporation Refueling Center # 9078, a full-service
-                    refueling station located in sunny
-                    Kerman, California.</p>
+                <p class="pt-3" id="welcome">Welcome, employee, to Earth Energy Corporation Refueling Center # 9078, a
+                    full-service
+                    refueling station.</p>
                 <div id="mainMessages2" class="mainmessages2 d-flex justify-content-center mx-auto col-6">Prices
                     are currently not set!
                 </div>
-                <div id="gprices" class="gprices d-flex justify-content-center mx-auto mb-3 col-6">
+                <div id="gprices" class="gprices d-flex justify-content-center mx-auto col-6">
+                </div>
+                <div id="gpricemsg" class="gpricemsg d-flex justify-content-center mx-auto mb-3 col-6">
                 </div>
                 <div id="mainMessages" class="mainmessages d-flex justify-content-center"></div>
+                <div id="mainMessages3" class="mainmessages3 d-flex justify-content-center"></div>
+                <div class="container">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="d-flex justify-content-center maptext">Refueling Center # 9078</div>
+                            <div id="map" class="map"></div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex justify-content-center maptext">Earth Energy Distribution Center
+                            </div>
+                            <div id="map2" class="map2"></div>
+                        </div>
+                    </div>
+                </div>
                 <p class="fs-5 mt-2"><span style="text-decoration: underline; font-weight: bold;">Refueling Center
-                        Prices
-                        (Per Gallon):</span><br><span class="fs-6">Prices update automatically upon entry.</span></p>
+                        Prices</span><br><span class="fs-6">Fuel Prices are established based on location.</span>
+                </p>
                 <div class="container">
                     <div class="row">
                         <div class="col-auto">
                             <form id="form">
-                                <div class="input-group"><span class="input-group-text">Regular Fuel</span><input
-                                        class="form-control" id="regular" type="number" step="0.01"
-                                        placeholder="Price in dollars" minlength="1" maxlength="5"></div>
-                                <div class="input-group"><span class="input-group-text">Plus Fuel</span><input
-                                        class="form-control" id="plus" type="number" step="0.01"
-                                        placeholder="Price in dollars" maxlength="5" minlength="1"></div>
-                                <div class="input-group"><span class="input-group-text">Premium Fuel</span><input
-                                        class="form-control" id="premium" type="number" step="0.01"
-                                        placeholder="Price in dollars" minlength="1" maxlength="5"></div>
                                 <div class="input-group"><span class="input-group-text">Car Wash Price</span><select
                                         name="carWash" id="carWash">
                                         <option disabled selected value> -- select an option -- </option>
@@ -112,7 +127,8 @@
                     <li>Do not forget to set the prices before serving any customers!</li>
                     <li>We do not sell less than one (1) unit of fuel to customers, NO EXCEPTIONS.</li>
                     <li>All fuel purchases must be made in whole units (to simplify auditing procedures.)</li>
-                    <li>Do not price fuel for less than $4 or more than $100. We're not selling gold but we're also not
+                    <li>Do not price fuel for less than $4 or more than $100. We're not selling gold but we're also
+                        not
                         a charity!</li>
                     <li>If a customer cannot afford the amount of fuel they need, the system will round down to the
                         amount of fuel they can afford.</li>
@@ -148,6 +164,7 @@
     </footer>
     <script src="../uuidv4.js"></script>
     <script src="../moment-with-locales.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/build/ol.js"></script>
     <script src="assets/js/functions.js"></script>
     <script src="assets/js/app.js"></script>
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>

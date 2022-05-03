@@ -19,6 +19,11 @@ a.mainlink {
   color: red;
 }
 
+.mainmessages3 {
+  font-weight: bold;
+  color: rgb(122, 122, 122);
+}
+
 .mainmessages2 {
   font-weight: bold;
   text-align: center;
@@ -35,7 +40,17 @@ a.mainlink {
   color: white;
   border: 0.5rem;
   border-style: groove;
+  border-bottom: none;
   background-color: #7974f8;
+}
+
+.gpricemsg {
+  font-weight: bold;
+  text-align: center;
+  color: rgb(61, 61, 136);
+  border: 0.5rem;
+  border-style: groove;
+  background-color: rgb(226, 226, 226);
 }
 
 .violations {
@@ -50,4 +65,18 @@ a.mainlink {
 
 button {
   margin: 3px;
+}
+
+.map {
+  height: 400px;
+  width: 100%;
+}
+
+.map2 {
+  height: 400px;
+  width: 100%;
+}
+
+.maptext {
+  font-weight: bold;
 }

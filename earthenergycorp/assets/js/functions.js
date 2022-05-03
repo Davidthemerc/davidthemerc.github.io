@@ -5,6 +5,190 @@
 const ranBetween = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 
+// Function to retrieve the user's coordinates from the IPWhoIs API, based on the approximate location of
+// their Internet ServiceProvider
+const callAPI = async () => {
+  let ip = ''; //Current IP
+  const response = await fetch(`http://ipwhois.app/json/` + ip);
+
+  if (response.status === 200) {
+    let data = await response.json();
+    longitude = data.longitude;
+    latitude = data.latitude;
+    console.log(`${longitude} ${latitude}`);
+  }
+
+  // Once the API has pulled the coordinates, call the map
+  callMap();
+
+  // Get the distance
+  let distance = getDistance(
+    stationLatitude,
+    stationLongitude,
+    latitude,
+    longitude,
+    'K'
+  );
+
+  // Now that we know the distance, calculate the prices
+  // There are several price tiers, based on distance to the distribution center
+  // Tier 1 - Within 1 Kilometer, Tier 2 - Within 2 Kilometers, Tier 3 - Within 5 Km, Tier 4 - Within 10 Km, Tier 5 - Within 15 Km
+  // Tier 6 - Greater than 15 Km away
+
+  const standardRegularPrice = 4.99;
+  const standardPlusPrice = 5.19;
+  const standardPremiumPrice = 5.39;
+  let tier;
+
+  if (distance < 1) {
+    console.log('Less than 1 Km away!');
+    updateFuelArray(0, standardRegularPrice, 'regular fuel');
+    updateFuelArray(1, standardPlusPrice, 'plus fuel');
+    updateFuelArray(2, standardPremiumPrice, 'premium fuel');
+    tier = 1;
+  } else if (distance < 2) {
+    console.log('Less than 2 Km away!');
+    updateFuelArray(0, standardRegularPrice + 0.25, 'regular fuel');
+    updateFuelArray(1, standardPlusPrice + 0.25, 'plus fuel');
+    updateFuelArray(2, standardPremiumPrice + 0.25, 'premium fuel');
+    tier = 2;
+  } else if (distance < 5) {
+    console.log('Less than 5 Km away!');
+    updateFuelArray(0, standardRegularPrice + 0.35, 'regular fuel');
+    updateFuelArray(1, standardPlusPrice + 0.35, 'plus fuel');
+    updateFuelArray(2, standardPremiumPrice + 0.35, 'premium fuel');
+    tier = 3;
+  } else if (distance < 10) {
+    console.log('Less than 10 Km away!');
+    updateFuelArray(
+      0,
+      standardRegularPrice + standardRegularPrice * 0.1,
+      'regular fuel'
+    );
+    updateFuelArray(
+      1,
+      standardPlusPrice + standardPlusPrice * 0.1,
+      'plus fuel'
+    );
+    updateFuelArray(
+      2,
+      standardPremiumPrice + standardPremiumPrice * 0.1,
+      'premium fuel'
+    );
+    tier = 4;
+  } else if (distance < 15) {
+    console.log('Less than 15 Km away!');
+    updateFuelArray(
+      0,
+      standardRegularPrice + standardRegularPrice * 0.15,
+      'regular fuel'
+    );
+    updateFuelArray(
+      1,
+      standardPlusPrice + standardPlusPrice * 0.15,
+      'plus fuel'
+    );
+    updateFuelArray(
+      2,
+      standardPremiumPrice + standardPremiumPrice * 0.15,
+      'premium fuel'
+    );
+    tier = 5;
+  } else if (distance >= 15) {
+    console.log('15 Km or greater away!');
+    updateFuelArray(0, standardRegularPrice + distance * 0.15, 'regular fuel');
+    updateFuelArray(1, standardPlusPrice + distance * 0.15, 'plus fuel');
+    updateFuelArray(2, standardPremiumPrice + distance * 0.15, 'premium fuel');
+    tier = '6. Ouch..';
+  }
+
+  // Display the distance
+  let messages = [];
+  messages.push(
+    `Your fuel station is about ${Math.round(
+      distance
+    )} kilometers from the Earth Energy Distribution Center in Fresno, CA. This places you in Price Tier ${tier}.`
+  );
+  displayMessages(messages, distanceElement);
+};
+
+// Function to generate the maps of the user's location (interpreted as the Fuel Station location) and the
+// Distribution Center location, which is in North Fresno
+const callMap = () => {
+  let map = new ol.Map({
+    target: 'map',
+    layers: [
+      new ol.layer.Tile({
+        source: new ol.source.OSM(),
+      }),
+    ],
+    view: new ol.View({
+      center: ol.proj.fromLonLat([longitude, latitude]),
+      zoom: 14,
+    }),
+  });
+
+  let map2 = new ol.Map({
+    target: 'map2',
+    layers: [
+      new ol.layer.Tile({
+        source: new ol.source.OSM(),
+      }),
+    ],
+    view: new ol.View({
+      center: ol.proj.fromLonLat([stationLongitude, stationLatitude]),
+      zoom: 14,
+    }),
+  });
+
+  let layer = new ol.layer.Vector({
+    source: new ol.source.Vector({
+      features: [
+        new ol.Feature({
+          geometry: new ol.geom.Point(
+            ol.proj.fromLonLat([longitude, latitude])
+          ),
+        }),
+      ],
+    }),
+  });
+  map.addLayer(layer);
+
+  let layer2 = new ol.layer.Vector({
+    source: new ol.source.Vector({
+      features: [
+        new ol.Feature({
+          geometry: new ol.geom.Point(
+            ol.proj.fromLonLat([stationLongitude, stationLatitude])
+          ),
+        }),
+      ],
+    }),
+  });
+  map2.addLayer(layer2);
+};
+
+const getDistance = (lat1, lon1, lat2, lon2, unit) => {
+  var radlat1 = (Math.PI * lat1) / 180;
+  var radlat2 = (Math.PI * lat2) / 180;
+  var theta = lon1 - lon2;
+  var radtheta = (Math.PI * theta) / 180;
+  var dist =
+    Math.sin(radlat1) * Math.sin(radlat2) +
+    Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+  dist = Math.acos(dist);
+  dist = (dist * 180) / Math.PI;
+  dist = dist * 60 * 1.1515;
+  if (unit == 'K') {
+    dist = dist * 1.609344;
+  }
+  if (unit == 'N') {
+    dist = dist * 0.8684;
+  }
+  console.log(dist);
+  return dist;
+};
+
 // Function to display messages
 const displayMessages = (messages, messageEl) => {
   messageEl.innerHTML = messages.join(' ');
@@ -188,41 +372,10 @@ const checkViolations = () => {
 // Function to save fuel prices from the page into the fuelPrices array, and then into localstorage
 // The car wash price was added into this array last, for simplicity's sake
 const updateFuelArray = (type, price, name) => {
-  // Define the last valid price used
-  let originalPrice = fuelPrices[type];
-
-  if (parseInt(price) === parseInt(originalPrice)) {
-    throw Error(
-      `You can't set the ${name} price to the same price! Choose a different price!`
-    );
-  }
-
-  if (parseInt(price) < 4) {
-    throw Error(
-      `You can't charge less than $4 for a gallon of ${name}! We'll lose money left and right! The price has been reset!`
-    );
-  }
-
-  if (parseInt(price) > 99.99) {
-    throw Error(
-      `You can't charge $100 or more for ${name}! The price has been reset!`
-    );
-  }
-
   let timeUpdated = moment().format('MMM Do, YYYY h:mm:ss A');
   // Update the price to the new value and update time last updated
-  fuelPrices[type] = price;
   fuelPrices[4] = timeUpdated;
-  // Display the gas price change
-  let messages = [];
-  originalPrice
-    ? messages.push(
-        `The ${name} price was changed from $${originalPrice} to $${price} at ${timeUpdated}.`
-      )
-    : messages.push(
-        `The ${name} price was set to $${price} at ${timeUpdated}.`
-      );
-  displayMessages(messages, messageElement);
+  fuelPrices[type] = floatFix(price);
   timeFuelPricesUpdated(timeUpdated);
   saveFuelArray(fuelPrices);
 };
@@ -230,7 +383,7 @@ const updateFuelArray = (type, price, name) => {
 // Function to render the prices changed timestamp into the DOM
 const timeFuelPricesUpdated = (time) => {
   let messages = [];
-  messages.push(`Our prices were last changed at: ${time}.`);
+  messages.push(`Our prices were last set at: ${time}.`);
   messages.push(`<br>Our Current Prices:<br>`);
   displayMessages(messages, messageElement2);
   renderFuelPrices();
@@ -293,10 +446,13 @@ const fuelPriceCheck = (arrayLoop) => {
 // Function to deal with those awful JavaScript floating point math errors
 // Takes an affected value, such as 100.9999994, times 100, to 10099.99994, rounds up to 10100
 // then divides back by 100 to 101, which will then correctly display as $101.
-const floatFix = (arrayLoop) => {
-  arrayLoop.customerMoney = Math.round(arrayLoop.customerMoney * 100);
-  arrayLoop.customerMoney = arrayLoop.customerMoney / 100;
+// Modified to work with other data as well
+const floatFix = (dataToFix) => {
+  dataToFix = Math.round(dataToFix * 100);
+  dataToFix = dataToFix / 100;
   saveCustomers(customers);
+  saveFuelArray(fuelPrices);
+  return dataToFix;
 };
 
 // Function for fueling up the customer's vehicle, or not, depending on their ability to pay
@@ -366,7 +522,7 @@ const fuelUpCheck = (arrayLoop) => {
     // Else if the customer has enough money for exactly one gallon of fuel, they can buy one and only one gallon of fuel
   } else if (arrayLoop.customerMoney === price) {
     arrayLoop.customerMoney -= cost;
-    floatFix(arrayLoop);
+    arrayLoop.customerMoney = floatFix(arrayLoop.customerMoney);
     arrayLoop.customerFuelNeeded -= 1;
     messages.push(
       `${arrayLoop.customerName} could not afford all the  ${arrayLoop.customerFuelType} fuel they needed, but ${arrayLoop.customerPronoun} were able to buy 1 gallon of ${arrayLoop.customerFuelType} fuel, ${arrayLoop.customerPronoun} $${arrayLoop.customerMoney} left.`
@@ -378,7 +534,7 @@ const fuelUpCheck = (arrayLoop) => {
     // Else if the customer has exactly enough money or more than enough money for all of the fuel they need, they can buy it
   } else if (arrayLoop.customerMoney >= cost) {
     arrayLoop.customerMoney -= cost;
-    floatFix(arrayLoop);
+    arrayLoop.customerMoney = floatFix(arrayLoop.customerMoney);
     messages.push(
       `${arrayLoop.customerName} successfully purchased ${arrayLoop.customerFuelNeeded} gallon(s) of ${arrayLoop.customerFuelType} fuel for $${cost}, ${arrayLoop.customerPronoun} $${arrayLoop.customerMoney} left.`
     );
@@ -392,7 +548,7 @@ const fuelUpCheck = (arrayLoop) => {
     let lowerAmount = Math.floor(arrayLoop.customerMoney / price);
     cost = lowerAmount * price;
     arrayLoop.customerMoney -= cost;
-    floatFix(arrayLoop);
+    arrayLoop.customerMoney = floatFix(arrayLoop.customerMoney);
     arrayLoop.customerFuelNeeded -= lowerAmount;
     messages.push(
       `${arrayLoop.customerName} could not afford all the ${arrayLoop.customerFuelType}  fuel they needed, but they were able to afford ${lowerAmount} gallon(s) of ${arrayLoop.customerFuelType} fuel for $${cost}, ${arrayLoop.customerPronoun} $${arrayLoop.customerMoney} left.`
@@ -519,6 +675,7 @@ const useCarWash = (arrayLoop) => {
   // been stopped by the prior If statement, then they use the car wash.
   if (arrayLoop.customerMoney >= price) {
     arrayLoop.customerMoney -= price;
+    arrayLoop.customerMoney = floatFix(arrayLoop.customerMoney);
     saveCustomers(customers);
     messages.push(
       `${arrayLoop.customerName} used the car wash. It cost $${price}, ${arrayLoop.customerName} now has $${arrayLoop.customerMoney}.`
