@@ -21,8 +21,6 @@ let form = document.getElementById('form');
 let longitude;
 let latitude;
 
-console.log(`${stationLongitude} ${stationLatitude}`);
-
 // Render customer data from local storage
 renderCustomers(customers);
 

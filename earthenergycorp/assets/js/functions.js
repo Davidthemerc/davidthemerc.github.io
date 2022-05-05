@@ -8,13 +8,16 @@ const ranBetween = (min, max) =>
 // Function to retrieve the user's coordinates from the IPWhoIs API, based on the approximate location of
 // their Internet ServiceProvider
 const callAPI = async () => {
+  // Updated to HTTPS
   const response = await fetch(`https://ipwhois.app/json/`);
 
+  // If response is good,
   if (response.status === 200) {
     let data = await response.json();
     longitude = data.longitude;
     latitude = data.latitude;
-    console.log(`${longitude} ${latitude}`);
+  } else {
+    throw new Error('The API data did not come back!');
   }
 
   // Once the API has pulled the coordinates, call the map
@@ -196,7 +199,6 @@ const getDistance = (lat1, lon1, lat2, lon2, unit) => {
   if (unit == 'N') {
     dist = dist * 0.8684;
   }
-  console.log(dist);
   return dist;
 };
 
