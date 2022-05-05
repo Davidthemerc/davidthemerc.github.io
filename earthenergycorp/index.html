@@ -41,15 +41,13 @@
                 <p class="pt-3" id="welcome">Welcome, employee, to Earth Energy Corporation Refueling Center # 9078, a
                     full-service
                     refueling station.</p>
-                <div id="mainMessages2" class="mainmessages2 d-flex justify-content-center mx-auto col-6">Prices
+                <div id="mainMessages2" class="mainmessages2 d-flex justify-content-center mx-auto col-8">Prices
                     are currently not set!
                 </div>
-                <div id="gprices" class="gprices d-flex justify-content-center mx-auto col-6">
+                <div id="gprices" class="gprices d-flex justify-content-center mx-auto col-8">
                 </div>
-                <div id="gpricemsg" class="gpricemsg d-flex justify-content-center mx-auto mb-3 col-6">
+                <div id="gpricemsg" class="gpricemsg d-flex justify-content-center mx-auto mb-3 col-8">
                 </div>
-                <div id="mainMessages" class="mainmessages d-flex justify-content-center"></div>
-                <div id="mainMessages3" class="mainmessages3 d-flex justify-content-center"></div>
                 <div class="container">
                     <div class="row">
                         <div class="col-6">
@@ -57,15 +55,27 @@
                             <div id="map" class="map"></div>
                         </div>
                         <div class="col-6">
-                            <div class="d-flex justify-content-center maptext">Earth Energy Distribution Center
+                            <div class="d-flex justify-content-center maptext">Earth Energy Distribution Center (Fresno,
+                                CA)
                             </div>
                             <div id="map2" class="map2"></div>
                         </div>
                     </div>
                 </div>
-                <p class="fs-5 mt-2"><span style="text-decoration: underline; font-weight: bold;">Refueling Center
-                        Prices</span><br><span class="fs-6">Fuel Prices are established based on location.</span>
-                </p>
+                <div class="container">
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="fs-5 mt-3"><span style="text-decoration: underline; font-weight: bold;">Refueling
+                                    Center
+                                    Prices</span><br><span class="fueltext">Fuel Prices are established based on
+                                    location.</span>
+                            </p>
+                        </div>
+                        <div class="col-6">
+                            <div id="mainMessages" class="mainmessages d-flex justify-content-center"></div>
+                        </div>
+                    </div>
+                </div>
                 <div class="container">
                     <div class="row">
                         <div class="col-auto">
@@ -86,14 +96,15 @@
                                         <option value="27">$27</option>
                                         <option value="31">$31</option>
                                         <option value="35">$35</option>
-                                    </select></div><br>
+                                    </select></div>
 
-                                <div class="d-flex justify-content-center">
-                                    <p class="fs-6 fw-bold"><span style="text-decoration: underline;">Customer
+                                <div>
+                                    <p class="fs-6 fw-bold input-head-main"><span
+                                            style="text-decoration: underline;">Customer
                                             Data Entry (Leave Blank to Randomize)</span></p>
                                 </div>
-                                <div class="input-group"><span class="input-group-text">Customer Name</span><input
-                                        class="form-control" id="customerName" type="text"
+                                <div class="input-group"><span class="input-group-text">Customer
+                                        Name</span><input class="form-control" id="customerName" type="text"
                                         placeholder="Customer Name (optional)" minlength="1"></div>
                                 <div class="input-group"><span class="input-group-text">Customer Pronoun</span>
                                     <select name="customerPronoun" id="customerPronoun">
@@ -121,33 +132,89 @@
                         </div>
                     </div>
                 </div>
-                <p class="pt-3"><strong><span style="text-decoration: underline;">Earth Energy Corporation
-                            Policies</span></strong></p>
-                <ul class="pb-3">
-                    <li>Do not forget to set the prices before serving any customers!</li>
-                    <li>We do not sell less than one (1) unit of fuel to customers, NO EXCEPTIONS.</li>
-                    <li>All fuel purchases must be made in whole units (to simplify auditing procedures.)</li>
-                    <li>Do not price fuel for less than $4 or more than $100. We're not selling gold but we're also
-                        not
-                        a charity!</li>
-                    <li>If a customer cannot afford the amount of fuel they need, the system will round down to the
-                        amount of fuel they can afford.</li>
-                    <li>If a customer wants to use the car wash, and they can afford to use it,
-                        <strong>ALWAYS</strong>
-                        offer to send their vehicle through the car wash.
-                    </li>
-                    <li>Do not, <strong>under any circumstances</strong> attempt to edit the customer's funds in the
-                        transaction system. Our fraud prevention system is running 24/7.</li>
-                    <li>Do not, <strong>under any circumstances</strong> allow someone without enough money for at
-                        least one gallon of fuel to attempt to fuel up.</li>
-                    <li>Do not, <strong>under any circumstances</strong> send away a potential paying customer
-                        before providing all services.</li>
-                    <li>Failure to follow these policies can result in a written violation.</li>
-                    <li>Three violations, and you're fired! There's more where you came from!</li>
-                    <li>Earth Energy Corporation reserves the right to change its prices at any time, for any
-                        reason.
-                    </li>
-                </ul>
+                <div class="container">
+                    <div class="row">
+                        <div class="col-6">
+                            <p><strong><span style="text-decoration: underline;">Earth Energy Corporation
+                                        Policies</span></strong></p>
+                            <ul>
+                                <li>Do not forget to set the prices before serving any customers!</li>
+                                <li>We do not sell less than one (1) unit of fuel to customers, NO EXCEPTIONS.</li>
+                                <li>All fuel purchases must be made in whole units (to simplify auditing procedures.)
+                                </li>
+                                <li>If a customer cannot afford the amount of fuel they need, the system will round down
+                                    to the
+                                    amount of fuel they can afford.</li>
+                                <li>If a customer wants to use the car wash, and they can afford to use it,
+                                    <strong>ALWAYS</strong>
+                                    offer to wash their car.
+                                </li>
+                                <li>Do not, <strong>under any circumstances</strong> attempt to edit the customer's
+                                    funds in the
+                                    transaction system. Our automated fraud prevention system will catch you!</li>
+                                <li>Do not, <strong>under any circumstances</strong> allow someone without enough money
+                                    for at
+                                    least one gallon of fuel to attempt to fuel up.</li>
+                                <li>Do not, <strong>under any circumstances</strong> send away a potential paying
+                                    customer
+                                    before providing all services.</li>
+                                <li>Failure to follow these policies can result in a written violation.</li>
+                                <li>Three violations, and you're fired! There's more where you came from!</li>
+                                <li>Earth Energy Corporation reserves the right to change its prices at any time, for
+                                    any
+                                    reason.
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-6">
+                            <p><strong><span style="text-decoration: underline;">Earth Energy Corporation
+                                        Fuel Pricing Tiers</span></strong></p>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Tier</th>
+                                        <th>Distance from<br>Distribution Center</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>Within 1 km</td>
+                                        <td>Regular: $4.99/gallon<br>Plus: $5.19/gallon<br>Premium: $5.39/gallon</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>Within 2 km</td>
+                                        <td>$0.25 surcharge</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>Within 5 km</td>
+                                        <td>$0.35 surcharge</td>
+                                    </tr>
+                                    <tr>
+                                        <td>4</td>
+                                        <td>Within 10 km</td>
+                                        <td>10% surcharge</td>
+                                    </tr>
+                                    <tr>
+                                        <td>5</td>
+                                        <td>Within 15 km</td>
+                                        <td>15% fuel price<br>surcharge</td>
+                                    </tr>
+                                    <tr>
+                                        <td>6</td>
+                                        <td>15 km or more</td>
+                                        <td>20% fuel price <br>surcharge + 3% <br>surcharge for<br>each km of distance
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

@@ -7,7 +7,6 @@ const stationLongitude = -119.774259;
 const stationLatitude = 36.85441;
 const messageElement = document.getElementById('mainMessages');
 const messageElement2 = document.getElementById('mainMessages2');
-const messageElement3 = document.getElementById('mainMessages3');
 const distanceElement = document.getElementById('gpricemsg');
 const gPrices = document.getElementById('gprices');
 const violationsElement = document.getElementById('violations');
@@ -78,8 +77,6 @@ fuelPrices[4] ? timeFuelPricesUpdated(fuelPrices[4]) : '';
 // });
 // Event listener for car wash price input
 document.querySelector('#carWash').addEventListener('change', () => {
-  let originalPrice = fuelPrices[3];
-
   try {
     updateFuelArray(3, carWashPrice.value, 'car wash');
     carWashPrice.value = '';

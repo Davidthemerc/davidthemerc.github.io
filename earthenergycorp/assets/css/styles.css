@@ -3,6 +3,18 @@ a.mainlink {
   text-decoration: inherit;
 }
 
+a {
+  display: inline-block;
+}
+
+.input-head-main {
+padding-top: .5rem;
+}
+
+.fueltext {
+  font-size: 15px;
+}
+
 .rocks {
   background: rgb(199, 197, 206);
   padding: 1rem 1rem 1rem 1rem;
@@ -17,6 +29,7 @@ a.mainlink {
 .mainmessages {
   font-weight: bold;
   color: red;
+  margin-top: 1rem;
 }
 
 .mainmessages3 {
@@ -65,18 +78,30 @@ a.mainlink {
 
 button {
   margin: 3px;
+  border-radius: .5rem;
 }
 
 .map {
-  height: 400px;
+  height: 300px;
   width: 100%;
 }
 
 .map2 {
-  height: 400px;
+  height: 300px;
   width: 100%;
 }
 
 .maptext {
   font-weight: bold;
+}
+
+table,td,tr,th {
+  border:1px solid;
+  border-style: solid;
+  padding: .25rem;
+  text-align: center;
+}
+
+th{
+  padding: .5rem;
 }

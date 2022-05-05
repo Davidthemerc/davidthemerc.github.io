@@ -8,8 +8,7 @@ const ranBetween = (min, max) =>
 // Function to retrieve the user's coordinates from the IPWhoIs API, based on the approximate location of
 // their Internet ServiceProvider
 const callAPI = async () => {
-  let ip = ''; //Current IP
-  const response = await fetch(`http://ipwhois.app/json/` + ip);
+  const response = await fetch(`http://ipwhois.app/json/`);
 
   if (response.status === 200) {
     let data = await response.json();
@@ -96,16 +95,28 @@ const callAPI = async () => {
     tier = 5;
   } else if (distance >= 15) {
     console.log('15 Km or greater away!');
-    updateFuelArray(0, standardRegularPrice + distance * 0.15, 'regular fuel');
-    updateFuelArray(1, standardPlusPrice + distance * 0.15, 'plus fuel');
-    updateFuelArray(2, standardPremiumPrice + distance * 0.15, 'premium fuel');
+    updateFuelArray(
+      0,
+      standardRegularPrice + standardRegularPrice * 0.2 + distance * 0.03,
+      'regular fuel'
+    );
+    updateFuelArray(
+      1,
+      standardPlusPrice + standardRegularPrice * 0.2 + distance * 0.03,
+      'plus fuel'
+    );
+    updateFuelArray(
+      2,
+      standardPremiumPrice + standardRegularPrice * 0.2 + distance * 0.03,
+      'premium fuel'
+    );
     tier = '6. Ouch..';
   }
 
   // Display the distance
   let messages = [];
   messages.push(
-    `Your fuel station is about ${Math.round(
+    `Your fuel station is approximately ${Math.round(
       distance
     )} kilometers from the Earth Energy Distribution Center in Fresno, CA. This places you in Price Tier ${tier}.`
   );
@@ -372,10 +383,29 @@ const checkViolations = () => {
 // Function to save fuel prices from the page into the fuelPrices array, and then into localstorage
 // The car wash price was added into this array last, for simplicity's sake
 const updateFuelArray = (type, price, name) => {
+  // Define the last valid price used
+  let originalPrice = fuelPrices[type];
+  name === 'car wash'
+    ? (originalPrice = fuelPrices[type])
+    : (originalPrice = originalPrice);
   let timeUpdated = moment().format('MMM Do, YYYY h:mm:ss A');
   // Update the price to the new value and update time last updated
   fuelPrices[4] = timeUpdated;
   fuelPrices[type] = floatFix(price);
+
+  // If the car wash price was updated, display that
+  // The other prices are updated automatically so we don't want to display those
+  if (name === 'car wash') {
+    let messages = [];
+    originalPrice
+      ? messages.push(
+          `The ${name} price was changed from $${originalPrice} to $${price} at ${timeUpdated}.`
+        )
+      : messages.push(
+          `The ${name} price was set to $${price} at ${timeUpdated}.`
+        );
+    displayMessages(messages, messageElement);
+  }
   timeFuelPricesUpdated(timeUpdated);
   saveFuelArray(fuelPrices);
 };
@@ -450,8 +480,6 @@ const fuelPriceCheck = (arrayLoop) => {
 const floatFix = (dataToFix) => {
   dataToFix = Math.round(dataToFix * 100);
   dataToFix = dataToFix / 100;
-  saveCustomers(customers);
-  saveFuelArray(fuelPrices);
   return dataToFix;
 };
 
@@ -726,7 +754,7 @@ const renderCustomers = (customerArray) => {
     )}`;
     editLink.textContent = `Edit Transaction Data`;
     serveButton.textContent = `Fuel up ${arrayLoop.customerName}'s vehicle?`;
-    carWashButton.textContent = `Send ${arrayLoop.customerName}'s vehicle to the car wash?`;
+    carWashButton.textContent = `Wash ${arrayLoop.customerName}'s Car`;
     kickButton.textContent = `End ${arrayLoop.customerName}'s transaction?`;
     editLink.setAttribute('href', `customer.html#${arrayLoop.id}`);
     customerEl.appendChild(span);
