@@ -8,7 +8,7 @@ const ranBetween = (min, max) =>
 // Function to retrieve the user's coordinates from the IPWhoIs API, based on the approximate location of
 // their Internet ServiceProvider
 const callAPI = async () => {
-  const response = await fetch(`http://ipwhois.app/json/`);
+  const response = await fetch(`https://ipwhois.app/json/`);
 
   if (response.status === 200) {
     let data = await response.json();
