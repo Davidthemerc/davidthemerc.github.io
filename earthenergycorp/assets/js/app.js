@@ -18,8 +18,12 @@ let userCustomerName = document.getElementById('customerName');
 let userCustomerPronoun = document.getElementById('customerPronoun');
 let userCustomerFuelType = document.getElementById('customerFuelType');
 let form = document.getElementById('form');
+let mapEl = document.getElementById('map');
+let map2El = document.getElementById('map2');
 let longitude;
 let latitude;
+let newCoordinates;
+let layer3;
 
 // Render customer data from local storage
 renderCustomers(customers);

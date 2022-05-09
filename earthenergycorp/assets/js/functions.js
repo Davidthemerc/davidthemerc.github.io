@@ -23,6 +23,10 @@ const callAPI = async () => {
   // Once the API has pulled the coordinates, call the map
   callMap();
 
+  fuelCalculations();
+};
+
+const fuelCalculations = () => {
   // Get the distance
   let distance = getDistance(
     stationLatitude,
@@ -119,9 +123,9 @@ const callAPI = async () => {
   // Display the distance
   let messages = [];
   messages.push(
-    `Your fuel station is approximately ${Math.round(
-      distance
-    )} kilometers from the Earth Energy Distribution Center in Fresno, CA. This places you in Price Tier ${tier}.`
+    `Your fuel station is approximately ${
+      Math.round(distance * 10) / 10
+    } kilometers from the Earth Energy Distribution Center in Fresno, CA. This places you in Price Tier ${tier}.`
   );
   displayMessages(messages, distanceElement);
 };
@@ -129,6 +133,9 @@ const callAPI = async () => {
 // Function to generate the maps of the user's location (interpreted as the Fuel Station location) and the
 // Distribution Center location, which is in North Fresno
 const callMap = () => {
+  mapEl.innerHTML = '';
+  map2El.innerHTML = '';
+
   let map = new ol.Map({
     target: 'map',
     layers: [
@@ -180,6 +187,41 @@ const callMap = () => {
     }),
   });
   map2.addLayer(layer2);
+
+  map.on('click', function (evt) {
+    console.log(ol.proj.transform(evt.coordinate, 'EPSG:3857', 'EPSG:4326'));
+    newCoordinates = ol.proj.transform(
+      evt.coordinate,
+      'EPSG:3857',
+      'EPSG:4326'
+    );
+    layer3 = new ol.layer.Vector({
+      source: new ol.source.Vector({
+        features: [
+          new ol.Feature({
+            geometry: new ol.geom.Point(
+              ol.proj.fromLonLat([newCoordinates[0], newCoordinates[1]])
+            ),
+          }),
+        ],
+      }),
+    });
+    map.addLayer(layer3);
+    map
+      .getView()
+      .setCenter(
+        ol.proj.transform(
+          [newCoordinates[0], newCoordinates[1]],
+          'EPSG:4326',
+          'EPSG:3857'
+        )
+      );
+    map.getView().setZoom(14);
+    longitude = newCoordinates[0];
+    latitude = newCoordinates[1];
+    fuelCalculations();
+    callMap();
+  });
 };
 
 const getDistance = (lat1, lon1, lat2, lon2, unit) => {
