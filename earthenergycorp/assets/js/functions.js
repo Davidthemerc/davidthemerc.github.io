@@ -8,64 +8,79 @@ const ranBetween = (min, max) =>
 // Function to retrieve the user's coordinates from the IPWhoIs API, based on the approximate location of
 // their Internet ServiceProvider
 const callAPI = async () => {
+  // We only want to actually call the API if the coordinates aren't already specified,
+  // so we'll check and see if something isn't already there first.
+  if (stationCoordinates.length > 1) {
+    // Just call the map only, since a Fuel station already exists (with coordinates)
+    console.log('Coordinates exist already');
+    callMap();
+    fuelCalculations();
+    return;
+  }
+  // If this is a new run, or there's no fuel station coordinates established,
+  // then we'll need to pull new geolocated coordinates from the API, no problem.
   // Updated to HTTPS
   const response = await fetch(`https://ipwhois.app/json/`);
 
-  // If response is good,
+  // If response is good
   if (response.status === 200) {
     let data = await response.json();
-    longitude = data.longitude;
-    latitude = data.latitude;
+    updateStationCoords(data.latitude, data.longitude);
+    // Save these coordinates to local storage
+    saveStationCoords(stationCoordinates);
   } else {
+    // If response is bad
     throw new Error('The API data did not come back!');
   }
 
   // Once the API has pulled the coordinates, call the map
   callMap();
 
+  // Now run the calculations to determine the fuel prices
   fuelCalculations();
 };
 
+// Function to calculate fuel prices based on distance between the distribution center and the user's fuel station
 const fuelCalculations = () => {
   // Get the distance
   let distance = getDistance(
-    stationLatitude,
-    stationLongitude,
-    latitude,
-    longitude,
-    'K'
+    distributionLatitude,
+    distributionLongitude,
+    stationCoordinates[0],
+    stationCoordinates[1]
   );
 
   // Now that we know the distance, calculate the prices
   // There are several price tiers, based on distance to the distribution center
-  // Tier 1 - Within 1 Kilometer, Tier 2 - Within 2 Kilometers, Tier 3 - Within 5 Km, Tier 4 - Within 10 Km, Tier 5 - Within 15 Km
-  // Tier 6 - Greater than 15 Km away
+  // Tier 1 - Within 3 Kilometers, Tier 2 - Within 5 Kilometers, Tier 3 - Within 10 Km, Tier 4 - Within 25 Km, Tier 5 - Within 40 Km
+  // Tier 6 - Greater than 40 Km away
 
   const standardRegularPrice = 4.99;
   const standardPlusPrice = 5.19;
   const standardPremiumPrice = 5.39;
   let tier;
 
-  if (distance < 1) {
-    console.log('Less than 1 Km away!');
+  // Distance cost calculations
+  if (distance < 3) {
+    console.log('Less than 3 Km away!');
     updateFuelArray(0, standardRegularPrice, 'regular fuel');
     updateFuelArray(1, standardPlusPrice, 'plus fuel');
     updateFuelArray(2, standardPremiumPrice, 'premium fuel');
     tier = 1;
-  } else if (distance < 2) {
-    console.log('Less than 2 Km away!');
+  } else if (distance < 5) {
+    console.log('Less than 5 Km away!');
     updateFuelArray(0, standardRegularPrice + 0.25, 'regular fuel');
     updateFuelArray(1, standardPlusPrice + 0.25, 'plus fuel');
     updateFuelArray(2, standardPremiumPrice + 0.25, 'premium fuel');
     tier = 2;
-  } else if (distance < 5) {
-    console.log('Less than 5 Km away!');
+  } else if (distance < 10) {
+    console.log('Less than 10 Km away!');
     updateFuelArray(0, standardRegularPrice + 0.35, 'regular fuel');
     updateFuelArray(1, standardPlusPrice + 0.35, 'plus fuel');
     updateFuelArray(2, standardPremiumPrice + 0.35, 'premium fuel');
     tier = 3;
-  } else if (distance < 10) {
-    console.log('Less than 10 Km away!');
+  } else if (distance < 25) {
+    console.log('Less than 25 Km away!');
     updateFuelArray(
       0,
       standardRegularPrice + standardRegularPrice * 0.1,
@@ -82,8 +97,8 @@ const fuelCalculations = () => {
       'premium fuel'
     );
     tier = 4;
-  } else if (distance < 15) {
-    console.log('Less than 15 Km away!');
+  } else if (distance < 40) {
+    console.log('Less than 40 Km away!');
     updateFuelArray(
       0,
       standardRegularPrice + standardRegularPrice * 0.15,
@@ -100,8 +115,8 @@ const fuelCalculations = () => {
       'premium fuel'
     );
     tier = 5;
-  } else if (distance >= 15) {
-    console.log('15 Km or greater away!');
+  } else if (distance >= 40) {
+    console.log('40 Km or greater away!');
     updateFuelArray(
       0,
       standardRegularPrice + standardRegularPrice * 0.2 + distance * 0.03,
@@ -124,6 +139,7 @@ const fuelCalculations = () => {
   let messages = [];
   messages.push(
     `Your fuel station is approximately ${
+      // Math Round and * 10, / 10 are used here to allow for 1 decimal point in the distance calculation.
       Math.round(distance * 10) / 10
     } kilometers from the Earth Energy Distribution Center in Fresno, CA. This places you in Price Tier ${tier}.`
   );
@@ -136,6 +152,7 @@ const callMap = () => {
   mapEl.innerHTML = '';
   map2El.innerHTML = '';
 
+  // New map object, using Open Street Map
   let map = new ol.Map({
     target: 'map',
     layers: [
@@ -143,8 +160,12 @@ const callMap = () => {
         source: new ol.source.OSM(),
       }),
     ],
+    // We'll want to center the view on the fuel station coordinates
     view: new ol.View({
-      center: ol.proj.fromLonLat([longitude, latitude]),
+      center: ol.proj.fromLonLat([
+        stationCoordinates[1],
+        stationCoordinates[0],
+      ]),
       zoom: 14,
     }),
   });
@@ -157,17 +178,18 @@ const callMap = () => {
       }),
     ],
     view: new ol.View({
-      center: ol.proj.fromLonLat([stationLongitude, stationLatitude]),
+      center: ol.proj.fromLonLat([distributionLongitude, distributionLatitude]),
       zoom: 14,
     }),
   });
 
+  //
   let layer = new ol.layer.Vector({
     source: new ol.source.Vector({
       features: [
         new ol.Feature({
           geometry: new ol.geom.Point(
-            ol.proj.fromLonLat([longitude, latitude])
+            ol.proj.fromLonLat([stationCoordinates[1], stationCoordinates[0]])
           ),
         }),
       ],
@@ -180,7 +202,7 @@ const callMap = () => {
       features: [
         new ol.Feature({
           geometry: new ol.geom.Point(
-            ol.proj.fromLonLat([stationLongitude, stationLatitude])
+            ol.proj.fromLonLat([distributionLongitude, distributionLatitude])
           ),
         }),
       ],
@@ -217,13 +239,20 @@ const callMap = () => {
         )
       );
     map.getView().setZoom(14);
-    longitude = newCoordinates[0];
-    latitude = newCoordinates[1];
+
+    // Save these coordinates to local storage
+    updateStationCoords(newCoordinates[1], newCoordinates[0]);
+    saveStationCoords(stationCoordinates);
+
+    // Recalculate fuel prices based on new coordinates
     fuelCalculations();
+    // Redraw the map based on new coordinates
     callMap();
   });
 };
 
+// Function to calculate the approximate distance between two sets of coordinates on Earth
+// In this case, we're getting the distance in kilometers, by using 'K' as a parameter in the function call above
 const getDistance = (lat1, lon1, lat2, lon2, unit) => {
   var radlat1 = (Math.PI * lat1) / 180;
   var radlat2 = (Math.PI * lat2) / 180;
@@ -235,12 +264,8 @@ const getDistance = (lat1, lon1, lat2, lon2, unit) => {
   dist = Math.acos(dist);
   dist = (dist * 180) / Math.PI;
   dist = dist * 60 * 1.1515;
-  if (unit == 'K') {
-    dist = dist * 1.609344;
-  }
-  if (unit == 'N') {
-    dist = dist * 0.8684;
-  }
+  // Modifying the distance to be kilometers
+  dist = dist * 1.609344;
   return dist;
 };
 
@@ -352,10 +377,12 @@ const fraudDetection = (change, edits) => {
       customers = [];
       violations = [];
       fuelPrices = [];
+      stationCoordinates = [];
       saveCustomers(customers);
       renderCustomers(customers);
       saveViolations(violations);
       saveFuelArray(fuelPrices);
+      saveStationCoords(stationCoordinates);
     });
     sleep(6000).then(() => {
       // Now send the user to the HR page and clear local storage.
@@ -363,6 +390,27 @@ const fraudDetection = (change, edits) => {
       localStorage.clear();
     });
   }
+};
+
+const updateStationCoords = (lat, long) => {
+  stationCoordinates[0] = lat;
+  stationCoordinates[1] = long;
+};
+
+// Function to retrieve saved violations from localstorage
+const getStationCoords = () => {
+  try {
+    const stationCoordsJSON = localStorage.getItem('coordinates');
+    // Conditional operator! Returns the localstorage data or a blank array
+    return stationCoordsJSON ? JSON.parse(stationCoordsJSON) : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+// Function to save employee violations to localstorage
+const saveStationCoords = (array) => {
+  localStorage.setItem('coordinates', JSON.stringify(array));
 };
 
 // Function to retrieve saved violations from localstorage
@@ -404,10 +452,12 @@ const checkViolations = () => {
     customers = [];
     violations = [];
     fuelPrices = [];
+    stationCoordinates = [];
     saveCustomers(customers);
     renderCustomers(customers);
     saveViolations(violations);
     saveFuelArray(fuelPrices);
+    saveStationCoords(stationCoordinates);
     let messages = [];
     messages.push(`THREE STRIKES, YOU'RE FIRED!!!`);
     displayMessages(messages, messageElement);
@@ -1015,7 +1065,7 @@ const renderCustomers = (customerArray) => {
           checkViolations();
         });
         return;
-        // Else if the customer can't afford gas but was able to afford the car wash and was offered it, they will be
+        // Else if the customer can't afford fuel but was able to afford the car wash and was offered it, they will be
         // partially satisfied. Most other possibilities should have been covered by other conditionals by now.
       } else if (
         arrayLoop.customerMoney < price &&

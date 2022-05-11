@@ -3,8 +3,9 @@
 let fuelPrices = getFuelArray();
 let customers = getCustomers();
 let violations = getViolations();
-const stationLongitude = -119.774259;
-const stationLatitude = 36.85441;
+let stationCoordinates = getStationCoords();
+const distributionLongitude = -119.774259;
+const distributionLatitude = 36.85441;
 const messageElement = document.getElementById('mainMessages');
 const messageElement2 = document.getElementById('mainMessages2');
 const distanceElement = document.getElementById('gpricemsg');
@@ -20,8 +21,6 @@ let userCustomerFuelType = document.getElementById('customerFuelType');
 let form = document.getElementById('form');
 let mapEl = document.getElementById('map');
 let map2El = document.getElementById('map2');
-let longitude;
-let latitude;
 let newCoordinates;
 let layer3;
 
