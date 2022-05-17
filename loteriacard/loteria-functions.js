@@ -1,3 +1,5 @@
+'use strict';
+
 // The Image Switching function is now reduced to 1 function thanks to Chifos0! Woo!
 function switchImageMaster(loop) {
   let doc_image = document.getElementById(loop);
@@ -25,9 +27,6 @@ let initialSetup = () => {
   for (let i = 0; i < 16; i++) {
     // Setup the event listener to click on the card
     grid[i].addEventListener('click', () => {
-      // Update the tracker status
-      console.log(i);
-
       // Assign each card an image and append it to the appropriate div
       // But, we want to show the bean instead if the card has been clicked
       if (trackerArray[i] === 1) {
@@ -41,8 +40,6 @@ let initialSetup = () => {
         grid[i].appendChild(image);
         trackerArray[i] = 1;
       }
-
-      console.log(trackerArray);
 
       // Lastly, check if there was a winning combination
       buenasCheck();
@@ -189,12 +186,40 @@ let buenasCheck = () => {
     conditionsValue === '4' &&
     trackerArray.every((val, i, arr) => val === arr[0])
   ) {
-    console.log('All cards!');
     buenasPues();
   }
 };
 
 let buenasPues = () => {
-  console.log('Buenas!');
+  // Buenas!
   audio.play();
+};
+
+let selectorDetector = () => {
+  let sel = document.getElementById('customCards').value;
+
+  if (sel === '1') {
+    customCardArranger(defaultCard);
+    shuffled = defaultCard;
+  } else if (sel === '2') {
+    customCardArranger(theDeadDrunk);
+    shuffled = theDeadDrunk;
+  } else if (sel === '3') {
+    customCardArranger(fuckedUpCard);
+    shuffled = fuckedUpCard;
+  } else if (sel === '4') {
+    customCardArranger(variety);
+    shuffled = variety;
+  }
+};
+
+let customCardArranger = (set) => {
+  for (let i = 0; i < 16; i++) {
+    // Assign each card an image and append it to the appropriate div
+    // But, we want to show the bean instead if the card has been clicked
+
+    image = imageList[set[i]];
+    grid[i].innerHTML = '';
+    grid[i].appendChild(image);
+  }
 };

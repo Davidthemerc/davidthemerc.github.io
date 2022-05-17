@@ -5,9 +5,8 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!--<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    -->
     <link rel="stylesheet" href="style.css">
     <title>David's Dynamic Loteria v.2</title>
 </head>
@@ -17,7 +16,7 @@
         <div class="row">
             <div class="col-auto">
                 <div class="d-flex justify-content-center">
-                    <label><b>Game Type:</b>
+                    <label class="mb-2"><b>Game Type:</b>
                         <select class="conditions" id="conditions">
                             <option value="0">Four in a Row</option>
                             <option value="1">Corners</option>
@@ -86,24 +85,26 @@
                         </tr>
                     </tbody>
                 </table>
+                <div class="d-flex justify-content-center">
+                    <button id="reset" class="mt-2">Reset Card</button>
+                </div>
+                <label class="d-flex justify-content-center mt-2 mb-2"><b>Custom Card:&nbsp;</b>
+                    <select class="customCards" id="customCards" onchange="selectorDetector();">
+                        <option disabled selected="selected" value="0">David Only - Select One</option>
+                        <option value="1">Default Card (3 Trees in a Row)</option>
+                        <option value="2">Card 2: The Drunk Is Dead</option>
+                        <option value="3">Card 3: El Melon & La Sandia</option>
+                        <option value="4">Card 4: Just Some Variety</option>
+                    </select></label>
             </div>
         </div>
     </div>
-    <div class="container">
-        <div class="row d-flex justify-content-center">
-            <div class="col-auto">
-                <div class="">
-                    <button id="reset">Reset Card</button>
-                </div>
-            </div>
-        </div>
     </div>
     <script src="loteria-functions.js"></script>
     <script src="loteria-app.js"></script>
-    <!--
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-        crossorigin="anonymous"></script>-->
+        crossorigin="anonymous"></script>
 </body>
 
 </html>
