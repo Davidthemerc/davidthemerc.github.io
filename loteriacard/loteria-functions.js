@@ -180,10 +180,21 @@ let buenasCheck = () => {
   ) {
     buenasPues();
   }
+  // Center checks
+  // If the center is complete, buenas!
+  if (
+    conditionsValue === '4' &&
+    trackerArray[5] &&
+    trackerArray[6] &&
+    trackerArray[9] &&
+    trackerArray[10]
+  ) {
+    buenasPues();
+  }
   // Full card check
   // If all cards are complete, buenas!
   if (
-    conditionsValue === '4' &&
+    conditionsValue === '5' &&
     trackerArray.every((val, i, arr) => val === arr[0])
   ) {
     buenasPues();
@@ -192,7 +203,13 @@ let buenasCheck = () => {
 
 let buenasPues = () => {
   // Buenas!
-  audio.play();
+  // If the voice dropdown is set to Female/0, then play the female voice
+  if (voiceValue === '0') {
+    audio.play();
+  } else {
+    // Otherwise play the male voice
+    audio2.play();
+  }
 };
 
 let selectorDetector = () => {

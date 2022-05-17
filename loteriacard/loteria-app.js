@@ -10,7 +10,8 @@ for (let i = 0; i <= 53; i++) {
 let image;
 
 // Define buenas audio
-const audio = new Audio('audio/Buenas.mp3');
+const audio = new Audio('audio/Buenas.mp3'); // Female voice
+const audio2 = new Audio('audio/Buenas2.mp3'); // Male voice
 
 // This is the code to preload the images
 let beanedImageList = Array();
@@ -48,6 +49,10 @@ let grid = document.getElementsByClassName('grid');
 let conditions = document.getElementById('conditions');
 let conditionsValue = document.getElementById('conditions').value;
 
+// Capture current voice value
+let voice = document.getElementById('voice');
+let voiceValue = document.getElementById('voice').value;
+
 // Define button
 let button = document.getElementById('reset');
 
@@ -61,6 +66,11 @@ initialSetup();
 // Game Type/Conditions Selector
 conditions.addEventListener('change', (e) => {
   conditionsValue = document.getElementById('conditions').value;
+});
+
+// Voice Selector
+voice.addEventListener('change', (e) => {
+  voiceValue = document.getElementById('voice').value;
 });
 
 // Reset card event listener
