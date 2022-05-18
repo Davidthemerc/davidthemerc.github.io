@@ -1,11 +1,6 @@
 'use strict';
 
-// The Image Switching function is now reduced to 1 function thanks to Chifos0! Woo!
-function switchImageMaster(loop) {
-  let doc_image = document.getElementById(loop);
-  doc_image.src = imageList[loop].src;
-}
-
+// Shuffle the card array so that we'll get a random, non-repeating set
 let shuffle = (array) => {
   let i = array.length,
     j = 0,
@@ -23,6 +18,7 @@ let shuffle = (array) => {
   return array;
 };
 
+// This function runs when the page is initialized
 let initialSetup = () => {
   for (let i = 0; i < 16; i++) {
     // Setup the event listener to click on the card
@@ -50,6 +46,7 @@ let initialSetup = () => {
   }
 };
 
+// Function to reload cards
 let reloadCard = () => {
   for (let i = 0; i < 16; i++) {
     // Assign each card an image and append it to the appropriate div
@@ -61,6 +58,7 @@ let reloadCard = () => {
   }
 };
 
+// Check if there's a winning condition
 let buenasCheck = () => {
   // Horizontal row checks
   // If any of the horizontal rows are complete, buenas!
@@ -228,6 +226,10 @@ let selectorDetector = () => {
     customCardArranger(variety);
     shuffled = variety;
   }
+
+  // This array keeps track of which cards have beans
+  trackerArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  reloadCard();
 };
 
 let customCardArranger = (set) => {
