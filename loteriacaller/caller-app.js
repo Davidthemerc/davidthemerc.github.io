@@ -4,9 +4,10 @@
 let imageList = Array();
 for (let i = 0; i <= 53; i++) {
   imageList[i] = new Image(273, 390);
-  imageList[i].src = '../loteriacard/images/loteria 5x7 ' + i + '.jpg';
+  imageList[i].src = `../loteriacard/images/loteria 5x7 ${i}.jpg`;
 }
 
+// This is the code to preload the audio files
 let audioList = Array();
 for (let i = 1; i <= 54; i++) {
   audioList[i] = new Audio();
@@ -73,8 +74,16 @@ let loteriaDeckArray = [
 // Define array of already called cards
 let calledCards = [];
 
+// Define array of shuffled cards and call the shuffle
+let shuffledDeck = getJSON('loteriaDeck');
+saveJSON(shuffledDeck, 'loteriaDeck');
+
 // Required Variables
+let savedCalls = getJSON('savedCalls');
+saveJSON(savedCalls, 'savedCalls');
 let currentCard = {};
+let count = getJSON('count');
+saveJSON(count, 'count');
 
 // Define the card slot as a variable
 let cardArea = document.getElementById('cardArea');
@@ -87,13 +96,14 @@ let errorMessageDiv = document.querySelector('#errorMessages');
 let startButton = document.getElementById('startoff');
 let repeatButton = document.getElementById('repeat');
 let callButton = document.getElementById('call');
-
-// Call the shuffle function to obtain a shuffled deck
-let shuffledDeck = shuffle(loteriaDeckArray);
+let resetButton = document.getElementById('reset');
 
 // Call initial setup function
 // Show El Gallo by default
 initialSetup();
+
+// Show already called cards
+showCalledCards();
 
 // Start Button event listener
 startButton.addEventListener('click', () => {
@@ -108,4 +118,9 @@ callButton.addEventListener('click', () => {
 // Repeat Button event listener
 repeatButton.addEventListener('click', () => {
   repeatCall();
+});
+
+// Reset Button event listener
+resetButton.addEventListener('click', () => {
+  resetGame();
 });
