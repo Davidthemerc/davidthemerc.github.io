@@ -81,7 +81,8 @@ saveJSON(shuffledDeck, 'loteriaDeck');
 // Required Variables
 let savedCalls = getJSON('savedCalls');
 saveJSON(savedCalls, 'savedCalls');
-let currentCard = {};
+let currentCard = getJSON('currentCard');
+saveJSON(currentCard, 'currentCard');
 let count = getJSON('count');
 saveJSON(count, 'count');
 
@@ -99,7 +100,7 @@ let callButton = document.getElementById('call');
 let resetButton = document.getElementById('reset');
 
 // Call initial setup function
-// Show El Gallo by default
+// Show El Gallo by default, unless there's a card stored
 initialSetup();
 
 // Show already called cards

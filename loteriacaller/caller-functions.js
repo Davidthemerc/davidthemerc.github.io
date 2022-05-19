@@ -19,9 +19,15 @@ let shuffle = (array) => {
 };
 
 // Function to draw the 'El Gallo' image as the default image
+// Unless if there is a card stored, then use that instead
 let initialSetup = () => {
-  let defaultImage = imageList[0];
-  cardArea.appendChild(defaultImage);
+  if (currentCard.ID) {
+    let defaultImage = imageList[currentCard.ID];
+    cardArea.appendChild(defaultImage);
+  } else {
+    let defaultImage = imageList[0];
+    cardArea.appendChild(defaultImage);
+  }
 };
 
 // Function to start the game
@@ -84,6 +90,7 @@ let calling = () => {
   let messages = [];
   errorDeclare(messages);
   currentCard = shuffledDeck[0];
+  saveJSON(currentCard, 'currentCard');
   cardArea.innerHTML = '';
   cardArea.appendChild(imageList[currentCard.ID]);
   audioList[currentCard.ID + 1].play();
@@ -112,6 +119,12 @@ let getJSON = (savedName) => {
     } else {
       return 0;
     }
+  } else if (savedName === 'currentCard') {
+    if (saveJSON !== null) {
+      return JSON.parse(saveJSON);
+    } else {
+      return {};
+    }
   } else {
     if (saveJSON !== null) {
       return JSON.parse(saveJSON);
@@ -131,6 +144,7 @@ let resetGame = () => {
     localStorage.removeItem('loteriaDeck');
     localStorage.removeItem('savedCalls');
     localStorage.removeItem('count');
+    localStorage.removeItem('currentCard');
     location.reload();
   } else {
     alert(`The game was not reset.`);
