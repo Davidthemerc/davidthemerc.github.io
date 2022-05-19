@@ -31,6 +31,8 @@ let startOff = () => {
     let messages = [];
     errorDeclare(messages);
     currentCard = shuffledDeck[0];
+    cardArea.innerHTML = '';
+    cardArea.appendChild(imageList[currentCard.ID]);
     console.log(`Current Card:${currentCard.Name}`);
     audioList[currentCard.ID + 1].play();
     const paragraph = document.createElement('span');
@@ -68,6 +70,8 @@ let callCard = () => {
     let messages = [];
     errorDeclare(messages);
     currentCard = shuffledDeck[0];
+    cardArea.innerHTML = '';
+    cardArea.appendChild(imageList[currentCard.ID]);
     console.log(`Current Card:${currentCard.Name}`);
     audioList[currentCard.ID + 1].play();
     const paragraph = document.createElement('span');
