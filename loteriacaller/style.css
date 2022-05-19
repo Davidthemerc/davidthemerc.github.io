@@ -1,0 +1,17 @@
+body {
+  background-color: rgb(224, 215, 255);
+}
+
+img {
+  height: 100%;
+  width: 100%;
+}
+
+span {
+  display: block;
+}
+
+.errorMessages {
+  color: red;
+  font-weight: bold;
+}
