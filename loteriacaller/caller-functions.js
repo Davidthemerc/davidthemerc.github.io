@@ -55,7 +55,7 @@ let repeatCall = () => {
     }
     let messages = [];
     errorDeclare(messages);
-    audioList[currentCard.ID + 1].play();
+    audioPlay(currentCard.ID + 1);
   } catch (error) {
     errorDeclare(error);
   }
@@ -93,7 +93,7 @@ let calling = () => {
   saveJSON(currentCard, 'currentCard');
   cardArea.innerHTML = '';
   cardArea.appendChild(imageList[currentCard.ID]);
-  audioList[currentCard.ID + 1].play();
+  audioPlay(currentCard.ID + 1);
   const span = document.createElement('span');
   span.textContent = `${count}. ${currentCard.Name} `;
   span.className = 'rocks';
@@ -158,4 +158,12 @@ let showCalledCards = () => {
     span.className = 'rocks';
     calledCardsDiv.appendChild(span);
   });
+};
+
+const audioPlay = (ID) => {
+  if (voiceValue === '0') {
+    femaleAudioList[ID].play();
+  } else {
+    maleAudioList[ID].play();
+  }
 };

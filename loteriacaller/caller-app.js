@@ -7,11 +7,18 @@ for (let i = 0; i <= 53; i++) {
   imageList[i].src = `../loteriacard/images/loteria 5x7 ${i}.jpg`;
 }
 
-// This is the code to preload the audio files
-let audioList = Array();
+// This is the code to preload the female audio files
+let femaleAudioList = Array();
 for (let i = 1; i <= 54; i++) {
-  audioList[i] = new Audio();
-  audioList[i].src = `audio/Sound ${i}.mp3`;
+  femaleAudioList[i] = new Audio();
+  femaleAudioList[i].src = `audio/female/Sound ${i}.mp3`;
+}
+
+// This is the code to preload the male audio files
+let maleAudioList = Array();
+for (let i = 1; i <= 54; i++) {
+  maleAudioList[i] = new Audio();
+  maleAudioList[i].src = `audio/male/Sound ${i}.mp3`;
 }
 
 let loteriaDeckArray = [
@@ -89,6 +96,10 @@ saveJSON(count, 'count');
 // Define the card slot as a variable
 let cardArea = document.getElementById('cardArea');
 
+// Obtain the value from the voice select dropbox
+let voiceSelect = document.getElementById('voiceSelect');
+let voiceValue = document.getElementById('voiceSelect').value;
+
 // Define the call cards area and error messages area as avariables
 let calledCardsDiv = document.querySelector('#calledCards');
 let errorMessageDiv = document.querySelector('#errorMessages');
@@ -124,4 +135,9 @@ repeatButton.addEventListener('click', () => {
 // Reset Button event listener
 resetButton.addEventListener('click', () => {
   resetGame();
+});
+
+// Voice select dropbox event listener
+voiceSelect.addEventListener('change', () => {
+  voiceValue = document.getElementById('voiceSelect').value;
 });
