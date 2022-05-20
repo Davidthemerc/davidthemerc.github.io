@@ -58,10 +58,15 @@ let reloadCard = () => {
   for (let i = 0; i < 16; i++) {
     // Assign each card an image and append it to the appropriate div
     // But, we want to show the bean instead if the card has been clicked
-
-    image = imageList[shuffled[i]];
-    grid[i].innerHTML = '';
-    grid[i].appendChild(image);
+    if (trackerArray[i] === 0) {
+      image = imageList[shuffled[i]];
+      grid[i].innerHTML = '';
+      grid[i].appendChild(image);
+    } else {
+      image = beanedImageList[shuffled[i]];
+      grid[i].innerHTML = '';
+      grid[i].appendChild(image);
+    }
   }
 };
 
@@ -234,16 +239,13 @@ let selectorDetector = () => {
     shuffled = variety;
   }
 
-  // This array keeps track of which cards have beans
-  trackerArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  reloadCard();
+  // Clear the tracker array and save to local storage, since we're changing cards
+  clearBeanTracking();
 };
 
 let customCardArranger = (set) => {
   for (let i = 0; i < 16; i++) {
     // Assign each card an image and append it to the appropriate div
-    // But, we want to show the bean instead if the card has been clicked
-
     image = imageList[set[i]];
     grid[i].innerHTML = '';
     grid[i].appendChild(image);
@@ -268,4 +270,10 @@ let getJSON = (savedName) => {
 
 let saveJSON = (savedItem, savedName) => {
   localStorage.setItem(savedName, JSON.stringify(savedItem));
+};
+
+let clearBeanTracking = () => {
+  trackerArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  saveJSON(trackerArray, 'loteriaTracker');
+  reloadCard();
 };

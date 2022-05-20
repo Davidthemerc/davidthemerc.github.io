@@ -80,9 +80,7 @@ voice.addEventListener('change', (e) => {
 // Clear card event listener
 clearButton.addEventListener('click', (e) => {
   // This array keeps track of which cards have beans
-  trackerArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  saveJSON(trackerArray, 'loteriaTracker');
-  reloadCard();
+  clearBeanTracking();
 });
 
 // Clear card event listener
@@ -90,5 +88,5 @@ newButton.addEventListener('click', (e) => {
   // This array keeps track of which cards have beans
   shuffled = shuffle(loteriaArray);
   saveJSON(shuffled, 'loteriaCard');
-  reloadCard();
+  clearBeanTracking();
 });
