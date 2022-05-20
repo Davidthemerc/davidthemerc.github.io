@@ -247,6 +247,8 @@ let customCardArranger = (set) => {
     image = imageList[set[i]];
     grid[i].innerHTML = '';
     grid[i].appendChild(image);
+    shuffled[i] = set[i];
+    saveJSON(shuffled, 'loteriaCard');
   }
 };
 
