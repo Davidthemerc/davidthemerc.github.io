@@ -36,13 +36,20 @@ let initialSetup = () => {
         grid[i].appendChild(image);
         trackerArray[i] = 1;
       }
-
+      // Save the change to local storage
+      saveJSON(trackerArray, 'loteriaTracker');
       // Lastly, check if there was a winning combination
       buenasCheck();
     });
-    image = imageList[shuffled[i]];
-    grid[i].innerHTML = '';
-    grid[i].appendChild(image);
+    if (trackerArray[i] === 0) {
+      image = imageList[shuffled[i]];
+      grid[i].innerHTML = '';
+      grid[i].appendChild(image);
+    } else {
+      image = beanedImageList[shuffled[i]];
+      grid[i].innerHTML = '';
+      grid[i].appendChild(image);
+    }
   }
 };
 
@@ -241,4 +248,22 @@ let customCardArranger = (set) => {
     grid[i].innerHTML = '';
     grid[i].appendChild(image);
   }
+};
+
+let getJSON = (savedName) => {
+  const saveJSON = localStorage.getItem(savedName);
+
+  if (savedName === 'loteriaCard') {
+    if (saveJSON !== null) {
+      return JSON.parse(saveJSON);
+    } else return shuffle(loteriaArray);
+  } else if (savedName === 'loteriaTracker') {
+    if (saveJSON !== null) {
+      return JSON.parse(saveJSON);
+    } else return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  }
+};
+
+let saveJSON = (savedItem, savedName) => {
+  localStorage.setItem(savedName, JSON.stringify(savedItem));
 };

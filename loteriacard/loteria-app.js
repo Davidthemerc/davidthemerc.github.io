@@ -28,7 +28,8 @@ let loteriaArray = [
 ];
 
 // This array keeps track of which cards have beans
-let trackerArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+let trackerArray = getJSON('loteriaTracker');
+saveJSON(trackerArray, 'loteriaTracker');
 
 // Define my preferred cards with arrays
 const defaultCard = [
@@ -54,13 +55,16 @@ let voice = document.getElementById('voice');
 let voiceValue = document.getElementById('voice').value;
 
 // Define button
-let button = document.getElementById('reset');
+let clearButton = document.getElementById('clear');
+let newButton = document.getElementById('newCard');
 
 // Call the function to assign the shuffled array to the shuffled variable
 // We'll reference this to draw the card
-let shuffled = shuffle(loteriaArray);
+let shuffled = getJSON('loteriaCard');
+saveJSON(shuffled, 'loteriaCard');
 
 // Call the function to assign individual cards randomly to the entire loteria card
+// Unless there's a card already, then we'll just load that
 initialSetup();
 
 // Game Type/Conditions Selector
@@ -73,9 +77,18 @@ voice.addEventListener('change', (e) => {
   voiceValue = document.getElementById('voice').value;
 });
 
-// Reset card event listener
-button.addEventListener('click', (e) => {
+// Clear card event listener
+clearButton.addEventListener('click', (e) => {
   // This array keeps track of which cards have beans
   trackerArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  saveJSON(trackerArray, 'loteriaTracker');
+  reloadCard();
+});
+
+// Clear card event listener
+newButton.addEventListener('click', (e) => {
+  // This array keeps track of which cards have beans
+  shuffled = shuffle(loteriaArray);
+  saveJSON(shuffled, 'loteriaCard');
   reloadCard();
 });
