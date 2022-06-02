@@ -6,6 +6,7 @@ for (let i = 0; i <= 53; i++) {
   imageList[i] = new Image(273, 390);
   imageList[i].src = 'images/loteria 5x7 ' + i + '.jpg';
 }
+
 // Define image as global variable
 let image;
 
@@ -88,5 +89,8 @@ newButton.addEventListener('click', (e) => {
   // This array keeps track of which cards have beans
   shuffled = shuffle(loteriaArray);
   saveJSON(shuffled, 'loteriaCard');
+  for (let i = 0; i < 16; i++) {
+    selectorArranger(i);
+  }
   clearBeanTracking();
 });
