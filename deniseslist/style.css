@@ -43,3 +43,7 @@ li {
   font-weight: bold;
   color: rgb(179, 38, 38);
 }
+
+.editmessage {
+  font-weight: bold;
+}

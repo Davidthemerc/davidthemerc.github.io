@@ -129,7 +129,7 @@ const generateResultsDOM = function (result) {
     resultsTextEl.textContent = displayText(
       resultLoop.listItem,
       resultLoop.category,
-      'span',
+      'a',
       resultLoop.id
     );
   });
@@ -143,6 +143,7 @@ const displayText = function (listItem, category, elType, resultID) {
   const button = document.createElement('button');
   paragraph.textContent = `${listItem}`;
   paragraph.className = 'item';
+  paragraph.setAttribute('href', `edit.html#${resultID}`);
   span.textContent = ` - Dept: ${category} `;
   span.className = 'rocks2';
 
@@ -162,7 +163,7 @@ const displayText = function (listItem, category, elType, resultID) {
 
 function confirmDeletedSaved() {
   let confirmAction = confirm(
-    'Are you sure you want to delete all saved data?'
+    'Are you sure you want to delete all list item data?'
   );
   if (confirmAction) {
     results = [];
