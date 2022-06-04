@@ -4,7 +4,7 @@
 let imageList = Array();
 for (let i = 0; i <= 53; i++) {
   imageList[i] = new Image(273, 390);
-  imageList[i].src = `../loteriacard/images/loteria 5x7 ${i}.jpg`;
+  imageList[i].src = `../loteriacard/images/loteria 5x7 ${i}.png`;
 }
 
 // This is the code to preload the female audio files
