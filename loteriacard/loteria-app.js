@@ -3,8 +3,8 @@
 // This is the code to preload the images
 let imageList = Array();
 for (let i = 0; i <= 53; i++) {
-  imageList[i] = new Image(273, 390);
-  imageList[i].src = 'images/loteria 5x7 ' + i + '.jpg';
+  imageList[i] = new Image(264, 390);
+  imageList[i].src = 'images/loteria 5x7 ' + i + '.png';
 }
 
 // Define image as global variable
@@ -17,9 +17,12 @@ const audio2 = new Audio('audio/Buenas2.mp3'); // Male voice
 // This is the code to preload the images
 let beanedImageList = Array();
 for (let i = 0; i <= 53; i++) {
-  beanedImageList[i] = new Image(273, 390);
-  beanedImageList[i].src = 'images/beaned/loteria 5x7 ' + i + '.jpg';
+  beanedImageList[i] = new Image(264, 390);
+  beanedImageList[i].src = 'images/beaned/loteria 5x7 ' + i + '.png';
 }
+
+let bean = new Image(264, 390);
+bean.src = 'images/beansized.png';
 
 // Define the "Loteria Array" as 0-53 to represent the 54 possible cards
 let loteriaArray = [

@@ -3,10 +3,18 @@ img {
   height: 100%;
 }
 
+select {
+  width: 100%;
+}
+
 body {
   background-color: rgb(224, 215, 255);
 }
 
 h3 {
   font-weight: bold;
+}
+
+.grid {
+  position: relative;
 }
