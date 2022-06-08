@@ -14,12 +14,17 @@
     <header class="bg-dark">
         <div>
             <div class="row">
-                <div class="col-auto align-self-center"><img class="img-fluid p-3" src="assets/img/quarter.png"
-                        style="width: 150px;height: 150px;"></div>
-                <div class="col align-self-center"><span class="fs-1 fw-bold text-light">Vending Machine
-                        Manager<br></span><span class="fs-6 text-light">Aspire to be the best in snack and beverage
-                        vending!</span></div>
-                <div class="col-auto align-self-center">
+                <div class="col-auto align-self-center" id="quarter"><img class="img-fluid p-3"
+                        src="assets/img/quarter.png" width="150" height="150"></div>
+                <div class="col align-self-center">
+                    <a href="index.html" class="mainlink">
+                        <span class="fs-1 fw-bold text-light">Vending Machine
+                            Manager</span>
+                    </a>
+                    <span class="fs-6 text-light"><br>Aspire to be the best in snack and beverage
+                        vending!</span>
+                </div>
+                <div class="col-auto align-self-center" id="welcome">
                     <p class="fs-5 fw-normal text-end text-light" style="padding: 2rem;">Welcome, Manager</p>
                 </div>
             </div>
@@ -28,15 +33,18 @@
     <div class="container">
         <div class="row">
             <div class="col-12" style="background: #ffffff;">
+                <p class="text-center"><span id="notifications" style="text-decoration: underline;">This area will be
+                        used for in-game
+                        notifications.</span></p>
+                <div id="outputArea"></div>
                 <div class="container">
                     <div class="row">
-                        <div class="col-12 text-center" id="status">
-                            <p class="fs-5 fw-bold text-center">Welcome to Vending Machine Manager</p>
-                        </div>
-                        <div class="col-12 text-center pb-2">
-                            <button type="button" id="startButton">Start/Resume Game</button>
+                        <div class="col-12 text-center">
+                            <p><span style="text-decoration: underline;">Placeholder Text To Show That This is
+                                    Centered</span></p>
                         </div>
                     </div>
+                    <div class="row" id="vending"></div>
                 </div>
             </div>
         </div>
@@ -46,16 +54,13 @@
             <div class="row">
                 <div class="col-md-6 item text">
                     <h3>Vending Machine Manager</h3>
-                    <p><span style="color: rgb(248, 249, 250); background-color: rgb(33, 37, 41);">Aspire to be the best
-                            in snack and beverage vending!</span><br></p>
+                    <p>Aspire to be the best in snack and beverage vending!<br></p>
                 </div>
             </div>
             <p class="copyright">David Mercado © 2022</p>
         </div>
     </footer>
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
-    <script src="/vendingmachinemanager/assets/js/app.js"></script>
-    <script src="/vendingmachinemanager/assets/js/functions.js"></script>
 </body>
 
 </html>

@@ -30,12 +30,28 @@
             <div class="col-12" style="background: #ffffff;">
                 <div class="container">
                     <div class="row">
-                        <div class="col-12 text-center" id="status">
-                            <p class="fs-5 fw-bold text-center">Welcome to Vending Machine Manager</p>
+                        <div class="col-12 text-center">
+                            <p class="fs-3 fw-bold text-center" id="busName">Vending United</p><span><strong>Owned and
+                                    Operated By:</strong></span><a class="ms-1"
+                                href="/vendingmachinemanager/manager.html" id="managerNameDisplay">Manager</a>
                         </div>
-                        <div class="col-12 text-center pb-2">
-                            <button type="button" id="startButton">Start/Resume Game</button>
+                        <div class="col-12 pt-2">
+                            <p class="fw-bold text-center"><u>Manager Action Menu:</u></p>
                         </div>
+                        <div class="col-12 text-center pb-3" id="actionMenu"><button class="ms-2" id="warehouseMart"
+                                type="button">Go to Warehouse Mart</button><button class="ms-2" id="newLocation"
+                                type="button">Find New Machine
+                                Location</button><button class="ms-2" id="buyNewMachine" type="button">Go to Machine
+                                World</button><button class="ms-2" id="dontKnowYet" type="button">Go to Your
+                                Warehouse</button></div>
+                        <div class="col-12 align-self-center">
+                            <p class="fw-bold text-center"><u>Your Vending Machines:</u></p>
+                        </div>
+                        <div class="col-12 text-center" id="yourMachines"></div>
+                        <div class="col-12 text-center"><span class="text-center"><strong>Current
+                                    Money:&nbsp;</strong></span><span id="currentMoney">$0.00</span><span
+                                class="text-center ms-3"><strong>Vending Machines:&nbsp;</strong></span><span
+                                id="numberOfMachines">0</span></div>
                     </div>
                 </div>
             </div>
@@ -54,8 +70,8 @@
         </div>
     </footer>
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
-    <script src="/vendingmachinemanager/assets/js/app.js"></script>
     <script src="/vendingmachinemanager/assets/js/functions.js"></script>
+    <script src="/vendingmachinemanager/assets/js/manage.js"></script>
 </body>
 
 </html>
