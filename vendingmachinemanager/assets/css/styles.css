@@ -1,17 +1,19 @@
+  /* Global Data */
 a.mainlink {
     color: inherit;
     text-decoration: inherit;
   }
 
+  
+  /* Vending Machine Display Page Data */
 .snackimage {
-    width: 100%;
-    height: 100%;
+    width: 95%;
+    height: 95%;
     object-fit:contain;
   }
 
 .snackcolumn {
     padding: 0rem;
-    margin: .25rem;
   }
 
 .vendingouter {
@@ -42,3 +44,28 @@ a.mainlink {
     width: 75%;
     margin: 1rem;
   }
+
+/* Manager Page Data */
+.managedata {
+    display: block;
+  }
+  
+/* Warehouse Mart Page Data */
+.managedata {
+  display: block;
+}
+
+.snackStore {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  object-fit: contain;
+}
+
+.wareHouseMartLogo {
+  max-width: 75%;
+  margin-bottom: 1rem;
+}
+
+.LogoBG {
+  background: rgba(226,226,226,255);
+}
