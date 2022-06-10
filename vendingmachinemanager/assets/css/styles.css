@@ -69,3 +69,19 @@ a.mainlink {
 .LogoBG {
   background: rgba(226,226,226,255);
 }
+
+.itemColumn {
+  border: 1px;
+  border-style: solid;
+  border-color: black;
+  margin-top: .5rem;
+  margin-bottom: .5rem;
+}
+
+.itemColumn:nth-child(n+1) {
+  margin-left: -1px;
+}
+
+.itemQuantity {
+  width: 15px;
+}
