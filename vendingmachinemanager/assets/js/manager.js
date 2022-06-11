@@ -6,9 +6,9 @@ companyName.value = manager.cName;
 
 managerName.addEventListener('input', (e) => {
   manager.mName = e.target.value;
-  saveJSON(manager, 'managerData');
+  saveJSON(manager, 'VMM-managerData');
 });
 companyName.addEventListener('input', (e) => {
   manager.cName = e.target.value;
-  saveJSON(manager, 'managerData');
+  saveJSON(manager, 'VMM-managerData');
 });

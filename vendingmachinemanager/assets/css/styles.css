@@ -19,6 +19,21 @@ a.mainlink {
   border-width: 1px;
   border-color: black;
   border-style: solid;
+  display: inline-block
+}
+
+.listing:nth-child(n+1) {
+  margin-left: -1px;
+}
+
+.spanTitle {
+  color: purple;
+  font-weight: bold;
+}
+
+.block {
+  display: block;
+  margin: 3px 3px 3px 3px
 }
 
 /* Vending Machine Display Page */
