@@ -1,11 +1,27 @@
-  /* Global Data */
+  /* Global */
 a.mainlink {
     color: inherit;
     text-decoration: inherit;
   }
 
-  
-  /* Vending Machine Display Page Data */
+.outputArea {
+  color: red;
+  font-weight: bold;
+}
+
+/* Vending Machine Placement Agency Page */
+
+.vmpa {
+  color: rgb(32, 32, 158);
+}
+
+.listing {
+  border-width: 1px;
+  border-color: black;
+  border-style: solid;
+}
+
+/* Vending Machine Display Page */
 .snackimage {
     width: 95%;
     height: 95%;
@@ -26,7 +42,8 @@ a.mainlink {
     border-color: gray;
     border-width: .25rem;
     border-style: solid;
-    background-color: black
+    background-color: black;
+    padding: .5rem;
   }
 
 .vendingright {
@@ -45,12 +62,12 @@ a.mainlink {
     margin: 1rem;
   }
 
-/* Manager Page Data */
+/* Manager Page */
 .managedata {
     display: block;
   }
   
-/* Warehouse Mart Page Data */
+/* Warehouse Mart Page */
 .managedata {
   display: block;
 }
@@ -80,8 +97,4 @@ a.mainlink {
 
 .itemColumn:nth-child(n+1) {
   margin-left: -1px;
-}
-
-.itemQuantity {
-  width: 15px;
 }
