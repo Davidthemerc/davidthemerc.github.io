@@ -81,7 +81,41 @@ a.mainlink {
 .managedata {
     display: block;
   }
+
+.editManager {
+    font-weight: bold;
+ }
   
+/* Gregor's Page */
+.forSale {
+  border: 0px;
+  border-bottom: 2px;
+  border-style: solid;
+}
+
+
+/* Warehouse Page */
+.warehouseItem {
+  margin-top: .5rem;
+  margin-bottom: .5rem;
+  margin-right: 1rem;
+  object-fit: contain;
+  align-items: center;
+}
+
+.input-group.warehouse-group {
+  align-items: center;
+  margin-bottom: 1rem;
+  border-color: black;
+  border:1px;
+  border-style:solid;
+  padding:.5rem
+}
+
+.warehouse-select {
+  margin-right: 1rem;
+}
+
 /* Warehouse Mart Page */
 .managedata {
   display: block;

@@ -30,15 +30,23 @@
             <div class="col-12" style="background: #ffffff;">
                 <div class="container">
                     <div class="row">
-                        <div class="col-auto text-center p-1">
-                            <span class="editManager">Edit Manager Info</span>
-                            <div class="input-group mt-2"><span class="input-group-text">Manager Name</span><input
-                                    class="form-control" type="text" id="managerName"></div>
-                            <div class="input-group mb-1"><span class="input-group-text">Company Name</span><input
-                                    class="form-control" type="text" id="companyName">
-                            </div>
-                            <a href="/vendingmachinemanager/manage.html" class="text-center">Return to Home</a>
+                        <div class="col-12 text-center" id="status">
+                            <p class="fs-3 fw-bold mb-1">Gregor's Discount Machines</p>
+                            <p class="mb-0">Welcome, welcome in! You need a new vending machine? This is the place!</p>
+                            <p class="fs-5 fw-bold mb-2 p-1 forSale" style="font-style: italic;">Vending Machines For
+                                Sale:
+                            </p>
                         </div>
+                        <div class="col-12 text-center" id="status">
+                            <div class="input-group"><span class="d-flex align-items-center"><strong>Standard Snack
+                                        Machine, $1,000</strong>&nbsp;(5 Rows, 4 Large , 6 Medium, or 12 Small Products
+                                    Wide)&nbsp;</span><button id="buySnackMachine" type="button">Purchase</button></div>
+                            <div class="input-group"><span class="d-flex align-items-center"><strong>Standard Soda
+                                        Machine, $1,000</strong>&nbsp;(5 Rows, 8 Standard Bottles
+                                    Wide)&nbsp;</span><button id="buySodaMachine" type="button">Purchase</button></div>
+                        </div>
+                        <div class="col-12 text-center" id="lower"><a href="/vendingmachinemanager/index.html">Return to
+                                Home</a></div>
                     </div>
                 </div>
             </div>
@@ -49,7 +57,7 @@
             <div class="row">
                 <div class="col-md-6 item text">
                     <h3>Vending Machine Manager</h3>
-                    <p><span style="color: rgb(248, 249, 250)">Aspire to be the best
+                    <p><span style="color: rgb(248, 249, 250);">Aspire to be the best
                             in snack and beverage vending!</span><br></p>
                 </div>
             </div>
@@ -61,7 +69,7 @@
     <script src="/vendingmachinemanager/assets/js/vars.js"></script>
     <script src="/vendingmachinemanager/assets/js/functions.js"></script>
     <script src="/vendingmachinemanager/assets/js/init.js"></script>
-    <script src="/vendingmachinemanager/assets/js/manager.js"></script>
+    <script src="/vendingmachinemanager/assets/js/gregors.js"></script>
 </body>
 
 </html>

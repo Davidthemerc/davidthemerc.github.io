@@ -30,14 +30,30 @@
             <div class="col-12" style="background: #ffffff;">
                 <div class="container">
                     <div class="row">
-                        <div class="col-auto text-center p-1">
-                            <span class="editManager">Edit Manager Info</span>
-                            <div class="input-group mt-2"><span class="input-group-text">Manager Name</span><input
-                                    class="form-control" type="text" id="managerName"></div>
-                            <div class="input-group mb-1"><span class="input-group-text">Company Name</span><input
-                                    class="form-control" type="text" id="companyName">
-                            </div>
+                        <div class="col-12 text-center mb-2" id="status">
+                            <p class="fs-3 fw-bold mb-0">Your Warehouse</p>
+                            <p class="mb-1">Storage for all of the goodies you'll sell! Stock your machines from here!
+                            </p>
                             <a href="/vendingmachinemanager/manage.html" class="text-center">Return to Home</a>
+                        </div>
+                        <div class="col-12 text-center" id="warehouse">
+                            <div class="input-group warehouse-group"><img class="d-flex warehouseItem"
+                                    src="/vendingmachinemanager/assets/img/Snacks/Wham Chips.png"
+                                    style="width: 75px;height: 75px;"><span class="input-group-text">Wham
+                                    Chipz</span><select class="form-select warehouse-select">
+                                </select><button type="button">Stock Item</button></div>
+                            <div class="input-group warehouse-group"><img class="d-flex warehouseItem"
+                                    src="/vendingmachinemanager/assets/img/Snacks/Pythagoroos.png"
+                                    style="width: 75px;height: 75px;"><span
+                                    class="input-group-text">Pythagoroos</span><select
+                                    class="form-select warehouse-select">
+                                </select><button type="button">Stock Item<br></button></div>
+                            <div class="input-group warehouse-group"><img class="d-flex warehouseItem"
+                                    src="/vendingmachinemanager/assets/img/Snacks/Chompers.png"
+                                    style="width: 75px;height: 75px;"><span
+                                    class="input-group-text">Chompers</span><select
+                                    class="form-select warehouse-select">
+                                </select><button type="button">Stock Item<br></button></div>
                         </div>
                     </div>
                 </div>
@@ -49,8 +65,8 @@
             <div class="row">
                 <div class="col-md-6 item text">
                     <h3>Vending Machine Manager</h3>
-                    <p><span style="color: rgb(248, 249, 250)">Aspire to be the best
-                            in snack and beverage vending!</span><br></p>
+                    <p><span style="color: rgb(248, 249, 250);">Aspire to be the best in snack and beverage
+                            vending!</span><br></p>
                 </div>
             </div>
             <p class="copyright">David Mercado © 2022</p>
@@ -61,7 +77,7 @@
     <script src="/vendingmachinemanager/assets/js/vars.js"></script>
     <script src="/vendingmachinemanager/assets/js/functions.js"></script>
     <script src="/vendingmachinemanager/assets/js/init.js"></script>
-    <script src="/vendingmachinemanager/assets/js/manager.js"></script>
+    <script src="/vendingmachinemanager/assets/js/warehouse.js"></script>
 </body>
 
 </html>

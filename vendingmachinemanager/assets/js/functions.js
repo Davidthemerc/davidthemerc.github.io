@@ -53,7 +53,11 @@ const runAgency = () => {
 
     if (availableLocationsArray.length === 0) {
     } else {
-      locationsArray.push(availableLocationsArray[0]);
+      availableLocationsArray.forEach((tag) => {
+        locationsArray.push(tag);
+        saveJSON(locationsArray, 'VMM-locationsArray');
+      });
+
       availableLocationsArray = [];
     }
 
