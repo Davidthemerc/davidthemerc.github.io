@@ -8,7 +8,7 @@ const gregorButton = document.getElementById('buyNewMachine');
 
 managerNameDisplay.innerHTML = manager.mName;
 busName.innerHTML = manager.cName;
-currentMoney.innerHTML = `$${manager.money.toFixed(2)}`;
+updateMoney(manager.money);
 
 warehouseMart.addEventListener('click', () => {
   location.assign('/vendingmachinemanager/warehousemart.html');

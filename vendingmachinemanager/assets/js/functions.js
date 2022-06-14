@@ -1,3 +1,8 @@
+// Function to display messages in the DOM
+const displayMessages = (messages, messageEl) => {
+  messageEl.innerHTML = messages.join(' ');
+};
+
 const managerData = () => {
   const saveJSON = localStorage.getItem('VMM-managerData');
 
@@ -31,6 +36,20 @@ const vendLocations = () => {
   } else return [];
 };
 
+const warehouseSetup = () => {
+  const saveJSON = localStorage.getItem('VMM-warehouseData');
+  if (saveJSON !== null) {
+    return JSON.parse(saveJSON);
+  } else return [0, 0, 0];
+};
+
+const vendingMachinesSetup = () => {
+  const saveJSON = localStorage.getItem('VMM-vendingMachines');
+  if (saveJSON !== null) {
+    return JSON.parse(saveJSON);
+  } else return [];
+};
+
 const getJSON = (savedName) => {
   const saveJSON = localStorage.getItem(savedName);
 
@@ -49,7 +68,9 @@ const saveJSON = (savedItem, savedName) => {
 const runAgency = () => {
   if (manager.lastUsedAgencyDay !== manager.agencyDay) {
     // If the last used agency day doesn't match the current agency day, then we'll proceed to generate a new list
-    console.log('A week has passed! New locations are available!');
+    let messages = [];
+    messages.push('A week has passed! New locations are available!');
+    displayMessages(messages, statusEl);
 
     if (availableLocationsArray.length === 0) {
     } else {
@@ -66,12 +87,12 @@ const runAgency = () => {
 
     // Check if there are even any locations left to offer!
     if (locationsArray.length == 0) {
-      const place = document.getElementById('status');
-      const paragraph = document.createElement('p');
-      paragraph.textContent =
-        'Sorry, there are no locations currently available at this time!';
-      paragraph.className = 'mb-2';
-      place.appendChild(paragraph);
+      let messages = [];
+      messages.push(
+        'Sorry, there are no locations currently available at this time!'
+      );
+      displayMessages(messages, statusEl);
+
       return;
     }
 
@@ -169,7 +190,7 @@ const agencyDom = (
   locationID
 ) => {
   // Code to add the listing to the DOM
-  const place = document.getElementById('status');
+  const place = document.getElementById('listings');
   const div = document.createElement('div');
   const spanTitle = document.createElement('span');
   const spanTerms = document.createElement('span');
@@ -180,7 +201,7 @@ const agencyDom = (
   spanTerms.className = 'block';
   acceptButton.textContent = 'Make a Deal';
   acceptButton.className = 'mb-1';
-  div.className = 'col-4 listing mb-3';
+  div.className = 'col-4 listing mb-1';
   div.id = uuidv4();
 
   acceptButton.addEventListener('click', () => {
@@ -258,4 +279,69 @@ const advanceDay = () => {
   }
 
   saveJSON(manager, 'VMM-managerData');
+};
+
+const wmartBuy = (found, index, fields) => {
+  let quantity = selectFields[index].value;
+  let itemName = found.friendlyName;
+
+  if (fields[index].selectedIndex === 0) {
+    throw new Error(`You can't buy ${itemName} if a quantity isn't selected!`);
+  }
+
+  let cost = found.itemPrice * parseInt(fields[index].value).toFixed(2);
+  console.log(cost);
+
+  // Subtract the cost from the Manager's money
+  moneyExchange('-', cost);
+
+  let messages = [];
+  messages.push(
+    `You bought a pack of ${quantity} ${itemName} for $${cost.toFixed(
+      2
+    )}! They will be shipped to your warehouse.`
+  );
+  displayMessages(messages, statusEl);
+  warehouseStock(quantity, index);
+};
+
+const warehouseStock = (quantity, index) => {
+  quantity = parseInt(quantity);
+  warehouseArray[index] += quantity;
+  saveJSON(warehouseArray, 'VMM-warehouseData');
+};
+
+const warehouseDOM = () => {
+  let quantityFields = document.getElementsByClassName('warehouseQuantity');
+  let inputTypeFields = document.getElementsByClassName('warehouseInput');
+  let inputMenuFields = document.getElementsByClassName('warehouseInputMenu');
+  let vendingFields = document.getElementsByClassName('vendingSelect');
+
+  Array.from(quantityFields).forEach((arrayLoop, index) => {
+    arrayLoop.innerHTML = `Quantity Available: ${warehouseArray[index]}`;
+  });
+
+  // If some moron types a value and picks a value from the dropdown menu, be sure to error out!
+};
+
+const moneyExchange = (action, amount) => {
+  action === '-' ? (manager.money -= amount) : (manager.money += amount);
+  saveJSON(manager, 'VMM-managerData');
+  currentMoney.innerHTML = `$${manager.money.toFixed(2)}`;
+};
+
+const updateMoney = (money) => {
+  let moneyEl = document.getElementById('currentMoney');
+  moneyEl.innerHTML = '';
+  moneyEl.innerHTML = `$${money.toFixed(2)}`;
+};
+
+const addVendingMachine = (kind) => {
+  if (manager.numOfMachines > 0) {
+    // Only one machine for now please!
+    throw new Error('Only one machine for now please!');
+  }
+  let messages = [];
+  messages.push(`You added a new ${kind} machine!`);
+  displayMessages(messages, statusEl);
 };

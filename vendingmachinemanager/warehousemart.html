@@ -31,18 +31,19 @@
             <div class="col-12" style="background: #ffffff;">
                 <div class="container">
                     <div class="row">
-                        <div class="col-12 text-center LogoBG" id="status"><img class="wareHouseMartLogo"
+                        <div class="col-12 text-center LogoBG" id="logo"><img class="wareHouseMartLogo"
                                 src="/vendingmachinemanager/assets/img/WarehouseMart.png">
                             <p class="fs-5 fw-bold" style="font-style: italic;">Your one-stop shop for all your bulk
                                 purchasing needs!</p>
                         </div>
                         <div class="d-flex justify-content-center">
-                            <span class="outputArea" id="outputArea"></span>
                             <span><strong>Current
                                     Money:&nbsp;</strong></span><span id="currentMoney">$0.00</span>
                         </div>
-                        <a class="d-flex justify-content-center" href="/vendingmachinemanager/manage.html">Return to
-                            Home</a>
+                        <div class="d-flex justify-content-center">
+                            <a class="block" href="/vendingmachinemanager/manage.html">Return to Home</a>
+                        </div>
+                        <div class="d-flex justify-content-center status" id="status"></div>
                         <div class="col-4 text-center itemColumn"><span class="fw-bold" id="itemNameSpan-1">Wham
                                 Chipz</span><span>&nbsp;- Unit Price:&nbsp;</span><span class="itemUnitPrice"
                                 id="itemUnitPrice-1">$0.25
@@ -51,12 +52,12 @@
                                     class="input-group-text itemPrice" id="itemTotalCost-1">$0.00</span><select
                                     class="itemQuantity" id="itemQuantity-1">
                                     <option selected disabled>Select</option>
-                                </select><button class="btn btn-primary" id="itemBuy-1" type="button">Purchase</button>
+                                </select><button class="btn btn-primary" id="whamchipz" type="button">Purchase</button>
                             </div>
                             <div class="d-flex justify-content-center"><img class="img-fluid snackStore"
                                     id="itemImage-1" src="/vendingmachinemanager/assets/img/Snacks/Wham Chips.png"
                                     width="150" height="150"></div>
-                            <p id="itemInfo-1">These are some very tasty chips!</p>
+                            <p id="itemInfo-1">These are some very 80s chips!</p>
                         </div>
                         <div class="col-4 text-center itemColumn"><span class="fw-bold"
                                 id="itemNameSpan-2">Pythagoroos</span><span>&nbsp;- Unit Price:&nbsp;</span><span
@@ -65,7 +66,8 @@
                                     class="input-group-text itemPrice" id="itemTotalCost-2">$0.00</span><select
                                     class="itemQuantity" id="itemQuantity-2">
                                     <option selected disabled>Select</option>
-                                </select><button class="btn btn-primary" id="itemBuy-2" type="button">Purchase</button>
+                                </select><button class="btn btn-primary" id="pythagoroos"
+                                    type="button">Purchase</button>
                             </div>
                             <div class="d-flex justify-content-center"><img id="itemImage-2" class="snackStore"
                                     src="/vendingmachinemanager/assets/img/Snacks/Pythagoroos.png" width="150"
@@ -80,7 +82,7 @@
                                     class="input-group-text itemPrice" id="itemTotalCost-3">$0.00</span><select
                                     class="itemQuantity" id="itemQuantity-3">
                                     <option selected disabled>Select</option>
-                                </select><button class="btn btn-primary" id="itemBuy-3" type="button">Purchase</button>
+                                </select><button class="btn btn-primary" id="chompers" type="button">Purchase</button>
                             </div>
                             <div class="d-flex justify-content-center"><img class="d-sm-inline snackStore"
                                     id="itemImage-3" src="/vendingmachinemanager/assets/img/Snacks/Chompers.png"

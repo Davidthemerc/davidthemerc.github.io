@@ -9,6 +9,11 @@ a.mainlink {
   font-weight: bold;
 }
 
+.status {
+  color: red;
+  font-weight: bold;
+}
+
 /* Vending Machine Placement Agency Page */
 
 .vmpa {
@@ -34,6 +39,10 @@ a.mainlink {
 .block {
   display: block;
   margin: 3px 3px 3px 3px
+}
+
+.block2 {
+  display: inline-block;
 }
 
 /* Vending Machine Display Page */
@@ -112,7 +121,7 @@ a.mainlink {
   padding:.5rem
 }
 
-.warehouse-select {
+.vendingSelect {
   margin-right: 1rem;
 }
 
