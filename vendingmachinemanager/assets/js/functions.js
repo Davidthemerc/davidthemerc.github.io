@@ -40,7 +40,12 @@ const warehouseSetup = () => {
   const saveJSON = localStorage.getItem('VMM-warehouseData');
   if (saveJSON !== null) {
     return JSON.parse(saveJSON);
-  } else return [0, 0, 0];
+  } else
+    return [
+      { itemName: 'Wham Chipz', quantity: 0, size: 6 },
+      { itemName: 'Pythagoroos', quantity: 0, size: 4 },
+      { itemName: 'Chompers', quantity: 0, size: 3 },
+    ];
 };
 
 const vendingMachinesSetup = () => {
@@ -246,6 +251,8 @@ const locationDeal = (name, termCost, termVar, id, locationID) => {
     name: name,
     termType: termVar,
     termAmt: termCost,
+    snackPresent: 'no',
+    sodaPresent: 'no',
   });
 
   const spliceIndex = availableLocationsArray.findIndex(
@@ -305,9 +312,15 @@ const wmartBuy = (found, index, fields) => {
   warehouseStock(quantity, index);
 };
 
+const machineStock = (typed, selected) => {
+  if (typed !== '' && selected.selectedIndex > 0) {
+    throw new Error(`Don't use two inputs dipshit!`);
+  }
+};
+
 const warehouseStock = (quantity, index) => {
   quantity = parseInt(quantity);
-  warehouseArray[index] += quantity;
+  warehouseArray[index].quantity = quantity;
   saveJSON(warehouseArray, 'VMM-warehouseData');
 };
 
@@ -316,12 +329,67 @@ const warehouseDOM = () => {
   let inputTypeFields = document.getElementsByClassName('warehouseInput');
   let inputMenuFields = document.getElementsByClassName('warehouseInputMenu');
   let vendingFields = document.getElementsByClassName('vendingSelect');
+  let slotFields = document.getElementsByClassName('vendingSlot');
+  let buttonFields = document.getElementsByClassName('warehouseButton');
 
   Array.from(quantityFields).forEach((arrayLoop, index) => {
-    arrayLoop.innerHTML = `Quantity Available: ${warehouseArray[index]}`;
+    arrayLoop.innerHTML = `Item: ${warehouseArray[index].itemName} (${warehouseArray[index].quantity})`;
   });
 
-  // If some moron types a value and picks a value from the dropdown menu, be sure to error out!
+  Array.from(inputMenuFields).forEach((arrayLoop, index) => {
+    for (let x = 0; x <= 5; x++) {
+      let opt = document.createElement('option');
+      opt.value = vendingControlNum[x];
+      opt.innerHTML = vendingControlNum[x];
+      arrayLoop.appendChild(opt);
+    }
+  });
+
+  Array.from(vendingFields).forEach((arrayLoop, index) => {
+    for (let x = 0; x < machines.length; x++) {
+      let opt = document.createElement('option');
+      opt.value = x;
+      opt.innerHTML = `Vending Machine ID:${machines[x].macID}}`;
+      arrayLoop.appendChild(opt);
+    }
+
+    let slots = Array.from(slotFields);
+
+    arrayLoop.addEventListener('change', (e) => {
+      if (e.target.value == '-1') {
+        slots[index].innerHTML = '';
+        let opt = document.createElement('option');
+        opt.value = '-1';
+        opt.innerHTML = 'Select Slot';
+        slots[index].appendChild(opt);
+        return;
+      }
+
+      for (let x = 0; x < machines[e.target.value].numOfSlots; x++) {
+        let opt = document.createElement('option');
+        opt.value = x;
+        opt.innerHTML = `Slot ${x}`;
+        slots[index].appendChild(opt);
+      }
+    });
+  });
+
+  Array.from(slotFields).forEach((arrayLoop, index) => {});
+
+  Array.from(buttonFields).forEach((arrayLoop, index) => {
+    arrayLoop.addEventListener('click', () => {
+      try {
+        machineStock(inputTypeFields[index].value, inputMenuFields[index]);
+      } catch (error) {
+        let messages = [];
+        messages.push(error);
+        displayMessages(messages, statusEl);
+      }
+    });
+  });
+
+  // If some moron types a value and picks a value from the dropdown menu and attempts to stock
+  //, be sure to error out, since we don't want TWO inputs!
 };
 
 const moneyExchange = (action, amount) => {
@@ -344,4 +412,85 @@ const addVendingMachine = (kind) => {
   let messages = [];
   messages.push(`You added a new ${kind} machine!`);
   displayMessages(messages, statusEl);
+
+  machines.push({
+    // Machine Type, Snack or Soda
+    macType: 'snack',
+    // Machine UUID
+    macID: uuidv4(),
+    // Machine Location, Blank at time of purchase
+    macLocation: '',
+    // Property specifying the number of slots
+    numOfSlots: 34,
+    // Machine slot # and then the size
+    macSlot0: -1,
+    macSlot0Size: 6,
+    macSlot1: -1,
+    macSlot1Size: 6,
+    macSlot2: -1,
+    macSlot2Size: 6,
+    macSlot3: -1,
+    macSlot3Size: 6,
+    macSlot4: -1,
+    macSlot4Size: 6,
+    macSlot5: -1,
+    macSlot5Size: 6,
+    macSlot6: -1,
+    macSlot6Size: 6,
+    macSlot7: -1,
+    macSlot7Size: 6,
+    macSlot8: -1,
+    macSlot8Size: 6,
+    macSlot9: -1,
+    macSlot9Size: 6,
+    macSlot10: -1,
+    macSlot10Size: 6,
+    macSlot11: -1,
+    macSlot11Size: 6,
+    macSlot12: -1,
+    macSlot12Size: 3,
+    macSlot13: -1,
+    macSlot13Size: 3,
+    macSlot14: -1,
+    macSlot14Size: 3,
+    macSlot15: -1,
+    macSlot15Size: 3,
+    macSlot16: -1,
+    macSlot16Size: 3,
+    macSlot17: -1,
+    macSlot17Size: 3,
+    macSlot18: -1,
+    macSlot18Size: 3,
+    macSlot19: -1,
+    macSlot19Size: 3,
+    macSlot20: -1,
+    macSlot20Size: 3,
+    macSlot21: -1,
+    macSlot21Size: 3,
+    macSlot22: -1,
+    macSlot22Size: 3,
+    macSlot23: -1,
+    macSlot23Size: 3,
+    macSlot24: -1,
+    macSlot24Size: 3,
+    macSlot25: -1,
+    macSlot25Size: 3,
+    macSlot26: -1,
+    macSlot26Size: 3,
+    macSlot27: -1,
+    macSlot27Size: 3,
+    macSlot28: -1,
+    macSlot28Size: 4,
+    macSlot29: -1,
+    macSlot29Size: 4,
+    macSlot30: -1,
+    macSlot30Size: 4,
+    macSlot31: -1,
+    macSlot31Size: 4,
+    macSlot32: -1,
+    macSlot32Size: 4,
+    macSlot33: -1,
+    macSlot33Size: 4,
+  });
+  saveJSON(machines, 'VMM-vendingMachines');
 };

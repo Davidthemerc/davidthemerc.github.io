@@ -30,11 +30,12 @@
             <div class="col-12" style="background: #ffffff;">
                 <div class="container">
                     <div class="row">
-                        <div class="col-12 text-center mb-2" id="status">
+                        <div class="col-12 text-center mb-2" id="warehouseTop">
                             <p class="fs-3 fw-bold mb-0">Your Warehouse</p>
                             <p class="mb-1">Storage for all of the goodies you'll sell! Stock your machines from here!
                             </p>
                             <a href="/vendingmachinemanager/manage.html" class="text-center">Return to Home</a>
+                            <div class="col-12 text-center status" id="status"></div>
                         </div>
                         <div class="col-12 text-center" id="warehouse">
                             <div class="input-group warehouse-group"><img class="d-flex warehouseItem"
@@ -45,7 +46,9 @@
                                     placeholder="#"><select class="form-select warehouseInputMenu">
                                     <option selected disabled># to Stock</option>
                                 </select><select class="form-select vendingSelect">
-                                    <option selected disabled>Select Machine</option>
+                                    <option value="-1" selected>Select Machine</option>
+                                </select><select class="form-select vendingSlot">
+                                    <option selected disabled>Select Slot</option>
                                 </select><button type="button" class="warehouseButton">Stock Item</button></div>
                             <div class="input-group warehouse-group"><img class="d-flex warehouseItem"
                                     src="/vendingmachinemanager/assets/img/Snacks/Pythagoroos.png"
@@ -56,16 +59,20 @@
                                     <option selected disabled># to Stock</option>
                                 </select><select class="form-select vendingSelect">
                                     <option selected disabled>Select Machine</option>
+                                </select><select class="form-select vendingSlot">
+                                    <option selected disabled>Select Slot</option>
                                 </select><button type="button" class="warehouseButton">Stock Item</button></div>
                             <div class="input-group warehouse-group"><img class="d-flex warehouseItem"
                                     src="/vendingmachinemanager/assets/img/Snacks/Chompers.png"
                                     style="width: 75px;height: 75px;"><span
                                     class="input-group-text warehouseQuantity">Quantity
-                                    Available:</span><input class="form-control warehouseInput" type="text"
+                                    Available:</span><input class="form-control warehosuseInput" type="text"
                                     placeholder="#"><select class="form-select warehouseInputMenu">
                                     <option selected disabled># to Stock</option>
                                 </select><select class="form-select vendingSelect">
                                     <option selected disabled>Select Machine</option>
+                                </select><select class="form-select vendingSlot">
+                                    <option selected disabled>Select Slot</option>
                                 </select><button type="button" class="warehouseButton">Stock Item</button></div>
                         </div>
                     </div>

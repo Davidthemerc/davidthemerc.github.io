@@ -7,8 +7,6 @@ snackButton.addEventListener('click', () => {
     moneyExchange('-', 1000);
     manager.numOfMachines += 1;
     saveJSON(manager, 'VMM-managerData');
-    machines.push({ type: 'snack', macID: uuidv4() });
-    saveJSON(machines, 'VMM-vendingMachines');
     //Snack Machine
   } catch (error) {
     let messages = [];

@@ -9,9 +9,14 @@ const statusEl = document.getElementById('status');
 
 // Friendly Name should be plural, because it will/should be referenced as such in all situations
 const itemPriceTable = [
-  { refName: 'whamchipz', friendlyName: 'Wham Chipz', itemPrice: 0.5 },
-  { refName: 'pythagoroos', friendlyName: 'Pythagoroos', itemPrice: 0.7 },
-  { refName: 'chompers', friendlyName: 'Chompers', itemPrice: 0.8 },
+  { refName: 'whamchipz', friendlyName: 'Wham Chipz', itemPrice: 0.5, size: 6 },
+  {
+    refName: 'pythagoroos',
+    friendlyName: 'Pythagoroos',
+    itemPrice: 0.7,
+    size: 4,
+  },
+  { refName: 'chompers', friendlyName: 'Chompers', itemPrice: 0.8, size: 3 },
 ];
 
 // Random number function
