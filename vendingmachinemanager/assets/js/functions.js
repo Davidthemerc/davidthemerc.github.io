@@ -379,6 +379,8 @@ const warehouseDOM = () => {
   Array.from(buttonFields).forEach((arrayLoop, index) => {
     arrayLoop.addEventListener('click', () => {
       try {
+        // Basically left off here. It doesn't really do anything yet except stop you from trying to
+        // use both stock # inputs. I need the vending machine system built out first.
         machineStock(inputTypeFields[index].value, inputMenuFields[index]);
       } catch (error) {
         let messages = [];
