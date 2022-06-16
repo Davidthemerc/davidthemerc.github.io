@@ -251,8 +251,11 @@ const locationDeal = (name, termCost, termVar, id, locationID) => {
     name: name,
     termType: termVar,
     termAmt: termCost,
-    snackPresent: 'no',
-    sodaPresent: 'no',
+    snackPresent: false,
+    snackID: '',
+    sodaPresent: false,
+    sodaID: '',
+    ID: uuidv4(),
   });
 
   const spliceIndex = availableLocationsArray.findIndex(
@@ -312,10 +315,40 @@ const wmartBuy = (found, index, fields) => {
   warehouseStock(quantity, index);
 };
 
-const machineStock = (typed, selected) => {
+const machineStock = (typed, selected, machIndex, slotNum, fName) => {
+  if (machines[machIndex].macLocation === 'warehouse') {
+    // Flip out, because a machine has to be at a location to be stocked...
+    throw new Error(
+      `Selected machine isn't placed! You must place it at a location before attempting to stock it.`
+    );
+  }
+
   if (typed !== '' && selected.selectedIndex > 0) {
     throw new Error(`Don't use two inputs dipshit!`);
+  } else if (typed === '' && selected.selectedIndex === 0) {
+    throw new Error(`WHAT ARE YOU DOING, ENTER AN INPUT!`);
   }
+
+  if (machIndex < 0) {
+    throw new Error('Please pick a machine!');
+  }
+
+  if (slotNum === '-1') {
+    throw new Error('Please pick a slot!');
+  }
+
+  let messages = [];
+  displayMessages(messages, statusEl);
+  typed !== ''
+    ? messages.push(
+        `You stocked ${typed} ${fName} into slot ${slotNum} in machine ${machIndex}.`
+      )
+    : messages.push(
+        `You stocked ${selected.value} ${fName} into slot ${slotNum} in machine ${machIndex}.`
+      );
+  displayMessages(messages, statusEl);
+
+  const entries = Object.entries(machines);
 };
 
 const warehouseStock = (quantity, index) => {
@@ -331,12 +364,13 @@ const warehouseDOM = () => {
   let vendingFields = document.getElementsByClassName('vendingSelect');
   let slotFields = document.getElementsByClassName('vendingSlot');
   let buttonFields = document.getElementsByClassName('warehouseButton');
+  let slots = Array.from(slotFields);
 
   Array.from(quantityFields).forEach((arrayLoop, index) => {
     arrayLoop.innerHTML = `Item: ${warehouseArray[index].itemName} (${warehouseArray[index].quantity})`;
   });
 
-  Array.from(inputMenuFields).forEach((arrayLoop, index) => {
+  Array.from(inputMenuFields).forEach((arrayLoop) => {
     for (let x = 0; x <= 5; x++) {
       let opt = document.createElement('option');
       opt.value = vendingControlNum[x];
@@ -349,17 +383,15 @@ const warehouseDOM = () => {
     for (let x = 0; x < machines.length; x++) {
       let opt = document.createElement('option');
       opt.value = x;
-      opt.innerHTML = `Vending Machine ID:${machines[x].macID}}`;
+      opt.innerHTML = `${machines[x].macName}`;
       arrayLoop.appendChild(opt);
     }
-
-    let slots = Array.from(slotFields);
 
     arrayLoop.addEventListener('change', (e) => {
       if (e.target.value == '-1') {
         slots[index].innerHTML = '';
         let opt = document.createElement('option');
-        opt.value = '-1';
+        opt.value = -1;
         opt.innerHTML = 'Select Slot';
         slots[index].appendChild(opt);
         return;
@@ -381,11 +413,36 @@ const warehouseDOM = () => {
       try {
         // Basically left off here. It doesn't really do anything yet except stop you from trying to
         // use both stock # inputs. I need the vending machine system built out first.
-        machineStock(inputTypeFields[index].value, inputMenuFields[index]);
+        machineStock(
+          inputTypeFields[index].value,
+          inputMenuFields[index],
+          vendingFields[index].value,
+          slotFields[index].value,
+          itemPriceTable[index].friendlyName
+        );
+        // Clear the fields
+        inputTypeFields[index].value = '';
+        inputMenuFields[index].value = 0;
+        vendingFields[index].value = -1;
+        slots[index].innerHTML = '';
+        let opt = document.createElement('option');
+        opt.value = -1;
+        opt.innerHTML = 'Select Slot';
+        slots[index].appendChild(opt);
       } catch (error) {
         let messages = [];
         messages.push(error);
         displayMessages(messages, statusEl);
+
+        // Clear the fields
+        inputTypeFields[index].value = '';
+        inputMenuFields[index].value = 0;
+        vendingFields[index].value = -1;
+        slots[index].innerHTML = '';
+        let opt = document.createElement('option');
+        opt.value = -1;
+        opt.innerHTML = 'Select Slot';
+        slots[index].appendChild(opt);
       }
     });
   });
@@ -411,88 +468,178 @@ const addVendingMachine = (kind) => {
     // Only one machine for now please!
     throw new Error('Only one machine for now please!');
   }
+
+  let newName = prompt('Please name your new vending machine:');
+
   let messages = [];
-  messages.push(`You added a new ${kind} machine!`);
+  messages.push(`You added a new ${kind} machine called ${newName}!`);
   displayMessages(messages, statusEl);
 
   machines.push({
     // Machine Type, Snack or Soda
     macType: 'snack',
+    macName: newName,
     // Machine UUID
     macID: uuidv4(),
     // Machine Location, Blank at time of purchase
-    macLocation: '',
+    macLocation: 'warehouse',
     // Property specifying the number of slots
     numOfSlots: 34,
     // Machine slot # and then the size
-    macSlot0: -1,
-    macSlot0Size: 6,
-    macSlot1: -1,
-    macSlot1Size: 6,
-    macSlot2: -1,
-    macSlot2Size: 6,
-    macSlot3: -1,
-    macSlot3Size: 6,
-    macSlot4: -1,
-    macSlot4Size: 6,
-    macSlot5: -1,
-    macSlot5Size: 6,
-    macSlot6: -1,
-    macSlot6Size: 6,
-    macSlot7: -1,
-    macSlot7Size: 6,
-    macSlot8: -1,
-    macSlot8Size: 6,
-    macSlot9: -1,
-    macSlot9Size: 6,
-    macSlot10: -1,
-    macSlot10Size: 6,
-    macSlot11: -1,
-    macSlot11Size: 6,
-    macSlot12: -1,
-    macSlot12Size: 3,
-    macSlot13: -1,
-    macSlot13Size: 3,
-    macSlot14: -1,
-    macSlot14Size: 3,
-    macSlot15: -1,
-    macSlot15Size: 3,
-    macSlot16: -1,
-    macSlot16Size: 3,
-    macSlot17: -1,
-    macSlot17Size: 3,
-    macSlot18: -1,
-    macSlot18Size: 3,
-    macSlot19: -1,
-    macSlot19Size: 3,
-    macSlot20: -1,
-    macSlot20Size: 3,
-    macSlot21: -1,
-    macSlot21Size: 3,
-    macSlot22: -1,
-    macSlot22Size: 3,
-    macSlot23: -1,
-    macSlot23Size: 3,
-    macSlot24: -1,
-    macSlot24Size: 3,
-    macSlot25: -1,
-    macSlot25Size: 3,
-    macSlot26: -1,
-    macSlot26Size: 3,
-    macSlot27: -1,
-    macSlot27Size: 3,
-    macSlot28: -1,
-    macSlot28Size: 4,
-    macSlot29: -1,
-    macSlot29Size: 4,
-    macSlot30: -1,
-    macSlot30Size: 4,
-    macSlot31: -1,
-    macSlot31Size: 4,
-    macSlot32: -1,
-    macSlot32Size: 4,
-    macSlot33: -1,
-    macSlot33Size: 4,
+    macSlot0: 0,
+    macSlotitem0: -1,
+    macSlotprice0: 0,
+    macSlotsize0: 6,
+    macSlot1: 0,
+    macSlotitem1: -1,
+    macSlotprice1: 0,
+    macSlotsize1: 6,
+    macSlot2: 0,
+    macSlotitem2: -1,
+    macSlotprice2: 0,
+    macSlotsize2: 6,
+    macSlot3: 0,
+    macSlotitem3: -1,
+    macSlotprice3: 0,
+    macSlotsize3: 6,
+    macSlot4: 0,
+    macSlotitem4: -1,
+    macSlotprice4: 0,
+    macSlotsize4: 6,
+    macSlot5: 0,
+    macSlotitem5: -1,
+    macSlotprice5: 0,
+    macSlotsize5: 6,
+    macSlot6: 0,
+    macSlotitem6: -1,
+    macSlotprice6: 0,
+    macSlotsize6: 6,
+    macSlot7: 0,
+    macSlotitem7: -1,
+    macSlotprice7: 0,
+    macSlotsize7: 6,
+    macSlot8: 0,
+    macSlotitem8: -1,
+    macSlotprice8: 0,
+    macSlotsize8: 6,
+    macSlot9: 0,
+    macSlotitem9: -1,
+    macSlotprice9: 0,
+    macSlotsize9: 6,
+    macSlot10: 0,
+    macSlotitem10: -1,
+    macSlotprice10: 0,
+    macSlotsize10: 6,
+    macSlot11: 0,
+    macSlotitem11: -1,
+    macSlotprice11: 0,
+    macSlotsize11: 6,
+    macSlot12: 0,
+    macSlotitem12: -1,
+    macSlotprice12: 0,
+    macSlotsize12: 3,
+    macSlot13: 0,
+    macSlotitem13: -1,
+    macSlotprice13: 0,
+    macSlotsize13: 3,
+    macSlot14: 0,
+    macSlotitem14: -1,
+    macSlotprice14: 0,
+    macSlotsize14: 3,
+    macSlot15: 0,
+    macSlotitem15: -1,
+    macSlotprice15: 0,
+    macSlotsize15: 3,
+    macSlot16: 0,
+    macSlotitem16: -1,
+    macSlotprice16: 0,
+    macSlotsize16: 3,
+    macSlot17: 0,
+    macSlotitem17: -1,
+    macSlotprice17: 0,
+    macSlotsize17: 3,
+    macSlot18: 0,
+    macSlotitem18: -1,
+    macSlotprice18: 0,
+    macSlotsize18: 3,
+    macSlot19: 0,
+    macSlotitem19: -1,
+    macSlotprice19: 0,
+    macSlotsize19: 3,
+    macSlot20: 0,
+    macSlotitem20: -1,
+    macSlotprice20: 0,
+    macSlotsize20: 3,
+    macSlot21: 0,
+    macSlotitem21: -1,
+    macSlotprice21: 0,
+    macSlotsize21: 3,
+    macSlot22: 0,
+    macSlotitem22: -1,
+    macSlotprice22: 0,
+    macSlotsize22: 3,
+    macSlot23: 0,
+    macSlotitem23: -1,
+    macSlotprice23: 0,
+    macSlotsize23: 3,
+    macSlot24: 0,
+    macSlotitem24: -1,
+    macSlotprice24: 0,
+    macSlotsize24: 3,
+    macSlot25: 0,
+    macSlotitem25: -1,
+    macSlotprice25: 0,
+    macSlotsize25: 3,
+    macSlot26: 0,
+    macSlotitem26: -1,
+    macSlotprice26: 0,
+    macSlotsize26: 3,
+    macSlot27: 0,
+    macSlotitem27: -1,
+    macSlotprice27: 0,
+    macSlotsize27: 3,
+    macSlot28: 0,
+    macSlotitem28: -1,
+    macSlotprice28: 0,
+    macSlotsize28: 4,
+    macSlot29: 0,
+    macSlotitem29: -1,
+    macSlotprice29: 0,
+    macSlotsize29: 4,
+    macSlot30: 0,
+    macSlotitem30: -1,
+    macSlotprice30: 0,
+    macSlotsize30: 4,
+    macSlot31: 0,
+    macSlotitem31: -1,
+    macSlotprice31: 0,
+    macSlotsize31: 4,
+    macSlot32: 0,
+    macSlotitem32: -1,
+    macSlotprice32: 0,
+    macSlotsize32: 4,
+    macSlot33: 0,
+    macSlotitem33: -1,
+    macSlotprice33: 0,
+    macSlotsize33: 4,
   });
   saveJSON(machines, 'VMM-vendingMachines');
+};
+
+const loadCurrentMachines = () => {
+  const machineEl = document.getElementById('yourMachines');
+
+  machines.forEach((mach) => {
+    let linkEl = document.createElement('a');
+    linkEl.textContent = mach.macName;
+    linkEl.href = `/vendingmachinemanager/machine.html#${mach.macID}`;
+    machineEl.appendChild(linkEl);
+  });
+};
+
+const machineLoader = (index) => {
+  const entries = Object.entries(machines);
+  for (let x = 0; x <= machines[index].numOfSlots; x++) {
+    // Example: entries[0][1]['macSlotsize' + x]
+  }
 };

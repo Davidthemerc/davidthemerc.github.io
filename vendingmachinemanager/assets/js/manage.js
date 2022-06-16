@@ -5,6 +5,7 @@ const warehouseMart = document.getElementById('warehouseMart');
 const warehouse = document.getElementById('warehouse');
 const agencyButton = document.getElementById('newLocation');
 const gregorButton = document.getElementById('buyNewMachine');
+const machNum = document.getElementById('numberOfMachines');
 
 managerNameDisplay.innerHTML = manager.mName;
 busName.innerHTML = manager.cName;
@@ -29,3 +30,5 @@ warehouse.addEventListener('click', () => {
 advanceDayButton.addEventListener('click', () => {
   advanceDay();
 });
+
+loadCurrentMachines();
