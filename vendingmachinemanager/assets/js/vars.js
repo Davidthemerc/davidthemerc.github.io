@@ -19,6 +19,15 @@ const itemPriceTable = [
   { refName: 'chompers', friendlyName: 'Chompers', itemPrice: 0.8, size: 3 },
 ];
 
+// This is the code to preload the item images for Warehouse Mart
+let warehouseMartItemImages = Array();
+for (let i = 0; i <= 2; i++) {
+  warehouseMartItemImages[i] = new Image(75, 75);
+  warehouseMartItemImages[
+    i
+  ].src = `/vendingmachinemanager/assets/img/items/item${i}.png`;
+}
+
 // Random number function
 // Accepts minimum and maximum number as parameters
 const ranBetween = (min, max) =>

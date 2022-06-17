@@ -315,18 +315,20 @@ const wmartBuy = (found, index, fields) => {
   warehouseStock(quantity, index);
 };
 
-const machineStock = (typed, selected, machIndex, slotNum, fName) => {
-  if (machines[machIndex].macLocation === 'warehouse') {
-    // Flip out, because a machine has to be at a location to be stocked...
-    throw new Error(
-      `Selected machine isn't placed! You must place it at a location before attempting to stock it.`
-    );
-  }
-
+const machineStock = (
+  typed,
+  selected,
+  machIndex,
+  slotNum,
+  fName,
+  size,
+  id,
+  index
+) => {
   if (typed !== '' && selected.selectedIndex > 0) {
-    throw new Error(`Don't use two inputs dipshit!`);
+    throw new Error(`You must not use both of the numeric inputs!`);
   } else if (typed === '' && selected.selectedIndex === 0) {
-    throw new Error(`WHAT ARE YOU DOING, ENTER AN INPUT!`);
+    throw new Error(`You must use one of the two numeric inputs!`);
   }
 
   if (machIndex < 0) {
@@ -337,27 +339,78 @@ const machineStock = (typed, selected, machIndex, slotNum, fName) => {
     throw new Error('Please pick a slot!');
   }
 
+  if (machines[machIndex].macLocation === 'warehouse') {
+    // Flip out, because a machine has to be at a location to be stocked...
+    throw new Error(
+      `Selected machine isn't placed! You must place it at a location before attempting to stock it.`
+    );
+  }
+
+  let machName = machines[machIndex].macName;
+
+  // This is where use of the entries method can be used to stock items in the appropriate slot
+  // in the machine. We'll need to check for errors first, though.
+  console.log(slotNum);
+  const entries = Object.entries(machines);
+
+  if (size !== entries[machIndex][1]['macSlotSize' + slotNum]) {
+    // Flip out, because the item isn't the right size for this slot
+    throw new Error(
+      `Item will not fit in selected slot! Choose another item/slot!`
+    );
+  }
+
+  // Make sure the slot is empty, or has the same type of item. If not, deny slot placement.
+  if (
+    entries[machIndex][1]['macSlotItem' + slotNum] !== -1 &&
+    entries[machIndex][1]['macSlotItem' + slotNum] !== id
+  ) {
+    // Flip out, because the slot is not empty, and doesn't match this item
+    throw new Error(
+      `Selected slot is not empty and doesn't match the current item!`
+    );
+  }
+
+  // Set the destination slot to match the newly stocked item and stock the item
+  entries[machIndex][1]['macSlotItem' + slotNum] = id;
+
+  // Subtract the item(s) from the warehouse
+  typed !== ''
+    ? (warehouseArray[id].quantity -= parseInt(typed))
+    : (warehouseArray[id].quantity -= parseInt(selected));
+  saveJSON(machines, 'VMM-vendingMachines');
+  saveJSON(warehouseArray, 'VMM-warehouseData');
+
+  // Add the item to the machine
+  typed !== ''
+    ? (entries[machIndex][1]['macSlot' + slotNum] += parseInt(typed))
+    : (entries[machIndex][1]['macSlot' + slotNum] += parseInt(selected));
+  saveJSON(machines, 'VMM-vendingMachines');
+
+  // Display the stocking message
   let messages = [];
   displayMessages(messages, statusEl);
   typed !== ''
     ? messages.push(
-        `You stocked ${typed} ${fName} into slot ${slotNum} in machine ${machIndex}.`
+        `You stocked ${typed} ${fName} into Slot ${slotNum} in machine ${machName}.`
       )
     : messages.push(
-        `You stocked ${selected.value} ${fName} into slot ${slotNum} in machine ${machIndex}.`
+        `You stocked ${selected.value} ${fName} into Slot ${slotNum} in machine "${machName}".`
       );
   displayMessages(messages, statusEl);
 
-  const entries = Object.entries(machines);
+  // Reset the warehouse fields, it's just cleaner that way
+  resetWarehouse(index, id, fName);
 };
 
 const warehouseStock = (quantity, index) => {
   quantity = parseInt(quantity);
-  warehouseArray[index].quantity = quantity;
+  warehouseArray[index].quantity += quantity;
   saveJSON(warehouseArray, 'VMM-warehouseData');
 };
 
 const warehouseDOM = () => {
+  let warehouseImages = document.getElementsByClassName('warehouseItem');
   let quantityFields = document.getElementsByClassName('warehouseQuantity');
   let inputTypeFields = document.getElementsByClassName('warehouseInput');
   let inputMenuFields = document.getElementsByClassName('warehouseInputMenu');
@@ -367,10 +420,35 @@ const warehouseDOM = () => {
   let slots = Array.from(slotFields);
 
   Array.from(quantityFields).forEach((arrayLoop, index) => {
-    arrayLoop.innerHTML = `Item: ${warehouseArray[index].itemName} (${warehouseArray[index].quantity})`;
+    let defaultOpt = document.createElement('option');
+    defaultOpt.value = -1;
+    defaultOpt.innerHTML = `Select Item`;
+    defaultOpt.selected = true;
+    defaultOpt.disabled = true;
+    quantityFields[index].appendChild(defaultOpt);
+    itemPriceTable.forEach((item, itemIndex) => {
+      let opt = document.createElement('option');
+      opt.value = itemIndex;
+      opt.innerHTML = `${item.friendlyName} (${warehouseArray[itemIndex].quantity})`;
+      quantityFields[index].appendChild(opt);
+    });
+
+    arrayLoop.addEventListener('change', () => {
+      let currentSelect = arrayLoop.selectedIndex - 1;
+      image = warehouseMartItemImages[currentSelect];
+      warehouseImages[index].src = image.src;
+    });
+
+    //arrayLoop.innerHTML = `Item: ${warehouseArray[index].itemName} (${warehouseArray[index].quantity})`;
   });
 
-  Array.from(inputMenuFields).forEach((arrayLoop) => {
+  Array.from(inputMenuFields).forEach((arrayLoop, index) => {
+    let defaultOpt = document.createElement('option');
+    defaultOpt.value = -1;
+    defaultOpt.innerHTML = `# to Stock`;
+    defaultOpt.selected = true;
+    defaultOpt.disabled = true;
+    inputMenuFields[index].appendChild(defaultOpt);
     for (let x = 0; x <= 5; x++) {
       let opt = document.createElement('option');
       opt.value = vendingControlNum[x];
@@ -380,6 +458,12 @@ const warehouseDOM = () => {
   });
 
   Array.from(vendingFields).forEach((arrayLoop, index) => {
+    let defaultOpt = document.createElement('option');
+    defaultOpt.value = -1;
+    defaultOpt.innerHTML = `Select Machine`;
+    defaultOpt.selected = true;
+    defaultOpt.disabled = true;
+    vendingFields[index].appendChild(defaultOpt);
     for (let x = 0; x < machines.length; x++) {
       let opt = document.createElement('option');
       opt.value = x;
@@ -388,6 +472,7 @@ const warehouseDOM = () => {
     }
 
     arrayLoop.addEventListener('change', (e) => {
+      console.log(vendingFields[index].selectedIndex);
       if (e.target.value == '-1') {
         slots[index].innerHTML = '';
         let opt = document.createElement('option');
@@ -406,8 +491,6 @@ const warehouseDOM = () => {
     });
   });
 
-  Array.from(slotFields).forEach((arrayLoop, index) => {});
-
   Array.from(buttonFields).forEach((arrayLoop, index) => {
     arrayLoop.addEventListener('click', () => {
       try {
@@ -418,32 +501,19 @@ const warehouseDOM = () => {
           inputMenuFields[index],
           vendingFields[index].value,
           slotFields[index].value,
-          itemPriceTable[index].friendlyName
+          itemPriceTable[quantityFields[index].selectedIndex - 1].friendlyName,
+          itemPriceTable[quantityFields[index].selectedIndex - 1].size,
+          quantityFields[index].selectedIndex - 1,
+          index
+          // Adjusting it down by one because of the menu arrangement
         );
-        // Clear the fields
-        inputTypeFields[index].value = '';
-        inputMenuFields[index].value = 0;
-        vendingFields[index].value = -1;
-        slots[index].innerHTML = '';
-        let opt = document.createElement('option');
-        opt.value = -1;
-        opt.innerHTML = 'Select Slot';
-        slots[index].appendChild(opt);
       } catch (error) {
         let messages = [];
         messages.push(error);
         displayMessages(messages, statusEl);
-
-        // Clear the fields
-        inputTypeFields[index].value = '';
-        inputMenuFields[index].value = 0;
-        vendingFields[index].value = -1;
-        slots[index].innerHTML = '';
-        let opt = document.createElement('option');
-        opt.value = -1;
-        opt.innerHTML = 'Select Slot';
-        slots[index].appendChild(opt);
       }
+      // Clear the fields
+      //resetWarehouse();
     });
   });
 
@@ -487,141 +557,141 @@ const addVendingMachine = (kind) => {
     numOfSlots: 34,
     // Machine slot # and then the size
     macSlot0: 0,
-    macSlotitem0: -1,
-    macSlotprice0: 0,
-    macSlotsize0: 6,
+    macSlotItem0: -1,
+    macSlotPrice0: 0,
+    macSlotSize0: 6,
     macSlot1: 0,
-    macSlotitem1: -1,
-    macSlotprice1: 0,
-    macSlotsize1: 6,
+    macSlotItem1: -1,
+    macSlotPrice1: 0,
+    macSlotSize1: 6,
     macSlot2: 0,
-    macSlotitem2: -1,
-    macSlotprice2: 0,
-    macSlotsize2: 6,
+    macSlotItem2: -1,
+    macSlotPrice2: 0,
+    macSlotSize2: 6,
     macSlot3: 0,
-    macSlotitem3: -1,
-    macSlotprice3: 0,
-    macSlotsize3: 6,
+    macSlotItem3: -1,
+    macSlotPrice3: 0,
+    macSlotSize3: 6,
     macSlot4: 0,
-    macSlotitem4: -1,
-    macSlotprice4: 0,
-    macSlotsize4: 6,
+    macSlotItem4: -1,
+    macSlotPrice4: 0,
+    macSlotSize4: 6,
     macSlot5: 0,
-    macSlotitem5: -1,
-    macSlotprice5: 0,
-    macSlotsize5: 6,
+    macSlotItem5: -1,
+    macSlotPrice5: 0,
+    macSlotSize5: 6,
     macSlot6: 0,
-    macSlotitem6: -1,
-    macSlotprice6: 0,
-    macSlotsize6: 6,
+    macSlotItem6: -1,
+    macSlotPrice6: 0,
+    macSlotSize6: 6,
     macSlot7: 0,
-    macSlotitem7: -1,
-    macSlotprice7: 0,
-    macSlotsize7: 6,
+    macSlotItem7: -1,
+    macSlotPrice7: 0,
+    macSlotSize7: 6,
     macSlot8: 0,
-    macSlotitem8: -1,
-    macSlotprice8: 0,
-    macSlotsize8: 6,
+    macSlotItem8: -1,
+    macSlotPrice8: 0,
+    macSlotSize8: 6,
     macSlot9: 0,
-    macSlotitem9: -1,
-    macSlotprice9: 0,
-    macSlotsize9: 6,
+    macSlotItem9: -1,
+    macSlotPrice9: 0,
+    macSlotSize9: 6,
     macSlot10: 0,
-    macSlotitem10: -1,
-    macSlotprice10: 0,
-    macSlotsize10: 6,
+    macSlotItem10: -1,
+    macSlotPrice10: 0,
+    macSlotSize10: 6,
     macSlot11: 0,
-    macSlotitem11: -1,
-    macSlotprice11: 0,
-    macSlotsize11: 6,
+    macSlotItem11: -1,
+    macSlotPrice11: 0,
+    macSlotSize11: 6,
     macSlot12: 0,
-    macSlotitem12: -1,
-    macSlotprice12: 0,
-    macSlotsize12: 3,
+    macSlotItem12: -1,
+    macSlotPrice12: 0,
+    macSlotSize12: 3,
     macSlot13: 0,
-    macSlotitem13: -1,
-    macSlotprice13: 0,
-    macSlotsize13: 3,
+    macSlotItem13: -1,
+    macSlotPrice13: 0,
+    macSlotSize13: 3,
     macSlot14: 0,
-    macSlotitem14: -1,
-    macSlotprice14: 0,
-    macSlotsize14: 3,
+    macSlotItem14: -1,
+    macSlotPrice14: 0,
+    macSlotSize14: 3,
     macSlot15: 0,
-    macSlotitem15: -1,
-    macSlotprice15: 0,
-    macSlotsize15: 3,
+    macSlotItem15: -1,
+    macSlotPrice15: 0,
+    macSlotSize15: 3,
     macSlot16: 0,
-    macSlotitem16: -1,
-    macSlotprice16: 0,
-    macSlotsize16: 3,
+    macSlotItem16: -1,
+    macSlotPrice16: 0,
+    macSlotSize16: 3,
     macSlot17: 0,
-    macSlotitem17: -1,
-    macSlotprice17: 0,
-    macSlotsize17: 3,
+    macSlotItem17: -1,
+    macSlotPrice17: 0,
+    macSlotSize17: 3,
     macSlot18: 0,
-    macSlotitem18: -1,
-    macSlotprice18: 0,
-    macSlotsize18: 3,
+    macSlotItem18: -1,
+    macSlotPrice18: 0,
+    macSlotSize18: 3,
     macSlot19: 0,
-    macSlotitem19: -1,
-    macSlotprice19: 0,
-    macSlotsize19: 3,
+    macSlotItem19: -1,
+    macSlotPrice19: 0,
+    macSlotSize19: 3,
     macSlot20: 0,
-    macSlotitem20: -1,
-    macSlotprice20: 0,
-    macSlotsize20: 3,
+    macSlotItem20: -1,
+    macSlotPrice20: 0,
+    macSlotSize20: 3,
     macSlot21: 0,
-    macSlotitem21: -1,
-    macSlotprice21: 0,
-    macSlotsize21: 3,
+    macSlotItem21: -1,
+    macSlotPrice21: 0,
+    macSlotSize21: 3,
     macSlot22: 0,
-    macSlotitem22: -1,
-    macSlotprice22: 0,
-    macSlotsize22: 3,
+    macSlotItem22: -1,
+    macSlotPrice22: 0,
+    macSlotSize22: 3,
     macSlot23: 0,
-    macSlotitem23: -1,
-    macSlotprice23: 0,
-    macSlotsize23: 3,
+    macSlotItem23: -1,
+    macSlotPrice23: 0,
+    macSlotSize23: 3,
     macSlot24: 0,
-    macSlotitem24: -1,
-    macSlotprice24: 0,
-    macSlotsize24: 3,
+    macSlotItem24: -1,
+    macSlotPrice24: 0,
+    macSlotSize24: 3,
     macSlot25: 0,
-    macSlotitem25: -1,
-    macSlotprice25: 0,
-    macSlotsize25: 3,
+    macSlotItem25: -1,
+    macSlotPrice25: 0,
+    macSlotSize25: 3,
     macSlot26: 0,
-    macSlotitem26: -1,
-    macSlotprice26: 0,
-    macSlotsize26: 3,
+    macSlotItem26: -1,
+    macSlotPrice26: 0,
+    macSlotSize26: 3,
     macSlot27: 0,
-    macSlotitem27: -1,
-    macSlotprice27: 0,
-    macSlotsize27: 3,
+    macSlotItem27: -1,
+    macSlotPrice27: 0,
+    macSlotSize27: 3,
     macSlot28: 0,
-    macSlotitem28: -1,
-    macSlotprice28: 0,
-    macSlotsize28: 4,
+    macSlotItem28: -1,
+    macSlotPrice28: 0,
+    macSlotSize28: 4,
     macSlot29: 0,
-    macSlotitem29: -1,
-    macSlotprice29: 0,
-    macSlotsize29: 4,
+    macSlotItem29: -1,
+    macSlotPrice29: 0,
+    macSlotSize29: 4,
     macSlot30: 0,
-    macSlotitem30: -1,
-    macSlotprice30: 0,
-    macSlotsize30: 4,
+    macSlotItem30: -1,
+    macSlotPrice30: 0,
+    macSlotSize30: 4,
     macSlot31: 0,
-    macSlotitem31: -1,
-    macSlotprice31: 0,
-    macSlotsize31: 4,
+    macSlotItem31: -1,
+    macSlotPrice31: 0,
+    macSlotSize31: 4,
     macSlot32: 0,
-    macSlotitem32: -1,
-    macSlotprice32: 0,
-    macSlotsize32: 4,
+    macSlotItem32: -1,
+    macSlotPrice32: 0,
+    macSlotSize32: 4,
     macSlot33: 0,
-    macSlotitem33: -1,
-    macSlotprice33: 0,
-    macSlotsize33: 4,
+    macSlotItem33: -1,
+    macSlotPrice33: 0,
+    macSlotSize33: 4,
   });
   saveJSON(machines, 'VMM-vendingMachines');
 };
@@ -640,6 +710,48 @@ const loadCurrentMachines = () => {
 const machineLoader = (index) => {
   const entries = Object.entries(machines);
   for (let x = 0; x <= machines[index].numOfSlots; x++) {
-    // Example: entries[0][1]['macSlotsize' + x]
+    // Example: entries[0][1]['macSlotSize' + x]
   }
+};
+
+resetWarehouse = (index, id, fName) => {
+  let warehouseImages = document.getElementsByClassName('warehouseItem');
+  let quantityFields = document.getElementsByClassName('warehouseQuantity');
+  let inputTypeFields = document.getElementsByClassName('warehouseInput');
+  let inputMenuFields = document.getElementsByClassName('warehouseInputMenu');
+  let vendingFields = document.getElementsByClassName('vendingSelect');
+  let slotFields = document.getElementsByClassName('vendingSlot');
+
+  // Clears out/resets the various fields in the DOM then calls warehouseDOM to reset the values
+
+  //document.getElementById('quan1').options[0].text
+  Array.from(quantityFields).forEach((field) => {
+    // Have to add one here to adjust for the index (which was subtracted by 1 in the passed in value)
+    field.options[id + 1].text = `${fName} (${warehouseArray[id].quantity})`;
+  });
+
+  // quantityFields[index].innerHTML = '';
+  // let defaultOpt = document.createElement('option');
+  // defaultOpt.value = -1;
+  // defaultOpt.innerHTML = `Select Item`;
+  // defaultOpt.selected = true;
+  // defaultOpt.disabled = true;
+  // quantityFields[index].appendChild(defaultOpt);
+  // itemPriceTable.forEach((item, itemIndex) => {
+  //   let opt = document.createElement('option');
+  //   opt.value = itemIndex;
+  //   opt.innerHTML = `${item.friendlyName} (${warehouseArray[itemIndex].quantity})`;
+  //   quantityFields[index].appendChild(opt);
+  // });
+
+  quantityFields[index].selectedIndex = 0;
+  warehouseImages[index].src = '/vendingmachinemanager/assets/img/items/75.png';
+  inputTypeFields[index].value = '';
+  inputMenuFields[index].selectedIndex = 0;
+  vendingFields[index].selectedIndex = 0;
+  slotFields[index].innerHTML = '';
+  let opt = document.createElement('option');
+  opt.value = -1;
+  opt.innerHTML = 'Select Slot';
+  slotFields[index].appendChild(opt);
 };

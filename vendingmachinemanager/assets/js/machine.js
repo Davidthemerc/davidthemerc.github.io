@@ -3,9 +3,9 @@ let matchMach = machines.find((machines) => machines.macID === localMachID);
 const index = machines.findIndex((machines) => machines.macID === localMachID);
 let locationSelect = document.getElementById('locationSelect');
 
-if (!matchMach) {
-  location.assign('/vendingmachinemanager/manage.html');
-}
+// if (!matchMach) {
+//   location.assign('/vendingmachinemanager/manage.html');
+// }
 
 // Populate the locations menu with negotiated locations first
 yourVendLocations.forEach((spot) => {
