@@ -110,8 +110,8 @@ a.mainlink {
 
 /* Warehouse Page */
 .warehouseItem {
-  margin-bottom: .5rem;
-  margin-right: .5rem;
+  margin-bottom: 1rem;
+  margin-right: 1rem;
   object-fit: contain;
   align-items: center;
 }

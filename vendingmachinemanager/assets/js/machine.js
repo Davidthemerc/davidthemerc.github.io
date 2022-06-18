@@ -1,8 +1,11 @@
 const localMachID = location.hash.substring(1);
 let matchMach = machines.find((machines) => machines.macID === localMachID);
-const index = machines.findIndex((machines) => machines.macID === localMachID);
+const localMacIndex = machines.findIndex(
+  (machines) => machines.macID === localMachID
+);
 let locationSelect = document.getElementById('locationSelect');
 
+// Temporarily disabled during development
 // if (!matchMach) {
 //   location.assign('/vendingmachinemanager/manage.html');
 // }
@@ -14,7 +17,7 @@ yourVendLocations.forEach((spot) => {
   opt.innerHTML = spot.name;
   locationSelect.appendChild(opt);
 });
-machineLoader(index);
+machineLoader(localMacIndex);
 
 // Now default to the current location
 locationSelect.value = matchMach.macLocation;
@@ -42,4 +45,35 @@ locationSelect.addEventListener('change', (e) => {
 
   matchMach.macLocation = e.target.value;
   saveJSON(machines, 'VMM-vendingMachines');
+
+  // Unload the machine and send all items back to the Warehouse.
+  let slots = matchMach.numOfSlots;
+  for (let x = 0; x < slots; x++) {
+    const entries = Object.entries(machines);
+    // Grab the item's unique ID from the slot and send it to the Warehouse
+    let localItemID = entries[localMacIndex][1]['macSlotItem' + x];
+
+    let localItemQuantity = entries[localMacIndex][1]['macSlot' + x];
+
+    if (localItemID === -1) {
+      continue;
+    } else {
+      warehouseStock(localItemQuantity, localItemID);
+      matchMach['macSlot' + x] = 0;
+      matchMach['macSlotPrice' + x] = 0;
+      matchMach['macSlotItem' + x] = -1;
+      saveJSON(machines, 'VMM-vendingMachines');
+    }
+  }
+
+  let messages = [];
+  messages.push(
+    `You move the machine to ${
+      locationSelect[locationSelect.selectedIndex].text
+    }.`
+  );
+  displayMessages(messages, statusEl);
 });
+
+// Now, load the vending machine graphics
+vendingMachineDOM(matchMach);

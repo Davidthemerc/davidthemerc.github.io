@@ -9,14 +9,27 @@ const statusEl = document.getElementById('status');
 
 // Friendly Name should be plural, because it will/should be referenced as such in all situations
 const itemPriceTable = [
-  { refName: 'whamchipz', friendlyName: 'Wham Chipz', itemPrice: 0.5, size: 6 },
+  {
+    refName: 'whamchipz',
+    friendlyName: 'Wham Chipz',
+    itemPrice: 0.5,
+    size: 6,
+    maxNum: 12,
+  },
   {
     refName: 'pythagoroos',
     friendlyName: 'Pythagoroos',
     itemPrice: 0.7,
     size: 4,
+    maxNum: 16,
   },
-  { refName: 'chompers', friendlyName: 'Chompers', itemPrice: 0.8, size: 3 },
+  {
+    refName: 'chompers',
+    friendlyName: 'Chompers',
+    itemPrice: 0.8,
+    size: 3,
+    maxNum: 20,
+  },
 ];
 
 // This is the code to preload the item images for Warehouse Mart

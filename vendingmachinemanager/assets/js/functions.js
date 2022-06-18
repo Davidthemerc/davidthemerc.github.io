@@ -331,6 +331,10 @@ const machineStock = (
     throw new Error(`You must use one of the two numeric inputs!`);
   }
 
+  if (typed === '-1') {
+    throw new Error(`Please do not use negative numbers.`);
+  }
+
   if (machIndex < 0) {
     throw new Error('Please pick a machine!');
   }
@@ -346,12 +350,47 @@ const machineStock = (
     );
   }
 
+  let currentQuantity = 0;
+  typed !== ''
+    ? (currentQuantity = parseInt(typed))
+    : (currentQuantity = parseInt(selected.value));
+
+  if (warehouseArray[id].quantity === 0) {
+    throw new Error(`You don't have any ${fName} to load!`);
+  } else if (warehouseArray[id].quantity < currentQuantity) {
+    throw new Error(
+      `You don't have enough items to load ${currentQuantity}. You only have ${warehouseArray[id].quantity}!`
+    );
+  }
+
+  if (currentQuantity === 0) {
+    throw new Error(`You can't load zero items!`);
+  }
+
   let machName = machines[machIndex].macName;
 
   // This is where use of the entries method can be used to stock items in the appropriate slot
   // in the machine. We'll need to check for errors first, though.
   console.log(slotNum);
   const entries = Object.entries(machines);
+
+  // Determine how many free spaces are left for this item in the designated slot
+  let currentSlotQuantity = entries[machIndex][1]['macSlot' + slotNum];
+  let currentItemMax = itemPriceTable[id].maxNum;
+
+  if (currentSlotQuantity >= currentItemMax) {
+    // Flip out, because the slot is FULL
+    throw new Error(`Slot ${slotNum} is full! Please select another slot`);
+  }
+
+  if (currentItemMax - currentSlotQuantity < currentQuantity) {
+    // Flip out, because the slot can't take the quantity given
+    throw new Error(
+      `Slot ${slotNum} can't accept ${currentQuantity} ${fName}! It can only currently accept ${
+        currentItemMax - currentSlotQuantity
+      }!`
+    );
+  }
 
   if (size !== entries[machIndex][1]['macSlotSize' + slotNum]) {
     // Flip out, because the item isn't the right size for this slot
@@ -375,16 +414,12 @@ const machineStock = (
   entries[machIndex][1]['macSlotItem' + slotNum] = id;
 
   // Subtract the item(s) from the warehouse
-  typed !== ''
-    ? (warehouseArray[id].quantity -= parseInt(typed))
-    : (warehouseArray[id].quantity -= parseInt(selected));
+  warehouseArray[id].quantity -= currentQuantity;
   saveJSON(machines, 'VMM-vendingMachines');
   saveJSON(warehouseArray, 'VMM-warehouseData');
 
   // Add the item to the machine
-  typed !== ''
-    ? (entries[machIndex][1]['macSlot' + slotNum] += parseInt(typed))
-    : (entries[machIndex][1]['macSlot' + slotNum] += parseInt(selected));
+  entries[machIndex][1]['macSlot' + slotNum] += currentQuantity;
   saveJSON(machines, 'VMM-vendingMachines');
 
   // Display the stocking message
@@ -754,4 +789,10 @@ resetWarehouse = (index, id, fName) => {
   opt.value = -1;
   opt.innerHTML = 'Select Slot';
   slotFields[index].appendChild(opt);
+};
+
+const vendingMachineDOM = (mach) => {
+
+  
+
 };
