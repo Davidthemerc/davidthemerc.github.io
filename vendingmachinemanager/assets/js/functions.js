@@ -103,7 +103,6 @@ const runAgency = () => {
 
     if (locationsArray.length < 3) {
       for (let i = 0; i <= locationsArray.length; i++) {
-        console.log(`Only ${locationsArray.length} locations available!`);
         agencyGenerateLocations();
       }
     } else {
@@ -112,9 +111,6 @@ const runAgency = () => {
       }
     }
   } else {
-    console.log(
-      'A week has not passed yet. Sorry, no new locations are available!'
-    );
     loadExistingLocations();
   }
 
@@ -210,13 +206,19 @@ const agencyDom = (
   div.id = uuidv4();
 
   acceptButton.addEventListener('click', () => {
-    locationDeal(
-      locationName,
-      locationTermCost,
-      locationTermVar,
-      div.id,
-      locationID
-    );
+    try {
+      locationDeal(
+        locationName,
+        locationTermCost,
+        locationTermVar,
+        div.id,
+        locationID
+      );
+    } catch (error) {
+      let messages = [];
+      messages.push(error);
+      displayMessages(messages, statusEl);
+    }
   });
 
   div.appendChild(spanTitle);
@@ -227,24 +229,28 @@ const agencyDom = (
 
 // Deal when a location offer is accepted
 const locationDeal = (name, termCost, termVar, id, locationID) => {
-  // Temporarily DISABLED
-  // if (manager.numOfMachines === 0) {
-  //   console.log(
-  //     `You don't have any vending machines! You don't need a location yet!`
-  //   );
-  //   return;
-  // }
+  if (manager.numOfMachines === 0) {
+    throw new Error(
+      `You don't have any vending machines! You don't need a location yet!`
+    );
+  }
+
+  if (yourVendLocations.length > manager.numOfMachines + 3) {
+    throw new Error(`You have enough locations already! You don't need more!`);
+  }
 
   let terms;
 
   termVar === 1
-    ? (terms = `a flat fee of ${termCost} per week.`)
+    ? (terms = `a flat fee of $${termCost} per week.`)
     : (terms = `${termCost}% of your gross sales.`);
 
-  console.log(
-    `You've chosen to accept ${name}'s offer to place a vending machine at their location.`
+  let messages = [];
+  messages.push(
+    `You've chosen to accept ${name}'s offer to place a vending machine at their location.`,
+    `You will need to pay them ${terms}`
   );
-  console.log(`You will need to pay them ${terms}`);
+  displayMessages(messages, statusEl);
 
   // Push this location to the your Vending Locations array
   yourVendLocations.push({
@@ -300,7 +306,6 @@ const wmartBuy = (found, index, fields) => {
   }
 
   let cost = found.itemPrice * parseInt(fields[index].value).toFixed(2);
-  console.log(cost);
 
   // Subtract the cost from the Manager's money
   moneyExchange('-', cost);
@@ -371,7 +376,6 @@ const machineStock = (
 
   // This is where use of the entries method can be used to stock items in the appropriate slot
   // in the machine. We'll need to check for errors first, though.
-  console.log(slotNum);
   const entries = Object.entries(machines);
 
   // Determine how many free spaces are left for this item in the designated slot
@@ -507,7 +511,6 @@ const warehouseDOM = () => {
     }
 
     arrayLoop.addEventListener('change', (e) => {
-      console.log(vendingFields[index].selectedIndex);
       if (e.target.value == '-1') {
         slots[index].innerHTML = '';
         let opt = document.createElement('option');
@@ -547,13 +550,8 @@ const warehouseDOM = () => {
         messages.push(error);
         displayMessages(messages, statusEl);
       }
-      // Clear the fields
-      //resetWarehouse();
     });
   });
-
-  // If some moron types a value and picks a value from the dropdown menu and attempts to stock
-  //, be sure to error out, since we don't want TWO inputs!
 };
 
 const moneyExchange = (action, amount) => {
@@ -568,7 +566,7 @@ const updateMoney = (money) => {
   moneyEl.innerHTML = `$${money.toFixed(2)}`;
 };
 
-const addVendingMachine = (kind) => {
+const addVendingMachine = (kind, variant) => {
   if (manager.numOfMachines > 0) {
     // Only one machine for now please!
     throw new Error('Only one machine for now please!');
@@ -584,6 +582,7 @@ const addVendingMachine = (kind) => {
     // Machine Type, Snack or Soda
     macType: 'snack',
     macName: newName,
+    macVariant: 0,
     // Machine UUID
     macID: uuidv4(),
     // Machine Location, Blank at time of purchase
@@ -765,20 +764,6 @@ resetWarehouse = (index, id, fName) => {
     field.options[id + 1].text = `${fName} (${warehouseArray[id].quantity})`;
   });
 
-  // quantityFields[index].innerHTML = '';
-  // let defaultOpt = document.createElement('option');
-  // defaultOpt.value = -1;
-  // defaultOpt.innerHTML = `Select Item`;
-  // defaultOpt.selected = true;
-  // defaultOpt.disabled = true;
-  // quantityFields[index].appendChild(defaultOpt);
-  // itemPriceTable.forEach((item, itemIndex) => {
-  //   let opt = document.createElement('option');
-  //   opt.value = itemIndex;
-  //   opt.innerHTML = `${item.friendlyName} (${warehouseArray[itemIndex].quantity})`;
-  //   quantityFields[index].appendChild(opt);
-  // });
-
   quantityFields[index].selectedIndex = 0;
   warehouseImages[index].src = '/vendingmachinemanager/assets/img/items/75.png';
   inputTypeFields[index].value = '';
@@ -792,7 +777,64 @@ resetWarehouse = (index, id, fName) => {
 };
 
 const vendingMachineDOM = (mach) => {
+  // Write code to create HTML in the DOM identical/nearly identical to how the standard snack machine page
+  // is arranged. This way, looking to the future, I can support multiple different types of vending machines.
+  // They'll be different in terms of slot size arrangments, slot row arrangements, etc.
+  // First, identify what type and variant the machine is (e.g. Snack Variant 0)
+  let localType = mach.macType;
+  let localVariant = mach.macVariant;
+  let localTypeArray;
+  let leftSide = document.getElementById('vendingLeft');
+  let rightSide = document.getElementById('vendingRight');
+  leftSide.innerHTML = '';
+  rightSide.innerHTML = '';
 
-  
+  // Now, we need to match the machine with its variant data in the appropriate variants array
+  localType = 'snack'
+    ? (localTypeArray = snackVariants)
+    : (localTypeArray = sodaVariants);
 
+  // Now, begin the first (left side) loop and start construction!
+  localTypeArray[localVariant].leftSlots.forEach((arrayLoop) => {
+    let div = document.createElement('div');
+    let img = document.createElement('img');
+    div.className = `col-${arrayLoop.size} snack d-flex justify-content-center snackcolumn`;
+    div.id = `slot${arrayLoop.position}`;
+    img.className = 'snackimage';
+    // Check if there's actually an item in the slot first, if not, blank image please
+    if (mach['macSlotItem' + arrayLoop.position] === -1) {
+      img.src = `/vendingmachinemanager/assets/img/items/blank${arrayLoop.size}.png`;
+      // Now check if there's actually items in stock in that slot. If not, blank!
+    } else if (mach['macSlot' + arrayLoop.position] < 1) {
+      img.src = `/vendingmachinemanager/assets/img/items/blank${arrayLoop.size}.png`;
+    } else {
+      img.src = `/vendingmachinemanager/assets/img/items/item${
+        mach['macSlotItem' + arrayLoop.position]
+      }.png`;
+    }
+    leftSide.appendChild(div);
+    div.appendChild(img);
+  });
+
+  // Now, begin the second (right side) loop and start construction!
+  localTypeArray[localVariant].rightSlots.forEach((arrayLoop) => {
+    let div = document.createElement('div');
+    let img = document.createElement('img');
+    div.className = `col-${arrayLoop.size} snack d-flex justify-content-center snackcolumn`;
+    div.id = `slot${arrayLoop.position}`;
+    img.className = 'snackimage';
+    // Check if there's actually an item in the slot first, if not, blank image please
+    if (mach['macSlotItem' + arrayLoop.position] === -1) {
+      img.src = `/vendingmachinemanager/assets/img/items/blank${arrayLoop.size}.png`;
+      // Now check if there's actually items in stock in that slot. If not, blank!
+    } else if (mach['macSlot' + arrayLoop.position] < 1) {
+      img.src = `/vendingmachinemanager/assets/img/items/blank${arrayLoop.size}.png`;
+    } else {
+      img.src = `/vendingmachinemanager/assets/img/items/item${
+        mach['macSlotItem' + arrayLoop.position]
+      }.png`;
+    }
+    rightSide.appendChild(div);
+    div.appendChild(img);
+  });
 };

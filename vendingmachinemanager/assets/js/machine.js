@@ -73,6 +73,8 @@ locationSelect.addEventListener('change', (e) => {
     }.`
   );
   displayMessages(messages, statusEl);
+  // Reload the vending machine graphics after moving
+  vendingMachineDOM(matchMach);
 });
 
 // Now, load the vending machine graphics

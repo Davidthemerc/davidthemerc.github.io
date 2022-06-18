@@ -1,9 +1,10 @@
-const snackButton = document.getElementById('buySnackMachine');
+const snackButton0 = document.getElementById('buySnackMachine0');
 const sodaButton = document.getElementById('buySodaMachine');
 
-snackButton.addEventListener('click', () => {
+snackButton0.addEventListener('click', () => {
+  // Snack Machine Variant #0
   try {
-    addVendingMachine('snack');
+    addVendingMachine('snack', 0);
     moneyExchange('-', 1000);
     manager.numOfMachines += 1;
     saveJSON(manager, 'VMM-managerData');
