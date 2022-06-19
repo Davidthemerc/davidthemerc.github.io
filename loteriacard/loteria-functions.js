@@ -21,7 +21,7 @@ let shuffle = (array) => {
 // This function runs when the page is initialized
 let initialSetup = () => {
   for (let i = 0; i < 16; i++) {
-    selectorArranger(i);
+    //selectorArranger(i);
 
     // Setup the event listener to click on the card
     grid[i].addEventListener('click', () => {
@@ -252,7 +252,7 @@ let customCardArranger = (set) => {
     grid[i].innerHTML = '';
     grid[i].appendChild(image);
     shuffled[i] = set[i];
-    selectorArranger(i);
+    //selectorArranger(i);
     saveJSON(shuffled, 'loteriaCard');
   }
 };
@@ -281,19 +281,19 @@ let clearBeanTracking = () => {
   reloadCard();
 };
 
-let selectorArranger = (i) => {
-  // Arrange the input selectors to match the card
-  let currentInput = document.getElementById(`grid${i}`);
-  currentInput.selectedIndex = shuffled[i];
+// let selectorArranger = (i) => {
+//   // Arrange the input selectors to match the card
+//   let currentInput = document.getElementById(`grid${i}`);
+//   currentInput.selectedIndex = shuffled[i];
 
-  // Add an event listener for each input selector
-  currentInput.addEventListener('change', () => {
-    image = imageList[currentInput.selectedIndex];
-    shuffled[i] = currentInput.selectedIndex;
-    grid[i].innerHTML = '';
-    grid[i].appendChild(image);
+//   // Add an event listener for each input selector
+//   currentInput.addEventListener('change', () => {
+//     image = imageList[currentInput.selectedIndex];
+//     shuffled[i] = currentInput.selectedIndex;
+//     grid[i].innerHTML = '';
+//     grid[i].appendChild(image);
 
-    // Save the change to local storage
-    saveJSON(shuffled, 'loteriaCard');
-  });
-};
+//     // Save the change to local storage
+//     saveJSON(shuffled, 'loteriaCard');
+//   });
+// };

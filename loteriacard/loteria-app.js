@@ -93,7 +93,7 @@ newButton.addEventListener('click', (e) => {
   shuffled = shuffle(loteriaArray);
   saveJSON(shuffled, 'loteriaCard');
   for (let i = 0; i < 16; i++) {
-    selectorArranger(i);
+    //selectorArranger(i);
   }
   clearBeanTracking();
 });
