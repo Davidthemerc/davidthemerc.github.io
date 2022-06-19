@@ -58,6 +58,7 @@ a.mainlink {
 .vendingouter {
     padding-top: 1rem;
     background-color: rgb(39, 39, 39);
+    border-radius: .25rem
   }
 
 .vendinginner {
@@ -72,6 +73,11 @@ a.mainlink {
 
 .vendinginner:nth-child(n+2) {
   border-left: 0px;
+}
+
+.vendingLeg{
+  background-color: rgb(39, 39, 39);
+  height: 15%; 
 }
 
 .vendingright {
@@ -116,13 +122,19 @@ a.mainlink {
   align-items: center;
 }
 
-.input-group.warehouse-group {
+.warehouse-group {
   align-items: center;
   margin-bottom: 1rem;
   border-color: black;
   border:1px;
   border-style:solid;
-  padding:.5rem
+  padding:.5rem;
+  width:100%;
+}
+
+.warehouseQuantity{
+  margin-right: .75rem;
+
 }
 
 .vendingSlot {

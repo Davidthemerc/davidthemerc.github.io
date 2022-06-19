@@ -4,6 +4,7 @@ const localMacIndex = machines.findIndex(
   (machines) => machines.macID === localMachID
 );
 let locationSelect = document.getElementById('locationSelect');
+let nameField = document.getElementById('machineName');
 
 // Temporarily disabled during development
 // if (!matchMach) {
@@ -19,8 +20,9 @@ yourVendLocations.forEach((spot) => {
 });
 machineLoader(localMacIndex);
 
-// Now default to the current location
+// Now default to the current location and set the machine's name
 locationSelect.value = matchMach.macLocation;
+nameField.value = matchMach.macName;
 
 // If the user changes the location in the dropdown, update the location
 locationSelect.addEventListener('change', (e) => {
@@ -44,6 +46,7 @@ locationSelect.addEventListener('change', (e) => {
   saveJSON(yourVendLocations, 'VMM-vendLocations');
 
   matchMach.macLocation = e.target.value;
+  matchMach.priceTier = yourVendLocations[locationIndex].priceTier;
   saveJSON(machines, 'VMM-vendingMachines');
 
   // Unload the machine and send all items back to the Warehouse.
@@ -75,6 +78,16 @@ locationSelect.addEventListener('change', (e) => {
   displayMessages(messages, statusEl);
   // Reload the vending machine graphics after moving
   vendingMachineDOM(matchMach);
+});
+
+// If the user alters the name in the Name field, change the machine name in the array and display a message
+nameField.addEventListener('change', (e) => {
+  matchMach.macName = e.target.value;
+  saveJSON(machines, 'VMM-vendingMachines');
+
+  let messages = [];
+  messages.push(`Machine name changed to ${e.target.value}.`);
+  displayMessages(messages, statusEl);
 });
 
 // Now, load the vending machine graphics

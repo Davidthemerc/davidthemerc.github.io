@@ -131,6 +131,7 @@ const agencyGenerateLocations = () => {
   let locationTermCost = pickedLocation.termCost;
   let locationTermText = '';
   let locationID = pickedLocation.locationID;
+  let locationTier = pickedLocation.priceTier;
 
   if (locationTermVar === 1) {
     locationTermText = `${locationTerms} a flat fee of $${locationTermCost} per week in exchange for placement.`;
@@ -153,7 +154,8 @@ const agencyGenerateLocations = () => {
     locationTermText,
     locationTermCost,
     locationTermVar,
-    locationID
+    locationID,
+    locationTier
   );
 };
 
@@ -165,12 +167,14 @@ const loadExistingLocations = () => {
       locationTermCost = tag.termCost;
       locationTermVar = tag.termVar;
       locationID = tag.locationID;
+      locationTier = tag.priceTier;
       agencyDom(
         locationName,
         locationTermText,
         locationTermCost,
         locationTermVar,
-        locationID
+        locationID,
+        locationTier
       );
     });
   } else {
@@ -188,7 +192,8 @@ const agencyDom = (
   locationTermText,
   locationTermCost,
   locationTermVar,
-  locationID
+  locationID,
+  locationTier
 ) => {
   // Code to add the listing to the DOM
   const place = document.getElementById('listings');
@@ -212,7 +217,8 @@ const agencyDom = (
         locationTermCost,
         locationTermVar,
         div.id,
-        locationID
+        locationID,
+        locationTier
       );
     } catch (error) {
       let messages = [];
@@ -228,7 +234,14 @@ const agencyDom = (
 };
 
 // Deal when a location offer is accepted
-const locationDeal = (name, termCost, termVar, id, locationID) => {
+const locationDeal = (
+  name,
+  termCost,
+  termVar,
+  id,
+  locationID,
+  locationTier
+) => {
   if (manager.numOfMachines === 0) {
     throw new Error(
       `You don't have any vending machines! You don't need a location yet!`
@@ -261,6 +274,7 @@ const locationDeal = (name, termCost, termVar, id, locationID) => {
     snackID: '',
     sodaPresent: false,
     sodaID: '',
+    priceTier: locationTier,
     ID: uuidv4(),
   });
 
@@ -293,6 +307,8 @@ const advanceDay = () => {
     manager.agencyDayCounter = 0;
     manager.agencyDay += 1;
   }
+
+  dailySales();
 
   saveJSON(manager, 'VMM-managerData');
 };
@@ -468,7 +484,7 @@ const warehouseDOM = () => {
     itemPriceTable.forEach((item, itemIndex) => {
       let opt = document.createElement('option');
       opt.value = itemIndex;
-      opt.innerHTML = `${item.friendlyName} (${warehouseArray[itemIndex].quantity})`;
+      opt.innerHTML = `${item.friendlyName} (${warehouseArray[itemIndex].quantity}) (M${itemPriceTable[itemIndex].maxNum})`;
       quantityFields[index].appendChild(opt);
     });
 
@@ -484,7 +500,7 @@ const warehouseDOM = () => {
   Array.from(inputMenuFields).forEach((arrayLoop, index) => {
     let defaultOpt = document.createElement('option');
     defaultOpt.value = -1;
-    defaultOpt.innerHTML = `# to Stock`;
+    defaultOpt.innerHTML = `#`;
     defaultOpt.selected = true;
     defaultOpt.disabled = true;
     inputMenuFields[index].appendChild(defaultOpt);
@@ -590,6 +606,7 @@ const addVendingMachine = (kind, variant) => {
     // Property specifying the number of slots
     numOfSlots: 34,
     // Machine slot # and then the size
+    priceTier: -1,
     macSlot0: 0,
     macSlotItem0: -1,
     macSlotPrice0: 0,
@@ -758,10 +775,11 @@ resetWarehouse = (index, id, fName) => {
 
   // Clears out/resets the various fields in the DOM then calls warehouseDOM to reset the values
 
-  //document.getElementById('quan1').options[0].text
   Array.from(quantityFields).forEach((field) => {
     // Have to add one here to adjust for the index (which was subtracted by 1 in the passed in value)
-    field.options[id + 1].text = `${fName} (${warehouseArray[id].quantity})`;
+    field.options[
+      id + 1
+    ].text = `${fName} (${warehouseArray[id].quantity}) (M${itemPriceTable[id].maxNum})`;
   });
 
   quantityFields[index].selectedIndex = 0;
@@ -812,6 +830,9 @@ const vendingMachineDOM = (mach) => {
         mach['macSlotItem' + arrayLoop.position]
       }.png`;
     }
+    img.addEventListener('click', () => {
+      changePrice(arrayLoop.position, mach);
+    });
     leftSide.appendChild(div);
     div.appendChild(img);
   });
@@ -834,7 +855,61 @@ const vendingMachineDOM = (mach) => {
         mach['macSlotItem' + arrayLoop.position]
       }.png`;
     }
+    img.addEventListener('click', () => {
+      changePrice(arrayLoop.position, mach);
+    });
     rightSide.appendChild(div);
     div.appendChild(img);
+  });
+};
+
+const changePrice = (slot, mach) => {
+  let item = itemPriceTable[mach['macSlotItem' + slot]].friendlyName;
+
+  let price = prompt(`Please set the price for ${item} in Slot ${slot}.`);
+
+  // Set price
+  price = parseFloat(parseFloat(price).toFixed(2));
+  let displayPrice = parseFloat(price).toFixed(2);
+  mach['macSlotPrice' + slot] = price;
+  saveJSON(machines, 'VMM-vendingMachines');
+
+  // Price message
+  let messages = [];
+  messages.push(
+    `You set the price for ${item} in Slot ${slot} to $${displayPrice}.`
+  );
+  displayMessages(messages, statusEl);
+};
+
+const dailySales = () => {
+  // First, we need to analyze how many machines, if any, are available
+  // Establish a local variable using the array
+  let localMachines = machines;
+
+  // Next, run a forEach loop as we'll be running this code on each machine
+  localMachines.forEach((mach) => {
+    if (mach.macLocation === 'warehouse') {
+      // We'll skip this machine, since it's not placed
+      return;
+    }
+
+    // Set variable to number of slots
+    // We'll need this to know how many slots there are to check
+    let slots = mach.numOfSlots;
+    let usedSlots = 0;
+
+    //Next, find out how many slots actually have items
+    for (let x = 0; x < slots - 1; x++) {
+      // Slots that don't have stock (-1) will be skipped
+      if (mach['macSlotItem' + x] === -1) {
+        continue;
+        // Else, we'll actually run the code here
+      } else {
+        console.log(
+          `The price for this item is $${mach['macSlotPrice' + x].toFixed(2)}.`
+        );
+      }
+    }
   });
 };

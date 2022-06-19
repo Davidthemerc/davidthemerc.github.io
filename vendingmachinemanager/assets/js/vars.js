@@ -12,6 +12,7 @@ const itemPriceTable = [
   {
     refName: 'whamchipz',
     friendlyName: 'Wham Chipz',
+    itemType: 'snack',
     itemPrice: 0.5,
     size: 6,
     maxNum: 12,
@@ -19,6 +20,7 @@ const itemPriceTable = [
   {
     refName: 'pythagoroos',
     friendlyName: 'Pythagoroos',
+    itemType: 'snack',
     itemPrice: 0.7,
     size: 4,
     maxNum: 16,
@@ -26,11 +28,15 @@ const itemPriceTable = [
   {
     refName: 'chompers',
     friendlyName: 'Chompers',
+    itemType: 'snack',
     itemPrice: 0.8,
     size: 3,
     maxNum: 20,
   },
 ];
+
+// This is the table of "fair" prices for each item, which can be affected by the placement location
+const fairPriceTable = [];
 
 // This is the code to preload the item images for Warehouse Mart
 let warehouseMartItemImages = Array();
@@ -60,6 +66,7 @@ const defaultLocations = [
     termCost: ranBetween(5, 9),
     termText: '',
     termNum: 0,
+    priceTier: 0,
     locationID: uuidv4(),
   },
   {
@@ -69,6 +76,7 @@ const defaultLocations = [
     termCost: ranBetween(80, 130),
     termText: '',
     termNum: 0,
+    priceTier: 2,
     locationID: uuidv4(),
   },
   {
@@ -78,6 +86,7 @@ const defaultLocations = [
     termCost: ranBetween(50, 95),
     termText: '',
     termNum: 0,
+    priceTier: 2,
     locationID: uuidv4(),
   },
   {
@@ -87,6 +96,7 @@ const defaultLocations = [
     termCost: ranBetween(7, 11),
     termText: '',
     termNum: 0,
+    priceTier: 1,
     locationID: uuidv4(),
   },
   {
@@ -96,6 +106,7 @@ const defaultLocations = [
     termCost: ranBetween(55, 125),
     termText: '',
     termNum: 0,
+    priceTier: 1,
     locationID: uuidv4(),
   },
 ];
