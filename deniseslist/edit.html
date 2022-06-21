@@ -14,8 +14,32 @@
 <body>
     <span id="message" class="editmessage">Item Text:</span>
     <input id="item-body" placeholder="Item text"></input>
+    <label>Category <select id="category" required>
+            <option disabled selected value> -- select an option -- </option>
+            <option value="0">Clothing</option>
+            <option value="1">Produce</option>
+            <option value="2">Bakery</option>
+            <option value="3">Other Grocery</option>
+            <option value="4">Beverages</option>
+            <option value="5">Dairy</option>
+            <option value="6">Cleaning Supplies</option>
+            <option value="7">Pet Supplies</option>
+            <option value="8">Electronics/Home Office</option>
+            <option value="9">Crafts/Party Supplies</option>
+            <option value="10">Home Goods</option>
+            <option value="11">Home Improvement</option>
+            <option value="12">Sporting Goods</option>
+            <option value="13">Toys</option>
+            <option value="14">Clearance</option>
+            <option value="15">Garden/Outdoor</option>
+            <option value="16">Cosmetics/Health</option>
+            <option value="17">Seasonal</option>
+            <option value="18">Frozen Food</option>
+            <option value="19">Checkout Area</option>
+        </select></label>
     <br>
     <a href="deniseslist.html">Go Home</a>
+    <script src="vars.js"></script>
     <script src="functions.js"></script>
     <script src="edit.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"

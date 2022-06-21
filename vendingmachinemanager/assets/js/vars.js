@@ -36,7 +36,26 @@ const itemPriceTable = [
 ];
 
 // This is the table of "fair" prices for each item, which can be affected by the placement location
-const fairPriceTable = [];
+const fairPriceTable = [
+  {
+    friendlyName: 'Wham Chipz',
+    tierPrice0: 1.5,
+    tierPrice1: 1.75,
+    tierPrice2: 2.0,
+  },
+  {
+    friendlyName: 'Pythagoroos',
+    tierPrice0: 1.75,
+    tierPrice1: 2.0,
+    tierPrice2: 2.25,
+  },
+  {
+    friendlyName: 'Chompers',
+    tierPrice0: 1.0,
+    tierPrice1: 1.25,
+    tierPrice2: 1.5,
+  },
+];
 
 // This is the code to preload the item images for Warehouse Mart
 let warehouseMartItemImages = Array();

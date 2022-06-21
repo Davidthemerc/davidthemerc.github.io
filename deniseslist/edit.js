@@ -9,23 +9,28 @@ if (!item) {
 }
 
 const itemText = document.querySelector('#item-body');
+const categoryLister = document.querySelector('#category');
 
 itemText.value = item.listItem;
+categoryLister.selectedIndex = item.categoryNumber + 1;
 
 itemText.addEventListener('input', (e) => {
   item.listItem = e.target.value;
   saveResults(results);
 });
 
+categoryLister.addEventListener('change', (e) => {
+  item.categoryNumber = parseInt(e.target.value);
+  item.category = categoryNames[item.categoryNumber];
+  saveResults(results);
+});
+
 window.addEventListener('storage', (e) => {
-  if (e.key === 'notes') {
+  if (e.key === 'results') {
     results = JSON.parse(e.newValue);
     item = results.find((item) => item.id === itemId);
 
-    if (!note) {
-      location.assign('deniseslist.html');
-    }
-
     itemText.value = item.listItem;
+    categoryLister.selectedIndex = item.categoryNumber + 1;
   }
 });

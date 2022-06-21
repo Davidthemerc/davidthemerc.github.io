@@ -1,6 +1,7 @@
 const showOnPage = function (text, div, eltype) {
   let newParagraph = document.createElement(`${eltype}`);
   newParagraph.innerHTML = text;
+  newParagraph.className = 'deletedItem';
   console.log(text);
   let outputDiv = document.getElementById(`${div}`);
   outputDiv.append(newParagraph);
@@ -126,12 +127,7 @@ const generateResultsDOM = function (result) {
   // Run a for each loop to render each object in the array
   result.forEach(function (resultLoop) {
     // Call the displayText function to actually tell the DOM what to create
-    resultsTextEl.textContent = displayText(
-      resultLoop.listItem,
-      resultLoop.category,
-      'a',
-      resultLoop.id
-    );
+    displayText(resultLoop.listItem, resultLoop.category, 'a', resultLoop.id);
   });
 };
 

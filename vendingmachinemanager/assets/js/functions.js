@@ -897,6 +897,7 @@ const dailySales = () => {
     // Set variable to number of slots
     // We'll need this to know how many slots there are to check
     let slots = mach.numOfSlots;
+    // I can't remember what this is for???
     let usedSlots = 0;
 
     //Next, find out how many slots actually have items
@@ -906,9 +907,36 @@ const dailySales = () => {
         continue;
         // Else, we'll actually run the code here
       } else {
+        let localItemID = mach['macSlotItem' + x];
+        let localItemPrice = mach['macSlotPrice' + x];
+        let localFairPrice =
+          fairPriceTable[localItemID]['tierPrice' + localItemID];
+        let salesForce = 0;
         console.log(
-          `The price for this item is $${mach['macSlotPrice' + x].toFixed(2)}.`
+          `The price for this item is $${localItemPrice.toFixed(2)}.`
         );
+        console.log(
+          `The fair price for this item is $${localFairPrice.toFixed(2)}`
+        );
+        if (localItemPrice === localFairPrice) {
+          console.log(
+            `The price is fair, so the maximum possible sales will be in effect.`
+          );
+          // Fair price, so set "sales force" percentage to 100
+          salesForce = 100;
+        } else if (localItemPrice > localFairPrice) {
+          console.log(
+            `The price is higher than the fair price, so there will be a slight penalty to sales.`
+          );
+          // Need to develop the "salesForce" equation to determine the penalty (and also the bonus)
+          // for pricing higher or lower than fair price.
+          salesForce = 95;
+        } else if (localItemPrice < localFairPrice) {
+          console.log(
+            `The price is lower than the fair price, so there will be a slight bonus to sales.`
+          );
+          salesForce = 105;
+        }
       }
     }
   });
