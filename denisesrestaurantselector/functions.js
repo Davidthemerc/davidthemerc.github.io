@@ -110,7 +110,7 @@ const generateResultsDOM = function (result) {
     // Call the displayText function to actually tell the DOM what to create
     resultsTextEl.textContent = displayText(
       resultLoop.listItem,
-      'span',
+      'a',
       resultLoop.id
     );
   });
@@ -123,6 +123,7 @@ const displayText = function (listItem, elType, resultID) {
   const button = document.createElement('button');
   paragraph.textContent = `${listItem} `;
   paragraph.className = 'item rocks';
+  paragraph.setAttribute('href', `edit.html#${resultID}`);
 
   //  Setup the removal button & paragraph and append them both to a Div I can modify with CSS
   button.textContent = 'Delete';
