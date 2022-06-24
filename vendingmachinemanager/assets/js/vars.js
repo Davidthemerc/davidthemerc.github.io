@@ -77,12 +77,14 @@ const defaultLocations = [
   // Term 2: They will request a percentage of your gross sales in exchange for placement.'
   {
     name: 'BobRock Library',
-    terms: `BobRock Library is criminally underfunded. `,
+    terms: `BobRock Library would like you to pay`,
     termVar: 2,
     // termCost will actually be defined inside the generate location function. It will be different each time
     // the location is generated until the location is selected. So you could turn them down one time and possibly
     // get a better offer later on. Or, maybe a worse offer!
     termCost: ranBetween(5, 9),
+    termCostLow: 5,
+    termCostHigh: 9,
     termText: '',
     termNum: 0,
     priceTier: 0,
@@ -93,6 +95,8 @@ const defaultLocations = [
     terms: `Warehouse Mart would like you to pay`,
     termVar: 1,
     termCost: ranBetween(80, 130),
+    termCostLow: 80,
+    termCostHigh: 130,
     termText: '',
     termNum: 0,
     priceTier: 2,
@@ -103,6 +107,8 @@ const defaultLocations = [
     terms: `Tob's Gym Mart would like you to pay`,
     termVar: 1,
     termCost: ranBetween(50, 95),
+    termCostLow: 50,
+    termCostHigh: 95,
     termText: '',
     termNum: 0,
     priceTier: 2,
@@ -110,9 +116,11 @@ const defaultLocations = [
   },
   {
     name: 'Gilded Train Station',
-    terms: `The Gilded Train Station is getting a bit run down and could use extra funds. `,
+    terms: `The Gilded Train Station would like you to pay`,
     termVar: 2,
     termCost: ranBetween(7, 11),
+    termCostLow: 7,
+    termCostHigh: 11,
     termText: '',
     termNum: 0,
     priceTier: 1,
@@ -123,6 +131,8 @@ const defaultLocations = [
     terms: `Vargas Adult School would like you to pay`,
     termVar: 1,
     termCost: ranBetween(55, 125),
+    termCostLow: 55,
+    termCostHigh: 125,
     termText: '',
     termNum: 0,
     priceTier: 1,

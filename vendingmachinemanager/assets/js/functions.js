@@ -74,7 +74,7 @@ const runAgency = () => {
   if (manager.lastUsedAgencyDay !== manager.agencyDay) {
     // If the last used agency day doesn't match the current agency day, then we'll proceed to generate a new list
     let messages = [];
-    messages.push('A week has passed! New locations are available!');
+    messages.push('New locations are now available!');
     displayMessages(messages, statusEl);
 
     if (availableLocationsArray.length === 0) {
@@ -112,11 +112,92 @@ const runAgency = () => {
     }
   } else {
     loadExistingLocations();
+
+    // Show currently contracted (accepted) locations
+    showMyLocations();
   }
 
   // Set the agency day to keep track
   manager.lastUsedAgencyDay = manager.agencyDay;
   saveJSON(manager, 'VMM-managerData');
+};
+
+const showMyLocations = () => {
+  const place = document.getElementById('yourLocations');
+  place.innerHTML = '';
+
+  yourVendLocations.forEach((myLocation, index) => {
+    const div = document.createElement('div');
+    const spanTitle = document.createElement('span');
+    const spanTerms = document.createElement('span');
+    const releaseButton = document.createElement('button');
+    let myLocationText = '';
+    spanTitle.textContent = myLocation.name;
+    spanTitle.className = 'spanTitle block';
+    spanTerms.className = 'block';
+    releaseButton.textContent = 'Release';
+    releaseButton.className = 'mb-1';
+    div.className = 'col-4 listing mb-1';
+
+    if (myLocation.termType === 1) {
+      myLocationText = `Payment Terms: You must pay flat fee of $${myLocation.termAmt} per week in exchange for placement.`;
+    } else {
+      myLocationText = `Payment Terms: You must pay ${myLocation.termAmt}% of your gross sales in exchange for placement.`;
+    }
+
+    spanTerms.textContent = myLocationText;
+
+    releaseButton.addEventListener('click', () => {
+      try {
+        if (myLocation.snackID.length > 0) {
+          throw new Error(
+            `You can't release a location you currently have a machine at! Please move the machine first`
+          );
+        }
+        let messages = [];
+        messages.push(
+          `You are released from your placement agreement with ${myLocation.name}.`
+        );
+        displayMessages(messages, statusEl);
+
+        // Code to actually return this location to the locationsArray
+        // Remove the object from this array and put it back into the locations array
+        locationsArray.push({
+          name: myLocation.name,
+          terms: `${myLocation.name}`,
+          termVar: myLocation.termType,
+          termCost: ranBetween(myLocation.termAmtLow, myLocation.termAmtHigh),
+          termCostLow: myLocation.termAmtLow,
+          termCostHigh: myLocation.termAmtHigh,
+          termText: '',
+          priceTier: myLocation.priceTier,
+          locationID: myLocation.ID,
+        });
+        saveJSON(locationsArray, 'VMM-locationsArray');
+
+        const spliceIndex = yourVendLocations.findIndex(
+          (location) => location.ID === myLocation.ID
+        );
+
+        if (spliceIndex > -1) {
+          yourVendLocations.splice(spliceIndex, 1);
+        }
+        saveJSON(yourVendLocations, 'VMM-vendLocations');
+
+        // Delete the your location listing
+        div.remove();
+      } catch (error) {
+        let messages = [];
+        messages.push(error);
+        displayMessages(messages, statusEl);
+      }
+    });
+
+    div.appendChild(spanTitle);
+    div.appendChild(spanTerms);
+    div.appendChild(releaseButton);
+    place.appendChild(div);
+  });
 };
 
 const agencyGenerateLocations = () => {
@@ -129,6 +210,8 @@ const agencyGenerateLocations = () => {
   let locationTerms = pickedLocation.terms;
   let locationTermVar = pickedLocation.termVar;
   let locationTermCost = pickedLocation.termCost;
+  let locationTermCostLow = pickedLocation.termCostLow;
+  let locationTermCostHigh = pickedLocation.termCostHigh;
   let locationTermText = '';
   let locationID = pickedLocation.locationID;
   let locationTier = pickedLocation.priceTier;
@@ -136,7 +219,7 @@ const agencyGenerateLocations = () => {
   if (locationTermVar === 1) {
     locationTermText = `${locationTerms} a flat fee of $${locationTermCost} per week in exchange for placement.`;
   } else {
-    locationTermText = `${locationTerms}They would like you to pay ${locationTermCost}% of your gross sales in exchange for placement.`;
+    locationTermText = `${locationTerms} ${locationTermCost}% of your gross sales in exchange for placement.`;
   }
 
   pickedLocation.termCost = locationTermCost;
@@ -153,6 +236,8 @@ const agencyGenerateLocations = () => {
     locationName,
     locationTermText,
     locationTermCost,
+    locationTermCostLow,
+    locationTermCostHigh,
     locationTermVar,
     locationID,
     locationTier
@@ -165,6 +250,8 @@ const loadExistingLocations = () => {
       locationName = tag.name;
       locationTermText = tag.termText;
       locationTermCost = tag.termCost;
+      locationTermCostLow = tag.termCostLow;
+      locationTermCostHigh = tag.termCostHigh;
       locationTermVar = tag.termVar;
       locationID = tag.locationID;
       locationTier = tag.priceTier;
@@ -172,6 +259,8 @@ const loadExistingLocations = () => {
         locationName,
         locationTermText,
         locationTermCost,
+        locationTermCostLow,
+        locationTermCostHigh,
         locationTermVar,
         locationID,
         locationTier
@@ -191,6 +280,8 @@ const agencyDom = (
   locationName,
   locationTermText,
   locationTermCost,
+  locationTermCostLow,
+  locationTermCostHigh,
   locationTermVar,
   locationID,
   locationTier
@@ -215,11 +306,16 @@ const agencyDom = (
       locationDeal(
         locationName,
         locationTermCost,
+        locationTermCostLow,
+        locationTermCostHigh,
         locationTermVar,
         div.id,
         locationID,
         locationTier
       );
+
+      // Show the new location
+      showMyLocations();
     } catch (error) {
       let messages = [];
       messages.push(error);
@@ -237,6 +333,8 @@ const agencyDom = (
 const locationDeal = (
   name,
   termCost,
+  termCostLow,
+  termCostHigh,
   termVar,
   id,
   locationID,
@@ -270,6 +368,8 @@ const locationDeal = (
     name: name,
     termType: termVar,
     termAmt: termCost,
+    termAmtLow: termCostLow,
+    termAmtHigh: termCostHigh,
     snackPresent: false,
     snackID: '',
     sodaPresent: false,
