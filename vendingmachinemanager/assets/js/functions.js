@@ -987,6 +987,8 @@ const dailySales = () => {
   // Establish a local variable using the array
   let localMachines = machines;
 
+  // First, run a forEach Loop to determine how many slots have duplicate snacks
+
   // Next, run a forEach loop as we'll be running this code on each machine
   localMachines.forEach((mach) => {
     if (mach.macLocation === 'warehouse') {
@@ -1001,41 +1003,118 @@ const dailySales = () => {
     let usedSlots = 0;
 
     //Next, find out how many slots actually have items
-    for (let x = 0; x < slots - 1; x++) {
+    for (let x = 0; x < slots; x++) {
       // Slots that don't have stock (-1) will be skipped
       if (mach['macSlotItem' + x] === -1) {
+        //console.log(`There is no item in slot ${x}!`);
+        // We don't want to spam the console with a lot of empty slots!
         continue;
+      } else if (mach['macSlot' + x] === 0) {
+        //Nothing in stock!
+        console.log(`There's nothing in stock in slot ${x}! Skipping!`);
+        // If the slot is empty, reset it
+        if (mach['macSlot' + x] === 0) {
+          mach['macSlotItem' + x] = -1;
+          saveJSON(localMachines, 'VMM-vendingMachines');
+        }
+        continue;
+      } else if (mach['macSlotPrice' + x] === 0) {
+        // I can't believe it, but they failed to set the price!
+        console.log(`You forgot to set a price for the item in slot ${x}!!!`);
         // Else, we'll actually run the code here
       } else {
         let localItemID = mach['macSlotItem' + x];
         let localItemPrice = mach['macSlotPrice' + x];
+        let localItemQuantity = mach['macSlot' + x];
         let localFairPrice =
           fairPriceTable[localItemID]['tierPrice' + localItemID];
         let salesForce = 0;
+        let salesNumber = ranBetween(0, 8);
+        //let salesNumber = ranBetween(0, 8);
         console.log(
           `The price for this item is $${localItemPrice.toFixed(2)}.`
         );
         console.log(
           `The fair price for this item is $${localFairPrice.toFixed(2)}`
         );
+        console.log(`There are ${localItemQuantity} items currently in stock.`);
         if (localItemPrice === localFairPrice) {
           console.log(
-            `The price is fair, so the maximum possible sales will be in effect.`
+            `The price is fair, so there are no sales modifiers active.`
           );
-          // Fair price, so set "sales force" percentage to 100
-          salesForce = 100;
+          // Fair price, so there won't be a "salesForce" impact
+          if (localItemQuantity >= salesNumber) {
+            mach['macSlot' + x] -= salesNumber;
+            moneyExchange('+', salesNumber * localItemPrice);
+            saveJSON(localMachines, 'VMM-vendingMachines');
+          } else {
+            moneyExchange('+', localItemQuantity * localItemPrice);
+            mach['macSlot' + x] = 0;
+            mach['macSlotItem' + x] = -1;
+            saveJSON(localMachines, 'VMM-vendingMachines');
+          }
+
+          // If the slot is empty after all this, reset it
+          if (localItemQuantity === 0) {
+            mach['macSlotItem' + x] = -1;
+            saveJSON(localMachines, 'VMM-vendingMachines');
+          }
         } else if (localItemPrice > localFairPrice) {
-          console.log(
-            `The price is higher than the fair price, so there will be a slight penalty to sales.`
+          // Price is too high! The salesForce equation will draw a penalty!
+          salesForce = Math.round(
+            Math.abs(1 - localItemPrice / localFairPrice) * 1000
           );
-          // Need to develop the "salesForce" equation to determine the penalty (and also the bonus)
-          // for pricing higher or lower than fair price.
-          salesForce = 95;
+          salesForce /= 10;
+          console.log(
+            `The price is higher than the fair price, so there will be a ${salesForce}% hit to sales.`
+          );
+          salesForce /= 100;
+          let oldSalesNumber = salesNumber;
+          salesNumber = Math.round(salesNumber - salesNumber * salesForce);
+          console.log(
+            `Could have sold ${oldSalesNumber}, but sold ${salesNumber} instead.`
+          );
+          if (localItemQuantity >= salesNumber) {
+            mach['macSlot' + x] -= salesNumber;
+            moneyExchange('+', salesNumber * localItemPrice);
+            saveJSON(localMachines, 'VMM-vendingMachines');
+          } else {
+            moneyExchange('+', localItemQuantity * localItemPrice);
+            mach['macSlot' + x] = 0;
+            mach['macSlotItem' + x] = -1;
+            saveJSON(localMachines, 'VMM-vendingMachines');
+          }
         } else if (localItemPrice < localFairPrice) {
-          console.log(
-            `The price is lower than the fair price, so there will be a slight bonus to sales.`
+          // Price is low! The salesForce equation will increase sales slightly!
+          salesForce = Math.round(
+            Math.abs(1 - localItemPrice / localFairPrice) * 1000
           );
-          salesForce = 105;
+          salesForce /= 10;
+          console.log(
+            `The price is lower than the fair price, so there will be a ${salesForce}% increase to sales.`
+          );
+          salesForce /= 100;
+          let oldSalesNumber = salesNumber;
+          salesNumber = Math.round(salesNumber + salesNumber * salesForce);
+          console.log(
+            `Would have sold ${oldSalesNumber}, but sold ${salesNumber} instead!`
+          );
+          if (localItemQuantity >= salesNumber) {
+            mach['macSlot' + x] -= salesNumber;
+            moneyExchange('+', salesNumber * localItemPrice);
+            saveJSON(localMachines, 'VMM-vendingMachines');
+          } else {
+            moneyExchange('+', localItemQuantity * localItemPrice);
+            mach['macSlot' + x] = 0;
+            mach['macSlotItem' + x] = -1;
+            saveJSON(localMachines, 'VMM-vendingMachines');
+          }
+
+          // If the slot is empty after all this, reset it
+          if (localItemQuantity === 0) {
+            mach['macSlotItem' + x] = -1;
+            saveJSON(localMachines, 'VMM-vendingMachines');
+          }
         }
       }
     }
