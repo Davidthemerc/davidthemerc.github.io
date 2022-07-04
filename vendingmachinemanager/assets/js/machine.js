@@ -5,6 +5,9 @@ const localMacIndex = machines.findIndex(
 );
 let locationSelect = document.getElementById('locationSelect');
 let nameField = document.getElementById('machineName');
+let machineOption = document.getElementById('machineContext');
+let restock = document.getElementById('restockMachine');
+let select = '0';
 
 // Temporarily disabled during development
 // if (!matchMach) {
@@ -52,11 +55,10 @@ locationSelect.addEventListener('change', (e) => {
   // Unload the machine and send all items back to the Warehouse.
   let slots = matchMach.numOfSlots;
   for (let x = 0; x < slots; x++) {
-    const entries = Object.entries(machines);
     // Grab the item's unique ID from the slot and send it to the Warehouse
-    let localItemID = entries[localMacIndex][1]['macSlotItem' + x];
+    let localItemID = matchMach['macSlotItem' + x];
 
-    let localItemQuantity = entries[localMacIndex][1]['macSlot' + x];
+    let localItemQuantity = matchMach['macSlot' + x];
 
     if (localItemID === -1) {
       continue;
@@ -88,6 +90,10 @@ nameField.addEventListener('change', (e) => {
   let messages = [];
   messages.push(`Machine name changed to ${e.target.value}.`);
   displayMessages(messages, statusEl);
+});
+
+restock.addEventListener('click', () => {
+  restockMachine(matchMach);
 });
 
 // Now, load the vending machine graphics

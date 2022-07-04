@@ -707,6 +707,8 @@ const addVendingMachine = (kind, variant) => {
     numOfSlots: 34,
     // Machine slot # and then the size
     priceTier: -1,
+    // Property controlling autostock
+    autoStock: 1,
     macSlot0: 0,
     macSlotItem0: -1,
     macSlotPrice0: 0,
@@ -907,6 +909,11 @@ const vendingMachineDOM = (mach) => {
   leftSide.innerHTML = '';
   rightSide.innerHTML = '';
 
+  // If the user changes the machine tap/click context option in the menu, execute the action
+  machineOption.addEventListener('change', (e) => {
+    select = e.target.value;
+  });
+
   // Now, we need to match the machine with its variant data in the appropriate variants array
   localType = 'snack'
     ? (localTypeArray = snackVariants)
@@ -931,7 +938,17 @@ const vendingMachineDOM = (mach) => {
       }.png`;
     }
     img.addEventListener('click', () => {
-      changePrice(arrayLoop.position, mach);
+      if (mach['macSlotItem' + arrayLoop.position] === -1) {
+        // Do nothing
+      } else {
+        if (select === '0') {
+          changePrice(arrayLoop.position, mach);
+        } else if (select === '1') {
+          removeItem(arrayLoop.position, mach);
+        } else if (select === '2') {
+          showQuantity(arrayLoop.position, mach);
+        }
+      }
     });
     leftSide.appendChild(div);
     div.appendChild(img);
@@ -956,28 +973,123 @@ const vendingMachineDOM = (mach) => {
       }.png`;
     }
     img.addEventListener('click', () => {
-      changePrice(arrayLoop.position, mach);
+      if (mach['macSlotItem' + arrayLoop.position] === -1) {
+        // Do nothing
+      } else {
+        if (select === '0') {
+          changePrice(arrayLoop.position, mach);
+        } else if (select === '1') {
+          removeItem(arrayLoop.position, mach);
+        } else if (select === '2') {
+          showQuantity(arrayLoop.position, mach);
+        }
+      }
     });
     rightSide.appendChild(div);
     div.appendChild(img);
   });
 };
 
+const restockMachine = (mach) => {
+  let slots = mach.numOfSlots;
+  // Run a loop for all available slots on this machine
+  for (let x = 0; x < slots; x++) {
+    // Get ID of item
+    let localItemID = mach['macSlotItem' + x];
+    if (localItemID === -1) {
+      continue;
+    } else {
+      // Get quantity of item
+      let localItemQuantity = mach['macSlot' + x];
+      let localMaxQuantity = itemPriceTable[localItemID].maxNum;
+      let localDifference = 0;
+      // Attempt to stock the machine based on the ID and contents of warehouse
+
+      if (localItemQuantity < localMaxQuantity) {
+        // This slot is not filled, so fill it.
+        // Check if the warehouse has stock to match the difference first!
+        localDifference = localMaxQuantity - localItemQuantity;
+        if (warehouseArray[localItemID].quantity >= localDifference) {
+          // There is enough stock, remove the appropriate quantity from warehouse
+          warehouseStock(-1 * localDifference, localItemID);
+          mach['macSlot' + x] += localDifference;
+          saveJSON(machines, 'VMM-vendingMachines');
+        } else if (
+          warehouseArray[localItemID].quantity < localDifference &&
+          warehouseArray[localItemID].quantity > 0
+        ) {
+          // If there's more than 1 item in the warehouse, but less than the difference,
+          // stock it all, regardless
+          mach['macSlot' + x] += warehouseArray[localItemID].quantity;
+          warehouseStock(
+            -1 * warehouseArray[localItemID].quantity,
+            localItemID
+          );
+          saveJSON(machines, 'VMM-vendingMachines');
+        }
+      }
+    }
+  }
+};
+
 const changePrice = (slot, mach) => {
   let item = itemPriceTable[mach['macSlotItem' + slot]].friendlyName;
-
   let price = prompt(`Please set the price for ${item} in Slot ${slot}.`);
+  let oldPrice = mach['macSlotPrice' + slot];
 
-  // Set price
-  price = parseFloat(parseFloat(price).toFixed(2));
-  let displayPrice = parseFloat(price).toFixed(2);
-  mach['macSlotPrice' + slot] = price;
+  if (isNaN(price)) {
+    price = oldPrice;
+    price = parseFloat(price).toFixed(2);
+    // Price message
+    let messages = [];
+    messages.push(`Invalid entry. Slot ${slot} Price was reset to $${price}`);
+    displayMessages(messages, statusEl);
+  } else {
+    // Set price
+    price = parseFloat(parseFloat(price).toFixed(2));
+    let displayPrice = parseFloat(price).toFixed(2);
+    mach['macSlotPrice' + slot] = price;
+    saveJSON(machines, 'VMM-vendingMachines');
+
+    // Price message
+    let messages = [];
+    messages.push(
+      `You set the price for ${item} in Slot ${slot} to $${displayPrice}.`
+    );
+    displayMessages(messages, statusEl);
+  }
+};
+
+const removeItem = (slot, mach) => {
+  // Removes clicked/tapped item from the machine and returns the items
+  // stored back to the Warehouse
+  let item = itemPriceTable[mach['macSlotItem' + slot]].friendlyName;
+  let localItemID = mach['macSlotItem' + slot];
+  let localItemQuantity = mach['macSlot' + slot];
+
+  warehouseStock(localItemQuantity, localItemID);
+  mach['macSlot' + slot] = 0;
+  mach['macSlotPrice' + slot] = 0;
+  mach['macSlotItem' + slot] = -1;
   saveJSON(machines, 'VMM-vendingMachines');
 
-  // Price message
+  // Remove message
+  let messages = [];
+  messages.push(`You removed ${item} from Slot ${slot}.`);
+  displayMessages(messages, statusEl);
+
+  //Reload DOM after removing
+  vendingMachineDOM(mach);
+};
+
+const showQuantity = (slot, mach) => {
+  let item = itemPriceTable[mach['macSlotItem' + slot]].friendlyName;
+  let localItemQuantity = mach['macSlot' + slot];
+
+  // Display quantity message
   let messages = [];
   messages.push(
-    `You set the price for ${item} in Slot ${slot} to $${displayPrice}.`
+    `There are ${localItemQuantity} ${item} in stock in Slot ${slot}.`
   );
   displayMessages(messages, statusEl);
 };

@@ -48,6 +48,16 @@
                 </div>
                 <div class="col-12 text-center mb-2" id="lower"><a href="/vendingmachinemanager/manage.html">Return to
                         Home</a></div>
+
+                <div class="mb-2 text-center">
+                    <span>Machine Click/Tap Option:&nbsp;</span><select id="machineContext">
+                        <option value="0" selected>Change Price</option>
+                        <option value="1">Remove Item</option>
+                        <option value="2">Check Quantity</option>
+                    </select>
+                    <button id="restockMachine" class="ms-1">Restock
+                        Machine</button><span class="ms-1">Auto-Restock:&nbsp;</span><input type="checkbox">
+                </div>
                 <div id="status" class="text-center status mb-2"></div>
                 <div class="container">
                     <div class="row">
