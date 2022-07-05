@@ -1122,11 +1122,12 @@ const removeItem = (slot, mach) => {
 const showQuantity = (slot, mach) => {
   let item = itemPriceTable[mach['macSlotItem' + slot]].friendlyName;
   let localItemQuantity = mach['macSlot' + slot];
+  let localItemPrice = mach['macSlotPrice' + slot].toFixed(2);
 
   // Display quantity message
   let messages = [];
   messages.push(
-    `There are ${localItemQuantity} ${item} in stock in Slot ${slot}.`
+    `There are ${localItemQuantity} ${item} in stock in Slot ${slot}.<br> The price of ${item} in Slot ${slot} is $${localItemPrice}.`
   );
   displayMessages(messages, statusEl);
 };
@@ -1135,8 +1136,33 @@ const dailySales = () => {
   // First, we need to analyze how many machines, if any, are available
   // Establish a local variable using the array
   let localMachines = machines;
+  let localItemPenalty = [0, 0, 0];
 
   // First, run a forEach Loop to determine how many slots have duplicate snacks
+  localMachines.forEach((mach) => {
+    if (mach.macLocation === 'warehouse') {
+      // We'll skip this machine, since it's not placed
+      return;
+    }
+    // Set variable to number of slots
+    // We'll need this to know how many slots there are to check
+    let slots = mach.numOfSlots;
+
+    for (let x = 0; x < slots; x++) {
+      if (mach['macSlotItem' + x] === -1) {
+        continue;
+      } else {
+        // Basically, each item that the same item is placed in the machine, the item's
+        // corresponding entry in this array will increase by 0.6, applying a rapid penalty.
+        // The number of sales that COULD have been,will be divided by this array number.
+        // E.G. if you could have sold 8 chips per slot, but stocked 4 slots of the same chips
+        // you will now sell an average of 2 chips per slot, but probably less, because if the
+        // RNG rolls a number lower than what can be divided by the penalty #, you might sell
+        // EVEN less than that (possibly 0!) Don't duplicate too many items!
+        localItemPenalty[mach['macSlotItem' + x]] += 0.6;
+      }
+    }
+  });
 
   // Next, run a forEach loop as we'll be running this code on each machine
   localMachines.forEach((mach) => {
@@ -1148,8 +1174,6 @@ const dailySales = () => {
     // Set variable to number of slots
     // We'll need this to know how many slots there are to check
     let slots = mach.numOfSlots;
-    // I can't remember what this is for???
-    let usedSlots = 0;
 
     //Next, find out how many slots actually have items
     for (let x = 0; x < slots; x++) {
@@ -1178,15 +1202,16 @@ const dailySales = () => {
         let localFairPrice =
           fairPriceTable[localItemID]['tierPrice' + localItemID];
         let salesForce = 0;
-        let salesNumber = ranBetween(0, 8);
-        //let salesNumber = ranBetween(0, 8);
-        console.log(
-          `The price for this item is $${localItemPrice.toFixed(2)}.`
+        let salesNumber = Math.round(
+          ranBetween(0, 8) / localItemPenalty[localItemID]
         );
-        console.log(
-          `The fair price for this item is $${localFairPrice.toFixed(2)}`
-        );
-        console.log(`There are ${localItemQuantity} items currently in stock.`);
+        // console.log(
+        //   `The price for this item is $${localItemPrice.toFixed(2)}.`
+        // );
+        // console.log(
+        //   `The fair price for this item is $${localFairPrice.toFixed(2)}`
+        // );
+        // console.log(`There are ${localItemQuantity} items currently in stock.`);
         if (localItemPrice === localFairPrice) {
           console.log(
             `The price is fair, so there are no sales modifiers active.`
@@ -1245,6 +1270,12 @@ const dailySales = () => {
           salesForce /= 100;
           let oldSalesNumber = salesNumber;
           salesNumber = Math.round(salesNumber + salesNumber * salesForce);
+
+          // Don't let more items sell than you have!
+          if (salesNumber > localItemQuantity) {
+            salesNumber = localItemQuantity;
+          }
+
           console.log(
             `Would have sold ${oldSalesNumber}, but sold ${salesNumber} instead!`
           );
