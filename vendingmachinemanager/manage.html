@@ -32,13 +32,14 @@
             <div class="col-12" style="background: #ffffff;">
                 <div class="container">
                     <div class="row">
-                        <div class="col-12 text-center">
+                        <div class="col-12 text-center mb-1">
                             <p class="fs-3 fw-bold text-center mb-1" id="busName">Vending United</p><span><strong>Owned
                                     and
                                     Operated By:</strong></span><a class="ms-1"
                                 href="/vendingmachinemanager/manager.html" id="managerNameDisplay">Manager</a>
                         </div>
-                        <div class="col-12 pt-2">
+                        <div id="status" class="text-center status"></div>
+                        <div class="col-12 mt-1">
                             <p class="fw-bold text-center"><u>Manager Action Menu:</u></p>
                         </div>
                         <div class="col-12 text-center pb-3" id="actionMenu"><button class="ms-2" id="warehouseMart"
@@ -51,8 +52,10 @@
                             <p class="fw-bold text-center mb-1"><u>Your Vending Machines:</u></p>
                         </div>
                         <div class="col-12 text-center mb-1" id="yourMachines"></div>
-                        <div class="col-12 text-center mb-2"><span class="text-center"><strong>Current
+                        <div class="col-12 text-center mb-1"><span class="text-center"><strong>Current
                                     Money:&nbsp;</strong></span><span id="currentMoney">$0.00</span></div>
+                        <div class="col-12 text-center mb-2"><span class="text-center"><strong>Current
+                                    Day:&nbsp;</strong></span><span id="currentDay"></span></div>
                         <div class="col-12 text-center pb-3" id="advDayArea"><button class="ms-2" id="advanceDay"
                                 type="button">End the Day</button></div>
                     </div>

@@ -16,6 +16,7 @@ const managerData = () => {
       day: 0,
       agencyDayCounter: 0,
       agencyDay: 0,
+      paidDay: 0,
       lastUsedAgencyDay: -1,
       numOfMachines: 0,
     };
@@ -400,12 +401,56 @@ const locationDeal = (
 
 // Advance day function
 const advanceDay = () => {
+  let messages = [];
+  displayMessages(messages, statusEl);
+
   manager.day += 1;
   manager.agencyDayCounter += 1;
 
   if (manager.agencyDayCounter === 7) {
     manager.agencyDayCounter = 0;
     manager.agencyDay += 1;
+    manager.paidDay = 1;
+  }
+
+  // If a week has passed, subtract the machine weekly fee (if applicable)
+  if (manager.paidDay === 1) {
+    let localMachines = machines;
+
+    localMachines.forEach((mach) => {
+      if (mach.macLocation === 'warehouse') {
+        return;
+      }
+
+      let matchLocation = yourVendLocations.find(
+        (loc) => loc.ID === mach.macLocation
+      );
+      let payment = 0;
+      if (matchLocation.termType === 1) {
+        payment = matchLocation.termAmt;
+
+        if (manager.money >= payment) {
+          moneyExchange('-', payment);
+          let messages = [];
+          messages.push(
+            `Paid weekly fee of $${payment} for placement of machine ${mach.macName} at ${matchLocation.name}.`
+          );
+          displayMessages(messages, statusEl);
+        } else {
+          // Not enough money to pay location! Ruh roh.
+          let messages = [];
+          messages.push(
+            `You can't afford to pay ${matchLocation.name}! You're forced to relocate your machine to your warehouse, for now.`
+          );
+          displayMessages(messages, statusEl);
+
+          // Take the actions to terminate the agreement.
+          mach.macLocation = 'warehouse';
+          saveJSON(localMachines, 'VMM-vendingMachines');
+        }
+      }
+    });
+    manager.paidDay = 0;
   }
 
   dailySales();
@@ -706,8 +751,33 @@ const warehouseDOM = () => {
 
 const moneyExchange = (action, amount) => {
   action === '-' ? (manager.money -= amount) : (manager.money += amount);
+  //Crazy Floating Numbers Prevention
+  manager.money *= 100;
+  manager.money = Math.round(manager.money);
+  manager.money /= 100;
   saveJSON(manager, 'VMM-managerData');
   currentMoney.innerHTML = `$${manager.money.toFixed(2)}`;
+};
+
+const floatFix = (number) => {
+  number *= 100;
+  number = Math.round(number);
+  number /= 100;
+  return number;
+};
+
+// Function to give a machine location their % of sales cut.
+// Only used when the location requires a % of sales.
+const locationCut = (amount, termAmt) => {
+  // Turn the termAmt (which is an integer) into a percentage
+  termAmt /= 100;
+  // Let's take their cut percentage from the sales
+  amount = amount * termAmt;
+
+  //Float fix
+  amount = floatFix(amount);
+
+  return amount;
 };
 
 const updateMoney = (money) => {
@@ -1167,6 +1237,17 @@ const dailySales = () => {
   // Next, run a forEach loop as we'll be running this code on each machine
   localMachines.forEach((mach) => {
     if (mach.macLocation === 'warehouse') {
+      return;
+    }
+
+    let matchLocation = yourVendLocations.find(
+      (loc) => loc.ID === mach.macLocation
+    );
+    let percent = 0;
+    if (matchLocation.termType === 2) {
+      percent = matchLocation.termAmt;
+    }
+    if (mach.macLocation === 'warehouse') {
       // We'll skip this machine, since it's not placed
       return;
     }
@@ -1193,7 +1274,7 @@ const dailySales = () => {
         continue;
       } else if (mach['macSlotPrice' + x] === 0) {
         // I can't believe it, but they failed to set the price!
-        console.log(`You forgot to set a price for the item in slot ${x}!!!`);
+        // console.log(`You forgot to set a price for the item in slot ${x}!!!`);
         // Else, we'll actually run the code here
       } else {
         let localItemID = mach['macSlotItem' + x];
@@ -1219,7 +1300,18 @@ const dailySales = () => {
           // Fair price, so there won't be a "salesForce" impact
           if (localItemQuantity >= salesNumber) {
             mach['macSlot' + x] -= salesNumber;
-            moneyExchange('+', salesNumber * localItemPrice);
+
+            // This represents the gross sales
+            let salesAmount = salesNumber * localItemPrice;
+
+            // If percent is greater than 0, then this machine's location
+            // uses percent of sales pricing
+            // This is essentially net sales, after paying the location fee
+            if (percent > 0) {
+              salesAmount -= locationCut(salesAmount, percent);
+            }
+
+            moneyExchange('+', salesAmount);
             saveJSON(localMachines, 'VMM-vendingMachines');
           } else {
             moneyExchange('+', localItemQuantity * localItemPrice);
@@ -1250,10 +1342,31 @@ const dailySales = () => {
           );
           if (localItemQuantity >= salesNumber) {
             mach['macSlot' + x] -= salesNumber;
-            moneyExchange('+', salesNumber * localItemPrice);
+
+            // This represents the gross sales
+            let salesAmount = salesNumber * localItemPrice;
+
+            // If percent is greater than 0, then this machine's location
+            // uses percent of sales pricing
+            // This is essentially net sales, after paying the location fee
+            if (percent > 0) {
+              salesAmount -= locationCut(salesAmount, percent);
+            }
+
+            moneyExchange('+', salesAmount);
             saveJSON(localMachines, 'VMM-vendingMachines');
           } else {
-            moneyExchange('+', localItemQuantity * localItemPrice);
+            // This represents the gross sales
+            let salesAmount = localItemQuantity * localItemPrice;
+
+            // If percent is greater than 0, then this machine's location
+            // uses percent of sales pricing
+            // This is essentially net sales, after paying the location fee
+            if (percent > 0) {
+              salesAmount -= locationCut(salesAmount, percent);
+            }
+
+            moneyExchange('+', salesAmount);
             mach['macSlot' + x] = 0;
             mach['macSlotItem' + x] = -1;
             saveJSON(localMachines, 'VMM-vendingMachines');
@@ -1281,10 +1394,31 @@ const dailySales = () => {
           );
           if (localItemQuantity >= salesNumber) {
             mach['macSlot' + x] -= salesNumber;
-            moneyExchange('+', salesNumber * localItemPrice);
+
+            // This represents the gross sales
+            let salesAmount = salesNumber * localItemPrice;
+
+            // If percent is greater than 0, then this machine's location
+            // uses percent of sales pricing
+            // This is essentially net sales, after paying the location fee
+            if (percent > 0) {
+              salesAmount -= locationCut(salesAmount, percent);
+            }
+
+            moneyExchange('+', salesAmount);
             saveJSON(localMachines, 'VMM-vendingMachines');
           } else {
-            moneyExchange('+', localItemQuantity * localItemPrice);
+            // This represents the gross sales
+            let salesAmount = localItemQuantity * localItemPrice;
+
+            // If percent is greater than 0, then this machine's location
+            // uses percent of sales pricing
+            // This is essentially net sales, after paying the location fee
+            if (percent > 0) {
+              salesAmount -= locationCut(salesAmount, percent);
+            }
+
+            moneyExchange('+', salesAmount);
             mach['macSlot' + x] = 0;
             mach['macSlotItem' + x] = -1;
             saveJSON(localMachines, 'VMM-vendingMachines');

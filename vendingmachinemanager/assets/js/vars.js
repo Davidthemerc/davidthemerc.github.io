@@ -7,6 +7,16 @@ const currentMoney = document.getElementById('currentMoney');
 
 const statusEl = document.getElementById('status');
 
+const dayTable = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
+
 // Friendly Name should be plural, because it will/should be referenced as such in all situations
 const itemPriceTable = [
   {

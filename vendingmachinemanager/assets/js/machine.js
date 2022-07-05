@@ -26,6 +26,9 @@ machineLoader(localMacIndex);
 
 // Now default to the current location and set the machine's name
 locationSelect.value = matchMach.macLocation;
+if (matchMach.macLocation === 'warehouse') {
+  locationSelect.value = '0';
+}
 nameField.value = matchMach.macName;
 // Checkbox state detection (update input from data)
 matchMach.autoStock === true
