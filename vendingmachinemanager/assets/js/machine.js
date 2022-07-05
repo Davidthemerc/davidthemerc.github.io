@@ -57,42 +57,53 @@ locationSelect.addEventListener('change', (e) => {
     );
     yourVendLocations[oldLocation].snackPresent = false;
     yourVendLocations[oldLocation].snackID = '';
+    saveJSON(yourVendLocations, 'VMM-vendLocations');
   }
 
-  // Save the machine's ID to the new location.
-  yourVendLocations[locationIndex].snackPresent = true;
-  yourVendLocations[locationIndex].snackID = matchMach.macID;
-  saveJSON(yourVendLocations, 'VMM-vendLocations');
+  // if LocationIndex didn't find a match, it's because we've selected the Warehouse.
+  // Set the index to 0
+  if (locationIndex === -1) {
+    matchMach.macLocation = 'warehouse';
+    saveJSON(machines, 'VMM-vendingMachines');
+  } else {
+    // Save the machine's ID to the new location.
+    yourVendLocations[locationIndex].snackPresent = true;
+    yourVendLocations[locationIndex].snackID = matchMach.macID;
+    saveJSON(yourVendLocations, 'VMM-vendLocations');
 
-  matchMach.macLocation = e.target.value;
-  matchMach.priceTier = yourVendLocations[locationIndex].priceTier;
-  saveJSON(machines, 'VMM-vendingMachines');
+    matchMach.macLocation = e.target.value;
+    matchMach.priceTier = yourVendLocations[locationIndex].priceTier;
+    saveJSON(machines, 'VMM-vendingMachines');
 
-  // Unload the machine and send all items back to the Warehouse.
-  let slots = matchMach.numOfSlots;
-  for (let x = 0; x < slots; x++) {
-    // Grab the item's unique ID from the slot and send it to the Warehouse
-    let localItemID = matchMach['macSlotItem' + x];
+    // Unload the machine and send all items back to the Warehouse.
+    let slots = matchMach.numOfSlots;
+    for (let x = 0; x < slots; x++) {
+      // Grab the item's unique ID from the slot and send it to the Warehouse
+      let localItemID = matchMach['macSlotItem' + x];
 
-    let localItemQuantity = matchMach['macSlot' + x];
+      let localItemQuantity = matchMach['macSlot' + x];
 
-    if (localItemID === -1) {
-      continue;
-    } else {
-      warehouseStock(localItemQuantity, localItemID);
-      matchMach['macSlot' + x] = 0;
-      matchMach['macSlotPrice' + x] = 0;
-      matchMach['macSlotItem' + x] = -1;
-      saveJSON(machines, 'VMM-vendingMachines');
+      if (localItemID === -1) {
+        continue;
+      } else {
+        warehouseStock(localItemQuantity, localItemID);
+        matchMach['macSlot' + x] = 0;
+        matchMach['macSlotPrice' + x] = 0;
+        matchMach['macSlotItem' + x] = -1;
+        saveJSON(machines, 'VMM-vendingMachines');
+      }
     }
   }
 
   let messages = [];
-  messages.push(
-    `You move the machine to ${
-      locationSelect[locationSelect.selectedIndex].text
-    }.`
-  );
+  // Override the Warehouse text
+  let locationText = locationSelect[locationSelect.selectedIndex].text;
+
+  locationSelect[locationSelect.selectedIndex].text === 'Warehouse (Default)'
+    ? (locationText = 'the Warehouse')
+    : (locationText = locationText);
+
+  messages.push(`You move the machine to ${locationText}.`);
   displayMessages(messages, statusEl);
   // Reload the vending machine graphics after moving
   vendingMachineDOM(matchMach);

@@ -6,10 +6,12 @@ const warehouse = document.getElementById('warehouse');
 const agencyButton = document.getElementById('newLocation');
 const gregorButton = document.getElementById('buyNewMachine');
 const machNum = document.getElementById('numberOfMachines');
+const currentDay = document.getElementById('currentDay');
 
 managerNameDisplay.innerHTML = manager.mName;
 busName.innerHTML = manager.cName;
 updateMoney(manager.money);
+currentDay.innerHTML = dayTable[manager.agencyDayCounter];
 
 warehouseMart.addEventListener('click', () => {
   location.assign('/vendingmachinemanager/warehousemart.html');
@@ -29,6 +31,7 @@ warehouse.addEventListener('click', () => {
 
 advanceDayButton.addEventListener('click', () => {
   advanceDay();
+  currentDay.innerHTML = dayTable[manager.agencyDayCounter];
 });
 
 loadCurrentMachines();

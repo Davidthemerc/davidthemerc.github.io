@@ -271,7 +271,7 @@ const loadExistingLocations = () => {
     const place = document.getElementById('status');
     const paragraph = document.createElement('p');
     paragraph.textContent =
-      'Sorry, there are no locations currently available at this time!';
+      'Sorry, there are no locations currently available at this time! Check back next Monday.';
     paragraph.className = 'mb-2';
     place.appendChild(paragraph);
   }
