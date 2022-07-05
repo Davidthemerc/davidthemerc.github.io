@@ -592,6 +592,31 @@ const warehouseDOM = () => {
       let currentSelect = arrayLoop.selectedIndex - 1;
       image = warehouseMartItemImages[currentSelect];
       warehouseImages[index].src = image.src;
+
+      // Auto select the first available machine when choosing an item
+      if (vendingFields[index].selectedIndex === 0) {
+        vendingFields[index].selectedIndex = 1;
+      }
+
+      slots[index].innerHTML = '';
+      for (
+        let x = 0;
+        x < machines[vendingFields[index].selectedIndex - 1].numOfSlots;
+        x++
+      ) {
+        let localMachine = machines[vendingFields[index].selectedIndex - 1];
+        if (
+          localMachine['macSlotSize' + x] ===
+          itemPriceTable[quantityFields[index].value].size
+        ) {
+          let opt = document.createElement('option');
+          opt.value = x;
+          opt.innerHTML = `Slot ${x}`;
+          slots[index].appendChild(opt);
+        } else {
+          continue;
+        }
+      }
     });
 
     //arrayLoop.innerHTML = `Item: ${warehouseArray[index].itemName} (${warehouseArray[index].quantity})`;
@@ -617,7 +642,7 @@ const warehouseDOM = () => {
     defaultOpt.value = -1;
     defaultOpt.innerHTML = `Select Machine`;
     defaultOpt.selected = true;
-    defaultOpt.disabled = true;
+    //defaultOpt.disabled = true;
     vendingFields[index].appendChild(defaultOpt);
     for (let x = 0; x < machines.length; x++) {
       let opt = document.createElement('option');
@@ -636,11 +661,20 @@ const warehouseDOM = () => {
         return;
       }
 
+      slots[index].innerHTML = '';
       for (let x = 0; x < machines[e.target.value].numOfSlots; x++) {
-        let opt = document.createElement('option');
-        opt.value = x;
-        opt.innerHTML = `Slot ${x}`;
-        slots[index].appendChild(opt);
+        let localMachine = machines[e.target.value];
+        if (
+          localMachine['macSlotSize' + x] ===
+          itemPriceTable[quantityFields[index].value].size
+        ) {
+          let opt = document.createElement('option');
+          opt.value = x;
+          opt.innerHTML = `Slot ${x}`;
+          slots[index].appendChild(opt);
+        } else {
+          continue;
+        }
       }
     });
   });
@@ -867,7 +901,7 @@ const machineLoader = (index) => {
   }
 };
 
-resetWarehouse = (index, id, fName) => {
+const resetWarehouse = (index, id, fName) => {
   let warehouseImages = document.getElementsByClassName('warehouseItem');
   let quantityFields = document.getElementsByClassName('warehouseQuantity');
   let inputTypeFields = document.getElementsByClassName('warehouseInput');
@@ -1035,16 +1069,8 @@ const restockMachine = (mach) => {
 const changePrice = (slot, mach) => {
   let item = itemPriceTable[mach['macSlotItem' + slot]].friendlyName;
   let price = prompt(`Please set the price for ${item} in Slot ${slot}.`);
-  let oldPrice = mach['macSlotPrice' + slot];
 
-  if (isNaN(price)) {
-    price = oldPrice;
-    price = parseFloat(price).toFixed(2);
-    // Price message
-    let messages = [];
-    messages.push(`Invalid entry. Slot ${slot} Price was reset to $${price}`);
-    displayMessages(messages, statusEl);
-  } else {
+  if (!isNaN(parseInt(price))) {
     // Set price
     price = parseFloat(parseFloat(price).toFixed(2));
     let displayPrice = parseFloat(price).toFixed(2);
@@ -1057,6 +1083,17 @@ const changePrice = (slot, mach) => {
       `You set the price for ${item} in Slot ${slot} to $${displayPrice}.`
     );
     displayMessages(messages, statusEl);
+  } else {
+    price = 0;
+    let displayPrice = parseFloat(price).toFixed(2);
+    // Price message
+    let messages = [];
+    messages.push(
+      `Invalid entry. Slot ${slot} Price was reset to $${displayPrice}`
+    );
+    displayMessages(messages, statusEl);
+    mach['macSlotPrice' + slot] = price;
+    saveJSON(machines, 'VMM-vendingMachines');
   }
 };
 

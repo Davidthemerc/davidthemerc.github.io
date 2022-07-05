@@ -7,6 +7,7 @@ let locationSelect = document.getElementById('locationSelect');
 let nameField = document.getElementById('machineName');
 let machineOption = document.getElementById('machineContext');
 let restock = document.getElementById('restockMachine');
+let autoRestock = document.getElementById('autoRestockCheck');
 let select = '0';
 
 // Temporarily disabled during development
@@ -26,6 +27,18 @@ machineLoader(localMacIndex);
 // Now default to the current location and set the machine's name
 locationSelect.value = matchMach.macLocation;
 nameField.value = matchMach.macName;
+// Checkbox state detection (update input from data)
+matchMach.autoStock === true
+  ? (autoRestock.checked = true)
+  : (autoRestock.checked = false);
+
+// Auto Restock checkbox manipulation
+autoRestock.addEventListener('change', () => {
+  autoRestock.checked === true
+    ? (matchMach.autoStock = true)
+    : (matchMach.autoStock = false);
+  saveJSON(machines, 'VMM-vendingMachines');
+});
 
 // If the user changes the location in the dropdown, update the location
 locationSelect.addEventListener('change', (e) => {
