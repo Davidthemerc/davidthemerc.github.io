@@ -13,6 +13,8 @@ let image;
 // Define buenas audio
 const audio = new Audio('audio/Buenas.mp3'); // Female voice
 const audio2 = new Audio('audio/Buenas2.mp3'); // Male voice
+const audio3 = new Audio('audio/CambioMale.mp3'); // Male voice
+const audio4 = new Audio('audio/CambioFemale.mp3'); // Female voice
 
 // This is the code to preload the images
 let beanedImageList = Array();
@@ -96,4 +98,7 @@ newButton.addEventListener('click', (e) => {
     selectorArranger(i);
   }
   clearBeanTracking();
+
+  // Announce 'cambio' to prevent cheating
+  cambio();
 });

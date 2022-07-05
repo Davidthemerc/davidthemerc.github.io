@@ -224,6 +224,10 @@ let buenasPues = () => {
   }
 };
 
+let cambio = () => {
+  voiceValue === '0' ? audio4.play() : audio3.play();
+};
+
 let selectorDetector = () => {
   let sel = document.getElementById('customCards').value;
 
@@ -243,6 +247,9 @@ let selectorDetector = () => {
 
   // Clear the tracker array and save to local storage, since we're changing cards
   clearBeanTracking();
+
+  // Announce 'cambio' to prevent cheating
+  cambio();
 };
 
 let customCardArranger = (set) => {
@@ -293,10 +300,14 @@ let selectorArranger = (i) => {
 
   // Add an event listener for each input selector
   currentInput.addEventListener('change', () => {
+    // Announce 'cambio' to prevent cheating
+    cambio();
     image = imageList[currentInput.selectedIndex];
     shuffled[i] = currentInput.selectedIndex;
     grid[i].innerHTML = '';
     grid[i].appendChild(image);
+
+    clearBeanTracking();
 
     // Save the change to local storage
     saveJSON(shuffled, 'loteriaCard');
