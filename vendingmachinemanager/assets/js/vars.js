@@ -1,5 +1,5 @@
 const quantityControlNum = [16, 32, 64, 128, 256, 512];
-const vendingControlNum = [16, 12, 8, 4, 2, 1];
+const vendingControlNum = [20, 16, 12, 8, 4, 2, 1];
 
 const quantityControlNames = [
   '16 Units',
