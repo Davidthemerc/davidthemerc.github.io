@@ -22,7 +22,6 @@ yourVendLocations.forEach((spot) => {
   opt.innerHTML = spot.name;
   locationSelect.appendChild(opt);
 });
-machineLoader(localMacIndex);
 
 // Now default to the current location and set the machine's name
 locationSelect.value = matchMach.macLocation;

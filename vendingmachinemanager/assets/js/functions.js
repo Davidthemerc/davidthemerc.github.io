@@ -727,8 +727,6 @@ const warehouseDOM = () => {
   Array.from(buttonFields).forEach((arrayLoop, index) => {
     arrayLoop.addEventListener('click', () => {
       try {
-        // Basically left off here. It doesn't really do anything yet except stop you from trying to
-        // use both stock # inputs. I need the vending machine system built out first.
         machineStock(
           inputTypeFields[index].value,
           inputMenuFields[index],
@@ -800,9 +798,9 @@ const addVendingMachine = (kind, variant) => {
 
   machines.push({
     // Machine Type, Snack or Soda
-    macType: 'snack',
+    macType: `${kind}`,
     macName: newName,
-    macVariant: 0,
+    macVariant: variant,
     // Machine UUID
     macID: uuidv4(),
     // Machine Location, Blank at time of purchase
@@ -812,7 +810,7 @@ const addVendingMachine = (kind, variant) => {
     // Machine slot # and then the size
     priceTier: -1,
     // Property controlling autostock
-    autoStock: 1,
+    autoStock: true,
     macSlot0: 0,
     macSlotItem0: -1,
     macSlotPrice0: 0,
@@ -962,13 +960,6 @@ const loadCurrentMachines = () => {
     linkEl.href = `/vendingmachinemanager/machine.html#${mach.macID}`;
     machineEl.appendChild(linkEl);
   });
-};
-
-const machineLoader = (index) => {
-  const entries = Object.entries(machines);
-  for (let x = 0; x <= machines[index].numOfSlots; x++) {
-    // Example: entries[0][1]['macSlotSize' + x]
-  }
 };
 
 const resetWarehouse = (index, id, fName) => {
@@ -1327,10 +1318,19 @@ const dailySales = () => {
           }
         } else if (localItemPrice > localFairPrice) {
           // Price is too high! The salesForce equation will draw a penalty!
+          // Multiplying number and rounding to cut off floating point numbers
           salesForce = Math.round(
-            Math.abs(1 - localItemPrice / localFairPrice) * 1000
+            Math.abs((localItemPrice / localFairPrice) * 1000)
           );
+          // Dividing by 10 to give expressed percentage (e.g. 100)
           salesForce /= 10;
+          // Only 45% of the "above fair price" percentage actually affects sales
+          // So if you jacked up the price 100%, you'll only lose 45% of sales.
+          salesForce *= 0.45;
+          if (salesForce > 100) {
+            salesForce = 100;
+          }
+
           console.log(
             `The price is higher than the fair price, so there will be a ${salesForce}% hit to sales.`
           );
@@ -1431,6 +1431,11 @@ const dailySales = () => {
           }
         }
       }
+    }
+
+    if (mach.autoStock === true) {
+      //console.log(`Auto-restocking is on!`);
+      restockMachine(mach);
     }
   });
 };
