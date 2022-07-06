@@ -1320,7 +1320,7 @@ const dailySales = () => {
           // Price is too high! The salesForce equation will draw a penalty!
           // Multiplying number and rounding to cut off floating point numbers
           salesForce = Math.round(
-            Math.abs((localItemPrice / localFairPrice) * 1000)
+            Math.abs((1 - localItemPrice / localFairPrice) * 1000)
           );
           // Dividing by 10 to give expressed percentage (e.g. 100)
           salesForce /= 10;
