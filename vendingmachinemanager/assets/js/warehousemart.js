@@ -5,7 +5,7 @@ let costFields = document.getElementsByClassName('itemPrice');
 let unitPriceFields = document.getElementsByClassName('itemUnitPrice');
 
 Array.from(selectFields).forEach((arrayLoop, index) => {
-  for (let x = 0; x <= 3; x++) {
+  for (let x = 0; x <= 5; x++) {
     let opt = document.createElement('option');
     opt.value = quantityControlNum[x];
     opt.innerHTML = quantityControlNames[x];

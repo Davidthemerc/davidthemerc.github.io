@@ -1,7 +1,14 @@
-const quantityControlNum = [16, 32, 64, 128];
+const quantityControlNum = [16, 32, 64, 128, 256, 512];
 const vendingControlNum = [16, 12, 8, 4, 2, 1];
 
-const quantityControlNames = ['16 Units', '32 Units', '64 Units', '128 Units'];
+const quantityControlNames = [
+  '16 Units',
+  '32 Units',
+  '64 Units',
+  '128 Units',
+  '256 Units',
+  '512 Units',
+];
 
 const currentMoney = document.getElementById('currentMoney');
 

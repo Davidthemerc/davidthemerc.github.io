@@ -468,6 +468,12 @@ const wmartBuy = (found, index, fields) => {
 
   let cost = found.itemPrice * parseInt(fields[index].value).toFixed(2);
 
+  if (manager.money < cost) {
+    throw new Error(
+      `You don't have enough money to buy ${quantity} ${itemName}!`
+    );
+  }
+
   // Subtract the cost from the Manager's money
   moneyExchange('-', cost);
 
@@ -1274,9 +1280,13 @@ const dailySales = () => {
         let localFairPrice =
           fairPriceTable[localItemID]['tierPrice' + localItemID];
         let salesForce = 0;
-        let salesNumber = Math.round(
-          ranBetween(0, 8) / localItemPenalty[localItemID]
-        );
+        let localItemPenaltyVar = 0;
+        localItemPenalty[localItemID] < 1
+          ? (localItemPenaltyVar = 1)
+          : (localItemPenaltyVar = localItemPenalty[localItemID]);
+
+        let salesNumber = Math.round(ranBetween(0, 8) / localItemPenaltyVar);
+        // console.log(`LIP is: ${localItemPenaltyVar}`);
         // console.log(
         //   `The price for this item is $${localItemPrice.toFixed(2)}.`
         // );
@@ -1288,8 +1298,9 @@ const dailySales = () => {
           console.log(
             `The price is fair, so there are no sales modifiers active.`
           );
+          console.log(`${salesNumber} sold!`);
           // Fair price, so there won't be a "salesForce" impact
-          if (localItemQuantity >= salesNumber) {
+          if (localItemQuantity > salesNumber) {
             mach['macSlot' + x] -= salesNumber;
 
             // This represents the gross sales
@@ -1304,15 +1315,17 @@ const dailySales = () => {
 
             moneyExchange('+', salesAmount);
             saveJSON(localMachines, 'VMM-vendingMachines');
+          } else if (
+            localItemQuantity <= salesNumber &&
+            warehouseArray[localItemID].quantity > 0
+          ) {
+            mach['macSlot' + x] = itemPriceTable[localItemID].maxNum;
+            saveJSON(localMachines, 'VMM-vendingMachines');
+            warehouseStock(itemPriceTable[localItemID].maxNum, localItemID);
+            console.log('Emergency restock done!');
           } else {
             moneyExchange('+', localItemQuantity * localItemPrice);
             mach['macSlot' + x] = 0;
-            mach['macSlotItem' + x] = -1;
-            saveJSON(localMachines, 'VMM-vendingMachines');
-          }
-
-          // If the slot is empty after all this, reset it
-          if (localItemQuantity === 0) {
             mach['macSlotItem' + x] = -1;
             saveJSON(localMachines, 'VMM-vendingMachines');
           }
@@ -1340,7 +1353,7 @@ const dailySales = () => {
           console.log(
             `Could have sold ${oldSalesNumber}, but sold ${salesNumber} instead.`
           );
-          if (localItemQuantity >= salesNumber) {
+          if (localItemQuantity > salesNumber) {
             mach['macSlot' + x] -= salesNumber;
 
             // This represents the gross sales
@@ -1355,18 +1368,16 @@ const dailySales = () => {
 
             moneyExchange('+', salesAmount);
             saveJSON(localMachines, 'VMM-vendingMachines');
+          } else if (
+            localItemQuantity <= salesNumber &&
+            warehouseArray[localItemID].quantity > 0
+          ) {
+            mach['macSlot' + x] = itemPriceTable[localItemID].maxNum;
+            saveJSON(localMachines, 'VMM-vendingMachines');
+            warehouseStock(itemPriceTable[localItemID].maxNum, localItemID);
+            console.log('Emergency restock done!');
           } else {
-            // This represents the gross sales
-            let salesAmount = localItemQuantity * localItemPrice;
-
-            // If percent is greater than 0, then this machine's location
-            // uses percent of sales pricing
-            // This is essentially net sales, after paying the location fee
-            if (percent > 0) {
-              salesAmount -= locationCut(salesAmount, percent);
-            }
-
-            moneyExchange('+', salesAmount);
+            moneyExchange('+', localItemQuantity * localItemPrice);
             mach['macSlot' + x] = 0;
             mach['macSlotItem' + x] = -1;
             saveJSON(localMachines, 'VMM-vendingMachines');
@@ -1392,7 +1403,7 @@ const dailySales = () => {
           console.log(
             `Would have sold ${oldSalesNumber}, but sold ${salesNumber} instead!`
           );
-          if (localItemQuantity >= salesNumber) {
+          if (localItemQuantity > salesNumber) {
             mach['macSlot' + x] -= salesNumber;
 
             // This represents the gross sales
@@ -1407,25 +1418,17 @@ const dailySales = () => {
 
             moneyExchange('+', salesAmount);
             saveJSON(localMachines, 'VMM-vendingMachines');
-          } else {
-            // This represents the gross sales
-            let salesAmount = localItemQuantity * localItemPrice;
-
-            // If percent is greater than 0, then this machine's location
-            // uses percent of sales pricing
-            // This is essentially net sales, after paying the location fee
-            if (percent > 0) {
-              salesAmount -= locationCut(salesAmount, percent);
-            }
-
-            moneyExchange('+', salesAmount);
-            mach['macSlot' + x] = 0;
-            mach['macSlotItem' + x] = -1;
+          } else if (
+            localItemQuantity <= salesNumber &&
+            warehouseArray[localItemID].quantity > 0
+          ) {
+            mach['macSlot' + x] = itemPriceTable[localItemID].maxNum;
             saveJSON(localMachines, 'VMM-vendingMachines');
-          }
-
-          // If the slot is empty after all this, reset it
-          if (localItemQuantity === 0) {
+            warehouseStock(itemPriceTable[localItemID].maxNum, localItemID);
+            console.log('Emergency restock done!');
+          } else {
+            moneyExchange('+', localItemQuantity * localItemPrice);
+            mach['macSlot' + x] = 0;
             mach['macSlotItem' + x] = -1;
             saveJSON(localMachines, 'VMM-vendingMachines');
           }
