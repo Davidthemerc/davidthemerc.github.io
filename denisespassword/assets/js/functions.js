@@ -1,5 +1,14 @@
 const newPassword = async () => {
-  await getWord();
+  currentWord = words[ranBetween(1, words.length)];
+  displayWord(currentWord);
+  saveWord(currentWord);
+  lookupWord(currentWord);
+};
+
+// Random number function
+// Accepts minimum and maximum number as parameters
+const ranBetween = function randomNumbersBetweenMinAndMax(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
 // Check for locally saved data
@@ -20,6 +29,7 @@ const saveWord = (word) => {
 
 const displayWord = (text) => {
   passwordEl.innerHTML = text;
+  currentWord = text;
 };
 
 const chgScore = (chg) => {

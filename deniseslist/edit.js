@@ -5,7 +5,7 @@ let results = getSavedResults();
 let item = results.find((item) => item.id === itemId);
 
 if (!item) {
-  location.assign('deniseslist.html');
+  location.assign('index.html');
 }
 
 const itemText = document.querySelector('#item-body');
@@ -13,6 +13,9 @@ const categoryLister = document.querySelector('#category');
 
 itemText.value = item.listItem;
 categoryLister.selectedIndex = item.categoryNumber + 1;
+
+const wm = document.getElementById('wm');
+wm.href = `https://www.walmart.com/search?q=${itemText.value}`;
 
 itemText.addEventListener('input', (e) => {
   item.listItem = e.target.value;

@@ -2,7 +2,7 @@ let categoryNames = [
   'Clothing',
   'Produce',
   'Bakery',
-  'Other Grocery',
+  'Grocery',
   'Beverages',
   'Dairy',
   'Cleaning Supplies',

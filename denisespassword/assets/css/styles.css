@@ -33,3 +33,22 @@ body {
   color: rgb(36, 137, 239);
   margin-bottom: 0px;
 }
+
+.defName {
+  font-weight: bold;
+  font-size: 1.25rem;
+  text-decoration: underline;
+}
+
+.part {
+  font-style: italic;
+}
+
+.defoFronter {
+  font-weight: bold;
+  display: inline;
+}
+
+.actDef {
+  display: inline;
+}
