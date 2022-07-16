@@ -1,0 +1,35 @@
+.btn {
+  margin: 0.5rem;
+}
+
+nav {
+  background-color: #a770de;
+}
+
+.body {
+  background-color: red;
+}
+
+body {
+  background-color: rgb(224, 215, 255);
+}
+
+.passwordpre {
+  font-size: 32px;
+  font-family: Allan, serif;
+  font-style: italic;
+  text-align: center;
+  font-weight: bold;
+  color: var(--bs-gray-700);
+  margin-bottom: 0px;
+}
+
+.password {
+  font-size: 48px;
+  font-family: Allan, serif;
+  font-style: italic;
+  text-align: center;
+  font-weight: bold;
+  color: rgb(36, 137, 239);
+  margin-bottom: 0px;
+}

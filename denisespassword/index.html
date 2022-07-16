@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Password</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Adamina&amp;display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Allan&amp;display=swap">
+    <link rel="stylesheet" href="assets/css/Footer-Basic-icons.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-light navbar-expand-md">
+        <div class="container-fluid"><a class="navbar-brand" href="#"
+                style="font-family: Adamina, serif;font-size: 32px;font-weight: bold;">Denise's Password</a><button
+                data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-1"><span
+                    class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navcol-1"><button id="newword" class="btn btn-primary"
+                    type="button">New
+                    Word</button><button id="guessedword" class="btn btn-primary" type="button">Guessed
+                    Word</button><button id="resetscore" class="btn btn-primary" type="button">Reset
+                    Game</button><button id="penalty" class="btn btn-primary" type="button">Penalty</button>
+            </div>
+            <div class="col-auto"><span style="font-family: Adamina, serif;font-size: 24px;">Score:&nbsp;</span><span
+                    id="score" style="font-size: 24px;font-family: Adamina, serif;">0 Points</span></div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="col-12">
+            <p class="passwordpre"> Denise's password is...</p>
+            <div>
+                <p id="password" class="password"></p>
+            </div>
+        </div>
+    </div>
+    <footer class="text-center">
+        <div class="container text-muted py-2 py-lg-3">
+            <p class="mb-0">Copyright © 2022 David Mercado</p>
+        </div>
+    </footer>
+    <script src="assets/js/requests.js"></script>
+    <script src="assets/js/functions.js"></script>
+    <script src="assets/js/app.js"></script>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+</body>
+
+</html>
