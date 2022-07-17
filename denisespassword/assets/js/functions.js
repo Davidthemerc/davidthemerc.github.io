@@ -60,3 +60,11 @@ const retrieveScore = () => {
     return 0;
   }
 };
+
+const hideStuff = () => {
+  if (main.style.display !== 'none') {
+    main.style.display = 'none';
+  } else {
+    main.style.display = 'block';
+  }
+};

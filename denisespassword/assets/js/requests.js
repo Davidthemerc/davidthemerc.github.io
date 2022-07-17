@@ -39,6 +39,10 @@ const lookupWord = async (currentWord) => {
       });
     });
   } else {
-    throw new Error('Unable to get definition');
+    if (response.status === 404) {
+      console.log('Fuck, this word has no definition!');
+    } else {
+      throw new Error('Unable to get definition');
+    }
   }
 };

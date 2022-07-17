@@ -22,14 +22,15 @@
                     type="button">New
                     Word</button><button id="guessedword" class="btn btn-primary" type="button">Guessed
                     Word</button><button id="resetscore" class="btn btn-primary" type="button">Reset
-                    Game</button><button id="penalty" class="btn btn-primary" type="button">Penalty</button>
+                    Game</button><button id="penalty" class="btn btn-primary" type="button">Penalty</button><button
+                    id="hide" class="btn btn-primary" type="button">Hide Word</button>
             </div>
             <div class="col-auto"><span style="font-family: Adamina, serif;font-size: 24px;">Score:&nbsp;</span><span
                     id="score" style="font-size: 24px;font-family: Adamina, serif;">0 Points</span></div>
         </div>
     </nav>
     <div class="container">
-        <div class="col-12">
+        <div id="main" class="col-12">
             <p class="passwordpre"> Denise's password is...</p>
             <div>
                 <p id="password" class="password"></p>
@@ -41,7 +42,7 @@
     <footer class="text-center">
         <div class="container text-muted py-2 py-lg-3">
             <p class="mb-0">Copyright © 2022 David Mercado</p>
-            <p class="mb-0">Dictionary Definitions Thanks to <a
+            <p class="mb-0">Dictionary definitions thanks to <a
                     href="https://dictionaryapi.dev/">https://dictionaryapi.dev/</a></p>
         </div>
     </footer>
