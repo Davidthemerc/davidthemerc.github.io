@@ -1,0 +1,23 @@
+h3 {
+  color: blue;
+  text-align: center;
+  font-weight: bold;
+  margin: 0.5rem;
+}
+
+.head {
+  background-color: rgb(215, 209, 235);
+}
+
+body {
+  background-color: rgb(224, 215, 255);
+}
+
+.status {
+  color: red;
+  font-weight: bold;
+}
+
+.doggo {
+  margin: 0.2rem;
+}
