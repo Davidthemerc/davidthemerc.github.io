@@ -14,10 +14,15 @@ body {
 }
 
 .status {
-  color: red;
+  color: rgb(255, 0, 0);
   font-weight: bold;
 }
 
 .doggo {
   margin: 0.2rem;
+  border-radius: 1rem;
+  border-color: purple;
+  background-color: whitesmoke;
+  color: rgb(50, 50, 214);
+  font-weight: bold;
 }
