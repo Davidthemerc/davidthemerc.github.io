@@ -17,7 +17,7 @@ const doggoSounds = [
   { id: 15, dir: 'sounds/15.mp3', desc: 'Ataque Lucero!' },
   { id: 16, dir: 'sounds/16.mp3', desc: 'Subete!' },
   { id: 17, dir: 'sounds/17.mp3', desc: 'Vamanos a caminar!' },
-  { id: 18, dir: 'sounds/18.mp3', desc: 'No te creas ella!' },
+  { id: 18, dir: 'sounds/18.mp3', desc: 'No te creas de ella!' },
 ];
 
 const soundList = Array();

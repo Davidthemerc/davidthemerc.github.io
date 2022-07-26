@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Dungeons of Frostmyre</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/Footer-Dark.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body>
+    <header class="bg-dark">
+        <div class="container">
+            <div class="row text-center d-flex justify-content-center pb-2">
+                <div class="col-auto align-self-center"><img class="sword" src="assets/img/Sword.png"
+                        style="width: 125px;height: 125px;"></div>
+                <div class="col-auto align-self-center"><span class="fs-1 fw-bold text-light">Dungeons of
+                        Frostmyre<br></span><span class="fs-6 text-light">Fight your way through the frozen land of
+                        Frostmyre!</span></div>
+            </div>
+        </div>
+    </header>
+    <div class="container">
+        <div class="row">
+            <div class="col-12 background">
+                <div class="container">
+                    <div class="row main">
+                        <div class="col-3 text-center foreground">
+                            <a class="fw-bold mb-0" id="combatheroname" href="hero.html">Adventurer</a><br><img
+                                id="heroimage" class="portrait" src="assets/img/Sword.png">
+                        </div>
+                        <div class="col-3 foreground">
+                            <p><span><strong>Hitpoints: </strong></span><span id="herohpdisplay">25</span></p>
+                            <p><span><strong>Weapon:</strong><br><select id="heroweapon">
+                                    </select></span></p>
+                            <p><span><strong>Items:</strong><br><select id="heroitems">
+                                    </select></span></p><button class="btn btn-secondary" id="attackbutton"
+                                type="button">Attack</button><button class="btn btn-secondary" id="retreatbutton"
+                                type="button">Retreat</button>
+                        </div>
+                        <div class="col-3 text-center foreground">
+                            <p class="fw-bold mb-0" id="enemyname">Highwayman</p><img id="enemyimage" class="portrait"
+                                src="assets/img/Sword.png">
+                        </div>
+                        <div class="col-3 foreground">
+                            <p><span><strong>Hitpoints: </strong></span><span id="enemyhpdisplay">20</span></p>
+                            <p><span><strong>Weapon:</strong></span><span id="enemyweapon">&nbsp;Iron Dagger</span></p>
+                        </div>
+                    </div>
+                    <div class="row main">
+                        <div class="col-12 foreground" id="status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="footer-dark">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h3>Dungeons of Frostmyre</h3>
+                    <p><span>Fight your way through the frozen land of Frostmyre!</span></p>
+                </div>
+            </div>
+            <p class="copyright">David Mercado © 2022</p>
+        </div>
+    </footer>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/vars.js"></script>
+    <script src="assets/js/functions.js"></script>
+    <script src="assets/js/init.js"></script>
+    <script src="assets/js/combat.js"></script>
+</body>
+
+</html>
