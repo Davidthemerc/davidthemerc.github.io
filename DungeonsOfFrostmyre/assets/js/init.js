@@ -1,1 +1,1 @@
-const hero = loadHero();
+let hero = loadHero();

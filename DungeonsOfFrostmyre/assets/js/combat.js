@@ -5,6 +5,11 @@ const heroWeapon = document.getElementById('heroweapon');
 const heroItems = document.getElementById('heroitems');
 const attackButton = document.getElementById('attackbutton');
 const retreatButton = document.getElementById('retreatbutton');
+const heroCombatButtons = document.getElementById('herocombatbuttons');
+
+// Load Hero
+hero = loadHero();
+saveJSON(hero, 'DOF-heroData');
 
 // Load Enemy
 let enemy = enemyGeneration();
@@ -13,6 +18,7 @@ saveJSON(enemy, 'DOF-enemyData');
 // Enemy Page Items
 const enemyName = document.getElementById('enemyname');
 const enemyHPdisplay = document.getElementById('enemyhpdisplay');
+const enemyCombatButtons = document.getElementById('enemycombatbuttons');
 
 // Message Element
 const statusEl = document.getElementById('status');
@@ -39,4 +45,16 @@ attackButton.addEventListener('click', () => {
     hero.weapons[heroWeapon.value].weaponName,
     hero.weapons[heroWeapon.value]
   );
+  // Wait two seconds then show enemy attack
+  // If they are alive
+  if (enemy.hitpoints > 0) {
+    setTimeout(() => {
+      enemyAttack(enemy, enemy.weapons[0], enemy.weapons[0].weaponName);
+    }, 2000);
+  }
+});
+
+// Hero Retreat Button is Clicked
+retreatButton.addEventListener('click', () => {
+  heroRetreat();
 });
