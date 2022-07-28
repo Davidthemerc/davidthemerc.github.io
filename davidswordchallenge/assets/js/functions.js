@@ -64,11 +64,4 @@ const submitWord = (word) => {
   const three = word.substring(2, 3);
   const four = word.substring(3, 4);
   const five = word.substring(4, 5);
-
-  console.log(`Submitting word ${word}`);
-
-  if (words.indexOf(word) > -1) {
-    console.log(`It's in there!`);
-  }
-  // We'll continue with the function
 };

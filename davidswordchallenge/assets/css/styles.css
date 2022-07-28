@@ -75,6 +75,11 @@ container.fluid {
   font-weight: bold;
 }
 
+.quiz {
+  color: black;
+  font-weight: bold;
+}
+
 @media (min-width: 450px) {
   .box {
     padding: 70%;
