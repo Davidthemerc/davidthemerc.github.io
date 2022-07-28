@@ -1,0 +1,121 @@
+body {
+  background-color: #99aab5;
+}
+
+.box {
+  background: #fff;
+  border-radius: 4px;
+  padding: 75%;
+  border-color: black;
+  border: 2px;
+  border-style: solid;
+}
+
+.boxyellow {
+  background: yellow;
+  border-radius: 4px;
+  padding: 75%;
+  border-color: black;
+}
+
+.boxgreen {
+  background: green;
+  border-radius: 4px;
+  padding: 75%;
+  border-color: black;
+}
+
+.innerbox {
+  position: absolute;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.span {
+  padding: 0px;
+  margin: 0px;
+}
+
+.col-lg-2,
+.col-md-3,
+.col-xs-6 {
+  margin-top: 30px !important;
+}
+
+.letter-row {
+  margin: 1rem;
+}
+
+nav {
+  background-color: #7296ae;
+}
+
+.btn {
+  margin: 2px;
+  width: 32px;
+  font-weight: bold;
+}
+
+.buttonyellow {
+  background-color: #c9b458;
+  border-color: #c9b458;
+}
+
+.buttongreen {
+  background-color: #6aaa64;
+  border-color: #6aaa64;
+}
+
+container.fluid {
+  background-color: #7296ae;
+}
+
+.status {
+  color: black;
+  font-weight: bold;
+}
+
+@media (min-width: 450px) {
+  .box {
+    padding: 70%;
+  }
+  .btn {
+    width: 40px;
+  }
+}
+
+@media (min-width: 500px) {
+  .box {
+    padding: 65%;
+  }
+  .btn {
+    width: 45px;
+  }
+}
+
+@media (min-width: 600px) {
+  .box {
+    padding: 65%;
+  }
+  .btn {
+    width: 55px;
+  }
+}
+
+@media (min-width: 770px) {
+  .box {
+    padding: 55%;
+  }
+  .btn {
+    width: 65px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .box {
+    padding: 40%;
+  }
+  .btn {
+    width: 95px;
+  }
+}
