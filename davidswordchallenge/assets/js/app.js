@@ -32,8 +32,6 @@ boxRowArray.push(Array.from(boxRow5));
 
 const buzzer = new Audio('assets/audio/buzzer.mp3');
 const success = new Audio('assets/audio/success.mp3');
-const miss = new Audio('assets/audio/sword_miss.mp3');
-
 const keyboardArray = Array.from(keyboardKeys);
 
 let gameStatus = loadGameStatus();

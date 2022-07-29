@@ -136,9 +136,10 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
   const div = document.createElement('div');
   const paragraph = document.createElement('li');
   const button = document.createElement('button');
-  button.textContent = 'Select';
+  div.className = 'definebox';
+  button.textContent = `Select`;
   button.className = 'selectbutton';
-  paragraph.textContent = `Definition: ${definition[0].meanings[0].definitions[0].definition} `;
+  paragraph.textContent = `${definition[0].meanings[0].definitions[0].definition} `;
   paragraph.className = 'definition';
   div.appendChild(paragraph);
   div.appendChild(button);
@@ -155,7 +156,6 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
         quizEl.innerHTML = '';
         return;
       } else {
-        miss.play();
         displayMessage('Great, but you did not guess the word.', statusEl);
         submitWord(bword);
         // Reset the position of the 'cursor' and reset the current word. This essentially starts a new row.
