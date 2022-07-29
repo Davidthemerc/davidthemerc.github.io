@@ -37,7 +37,9 @@ const miss = new Audio('assets/audio/sword_miss.mp3');
 const keyboardArray = Array.from(keyboardKeys);
 
 let gameStatus = loadGameStatus();
+let savedWords = loadSavedWords();
 const winningWord = words[gameStatus.currentWord];
+displaySavedWords(savedWords);
 
 // Add event listener for reset button
 resetButton.addEventListener('click', () => {
@@ -48,8 +50,10 @@ resetButton.addEventListener('click', () => {
   };
   currentWord = '';
   saveJSON(gameStatus, 'DWC-gameStatus');
+  savedWords = ['', '', '', '', '', ''];
+  saveJSON(savedWords, 'DWC-savedWords');
   quizEl.innerHTML = '';
-  rowArray.forEach((row, index) => {
+  rowArray.forEach((row) => {
     row.forEach((subCell) => {
       subCell.innerHTML = '';
     });

@@ -18,6 +18,16 @@ const loadGameStatus = () => {
   }
 };
 
+const loadSavedWords = () => {
+  const saveJSON = localStorage.getItem('DWC-savedWords');
+
+  if (saveJSON !== null) {
+    return JSON.parse(saveJSON);
+  } else {
+    return ['', '', '', '', '', ''];
+  }
+};
+
 // Function to load saved localstorage data
 const getJSON = (savedName) => {
   const saveJSON = localStorage.getItem(savedName);
@@ -74,6 +84,9 @@ const submitWord = (word) => {
     word.substring(4, 5),
   ];
 
+  savedWords[gameStatus.currentRow] = yourWord;
+  saveJSON(savedWords, 'DWC-savedWords');
+
   const theRightWord = [
     winningWord.substring(0, 1),
     winningWord.substring(1, 2),
@@ -91,23 +104,12 @@ const submitWord = (word) => {
       boxRowArray[gameStatus.currentRow][
         index
       ].className = `boxrow${gameStatus.currentRow} boxyellow`;
+    } else {
+      boxRowArray[gameStatus.currentRow][
+        index
+      ].className = `boxrow${gameStatus.currentRow} boxred`;
     }
   });
-
-  // yourWord.forEach((checkedLetter) => {
-  //   theRightWord.forEach((letter) => {
-  //     if (checkedLetter === letter) {
-  //       // Green tile!
-  //       console.log(`${checkedLetter} matches ${letter}! Green tile!`);
-  //     } else if (theRightWord.indexOf(checkedLetter) > -1) {
-  //       console.log(
-  //         `${checkedLetter} isn't located this spot but it is located at spot ${
-  //           theRightWord.indexOf(checkedLetter) + 1
-  //         }. Yellow tile!`
-  //       );
-  //     }
-  //   });
-  // });
 };
 
 function shuffle(array) {
@@ -130,11 +132,6 @@ function shuffle(array) {
   return array;
 }
 
-// This is where I have currently left off.
-// This is where I have currently left off.
-// This is where I have currently left off.
-// This is where I have currently left off.
-// This is where I have currently left off.
 const definitionsDOM = (definition, bword, rightDefinedWord) => {
   const div = document.createElement('div');
   const paragraph = document.createElement('li');
@@ -160,7 +157,6 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
       } else {
         miss.play();
         displayMessage('Great, but you did not guess the word.', statusEl);
-
         submitWord(bword);
         // Reset the position of the 'cursor' and reset the current word. This essentially starts a new row.
         gameStatus.currentRow += 1;
@@ -179,6 +175,10 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
       boxRowArray[gameStatus.currentRow].forEach((tile) => {
         tile.className = `boxrow${gameStatus.currentRow} boxred`;
       });
+      // Save the failed word as asterisks. No help here.
+      const yourWord = ['*', '*', '*', '*', '*'];
+      savedWords[gameStatus.currentRow] = yourWord;
+      saveJSON(savedWords, 'DWC-savedWords');
       // Reset the position of the 'cursor' and reset the current word. This essentially starts a new row.
       gameStatus.currentRow += 1;
       gameStatus.currentColumn = 0;
@@ -188,6 +188,37 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
 
     if (gameStatus.currentRow > 5) {
       displayMessage('Haha, you have lost!', statusEl);
+    }
+  });
+};
+
+const displaySavedWords = (arrayLoop) => {
+  const theRightWord = [
+    winningWord.substring(0, 1),
+    winningWord.substring(1, 2),
+    winningWord.substring(2, 3),
+    winningWord.substring(3, 4),
+    winningWord.substring(4, 5),
+  ];
+
+  arrayLoop.forEach((letter, index) => {
+    for (let x = 0; x < 5; x++) {
+      if (letter[x] !== undefined) {
+        rowArray[index][x].innerHTML = letter[x].toUpperCase();
+        if (letter[x] === theRightWord[x]) {
+          boxRowArray[index][
+            x
+          ].className = `boxrow${gameStatus.currentRow} boxgreen`;
+        } else if (theRightWord.indexOf(letter[x]) > -1) {
+          boxRowArray[index][
+            x
+          ].className = `boxrow${gameStatus.currentRow} boxyellow`;
+        } else {
+          boxRowArray[index][
+            x
+          ].className = `boxrow${gameStatus.currentRow} boxred`;
+        }
+      }
     }
   });
 };
