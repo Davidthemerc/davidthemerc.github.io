@@ -95,19 +95,32 @@ const submitWord = (word) => {
     winningWord.substring(4, 5),
   ];
 
+  const dupeCheck = [0, 0, 0, 0, 0];
+
+  // Tile coloring system
   yourWord.forEach((checkedLetter, index) => {
     if (checkedLetter === theRightWord[index]) {
       boxRowArray[gameStatus.currentRow][
         index
       ].className = `boxrow${gameStatus.currentRow} boxgreen`;
-    } else if (theRightWord.indexOf(checkedLetter) > -1) {
-      boxRowArray[gameStatus.currentRow][
-        index
-      ].className = `boxrow${gameStatus.currentRow} boxyellow`;
+
+      dupeCheck[theRightWord.indexOf(checkedLetter, index)] += 1;
     } else {
       boxRowArray[gameStatus.currentRow][
         index
       ].className = `boxrow${gameStatus.currentRow} boxred`;
+    }
+  });
+  // Run an identical loop to check for yellow tiles only, duplicates won't show!
+  yourWord.forEach((checkedLetter, index) => {
+    if (
+      theRightWord.indexOf(checkedLetter) > -1 &&
+      dupeCheck[theRightWord.indexOf(checkedLetter, index)] === 0
+    ) {
+      boxRowArray[gameStatus.currentRow][
+        index
+      ].className = `boxrow${gameStatus.currentRow} boxyellow`;
+      dupeCheck[theRightWord.indexOf(checkedLetter, index)] += 1;
     }
   });
 };
@@ -201,6 +214,12 @@ const displaySavedWords = (arrayLoop) => {
     winningWord.substring(4, 5),
   ];
 
+  const dupeCheck = [0, 0, 0, 0, 0];
+
+  // I will have to re-do the letter checking system
+  // The current system is flawed, because if a letter that is in the word twice
+  // and is crossed off, even if it is in the right spot later, it will be missed
+  // Tile coloring system
   arrayLoop.forEach((letter, index) => {
     for (let x = 0; x < 5; x++) {
       if (letter[x] !== undefined) {
@@ -209,10 +228,7 @@ const displaySavedWords = (arrayLoop) => {
           boxRowArray[index][
             x
           ].className = `boxrow${gameStatus.currentRow} boxgreen`;
-        } else if (theRightWord.indexOf(letter[x]) > -1) {
-          boxRowArray[index][
-            x
-          ].className = `boxrow${gameStatus.currentRow} boxyellow`;
+          dupeCheck[theRightWord.indexOf(letter[x], x)] += 1;
         } else {
           boxRowArray[index][
             x
@@ -221,4 +237,22 @@ const displaySavedWords = (arrayLoop) => {
       }
     }
   });
+  // Run an identical loop to check for yellow tiles only, duplicates won't show!
+  arrayLoop.forEach((letter, index) => {
+    for (let x = 0; x < 5; x++) {
+      if (letter[x] !== undefined) {
+        rowArray[index][x].innerHTML = letter[x].toUpperCase();
+        if (
+          theRightWord.indexOf(letter[x]) > -1 &&
+          dupeCheck[theRightWord.indexOf(letter[x], x)] === 0
+        ) {
+          boxRowArray[index][
+            x
+          ].className = `boxrow${gameStatus.currentRow} boxyellow`;
+          dupeCheck[theRightWord.indexOf(letter[x], x)] += 1;
+        }
+      }
+    }
+  });
+  // forEach ends here
 };

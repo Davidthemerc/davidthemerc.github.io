@@ -1,5 +1,5 @@
 const words = [
-  'rabid',
+  'crier',
   'roach',
   'swing',
   'slate',

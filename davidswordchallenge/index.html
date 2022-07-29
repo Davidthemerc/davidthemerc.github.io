@@ -15,13 +15,22 @@
 
 <body>
     <nav class="navbar navbar-light navbar-expand-md">
-        <div class="container-fluid"><a class="navbar-brand" href="#"
-                style="font-family: Adamina, serif;font-size: 32px;font-weight: bold;">David's Word Challenge</a>
-            <button id="reset" class="btn btn-primary m-2">Reset Game</button>
+        <div class="container-fluid d-flex justify-content-center align-items-center"><a class="navbar-brand" href="#"
+                style="font-family: Adamina, serif;font-size: 32px;font-weight: bold;">David's Word
+                Challenge</a>
+            <div class="row">
+                <div class="col-12">
+                    <button id="reset" class="btn btn-primary m-2">Reset Game</button>
+                    <button id="nextword" class="btn btn-primary m-2">Next Word</button>
+                </div>
+            </div>
         </div>
     </nav>
-    <div class="container p-0">
+    <div class=" container p-0">
         <div class="row d-flex d-xxl-flex justify-content-center letter-row">
+            <div id="worddisplay" class="d-flex justify-content-center align-items-center pb-3 worddisplay">
+                Word #
+            </div>
             <div class="status d-flex justify-content-center align-items-center pb-3" id="status">
             </div>
             <div class="col-12">

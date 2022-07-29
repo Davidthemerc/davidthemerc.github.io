@@ -37,6 +37,11 @@ const basicLookupWord = async (bword, rightDefinedWord) => {
   if (response.status === 200) {
     const definition = await response.json();
 
+    displayMessage(
+      'Please select the correct definition of the word below:',
+      statusEl
+    );
+
     definitionsDOM(definition, bword, rightDefinedWord);
   } else if (response.status === 404) {
     // Do nothing, sorry

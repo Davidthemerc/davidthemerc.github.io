@@ -82,6 +82,11 @@ container.fluid {
   font-weight: bold;
 }
 
+.worddisplay {
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
 .quiz {
   color: black;
   font-weight: bold;
@@ -96,6 +101,7 @@ container.fluid {
   border-color: black;
   border-width: 1px;
   margin: 0.25rem;
+  padding: 0.25rem;
 }
 
 .selectbutton {
@@ -127,7 +133,7 @@ container.fluid {
     padding: 70;
     border-color: black;
   }
-  .btn {
+  .btnkey {
     width: 40px;
   }
 }
@@ -157,7 +163,7 @@ container.fluid {
     padding: 65%;
     border-color: black;
   }
-  .btn {
+  .btnkey {
     width: 45px;
   }
 }
@@ -187,7 +193,7 @@ container.fluid {
     padding: 65%;
     border-color: black;
   }
-  .btn {
+  .btnkey {
     width: 55px;
   }
 }
@@ -217,7 +223,7 @@ container.fluid {
     padding: 55%;
     border-color: black;
   }
-  .btn {
+  .btnkey {
     width: 65px;
   }
 }
@@ -247,7 +253,7 @@ container.fluid {
     padding: 40%;
     border-color: black;
   }
-  .btn {
+  .btnkey {
     width: 95px;
   }
 }
