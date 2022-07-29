@@ -162,6 +162,9 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
     if (bword === rightDefinedWord) {
       if (bword === winningWord) {
         displayMessage('SUPER! You guessed the word!', statusEl);
+        setTimeout(() => {
+          displayMessage('', statusEl);
+        }, 3000);
         success.play();
         submitWord(bword);
         gameStatus.currentRow = 6;
@@ -170,6 +173,9 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
         return;
       } else {
         displayMessage('Great, but you did not guess the word.', statusEl);
+        setTimeout(() => {
+          displayMessage('', statusEl);
+        }, 3000);
         submitWord(bword);
         // Reset the position of the 'cursor' and reset the current word. This essentially starts a new row.
         gameStatus.currentRow += 1;
@@ -183,6 +189,9 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
         `You did not pick the correct definition. NO COLOR TILES FOR YOU!`,
         statusEl
       );
+      setTimeout(() => {
+        displayMessage('', statusEl);
+      }, 3000);
       // Place the punishment tiles
       buzzer.play();
       boxRowArray[gameStatus.currentRow].forEach((tile) => {
