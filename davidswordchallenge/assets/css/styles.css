@@ -25,6 +25,13 @@ body {
   border-color: black;
 }
 
+.boxred {
+  background: red;
+  border-radius: 4px;
+  padding: 75%;
+  border-color: black;
+}
+
 .innerbox {
   position: absolute;
   font-size: 2rem;
@@ -80,9 +87,38 @@ container.fluid {
   font-weight: bold;
 }
 
+.definition {
+  display: inline-block;
+}
+
+.selectbutton {
+  margin: 0.25rem;
+}
+
 @media (min-width: 450px) {
   .box {
     padding: 70%;
+  }
+
+  .boxyellow {
+    background: yellow;
+    border-radius: 4px;
+    padding: 70%;
+    border-color: black;
+  }
+
+  .boxgreen {
+    background: green;
+    border-radius: 4px;
+    padding: 70%;
+    border-color: black;
+  }
+
+  .boxred {
+    background: red;
+    border-radius: 4px;
+    padding: 70;
+    border-color: black;
   }
   .btn {
     width: 40px;
@@ -93,6 +129,27 @@ container.fluid {
   .box {
     padding: 65%;
   }
+
+  .boxyellow {
+    background: yellow;
+    border-radius: 4px;
+    padding: 65%;
+    border-color: black;
+  }
+
+  .boxgreen {
+    background: green;
+    border-radius: 4px;
+    padding: 65%;
+    border-color: black;
+  }
+
+  .boxred {
+    background: red;
+    border-radius: 4px;
+    padding: 65%;
+    border-color: black;
+  }
   .btn {
     width: 45px;
   }
@@ -101,6 +158,27 @@ container.fluid {
 @media (min-width: 600px) {
   .box {
     padding: 65%;
+  }
+
+  .boxyellow {
+    background: yellow;
+    border-radius: 4px;
+    padding: 65%;
+    border-color: black;
+  }
+
+  .boxgreen {
+    background: green;
+    border-radius: 4px;
+    padding: 65%;
+    border-color: black;
+  }
+
+  .boxred {
+    background: red;
+    border-radius: 4px;
+    padding: 65%;
+    border-color: black;
   }
   .btn {
     width: 55px;
@@ -111,6 +189,27 @@ container.fluid {
   .box {
     padding: 55%;
   }
+
+  .boxyellow {
+    background: yellow;
+    border-radius: 4px;
+    padding: 55%;
+    border-color: black;
+  }
+
+  .boxgreen {
+    background: green;
+    border-radius: 4px;
+    padding: 55%;
+    border-color: black;
+  }
+
+  .boxred {
+    background: red;
+    border-radius: 4px;
+    padding: 55%;
+    border-color: black;
+  }
   .btn {
     width: 65px;
   }
@@ -119,6 +218,27 @@ container.fluid {
 @media (min-width: 1200px) {
   .box {
     padding: 40%;
+  }
+
+  .boxyellow {
+    background: yellow;
+    border-radius: 4px;
+    padding: 40%;
+    border-color: black;
+  }
+
+  .boxgreen {
+    background: green;
+    border-radius: 4px;
+    padding: 40%;
+    border-color: black;
+  }
+
+  .boxred {
+    background: red;
+    border-radius: 4px;
+    padding: 40%;
+    border-color: black;
   }
   .btn {
     width: 95px;
