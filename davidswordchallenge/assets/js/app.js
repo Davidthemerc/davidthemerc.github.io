@@ -3,6 +3,7 @@ const wordEl = document.getElementById('worddisplay');
 const quizEl = document.getElementById('quiz');
 const resetButton = document.getElementById('reset');
 const nextWordButton = document.getElementById('nextword');
+const goToWordButton = document.getElementById('gotoword');
 let currentWord = '';
 const row0 = document.getElementsByClassName('wordrow0');
 const row1 = document.getElementsByClassName('wordrow1');
@@ -39,33 +40,13 @@ const keyboardArray = Array.from(keyboardKeys);
 let gameStatus = loadGameStatus();
 let savedWords = loadSavedWords();
 let winningWord = words[gameStatus.currentWord];
-wordEl.innerHTML = `Word # ${gameStatus.currentWord + 1}`;
+wordEl.innerHTML = `Word # ${gameStatus.currentWord}`;
 
 displaySavedWords(savedWords);
 
 // Add event listener for reset button
 resetButton.addEventListener('click', () => {
-  gameStatus = {
-    currentRow: 0,
-    currentColumn: 0,
-    currentWord: 0,
-  };
-  wordEl.innerHTML = `Word # ${gameStatus.currentWord + 1}`;
-  currentWord = '';
-  saveJSON(gameStatus, 'DWC-gameStatus');
-  savedWords = ['', '', '', '', '', ''];
-  saveJSON(savedWords, 'DWC-savedWords');
-  quizEl.innerHTML = '';
-  rowArray.forEach((row) => {
-    row.forEach((subCell) => {
-      subCell.innerHTML = '';
-    });
-  });
-  boxRowArray.forEach((row, index) => {
-    row.forEach((subCell) => {
-      subCell.className = `box boxrow${index}`;
-    });
-  });
+  resetGameFunction(1);
   displayMessage('Game reset!', statusEl);
   setTimeout(() => {
     displayMessage('', statusEl);
@@ -73,39 +54,17 @@ resetButton.addEventListener('click', () => {
 });
 
 nextWordButton.addEventListener('click', () => {
-  // Confirm option temporarily disabled during development
-  // let confirmAction = confirm(
-  //   'Are you sure you want to proceed to the next word?'
-  // );
-  // if (confirmAction) {
-  //   // Proceed to next word
-  // } else {
-  //   alert('Cancelled!');
-  //   return;
-  // }
+  resetGameFunction(2);
+  wordEl.innerHTML = `Word # ${gameStatus.currentWord}`;
+});
 
-  gameStatus = {
-    currentRow: 0,
-    currentColumn: 0,
-    currentWord: gameStatus.currentWord + 1,
-  };
-  wordEl.innerHTML = `Word # ${gameStatus.currentWord + 1}`;
-  currentWord = '';
+goToWordButton.addEventListener('click', () => {
+  resetGameFunction(1);
+  let num = prompt(`Please select a Word #:`);
+  num = parseInt(num);
+  gameStatus.currentWord = num;
+  wordEl.innerHTML = `Word # ${gameStatus.currentWord}`;
   winningWord = words[gameStatus.currentWord];
-  saveJSON(gameStatus, 'DWC-gameStatus');
-  savedWords = ['', '', '', '', '', ''];
-  saveJSON(savedWords, 'DWC-savedWords');
-  quizEl.innerHTML = '';
-  rowArray.forEach((row) => {
-    row.forEach((subCell) => {
-      subCell.innerHTML = '';
-    });
-  });
-  boxRowArray.forEach((row, index) => {
-    row.forEach((subCell) => {
-      subCell.className = `box boxrow${index}`;
-    });
-  });
 });
 
 // Add event listeners for all keys on the virtual keyboard

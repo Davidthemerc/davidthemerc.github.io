@@ -271,3 +271,36 @@ const displaySavedWords = (arrayLoop) => {
   });
   // forEach ends here
 };
+
+const resetGameFunction = (val) => {
+  if (val === 1) {
+    gameStatus = {
+      currentRow: 0,
+      currentColumn: 0,
+      currentWord: 0,
+    };
+  } else {
+    gameStatus = {
+      currentRow: 0,
+      currentColumn: 0,
+      currentWord: gameStatus.currentWord + 1,
+    };
+  }
+  wordEl.innerHTML = `Word # ${gameStatus.currentWord}`;
+  currentWord = '';
+  saveJSON(gameStatus, 'DWC-gameStatus');
+  savedWords = ['', '', '', '', '', ''];
+  saveJSON(savedWords, 'DWC-savedWords');
+  quizEl.innerHTML = '';
+  rowArray.forEach((row) => {
+    row.forEach((subCell) => {
+      subCell.innerHTML = '';
+    });
+  });
+  boxRowArray.forEach((row, index) => {
+    row.forEach((subCell) => {
+      subCell.className = `box boxrow${index}`;
+    });
+  });
+  winningWord = words[gameStatus.currentWord];
+};
