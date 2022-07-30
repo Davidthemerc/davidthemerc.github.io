@@ -19,6 +19,11 @@ const lookupWord = async (word) => {
     shuffle(randomWords);
 
     quizEl.innerHTML = '';
+
+    displayMessage(
+      'Please select the correct definition of the word below:',
+      quizEl
+    );
     randomWords.forEach((word) => {
       basicLookupWord(word, rightDefinedWord);
     });
@@ -36,11 +41,6 @@ const basicLookupWord = async (bword, rightDefinedWord) => {
 
   if (response.status === 200) {
     const definition = await response.json();
-
-    displayMessage(
-      'Please select the correct definition of the word below:',
-      statusEl
-    );
 
     definitionsDOM(definition, bword, rightDefinedWord);
   } else if (response.status === 404) {

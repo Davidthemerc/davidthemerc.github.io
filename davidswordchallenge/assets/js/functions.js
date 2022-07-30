@@ -157,6 +157,11 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
   div.appendChild(paragraph);
   div.appendChild(button);
   quizEl.appendChild(div);
+  window.scrollTo({
+    left: 0,
+    top: document.body.scrollHeight,
+    behavior: 'smooth',
+  });
 
   button.addEventListener('click', () => {
     if (bword === rightDefinedWord) {
@@ -194,6 +199,7 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
       }, 3000);
       // Place the punishment tiles
       buzzer.play();
+      quizEl.innerHTML = '';
       boxRowArray[gameStatus.currentRow].forEach((tile) => {
         tile.className = `boxrow${gameStatus.currentRow} boxred`;
       });
