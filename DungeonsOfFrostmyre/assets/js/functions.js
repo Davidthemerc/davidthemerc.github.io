@@ -77,6 +77,12 @@ const heroAttack = (weaponName, weapon) => {
     : (damageAmount = 0);
 
   // If damage is above 0, then play Sword Hit sound, else, play Sword Miss sound
+  // I had a thought here. This should play different attack sounds based on the type of weapon used.
+  // Dagger = Dagger Miss, Dagger Hit Flesh Sounds
+  // Sword = Sword Miss, Sword Hit Flesh Sounds
+  // Bow = Arrow Flying in Air (Missed), Arrow Hit Flesh Sounds
+  // Et cetera et cetera. We can play different sounds by passing in the "sound ID" of the equipped weapon
+  // to the playAudio function, no problem!
   damageAmount > 0 ? playAudio(0) : playAudio(1);
   damage(damageAmount, enemy);
 
