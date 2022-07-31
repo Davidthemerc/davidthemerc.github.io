@@ -120,7 +120,10 @@ const submitWord = (word) => {
       boxRowArray[gameStatus.currentRow][
         index
       ].className = `boxrow${gameStatus.currentRow} boxyellow`;
-      dupeCheck[theRightWord.indexOf(checkedLetter, index)] += 1;
+      dupeCheck[
+        (theRightWord.indexOf(checkedLetter),
+        theRightWord.indexOf(checkedLetter))
+      ] += 1;
     }
   });
 };
@@ -264,7 +267,9 @@ const displaySavedWords = (arrayLoop) => {
           boxRowArray[index][
             x
           ].className = `boxrow${gameStatus.currentRow} boxyellow`;
-          dupeCheck[theRightWord.indexOf(letter[x], x)] += 1;
+          dupeCheck[
+            theRightWord.indexOf(letter[x], theRightWord.indexOf(letter[x]))
+          ] += 1;
         }
       }
     }
