@@ -97,6 +97,40 @@ const submitWord = (word) => {
 
   const dupeCheck = [0, 0, 0, 0, 0];
 
+  // Green tile coloring system
+  yourWord.forEach((checkedLetter, index) => {
+    if (checkedLetter === theRightWord[index]) {
+      boxRowArray[gameStatus.currentRow][
+        index
+      ].className = `boxrow${gameStatus.currentRow} boxgreen`;
+
+      dupeCheck[index] += 1;
+    } else {
+      boxRowArray[gameStatus.currentRow][
+        index
+      ].className = `boxrow${gameStatus.currentRow} boxred`;
+    }
+  });
+
+  yourWord.forEach((checkedLetter, index) => {
+    for (let x = 0; x < 5; x++) {
+      for (let y = 0; y < 5; y++) {
+        if (dupeCheck[y] > 0) {
+          continue;
+        }
+        if (checkedLetter !== undefined) {
+          console.log(`Checking ${checkedLetter} against ${theRightWord[y]}`);
+          if (checkedLetter === theRightWord[y] && dupeCheck[index] === 0) {
+            boxRowArray[gameStatus.currentRow][
+              index
+            ].className = `boxrow${gameStatus.currentRow} boxyellow`;
+            dupeCheck[y] += 1;
+          }
+        }
+      }
+    }
+  });
+
   // End of submitWord function
 };
 
@@ -205,6 +239,46 @@ const displaySavedWords = (arrayLoop) => {
   ];
 
   const dupeCheck = [0, 0, 0, 0, 0];
+
+  // Green tile coloring code
+  arrayLoop.forEach((letter, index) => {
+    for (let x = 0; x < 5; x++) {
+      if (letter[x] !== undefined) {
+        rowArray[index][x].innerHTML = letter[x].toUpperCase();
+        if (letter[x] === theRightWord[x]) {
+          boxRowArray[index][
+            x
+          ].className = `boxrow${gameStatus.currentRow} boxgreen`;
+          dupeCheck[x] += 1;
+        } else {
+          boxRowArray[index][
+            x
+          ].className = `boxrow${gameStatus.currentRow} boxred`;
+        }
+      }
+    }
+  });
+
+  arrayLoop.forEach((letter, index) => {
+    for (let x = 0; x < 5; x++) {
+      for (let y = 0; y < 5; y++) {
+        if (dupeCheck[y] > 0) {
+          continue;
+        }
+        if (letter[x] !== undefined) {
+          console.log(`Checking ${letter[x]} against ${theRightWord[y]}`);
+          if (letter[x] === theRightWord[y] && dupeCheck[x] === 0) {
+            boxRowArray[index][
+              x
+            ].className = `boxrow${gameStatus.currentRow} boxyellow`;
+            dupeCheck[x] += 1;
+          }
+        }
+      }
+    }
+  });
+
+  // Function ends here
 };
 
 const resetGameFunction = (val) => {
@@ -238,4 +312,10 @@ const resetGameFunction = (val) => {
     });
   });
   winningWord = words[gameStatus.currentWord];
+};
+
+const checkWord = (word) => {
+  if (currentWord.length < 5) {
+    throw new Error('Your word is too short!');
+  }
 };

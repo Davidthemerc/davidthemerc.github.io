@@ -79,6 +79,13 @@ keyboardArray.forEach((key) => {
 
     // If the html for the 'Enter' key is detected, submit the current word
     if (keyValue === '<i class="fa fa-play"></i>') {
+      try {
+        checkWord(currentWord);
+      } catch (error) {
+        displayMessage(error, statusEl);
+        return;
+      }
+
       lookupWord(currentWord.toLowerCase());
 
       // Else, if the key is longer than 1 character, then it's backspace
