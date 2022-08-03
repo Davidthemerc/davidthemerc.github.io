@@ -20,6 +20,7 @@ const boxRow5 = document.getElementsByClassName('boxrow5');
 const keyboardKeys = document.getElementsByClassName('keyboardkey');
 const rowArray = [];
 const boxRowArray = [];
+let toggler = 0;
 rowArray.push(Array.from(row0));
 rowArray.push(Array.from(row1));
 rowArray.push(Array.from(row2));

@@ -174,15 +174,29 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
     if (bword === rightDefinedWord) {
       if (bword === winningWord) {
         displayMessage('SUPER! You guessed the word!', statusEl);
-        setTimeout(() => {
-          displayMessage('', statusEl);
-        }, 3000);
         success.play();
         submitWord(bword);
-        gameStatus.currentRow = 6;
-        saveJSON(gameStatus, 'DWC-gameStatus');
-        quizEl.innerHTML = '';
-        return;
+        setTimeout(() => {
+          displayMessage('', statusEl);
+          let victory = `DWC Word # ${gameStatus.currentWord}: ${
+            gameStatus.currentRow + 1
+          }/6`;
+          displayMessage(victory, statusEl);
+          gameStatus.currentRow = 6;
+          saveJSON(gameStatus, 'DWC-gameStatus');
+          quizEl.innerHTML = '';
+          // Add button to hide letters to allow for result bragging screenshots
+          const div = document.createElement('div');
+          div.className = 'text-center';
+          const button = document.createElement('button');
+          button.textContent = 'Hide Words for Screenshot';
+          button.addEventListener('click', () => {
+            toggleWordsVisibility();
+          });
+          div.appendChild(button);
+          quizEl.appendChild(div);
+          return;
+        }, 3000);
       } else {
         displayMessage('Great, but you did not guess the word.', statusEl);
         setTimeout(() => {
@@ -310,10 +324,29 @@ const resetGameFunction = (val) => {
     });
   });
   winningWord = words[gameStatus.currentWord];
+  location.reload();
 };
 
 const checkWord = (word) => {
   if (currentWord.length < 5) {
     throw new Error('Your word is too short!');
+  }
+};
+
+const toggleWordsVisibility = () => {
+  if (toggler === 0) {
+    for (let x = 0; x < 5; x++) {
+      for (let y = 0; y < 5; y++) {
+        rowArray[x][y].style.display = 'block';
+      }
+    }
+    toggler = 1;
+  } else {
+    for (let x = 0; x < 5; x++) {
+      for (let y = 0; y < 5; y++) {
+        rowArray[x][y].style.display = 'none';
+      }
+    }
+    toggler = 0;
   }
 };
