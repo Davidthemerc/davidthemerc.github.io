@@ -113,19 +113,17 @@ const submitWord = (word) => {
   });
 
   yourWord.forEach((checkedLetter, index) => {
-    for (let x = 0; x < 5; x++) {
-      for (let y = 0; y < 5; y++) {
-        if (dupeCheck[y] > 0) {
-          continue;
-        }
-        if (checkedLetter !== undefined) {
-          console.log(`Checking ${checkedLetter} against ${theRightWord[y]}`);
-          if (checkedLetter === theRightWord[y] && dupeCheck[index] === 0) {
-            boxRowArray[gameStatus.currentRow][
-              index
-            ].className = `boxrow${gameStatus.currentRow} boxyellow`;
-            dupeCheck[y] += 1;
-          }
+    for (let y = 0; y < 5; y++) {
+      if (dupeCheck[y] > 0) {
+        continue;
+      }
+      if (checkedLetter !== undefined) {
+        console.log(`Checking ${checkedLetter} against ${theRightWord[y]}`);
+        if (checkedLetter === theRightWord[y] && dupeCheck[y] === 0) {
+          boxRowArray[gameStatus.currentRow][
+            index
+          ].className = `boxrow${gameStatus.currentRow} boxyellow`;
+          dupeCheck[y] += 1;
         }
       }
     }
@@ -267,11 +265,11 @@ const displaySavedWords = (arrayLoop) => {
         }
         if (letter[x] !== undefined) {
           console.log(`Checking ${letter[x]} against ${theRightWord[y]}`);
-          if (letter[x] === theRightWord[y] && dupeCheck[x] === 0) {
+          if (letter[x] === theRightWord[y] && dupeCheck[y] === 0) {
             boxRowArray[index][
               x
             ].className = `boxrow${gameStatus.currentRow} boxyellow`;
-            dupeCheck[x] += 1;
+            dupeCheck[y] += 1;
           }
         }
       }
