@@ -185,6 +185,7 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
           gameStatus.currentRow = 6;
           saveJSON(gameStatus, 'DWC-gameStatus');
           quizEl.innerHTML = '';
+          cheaterStopper = 0;
           // Add button to hide letters to allow for result bragging screenshots
           const div = document.createElement('div');
           div.className = 'text-center';
@@ -210,6 +211,7 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
         currentWord = '';
       }
       quizEl.innerHTML = '';
+      cheaterStopper = 0;
     } else {
       displayMessage(
         `You did not pick the correct definition. NO COLOR TILES FOR YOU!`,
@@ -221,6 +223,7 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
       // Place the punishment tiles
       buzzer.play();
       quizEl.innerHTML = '';
+      cheaterStopper = 0;
       boxRowArray[gameStatus.currentRow].forEach((tile) => {
         tile.className = `boxrow${gameStatus.currentRow} boxred`;
       });
@@ -236,7 +239,10 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
     }
 
     if (gameStatus.currentRow > 5) {
-      displayMessage('Haha, you have lost!', statusEl);
+      displayMessage(
+        `Haha, you have lost! The word was: ${winningword}`,
+        statusEl
+      );
     }
   });
 };
