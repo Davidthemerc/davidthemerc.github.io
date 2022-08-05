@@ -14,6 +14,7 @@ const loadGameStatus = () => {
       currentRow: 0,
       currentColumn: 0,
       currentWord: 0,
+      currentScore: 0,
     };
   }
 };
@@ -103,12 +104,17 @@ const submitWord = (word) => {
       boxRowArray[gameStatus.currentRow][
         index
       ].className = `boxrow${gameStatus.currentRow} boxgreen`;
-
+      document
+        .getElementById(`keyboard-` + checkedLetter)
+        .classList.add('buttongreen');
       dupeCheck[index] += 1;
     } else {
       boxRowArray[gameStatus.currentRow][
         index
       ].className = `boxrow${gameStatus.currentRow} boxred`;
+      document
+        .getElementById(`keyboard-` + checkedLetter)
+        .classList.add('buttonred');
     }
   });
 
@@ -123,6 +129,9 @@ const submitWord = (word) => {
           boxRowArray[gameStatus.currentRow][
             index
           ].className = `boxrow${gameStatus.currentRow} boxyellow`;
+          document
+            .getElementById(`keyboard-` + checkedLetter)
+            .classList.add('buttonyellow');
           dupeCheck[y] += 1;
         }
       }
@@ -176,11 +185,12 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
         displayMessage('SUPER! You guessed the word!', statusEl);
         success.play();
         submitWord(bword);
+        gameStatus.currentScore += scoreTable[gameStatus.currentRow + 1];
         setTimeout(() => {
           displayMessage('', statusEl);
           let victory = `DWC Word # ${gameStatus.currentWord}: ${
             gameStatus.currentRow + 1
-          }/6`;
+          }/6, Score: ${gameStatus.currentScore}`;
           displayMessage(victory, statusEl);
           gameStatus.currentRow = 6;
           saveJSON(gameStatus, 'DWC-gameStatus');
@@ -199,13 +209,17 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
           return;
         }, 3000);
       } else {
-        displayMessage('Great, but you did not guess the word.', statusEl);
+        displayMessage(
+          'You did not guess the word, but +1 point for the correct definition.',
+          statusEl
+        );
         setTimeout(() => {
           displayMessage('', statusEl);
         }, 3000);
         submitWord(bword);
         // Reset the position of the 'cursor' and reset the current word. This essentially starts a new row.
         gameStatus.currentRow += 1;
+        gameStatus.currentScore += 1;
         gameStatus.currentColumn = 0;
         saveJSON(gameStatus, 'DWC-gameStatus');
         currentWord = '';
@@ -214,23 +228,18 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
       cheaterStopper = 0;
     } else {
       displayMessage(
-        `You did not pick the correct definition. NO COLOR TILES FOR YOU!`,
+        `You did not pick the correct definition. Sorry, you do not get a point.`,
         statusEl
       );
       setTimeout(() => {
         displayMessage('', statusEl);
       }, 3000);
-      // Place the punishment tiles
+      submitWord(bword);
+      // Play the buzzer sound
       buzzer.play();
       quizEl.innerHTML = '';
       cheaterStopper = 0;
-      boxRowArray[gameStatus.currentRow].forEach((tile) => {
-        tile.className = `boxrow${gameStatus.currentRow} boxred`;
-      });
-      // Save the failed word as asterisks. No help here.
-      const yourWord = ['*', '*', '*', '*', '*'];
-      savedWords[gameStatus.currentRow] = yourWord;
-      saveJSON(savedWords, 'DWC-savedWords');
+
       // Reset the position of the 'cursor' and reset the current word. This essentially starts a new row.
       gameStatus.currentRow += 1;
       gameStatus.currentColumn = 0;
@@ -267,11 +276,17 @@ const displaySavedWords = (arrayLoop) => {
           boxRowArray[index][
             x
           ].className = `boxrow${gameStatus.currentRow} boxgreen`;
+          document
+            .getElementById(`keyboard-` + letter[x])
+            .classList.add('buttongreen');
           dupeCheck[x] += 1;
         } else {
           boxRowArray[index][
             x
           ].className = `boxrow${gameStatus.currentRow} boxred`;
+          document
+            .getElementById(`keyboard-` + letter[x])
+            .classList.add('buttonred');
         }
       }
     }
@@ -290,6 +305,9 @@ const displaySavedWords = (arrayLoop) => {
               x
             ].className = `boxrow${gameStatus.currentRow} boxyellow`;
             dupeCheck[y] += 1;
+            document
+              .getElementById(`keyboard-` + letter[x])
+              .classList.add('buttonyellow');
           }
         }
       }
@@ -305,12 +323,14 @@ const resetGameFunction = (val) => {
       currentRow: 0,
       currentColumn: 0,
       currentWord: 0,
+      currentScore: 0,
     };
   } else {
     gameStatus = {
       currentRow: 0,
       currentColumn: 0,
       currentWord: gameStatus.currentWord + 1,
+      currentScore: 0,
     };
   }
   wordEl.innerHTML = `Word # ${gameStatus.currentWord}`;
@@ -355,4 +375,8 @@ const toggleWordsVisibility = () => {
     }
     toggler = 0;
   }
+};
+
+const clearLocal = () => {
+  localStorage.removeItem('DWC-gameStatus');
 };

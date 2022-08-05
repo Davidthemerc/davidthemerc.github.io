@@ -31,6 +31,7 @@ const lookupWord = async (word) => {
     // Else, the user can't proceed
   } else if (response.status === 404) {
     displayMessage('Sorry, this is not a real word!', statusEl);
+    cheaterStopper = 0;
   }
 };
 

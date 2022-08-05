@@ -6,6 +6,7 @@ const nextWordButton = document.getElementById('nextword');
 const goToWordButton = document.getElementById('gotoword');
 let currentWord = '';
 let cheaterStopper = 0;
+const scoreTable = [6, 5, 4, 3, 2, 1];
 const row0 = document.getElementsByClassName('wordrow0');
 const row1 = document.getElementsByClassName('wordrow1');
 const row2 = document.getElementsByClassName('wordrow2');
@@ -48,6 +49,7 @@ displaySavedWords(savedWords);
 
 // Add event listener for reset button
 resetButton.addEventListener('click', () => {
+  clearLocal();
   resetGameFunction(1);
   displayMessage('Game reset!', statusEl);
   setTimeout(() => {

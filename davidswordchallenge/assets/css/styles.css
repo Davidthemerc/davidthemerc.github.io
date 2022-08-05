@@ -63,6 +63,11 @@ nav {
   font-weight: bold;
 }
 
+.buttonred {
+  background-color: red;
+  border-color: red;
+}
+
 .buttonyellow {
   background-color: #c9b458;
   border-color: #c9b458;
