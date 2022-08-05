@@ -185,12 +185,13 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
         displayMessage('SUPER! You guessed the word!', statusEl);
         success.play();
         submitWord(bword);
-        gameStatus.currentScore += scoreTable[gameStatus.currentRow + 1];
         setTimeout(() => {
           displayMessage('', statusEl);
-          let victory = `DWC Word # ${gameStatus.currentWord}: ${
-            gameStatus.currentRow + 1
-          }/6, Score: ${gameStatus.currentScore}`;
+
+          gameStatus.currentRow += 1;
+          gameStatus.currentScore += 1;
+          gameStatus.currentScore += scoreTable[gameStatus.currentRow - 1];
+          let victory = `DWC Word # ${gameStatus.currentWord}: ${gameStatus.currentRow}/6, Score: ${gameStatus.currentScore} Points`;
           displayMessage(victory, statusEl);
           gameStatus.currentRow = 6;
           saveJSON(gameStatus, 'DWC-gameStatus');
