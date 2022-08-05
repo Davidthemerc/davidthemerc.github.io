@@ -19,6 +19,7 @@ const loadGameStatus = () => {
   }
 };
 
+// Function to load saved words from localstorage into an array
 const loadSavedWords = () => {
   const saveJSON = localStorage.getItem('DWC-savedWords');
 
@@ -48,6 +49,7 @@ const displayMessage = (message, messageEl) => {
   messageEl.innerHTML = message;
 };
 
+// Function to initially put entered letters into the word tiles
 const enterLetter = (key) => {
   if (gameStatus.currentRow > 5) {
     return;
@@ -62,6 +64,7 @@ const enterLetter = (key) => {
   currentWord += key;
 };
 
+// Function to remove letters from the word tiles when using the delete key
 const deleteLetter = () => {
   if (gameStatus.currentRow > 5) {
     return;
@@ -74,6 +77,7 @@ const deleteLetter = () => {
   }
 };
 
+// Function to initially check a submitted word and color the tiles appropriately
 const submitWord = (word) => {
   console.log(`Checking the word ${word}`);
 
@@ -85,6 +89,7 @@ const submitWord = (word) => {
     word.substring(4, 5),
   ];
 
+  // Save word into the correct position in the localstorage item
   savedWords[gameStatus.currentRow] = yourWord;
   saveJSON(savedWords, 'DWC-savedWords');
 
@@ -96,9 +101,18 @@ const submitWord = (word) => {
     winningWord.substring(4, 5),
   ];
 
+  // We'll use this to tell the code not to re-check a letter in the same position.
+  // Example Word: crier
+  // If someone guesses the word "error", the first two R's in error will match up with the R's in
+  // crier, but the third R will not match up, because when the R's are initially matched up, the
+  // dupeCheck array is set to 1 at these positions: [0,1,0,0,1] e.g. [c,R,i,e,R]. The loop will skip
+  // at positions 1 and 4, not checking for R's any more by the time the third R in 'error' is to be checked.
+  // Therefore, the third R in 'error' will result in a red tile instead of an erroneous extra yellow
+  // tile, because the code will not check for R again, due to skipping. Devising this system was the
+  //result of repeated trial and error over a couple of days!
   const dupeCheck = [0, 0, 0, 0, 0];
 
-  // Green tile coloring system
+  // Green tile coloring code. Also handles red (wrong letter) tiles.
   yourWord.forEach((checkedLetter, index) => {
     if (checkedLetter === theRightWord[index]) {
       boxRowArray[gameStatus.currentRow][
@@ -118,6 +132,7 @@ const submitWord = (word) => {
     }
   });
 
+  // Yellow tile coloring system
   yourWord.forEach((checkedLetter, index) => {
     for (let y = 0; y < 5; y++) {
       if (dupeCheck[y] > 0) {
@@ -141,7 +156,11 @@ const submitWord = (word) => {
   // End of submitWord function
 };
 
-function shuffle(array) {
+// Function to shuffle the array containing the winning word and three words selected at random
+// This way, you can't guess the correct definition by always just picking the first one, which
+// happened before I utilized this shuffle function. The correct definition can now appear at
+// any of the four spots in the array, meaning it could be rendered in the DOM first thru fourth.
+const shuffle = (array) => {
   let currentIndex = array.length,
     randomIndex;
 
@@ -159,8 +178,9 @@ function shuffle(array) {
   }
 
   return array;
-}
+};
 
+// Function to render the definitions and the corresponding response buttons on the DOM
 const definitionsDOM = (definition, bword, rightDefinedWord) => {
   const div = document.createElement('div');
   const paragraph = document.createElement('li');
@@ -179,6 +199,7 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
     behavior: 'smooth',
   });
 
+  // Event listener for definition buttons
   button.addEventListener('click', () => {
     if (bword === rightDefinedWord) {
       if (bword === winningWord) {
@@ -187,7 +208,6 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
         submitWord(bword);
         setTimeout(() => {
           displayMessage('', statusEl);
-
           gameStatus.currentRow += 1;
           gameStatus.currentScore += 1;
           gameStatus.currentScore += scoreTable[gameStatus.currentRow - 1];
@@ -210,6 +230,7 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
           return;
         }, 3000);
       } else {
+        // Else, did not guess the word, but did get the definition right.
         displayMessage(
           'You did not guess the word, but +1 point for the correct definition.',
           statusEl
@@ -228,6 +249,7 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
       quizEl.innerHTML = '';
       cheaterStopper = 0;
     } else {
+      // Else, did not get the right definition! No point for the player!
       displayMessage(
         `You did not pick the correct definition. Sorry, you do not get a point.`,
         statusEl
@@ -257,6 +279,7 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
   });
 };
 
+// Function to display previously placed words, color tiles, color keys, etc., when reloading page
 const displaySavedWords = (arrayLoop) => {
   const theRightWord = [
     winningWord.substring(0, 1),
@@ -266,9 +289,12 @@ const displaySavedWords = (arrayLoop) => {
     winningWord.substring(4, 5),
   ];
 
+  // Works just like the one on line 113, but the functionality is slightly different because this code has to be run to render
+  // all of the potential words on the board, not just the word being entered. This code renders the tile colors for the entire
+  // board whenever the user comes back to the page via a refresh or page open.
   const dupeCheck = [0, 0, 0, 0, 0];
 
-  // Green tile coloring code
+  // Green tile coloring code. Also handles red (wrong letter) tiles.
   arrayLoop.forEach((letter, index) => {
     for (let x = 0; x < 5; x++) {
       if (letter[x] !== undefined) {
@@ -293,6 +319,7 @@ const displaySavedWords = (arrayLoop) => {
     }
   });
 
+  // Yellow tile coloring code
   arrayLoop.forEach((letter, index) => {
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
@@ -318,6 +345,7 @@ const displaySavedWords = (arrayLoop) => {
   // Function ends here
 };
 
+// Function containing game reset values
 const resetGameFunction = (val) => {
   if (val === 1) {
     gameStatus = {
@@ -354,12 +382,14 @@ const resetGameFunction = (val) => {
   location.reload();
 };
 
+// Simple function to ensure that the submitted word is the right length
 const checkWord = (word) => {
   if (currentWord.length < 5) {
     throw new Error('Your word is too short!');
   }
 };
 
+// Function to allow for hiding the letters, especially after a victory, to allow for taking a result/bragging screenshot
 const toggleWordsVisibility = () => {
   if (toggler === 0) {
     for (let x = 0; x < 5; x++) {
@@ -378,6 +408,7 @@ const toggleWordsVisibility = () => {
   }
 };
 
+// Function to clear localstorage to prevent users of older versions from encountering issues
 const clearLocal = () => {
   localStorage.removeItem('DWC-gameStatus');
 };
