@@ -15,6 +15,7 @@ const loadGameStatus = () => {
       currentColumn: 0,
       currentWord: 0,
       currentScore: 0,
+      wonMode: 0,
     };
   }
 };
@@ -210,6 +211,7 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
           displayMessage('', statusEl);
           gameStatus.currentRow += 1;
           gameStatus.currentScore += 1;
+          gameStatus.wonMode = 1;
           gameStatus.currentScore += scoreTable[gameStatus.currentRow - 1];
           let victory = `DWC Word # ${gameStatus.currentWord}: ${gameStatus.currentRow}/6, Score: ${gameStatus.currentScore} Points`;
           displayMessage(victory, statusEl);
@@ -217,16 +219,7 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
           saveJSON(gameStatus, 'DWC-gameStatus');
           quizEl.innerHTML = '';
           cheaterStopper = 0;
-          // Add button to hide letters to allow for result bragging screenshots
-          const div = document.createElement('div');
-          div.className = 'text-center';
-          const button = document.createElement('button');
-          button.textContent = 'Hide Words for Screenshot';
-          button.addEventListener('click', () => {
-            toggleWordsVisibility();
-          });
-          div.appendChild(button);
-          quizEl.appendChild(div);
+          addHideButton();
           return;
         }, 3000);
       } else {
@@ -272,7 +265,7 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
 
     if (gameStatus.currentRow > 5) {
       displayMessage(
-        `Haha, you have lost! The word was: ${winningword}`,
+        `Haha, you have lost! The word was: ${winningWord}`,
         statusEl
       );
     }
@@ -281,6 +274,12 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
 
 // Function to display previously placed words, color tiles, color keys, etc., when reloading page
 const displaySavedWords = (arrayLoop) => {
+  if (gameStatus.currentWord === null) {
+    gameStatus.currentWord = 0;
+    winningWord = words[gameStatus.currentWord];
+    saveJSON(gameStatus, 'DWC-gameStatus');
+  }
+
   const theRightWord = [
     winningWord.substring(0, 1),
     winningWord.substring(1, 2),
@@ -292,7 +291,14 @@ const displaySavedWords = (arrayLoop) => {
   // Works just like the one on line 113, but the functionality is slightly different because this code has to be run to render
   // all of the potential words on the board, not just the word being entered. This code renders the tile colors for the entire
   // board whenever the user comes back to the page via a refresh or page open.
-  const dupeCheck = [0, 0, 0, 0, 0];
+  const dupeCheck = [
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+  ];
 
   // Green tile coloring code. Also handles red (wrong letter) tiles.
   arrayLoop.forEach((letter, index) => {
@@ -306,7 +312,7 @@ const displaySavedWords = (arrayLoop) => {
           document
             .getElementById(`keyboard-` + letter[x])
             .classList.add('buttongreen');
-          dupeCheck[x] += 1;
+          dupeCheck[index][x] += 1;
         } else {
           boxRowArray[index][
             x
@@ -323,16 +329,16 @@ const displaySavedWords = (arrayLoop) => {
   arrayLoop.forEach((letter, index) => {
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
-        if (dupeCheck[y] > 0) {
+        if (dupeCheck[index][y] > 0) {
           continue;
         }
         if (letter[x] !== undefined) {
           console.log(`Checking ${letter[x]} against ${theRightWord[y]}`);
-          if (letter[x] === theRightWord[y] && dupeCheck[y] === 0) {
+          if (letter[x] === theRightWord[y] && dupeCheck[index][y] === 0) {
             boxRowArray[index][
               x
             ].className = `boxrow${gameStatus.currentRow} boxyellow`;
-            dupeCheck[y] += 1;
+            dupeCheck[index][y] += 1;
             document
               .getElementById(`keyboard-` + letter[x])
               .classList.add('buttonyellow');
@@ -341,6 +347,13 @@ const displaySavedWords = (arrayLoop) => {
       }
     }
   });
+
+  // If we're still in "won" mode, e.g. the player hasn't reset the game
+  // after winning yet, show the hide button so they can still take a screenshot
+  // if they want to.
+  if (gameStatus.wonMode === 1) {
+    addHideButton();
+  }
 
   // Function ends here
 };
@@ -353,17 +366,24 @@ const resetGameFunction = (val) => {
       currentColumn: 0,
       currentWord: 0,
       currentScore: 0,
+      wonMode: 0,
     };
   } else {
+    if (gameStatus.currentWord === null) {
+      gameStatus.currentWord = 0;
+      saveJSON(gameStatus, 'DWC-gameStatus');
+    }
     gameStatus = {
       currentRow: 0,
       currentColumn: 0,
       currentWord: gameStatus.currentWord + 1,
       currentScore: 0,
+      wonMode: 0,
     };
   }
   wordEl.innerHTML = `Word # ${gameStatus.currentWord}`;
   currentWord = '';
+  winningWord = words[gameStatus.currentWord];
   saveJSON(gameStatus, 'DWC-gameStatus');
   savedWords = ['', '', '', '', '', ''];
   saveJSON(savedWords, 'DWC-savedWords');
@@ -395,6 +415,7 @@ const toggleWordsVisibility = () => {
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
         rowArray[x][y].style.display = 'block';
+        keyboardTray.style.display = 'block';
       }
     }
     toggler = 1;
@@ -402,6 +423,7 @@ const toggleWordsVisibility = () => {
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
         rowArray[x][y].style.display = 'none';
+        keyboardTray.style.display = 'none';
       }
     }
     toggler = 0;
@@ -411,4 +433,17 @@ const toggleWordsVisibility = () => {
 // Function to clear localstorage to prevent users of older versions from encountering issues
 const clearLocal = () => {
   localStorage.removeItem('DWC-gameStatus');
+};
+
+const addHideButton = () => {
+  // Add button to hide letters to allow for result bragging screenshots
+  const div = document.createElement('div');
+  div.className = 'text-center';
+  const button = document.createElement('button');
+  button.textContent = 'Hide Words for Screenshot';
+  button.addEventListener('click', () => {
+    toggleWordsVisibility();
+  });
+  div.appendChild(button);
+  ssButton.appendChild(div);
 };

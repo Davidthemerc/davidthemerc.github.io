@@ -1,6 +1,7 @@
 const statusEl = document.getElementById('status');
 const wordEl = document.getElementById('worddisplay');
 const quizEl = document.getElementById('quiz');
+const ssButton = document.getElementById('ssbutton');
 const resetButton = document.getElementById('reset');
 const nextWordButton = document.getElementById('nextword');
 const goToWordButton = document.getElementById('gotoword');
@@ -20,6 +21,7 @@ const boxRow3 = document.getElementsByClassName('boxrow3');
 const boxRow4 = document.getElementsByClassName('boxrow4');
 const boxRow5 = document.getElementsByClassName('boxrow5');
 const keyboardKeys = document.getElementsByClassName('keyboardkey');
+const keyboardTray = document.getElementById('keyboardtray');
 const rowArray = [];
 const boxRowArray = [];
 let toggler = 0;
@@ -67,6 +69,7 @@ goToWordButton.addEventListener('click', () => {
   let num = prompt(`Please select a Word #:`);
   num = parseInt(num);
   gameStatus.currentWord = num;
+  saveJSON(gameStatus, 'DWC-gameStatus');
   wordEl.innerHTML = `Word # ${gameStatus.currentWord}`;
   winningWord = words[gameStatus.currentWord];
 });
