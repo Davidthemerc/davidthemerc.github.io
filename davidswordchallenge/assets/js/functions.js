@@ -202,11 +202,13 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
 
   // Event listener for definition buttons
   button.addEventListener('click', () => {
+    window.scrollTo(0, 0);
+
     if (bword === rightDefinedWord) {
       if (bword === winningWord) {
         displayMessage('SUPER! You guessed the word!', statusEl);
         success.play();
-        submitWord(bword);
+        submitWord(rightDefinedWord);
         setTimeout(() => {
           displayMessage('', statusEl);
           gameStatus.currentRow += 1;
@@ -231,7 +233,7 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
         setTimeout(() => {
           displayMessage('', statusEl);
         }, 3000);
-        submitWord(bword);
+        submitWord(rightDefinedWord);
         // Reset the position of the 'cursor' and reset the current word. This essentially starts a new row.
         gameStatus.currentRow += 1;
         gameStatus.currentScore += 1;
@@ -242,25 +244,48 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
       quizEl.innerHTML = '';
       cheaterStopper = 0;
     } else {
-      // Else, did not get the right definition! No point for the player!
-      displayMessage(
-        `You did not pick the correct definition. Sorry, you do not get a point.`,
-        statusEl
-      );
-      setTimeout(() => {
-        displayMessage('', statusEl);
-      }, 3000);
-      submitWord(bword);
-      // Play the buzzer sound
-      buzzer.play();
-      quizEl.innerHTML = '';
-      cheaterStopper = 0;
+      if (rightDefinedWord === winningWord) {
+        displayMessage(
+          'SUPER! You guessed the word, although you did not get the definition right.',
+          statusEl
+        );
+        success.play();
+        submitWord(rightDefinedWord);
+        setTimeout(() => {
+          displayMessage('', statusEl);
+          gameStatus.currentRow += 1;
+          gameStatus.wonMode = 1;
+          gameStatus.currentScore += scoreTable[gameStatus.currentRow - 1];
+          let victory = `DWC Word # ${gameStatus.currentWord}: ${gameStatus.currentRow}/6, Score: ${gameStatus.currentScore} Points`;
+          displayMessage(victory, statusEl);
+          gameStatus.currentRow = 6;
+          saveJSON(gameStatus, 'DWC-gameStatus');
+          quizEl.innerHTML = '';
+          cheaterStopper = 0;
+          addHideButton();
+          return;
+        }, 4000);
+      } else {
+        // Else, did not get the right definition! No point for the player!
+        displayMessage(
+          `You did not pick the correct definition. Sorry, you do not get a point.`,
+          statusEl
+        );
+        setTimeout(() => {
+          displayMessage('', statusEl);
+        }, 3000);
+        submitWord(rightDefinedWord);
+        // Play the buzzer sound
+        buzzer.play();
+        quizEl.innerHTML = '';
+        cheaterStopper = 0;
 
-      // Reset the position of the 'cursor' and reset the current word. This essentially starts a new row.
-      gameStatus.currentRow += 1;
-      gameStatus.currentColumn = 0;
-      saveJSON(gameStatus, 'DWC-gameStatus');
-      currentWord = '';
+        // Reset the position of the 'cursor' and reset the current word. This essentially starts a new row.
+        gameStatus.currentRow += 1;
+        gameStatus.currentColumn = 0;
+        saveJSON(gameStatus, 'DWC-gameStatus');
+        currentWord = '';
+      }
     }
 
     if (gameStatus.currentRow > 5) {
