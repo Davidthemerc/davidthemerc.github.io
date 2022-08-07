@@ -1,3 +1,13 @@
+const originalDate = moment().set({
+  'year': 2022,
+  'month': 7,
+  'date': 7,
+  'hour': 0,
+  'minute': 0,
+  'second': 0,
+  'millesecond': 0,
+});
+
 const statusEl = document.getElementById('status');
 const wordEl = document.getElementById('worddisplay');
 const quizEl = document.getElementById('quiz');
@@ -43,13 +53,19 @@ const success = new Audio('assets/audio/success.mp3');
 const keyboardArray = Array.from(keyboardKeys);
 
 let gameStatus = loadGameStatus();
+
+// Check if it's been a day yet
+checkDate();
+
 let savedWords = loadSavedWords();
 let winningWord = words[gameStatus.currentWord];
-wordEl.innerHTML = `Word # ${gameStatus.currentWord}`;
+wordEl.innerHTML = `Word # ${gameStatus.currentWord} (${moment().format(
+  'MMMM D, YYYY'
+)})`;
 
 displaySavedWords(savedWords);
 
-// Add event listener for reset button
+// Add event listener for reset button (Will be disabled due to Daily Update)
 resetButton.addEventListener('click', () => {
   clearLocal();
   resetGameFunction(1);
@@ -57,21 +73,6 @@ resetButton.addEventListener('click', () => {
   setTimeout(() => {
     displayMessage('', statusEl);
   }, 2000);
-});
-
-nextWordButton.addEventListener('click', () => {
-  resetGameFunction(2);
-  wordEl.innerHTML = `Word # ${gameStatus.currentWord}`;
-});
-
-goToWordButton.addEventListener('click', () => {
-  resetGameFunction(1);
-  let num = prompt(`Please select a Word #:`);
-  num = parseInt(num);
-  gameStatus.currentWord = num;
-  saveJSON(gameStatus, 'DWC-gameStatus');
-  wordEl.innerHTML = `Word # ${gameStatus.currentWord}`;
-  winningWord = words[gameStatus.currentWord];
 });
 
 // Add event listeners for all keys on the virtual keyboard

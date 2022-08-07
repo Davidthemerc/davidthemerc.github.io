@@ -13,7 +13,7 @@ const loadGameStatus = () => {
     return {
       currentRow: 0,
       currentColumn: 0,
-      currentWord: 0,
+      currentWord: checkDayWord(),
       currentScore: 0,
       wonMode: 0,
     };
@@ -389,24 +389,14 @@ const resetGameFunction = (val) => {
     gameStatus = {
       currentRow: 0,
       currentColumn: 0,
-      currentWord: 0,
-      currentScore: 0,
-      wonMode: 0,
-    };
-  } else {
-    if (gameStatus.currentWord === null) {
-      gameStatus.currentWord = 0;
-      saveJSON(gameStatus, 'DWC-gameStatus');
-    }
-    gameStatus = {
-      currentRow: 0,
-      currentColumn: 0,
-      currentWord: gameStatus.currentWord + 1,
+      currentWord: checkDayWord(),
       currentScore: 0,
       wonMode: 0,
     };
   }
-  wordEl.innerHTML = `Word # ${gameStatus.currentWord}`;
+  wordEl.innerHTML = `Word # ${gameStatus.currentWord} (${moment().format(
+    'MMMM D, YYYY'
+  )})`;
   currentWord = '';
   winningWord = words[gameStatus.currentWord];
   saveJSON(gameStatus, 'DWC-gameStatus');
@@ -424,7 +414,6 @@ const resetGameFunction = (val) => {
     });
   });
   winningWord = words[gameStatus.currentWord];
-  location.reload();
 };
 
 // Simple function to ensure that the submitted word is the right length
@@ -471,4 +460,41 @@ const addHideButton = () => {
   });
   div.appendChild(button);
   ssButton.appendChild(div);
+};
+
+const checkDayWord = () => {
+  console.log(originalDate);
+
+  let currentDate = moment();
+  console.log(currentDate);
+
+  let duration = moment.duration(currentDate.diff(originalDate));
+  let dayDiff = duration.as('days');
+  console.log(dayDiff);
+
+  if (dayDiff >= 1) {
+    //At least one day has passed since the end of the original day (reset)!'
+    let word = Math.floor(dayDiff);
+    //We'll select the Word # based on the difference of days
+    return word;
+  } else {
+    let word = 0;
+    // Day One! August 7th, 2022. The beginning of the game!
+    return word;
+  }
+};
+
+const checkDate = () => {
+  let currentDate = moment();
+  let duration = moment.duration(currentDate.diff(originalDate));
+  let dayDiff = duration.as('days');
+
+  if (dayDiff >= 1) {
+    console.log(
+      'At least one day has passed since the end of the original day (reset)!'
+    );
+    // Advance the word of the day.
+    gameStatus.currentWord = checkDayWord();
+    saveJSON(gameStatus, 'DWC-gameStatus');
+  }
 };
