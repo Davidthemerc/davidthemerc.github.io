@@ -265,5 +265,5 @@ container.fluid {
 }
 
 .fas::before {
-  vertical-align: middle;
+  vertical-align: auto;
 }
