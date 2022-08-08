@@ -263,3 +263,7 @@ container.fluid {
     width: 95px;
   }
 }
+
+.fas::before {
+  vertical-align: middle;
+}
