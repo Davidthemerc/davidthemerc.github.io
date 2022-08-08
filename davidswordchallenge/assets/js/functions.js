@@ -136,19 +136,19 @@ const submitWord = (word) => {
   // Yellow tile coloring system
   yourWord.forEach((checkedLetter, index) => {
     for (let y = 0; y < 5; y++) {
-      if (dupeCheck[y] > 0) {
+      if (dupeCheck[index] > 0) {
         continue;
       }
       if (checkedLetter !== undefined) {
         console.log(`Checking ${checkedLetter} against ${theRightWord[y]}`);
-        if (checkedLetter === theRightWord[y] && dupeCheck[y] === 0) {
+        if (checkedLetter === theRightWord[y] && dupeCheck[index] === 0) {
           boxRowArray[gameStatus.currentRow][
             index
           ].className = `boxrow${gameStatus.currentRow} boxyellow`;
           document
             .getElementById(`keyboard-` + checkedLetter)
             .classList.add('buttonyellow');
-          dupeCheck[y] += 1;
+          dupeCheck[index] += 1;
         }
       }
     }
@@ -354,16 +354,16 @@ const displaySavedWords = (arrayLoop) => {
   arrayLoop.forEach((letter, index) => {
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
-        if (dupeCheck[index][y] > 0) {
+        if (dupeCheck[index][XMLHttpRequestUpload] > 0) {
           continue;
         }
         if (letter[x] !== undefined) {
           console.log(`Checking ${letter[x]} against ${theRightWord[y]}`);
-          if (letter[x] === theRightWord[y] && dupeCheck[index][y] === 0) {
+          if (letter[x] === theRightWord[y] && dupeCheck[index][x] === 0) {
             boxRowArray[index][
               x
             ].className = `boxrow${gameStatus.currentRow} boxyellow`;
-            dupeCheck[index][y] += 1;
+            dupeCheck[index][x] += 1;
             document
               .getElementById(`keyboard-` + letter[x])
               .classList.add('buttonyellow');
@@ -413,6 +413,11 @@ const resetGameFunction = (val) => {
       subCell.className = `box boxrow${index}`;
     });
   });
+  keyboardArray.forEach((key) => {
+    key.className =
+      'btnkey btn-primary d-flex justify-content-center keyboardkey';
+  });
+
   winningWord = words[gameStatus.currentWord];
 };
 
@@ -463,14 +468,9 @@ const addHideButton = () => {
 };
 
 const checkDayWord = () => {
-  console.log(originalDate);
-
   let currentDate = moment();
-  console.log(currentDate);
-
   let duration = moment.duration(currentDate.diff(originalDate));
   let dayDiff = duration.as('days');
-  console.log(dayDiff);
 
   if (dayDiff >= 1) {
     //At least one day has passed since the end of the original day (reset)!'
@@ -490,9 +490,7 @@ const checkDate = () => {
   let dayDiff = duration.as('days');
 
   if (dayDiff >= 1) {
-    console.log(
-      'At least one day has passed since the end of the original day (reset)!'
-    );
+    // At least one day has passed since the end of the original day (reset)!
     // Advance the word of the day.
     gameStatus.currentWord = checkDayWord();
     saveJSON(gameStatus, 'DWC-gameStatus');

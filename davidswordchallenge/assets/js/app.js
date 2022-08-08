@@ -34,6 +34,7 @@ const keyboardKeys = document.getElementsByClassName('keyboardkey');
 const keyboardTray = document.getElementById('keyboardtray');
 const rowArray = [];
 const boxRowArray = [];
+const keyboardArray = Array.from(keyboardKeys);
 let toggler = 0;
 rowArray.push(Array.from(row0));
 rowArray.push(Array.from(row1));
@@ -50,7 +51,6 @@ boxRowArray.push(Array.from(boxRow5));
 
 const buzzer = new Audio('assets/audio/buzzer.mp3');
 const success = new Audio('assets/audio/success.mp3');
-const keyboardArray = Array.from(keyboardKeys);
 
 let gameStatus = loadGameStatus();
 
