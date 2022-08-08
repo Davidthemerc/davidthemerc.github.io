@@ -59,6 +59,7 @@ nav {
 
 .btnkey {
   margin: 2px;
+  height: 48px;
   width: 32px;
   font-weight: bold;
 }
@@ -261,13 +262,4 @@ container.fluid {
   .btnkey {
     width: 95px;
   }
-}
-
-.fa::before,
-i {
-  vertical-align: middle;
-}
-
-.fa-backspace::before {
-  vertical-align: sub;
 }
