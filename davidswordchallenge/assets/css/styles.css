@@ -263,7 +263,8 @@ container.fluid {
   }
 }
 
-.fa::before {
+.fa::before,
+i {
   vertical-align: middle;
 }
 
