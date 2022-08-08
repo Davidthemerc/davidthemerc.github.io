@@ -54,11 +54,11 @@ const success = new Audio('assets/audio/success.mp3');
 
 let gameStatus = loadGameStatus();
 
-// Check if it's been a day yet
-checkDate();
-
 let savedWords = loadSavedWords();
 let winningWord = words[gameStatus.currentWord];
+
+// Check if it's been a day yet
+checkDate();
 wordEl.innerHTML = `Word # ${gameStatus.currentWord} (${moment().format(
   'MMMM D, YYYY'
 )})`;

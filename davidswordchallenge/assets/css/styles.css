@@ -262,3 +262,11 @@ container.fluid {
     width: 95px;
   }
 }
+
+.fa::before {
+  vertical-align: middle;
+}
+
+.fa-backspace::before {
+  vertical-align: sub;
+}
