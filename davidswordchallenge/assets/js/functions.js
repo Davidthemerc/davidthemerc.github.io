@@ -492,6 +492,8 @@ const checkDate = () => {
   if (dayDiff >= 1) {
     // At least one day has passed since the end of the original day (reset)!
     // Advance the word of the day.
+    clearLocal();
+    resetGameFunction(1);
     gameStatus.currentWord = checkDayWord();
     saveJSON(gameStatus, 'DWC-gameStatus');
   }
