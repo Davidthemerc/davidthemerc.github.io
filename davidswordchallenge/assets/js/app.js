@@ -84,6 +84,7 @@ keyboardArray.forEach((key) => {
   let keyValue;
   key.addEventListener('click', (e) => {
     keyValue = key.innerHTML;
+    console.log(keyValue);
 
     // If the html for the 'Enter' key is detected, submit the current word
     if (keyValue === '<i class="fa fa-play"></i>') {
