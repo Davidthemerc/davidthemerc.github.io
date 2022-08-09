@@ -80,7 +80,7 @@ const deleteLetter = () => {
 
 // Function to initially check a submitted word and color the tiles appropriately
 const submitWord = (word) => {
-  console.log(`Checking the word ${word}`);
+  //console.log(`Checking the word ${word}`);
 
   const yourWord = [
     word.substring(0, 1),
@@ -140,7 +140,7 @@ const submitWord = (word) => {
         continue;
       }
       if (checkedLetter !== undefined) {
-        console.log(`Checking ${checkedLetter} against ${theRightWord[y]}`);
+        //console.log(`Checking ${checkedLetter} against ${theRightWord[y]}`);
         if (checkedLetter === theRightWord[y] && dupeCheck[index] === 0) {
           boxRowArray[gameStatus.currentRow][
             index
@@ -358,7 +358,7 @@ const displaySavedWords = (arrayLoop) => {
           continue;
         }
         if (letter[x] !== undefined) {
-          console.log(`Checking ${letter[x]} against ${theRightWord[y]}`);
+          //console.log(`Checking ${letter[x]} against ${theRightWord[y]}`);
           if (letter[x] === theRightWord[y] && dupeCheck[index][x] === 0) {
             boxRowArray[index][
               x
@@ -467,8 +467,8 @@ const addHideButton = () => {
 };
 
 const checkDayWord = () => {
-  let currentDate = moment();
-  let duration = moment.duration(currentDate.diff(originalDate));
+  let midnightTime = moment();
+  let duration = moment.duration(midnightTime.diff(originalDate));
   let dayDiff = duration.as('days');
 
   if (dayDiff >= 1) {
@@ -484,11 +484,15 @@ const checkDayWord = () => {
 };
 
 const checkDate = () => {
-  let currentDate = moment();
-  let duration = moment.duration(currentDate.diff(originalDate));
-  let dayDiff = duration.as('days');
+  let midnightTime = moment();
+  let currentTime = moment();
+  midnightTime.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+  console.log(midnightTime);
+  let difference = moment.duration(midnightTime.diff(currentTime));
+  difference = Math.abs(difference.as('days'));
+  console.log(difference);
 
-  if (dayDiff >= 1) {
+  if (difference >= 1) {
     // At least one day has passed since the end of the original day (reset)!
     // Advance the word of the day.
     clearLocal();
