@@ -16,6 +16,9 @@ const loadGameStatus = () => {
       currentWord: checkDayWord(),
       currentScore: 0,
       wonMode: 0,
+      midnightTime: moment()
+        .set({ hour: 0, minute: 0, second: 0, millisecond: 0 })
+        .valueOf(),
     };
   }
 };
@@ -392,8 +395,12 @@ const resetGameFunction = (val) => {
       currentWord: checkDayWord(),
       currentScore: 0,
       wonMode: 0,
+      midnightTime: moment()
+        .set({ hour: 0, minute: 0, second: 0, millisecond: 0 })
+        .valueOf(),
     };
   }
+
   wordEl.innerHTML = `Word # ${gameStatus.currentWord} (${moment().format(
     'MMMM D, YYYY'
   )})`;
@@ -467,8 +474,8 @@ const addHideButton = () => {
 };
 
 const checkDayWord = () => {
-  let midnightTime = moment();
-  let duration = moment.duration(midnightTime.diff(originalDate));
+  let momentDay = moment();
+  let duration = moment.duration(momentDay.diff(originalDate));
   let dayDiff = duration.as('days');
 
   if (dayDiff >= 1) {
@@ -484,14 +491,11 @@ const checkDayWord = () => {
 };
 
 const checkDate = () => {
-  let midnightTime = moment();
-  let currentTime = moment();
-  midnightTime.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-  console.log(midnightTime);
-  let difference = moment.duration(midnightTime.diff(currentTime));
+  let currentTime = moment().valueOf();
+  console.log(gameStatus.midnightTime);
+  let difference = moment.duration(currentTime - gameStatus.midnightTime);
   difference = Math.abs(difference.as('days'));
   console.log(difference);
-
   if (difference >= 1) {
     // At least one day has passed since the end of the original day (reset)!
     // Advance the word of the day.
