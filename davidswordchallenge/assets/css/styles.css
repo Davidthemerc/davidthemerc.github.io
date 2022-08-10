@@ -264,6 +264,10 @@ container.fluid {
   }
 }
 
-.fas::before {
-  vertical-align: auto;
+.victory {
+  background-color: white;
+  border-width: 5px;
+  border-color: green;
+  border-style: groove;
+  color: rgb(13, 82, 13);
 }

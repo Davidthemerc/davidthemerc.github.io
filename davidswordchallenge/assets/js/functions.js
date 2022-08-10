@@ -15,6 +15,7 @@ const loadGameStatus = () => {
       currentColumn: 0,
       currentWord: checkDayWord(),
       currentScore: 0,
+      doneInRows: 0,
       wonMode: 0,
       midnightTime: moment()
         .set({ hour: 0, minute: 0, second: 0, millisecond: 0 })
@@ -215,11 +216,11 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
         setTimeout(() => {
           displayMessage('', statusEl);
           gameStatus.currentRow += 1;
+          gameStatus.doneInRows = gameStatus.currentRow;
           gameStatus.currentScore += 1;
           gameStatus.wonMode = 1;
           gameStatus.currentScore += scoreTable[gameStatus.currentRow - 1];
-          let victory = `DWC Word # ${gameStatus.currentWord}: ${gameStatus.currentRow}/6, Score: ${gameStatus.currentScore} Points`;
-          displayMessage(victory, statusEl);
+          victoryMessage();
           gameStatus.currentRow = 6;
           saveJSON(gameStatus, 'DWC-gameStatus');
           quizEl.innerHTML = '';
@@ -257,10 +258,10 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
         setTimeout(() => {
           displayMessage('', statusEl);
           gameStatus.currentRow += 1;
+          gameStatus.doneInRows = gameStatus.currentRow;
           gameStatus.wonMode = 1;
           gameStatus.currentScore += scoreTable[gameStatus.currentRow - 1];
-          let victory = `DWC Word # ${gameStatus.currentWord}: ${gameStatus.currentRow}/6, Score: ${gameStatus.currentScore} Points`;
-          displayMessage(victory, statusEl);
+          victoryMessage();
           gameStatus.currentRow = 6;
           saveJSON(gameStatus, 'DWC-gameStatus');
           quizEl.innerHTML = '';
@@ -381,6 +382,7 @@ const displaySavedWords = (arrayLoop) => {
   // if they want to.
   if (gameStatus.wonMode === 1) {
     addHideButton();
+    victoryMessage();
   }
 
   // Function ends here
@@ -394,6 +396,7 @@ const resetGameFunction = (val) => {
       currentColumn: 0,
       currentWord: checkDayWord(),
       currentScore: 0,
+      doneInRows: 0,
       wonMode: 0,
       midnightTime: moment()
         .set({ hour: 0, minute: 0, second: 0, millisecond: 0 })
@@ -492,10 +495,8 @@ const checkDayWord = () => {
 
 const checkDate = () => {
   let currentTime = moment().valueOf();
-  console.log(gameStatus.midnightTime);
   let difference = moment.duration(currentTime - gameStatus.midnightTime);
   difference = Math.abs(difference.as('days'));
-  console.log(difference);
   if (difference >= 1) {
     // At least one day has passed since the end of the original day (reset)!
     // Advance the word of the day.
@@ -504,4 +505,14 @@ const checkDate = () => {
     gameStatus.currentWord = checkDayWord();
     saveJSON(gameStatus, 'DWC-gameStatus');
   }
+};
+
+const victoryMessage = () => {
+  let div = document.createElement('div');
+  div.className = 'victory';
+  let paragraph = document.createElement('p');
+  paragraph.className = 'm-0 p-1';
+  paragraph.textContent = `DWC Word # ${gameStatus.currentWord}: ${gameStatus.doneInRows}/6, Score: ${gameStatus.currentScore} Points`;
+  div.appendChild(paragraph);
+  statusEl.appendChild(div);
 };
