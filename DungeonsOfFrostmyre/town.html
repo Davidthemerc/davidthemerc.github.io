@@ -14,8 +14,11 @@
     <header class="bg-dark">
         <div class="container">
             <div class="row text-center d-flex justify-content-center pb-2">
-                <div class="col-auto align-self-center"><img class="sword" src="assets/img/Sword.png" style="width: 125px;height: 125px;"></div>
-                <div class="col-auto align-self-center"><span class="fs-1 fw-bold text-light">Dungeons of Frostmyre<br></span><span class="fs-6 text-light">Fight your way through the frozen land of Frostmyre!</span></div>
+                <div class="col-auto align-self-center"><img class="sword" src="assets/img/Sword.png"
+                        style="width: 125px;height: 125px;"></div>
+                <div class="col-auto align-self-center"><span class="fs-1 fw-bold text-light">Dungeons of
+                        Frostmyre<br></span><span class="fs-6 text-light">Fight your way through the frozen land of
+                        Frostmyre!</span></div>
             </div>
         </div>
     </header>
@@ -25,31 +28,90 @@
                 <div class="container">
                     <div class="row text-center main">
                         <div class="col-12 foreground">
-                            <p class="fs-4 fw-bold">Welcome to Arandar</p>
+                            <div class="gameinfo" id="gameinfo"><a href="hero.html" class="herolink"
+                                    id="herolink">Lardor</a><br><span id="gameday">Day: Mondas</span>&nbsp;|&nbsp;<span
+                                    id="gametime">Hour: 5
+                                    PM</span></div><br>
+                            <div id="status" class="status"></div>
+                        </div>
+                        <div class="col-12 foreground">
+                            <p class="fs-4 fw-bold m-0">Welcome to Arandar</p>
                         </div>
                         <div class="col-sm-6 foreground town-cell">
-                            <p class="fw-bold">Temple of Skyrios</p><span style="font-style: italic;">Welcome, child. Skyrios be with you.</span>
+                            <p class="fw-bold town-service-title">Temple of Skyrios</p><small
+                                style="font-style: italic;">Welcome, child. Skyrios be with you.</small>
+                            <div class="row tex-center">
+                                <div class="col-4 mt-1">
+                                    <p class="m-0">Monks</p><button class="townbutton" id="healing"
+                                        type="button">Healing</button>
+                                    <p class="m-0" style="font-style: italic;">50 gp</p>
+                                </div>
+                                <div class="col-4 mt-1">
+                                    <p class="m-0">Meditation</p><button class="townbutton" id="meditate"
+                                        type="button">Join In</button>
+                                    <p class="m-0" style="font-style: italic;">100 gp</p>
+                                </div>
+                                <div class="col-4 mt-1">
+                                    <p class="m-0">Offerings</p><button class="townbutton" id="donate"
+                                        type="button">Donate</button>
+                                    <p class="m-0" style="font-style: italic;">Any gp</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-sm-6 foreground town-cell">
-                            <p class="fw-bold">Mountain Pass Forge</p><span style="font-style: italic;">Greetings! I have all the weapons and armor you'll need to survive out there!</span>
+                            <p class="fw-bold town-service-title">Mountain Pass Forge</p><small
+                                style="font-style: italic;">Greetings! I have all the weapons and armor you'll need to
+                                survive out there!</small>
+                            <div><button class="townbutton" id="enter-mtnpass" type="button">Enter Forge</button>
+                            </div>
                         </div>
                         <div class="col-sm-6 foreground town-cell">
-                            <p class="fw-bold">&nbsp;General Store</p><span style="font-style: italic;">Good day to you! Please, have a look at the many goods I have to offer.</span>
+                            <p class="fw-bold town-service-title">&nbsp;General Store</p><small
+                                style="font-style: italic;">Good day to you! Please, have a look at the many goods I
+                                have to offer.</small>
+                            <div><button class="townbutton" id="enter-genstore" type="button">Enter Store</button>
+                            </div>
                         </div>
                         <div class="col-sm-6 foreground town-cell">
-                            <p class="fw-bold">Arandar Inn</p><span style="font-style: italic;">Welcome in friend! Have a pint of Arandar's finest!</span>
+                            <p class="fw-bold town-service-title">Arandar Inn</p><small
+                                style="font-style: italic;">Welcome in friend! Enjoy a pint of Arandar's finest ale with
+                                one of our delicious pies!</small>
+                            <div><button class="townbutton" id="enter-arandarinn" type="button">Enter Inn</button>
+                            </div>
                         </div>
                         <div class="col-sm-6 foreground town-cell">
-                            <p class="fw-bold">Ancient Portal</p><span style="font-style: italic;">The Ancient Portal, impressive as it is, is old, weathered, and as always, non-functional.</span>
+                            <p class="fw-bold town-service-title">Averil's Archery Emporeum</p><small
+                                style="font-style: italic;">Welcome to my shop adventurer. I hope I can meet all your
+                                ranged needs.</small>
+                            <div><button class="townbutton" id="enter-archery" type="button">Enter
+                                    Emporeum</button></div>
                         </div>
                         <div class="col-sm-6 foreground town-cell">
-                            <p class="fw-bold">Marek's Enchantery</p><span style="font-style: italic;">Hello there! Be careful with some of these items, they can be quite volatile.</span>
+                            <p class="fw-bold town-service-title">Marek's Enchantery</p><small
+                                style="font-style: italic;">Hello there! Be careful with some of these items, they can
+                                be quite volatile.</small>
+                            <div><button class="townbutton" id="enter-enchantery" type="button">Enter
+                                    Marek's</button></div>
                         </div>
                         <div class="col-sm-6 foreground town-cell">
-                            <p class="fw-bold">Averil's Archery Emporeum</p><span style="font-style: italic;">Welcome to my shop adventurer. I hope I can meet all your ranged needs.</span>
+                            <p class="fw-bold town-service-title">Bank of Mariposa (Arandar Branch)</p><small
+                                style="font-style: italic;">Nice to see you again, loyal customer. Have you heard of our
+                                low interest rates?</small>
+                            <div><button class="townbutton" id="enter-bank" type="button">Enter Bank</button></div>
                         </div>
                         <div class="col-sm-6 foreground town-cell">
-                            <p class="fw-bold">Bank of Mariposa (Arandar Branch)</p><span style="font-style: italic;">Nice to see you again, loyal customer. Have you heard of our low interest rates?</span>
+                            <p class="fw-bold town-service-title">Ancient Portal</p><small
+                                style="font-style: italic;">The Ancient Portal, impressive as it is, is old, weathered,
+                                and as always, inactive.</small>
+                            <div><button class="townbutton" id="enter-portal" type="button">Visit Portal</button>
+                            </div>
+                        </div>
+                        <div class="col-12 foreground town-cell">
+                            <p class="fw-bold town-service-title">Leave Arandar</p><small
+                                style="font-style: italic;">Leave
+                                the safety of Arandar and seek adventure!</small>
+                            <div><button class="townbutton" id="leave-town" type="button">Leave Arandar</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -59,7 +121,7 @@
     <footer class="footer-dark">
         <div class="container">
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-sm-6">
                     <h3>Dungeons of Frostmyre</h3>
                     <p><span>Fight your way through the frozen land of Frostmyre!</span><br></p>
                 </div>
@@ -68,6 +130,10 @@
         </div>
     </footer>
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/vars.js"></script>
+    <script src="assets/js/functions.js"></script>
+    <script src="assets/js/init.js"></script>
+    <script src="assets/js/town.js"></script>
 </body>
 
 </html>

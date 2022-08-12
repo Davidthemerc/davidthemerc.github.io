@@ -29,10 +29,12 @@ const enemyGeneration = () => {
   // If there isn't saved data, or if it is null, initialize new data
   else
     return {
-      enemyName: 'Highwayman',
+      name: 'Highwayman',
       hitpoints: 20,
+      maxHitpoints: 20,
       attackLevel: 10,
       strengthLevel: 10,
+      defenseLevel: 10,
       weapons: [{ weaponName: 'Iron Dagger', weaponStrength: 1 }],
     };
 };
@@ -52,22 +54,28 @@ const saveJSON = (savedItem, savedName) => {
 };
 
 // Function to display messages in an area of the page
-const displayMessage = (message, messageEl) => {
+const displayMessage = (message, messageEl, length) => {
   messageEl.innerHTML = message;
+
+  if (length > 0) {
+    setTimeout(() => {
+      messageEl.innerHTML = '';
+    }, length * 1000);
+  }
 };
 
 // Function to calculate hero attack damage and handle response
 const heroAttack = (weaponName, weapon) => {
   // If the enemy is dead already, don't let this function run
   if (enemy.hitpoints <= 0) {
-    displayMessage(`${hero.heroName}, stop, stop he's already dead!`, statusEl);
+    displayMessage(`${hero.name}, stop, stop he's already dead!`, statusEl, 4);
     playAudio(3);
     return;
   }
 
   // Combat damage formula
-  let hit = ranBetween(0, 25 + hero.attackLevel);
-  console.log(`${hero.heroName}'s hit roll was ${hit}.`);
+  let hit = ranBetween(0, 25 + hero.attackLevel - enemy.defenseLevel);
+  console.log(`${hero.name}'s hit roll was ${hit}.`);
   let damageAmount;
   hit > 25 * 0.67
     ? (damageAmount = ranBetween(
@@ -91,10 +99,15 @@ const heroAttack = (weaponName, weapon) => {
     // They are dead
     enemy.hitpoints = 0;
     enemyHPdisplay.innerHTML = enemy.hitpoints;
+
+    // Play victory sound
+    playAudio(4);
+
     // Display victory message
     displayMessage(
-      `<b>${hero.heroName}</b> has defeated <b>${enemy.enemyName}</b>!`,
-      statusEl
+      `<b>${hero.name}</b> has defeated <b>${enemy.name}</b>!`,
+      statusEl,
+      5
     );
 
     // Add '[Dead]' to Enemy Name for laughs
@@ -117,18 +130,24 @@ const heroAttack = (weaponName, weapon) => {
   saveJSON(enemy, 'DOF-enemyData');
   damageAmount > 0
     ? displayMessage(
-        `<b>${hero.heroName}</b> has attacked <b>${enemy.enemyName}</b> with their ${weaponName} for ${damageAmount} damage!`,
-        statusEl
+        `<b>${hero.name}</b> has attacked <b>${enemy.name}</b> with their ${weaponName} for ${damageAmount} damage!`,
+        statusEl,
+        0
       )
-    : displayMessage(`<b>${hero.heroName}</b> missed!`, statusEl);
+    : displayMessage(`<b>${hero.name}</b> missed!`, statusEl, 0);
 };
 
 // Function for the hero to retreat
 const heroRetreat = () => {
-  let chance = ranBetween(0, 2);
+  // Don't allow the hero to retreat in the middle of an attack roll
+  if (attackStatus === 1) {
+    return;
+  }
+
+  let chance = ranBetween(0, 1);
   if (chance > 0) {
     // Successful Retreat
-    displayMessage(`You have successfully retreated...`, statusEl);
+    displayMessage(`You have successfully retreated...`, statusEl, 5);
 
     // Remove enemy from storage, you coward
     localStorage.removeItem('DOF-enemyData');
@@ -140,11 +159,12 @@ const heroRetreat = () => {
   } else {
     // Failed Retreat! The enemy attacks you again, you coward!
     displayMessage(
-      `You were unable to retreat! ${enemy.enemyName} attacks again!`,
-      statusEl
+      `You were unable to retreat! ${enemy.name} will attack!`,
+      statusEl,
+      0
     );
     setTimeout(() => {
-      enemyAttack(enemy);
+      enemyAttack(enemy, enemy.weapons[0], enemy.weapons[0].weaponName);
     }, 2000);
   }
 };
@@ -152,8 +172,9 @@ const heroRetreat = () => {
 // Function to handle enemy attacks
 const enemyAttack = (enemy, weapon, weaponName) => {
   // Combat damage formula
-  let hit = ranBetween(0, 25 + enemy.attackLevel);
-  console.log(`${enemy.enemyName}'s hit roll was ${hit}.`);
+  attackstatus = 1;
+  let hit = ranBetween(0, 25 + enemy.attackLevel - hero.defenseLevel);
+  console.log(`${enemy.name}'s hit roll was ${hit}.`);
   let damageAmount;
   hit > 25 * 0.67
     ? (damageAmount = ranBetween(
@@ -171,25 +192,27 @@ const enemyAttack = (enemy, weapon, weaponName) => {
     // The hero is dead
     hero.hitpoints = 0;
     heroHPdisplay.innerHTML = hero.hitpoints;
+    // Play defeat sound
+    playAudio(5);
     // Display damage message, then defeat message
     displayMessage(
-      `<b>${enemy.enemyName}</b> has attacked <b>${hero.heroName}</b> with their ${weaponName} for ${damageAmount} damage!`,
-      statusEl
+      `<b>${enemy.name}</b> has attacked <b>${hero.name}</b> with their ${weaponName} for ${damageAmount} damage!`,
+      statusEl,
+      5
     );
 
     // Restore Hero HP to normal after death, but remove some coins
-    hero.hitpoints = hero.hitpointsMax;
-    let coinAmount = ranBetween(
-      1,
-      (enemy.attackLevel + enemy.strengthLevel) * ranBetween(3, 10)
-    );
+    hero.hitpoints = hero.maxHitpoints;
+    let coinAmount = ranBetween(1, 50);
+    //(enemy.attackLevel + enemy.strengthLevel) * ranBetween(3, 10)
     coinChange(coinAmount, '-');
     saveJSON(hero, 'DOF-heroData');
 
     setTimeout(() => {
       displayMessage(
-        `<b>${hero.heroName}</b> has been defeated by <b>${enemy.enemyName}</b>, losing ${coinAmount} coins...`,
-        statusEl
+        `<b>${hero.name}</b> has been defeated by <b>${enemy.name}</b>, losing ${coinAmount} coins...`,
+        statusEl,
+        0
       );
     }, 2000);
 
@@ -206,10 +229,11 @@ const enemyAttack = (enemy, weapon, weaponName) => {
   saveJSON(hero, 'DOF-heroData');
   damageAmount > 0
     ? displayMessage(
-        `<b>${enemy.enemyName}</b> has attacked <b>${hero.heroName}</b> with their ${weaponName} for ${damageAmount} damage!`,
-        statusEl
+        `<b>${enemy.name}</b> has attacked <b>${hero.name}</b> with their ${weaponName} for ${damageAmount} damage!`,
+        statusEl,
+        3
       )
-    : displayMessage(`<b>${enemy.enemyName}</b> missed!`, statusEl);
+    : displayMessage(`<b>${enemy.name}</b> missed!`, statusEl, 3);
 };
 
 // Function to inflict damage
@@ -224,7 +248,7 @@ const damage = (damage, entity) => {
 
 // Function to add/remove coins
 const coinChange = (amount, action) => {
-  action = '-' ? (hero.gold -= amount) : (hero.gold += amount);
+  action === '-' ? (hero.gold -= amount) : (hero.gold += amount);
   if (hero.gold < 0) {
     hero.gold = 0;
   }
@@ -241,14 +265,36 @@ const lootEnemy = (enemy) => {
     (enemy.attackLevel + enemy.strengthLevel) * ranBetween(3, 10)
   );
   coinChange(coinAmount, '+');
+  saveJSON(hero, 'DOF-heroData');
   // Play coin sound
   playAudio(2);
   // Display coins collected message
   displayMessage(
-    `<b>${hero.heroName}</b> collected ${coinAmount} gold coins.`,
-    statusEl
+    `<b>${hero.name}</b> collected ${coinAmount} gold coins.`,
+    statusEl,
+    3
   );
   setTimeout(() => {
     location.assign('adventure.html');
   }, 2000);
+};
+
+const healing = (entity, amount) => {
+  entity.hitpoints += amount;
+  displayMessage(`${entity.name} was healed for ${amount} HP.`, statusEl, 3);
+};
+
+const townHealing = () => {
+  if (hero.hitpoints === hero.maxHitpoints) {
+    throw new Error(`${hero.name} does not need healing.`);
+  }
+
+  if (hero.gold < 50) {
+    throw new Error(`${hero.name} does not have enough gold!`);
+  }
+
+  const hurtAmount = hero.maxHitpoints - hero.hitpoints;
+  healing(hero, hurtAmount);
+  coinChange(50, '-');
+  saveJSON(hero, 'DOF-heroData');
 };

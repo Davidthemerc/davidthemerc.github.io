@@ -1,11 +1,12 @@
 // Hero Page Items
-const combatHeroName = document.getElementById('combatheroname');
+const combatname = document.getElementById('combatname');
 const heroHPdisplay = document.getElementById('herohpdisplay');
 const heroWeapon = document.getElementById('heroweapon');
 const heroItems = document.getElementById('heroitems');
 const attackButton = document.getElementById('attackbutton');
 const retreatButton = document.getElementById('retreatbutton');
 const heroCombatButtons = document.getElementById('herocombatbuttons');
+let attackStatus = 0;
 
 // Load Hero
 hero = loadHero();
@@ -24,11 +25,11 @@ const enemyCombatButtons = document.getElementById('enemycombatbuttons');
 const statusEl = document.getElementById('status');
 
 // Set the Hero's Name to match the stored name
-combatHeroName.innerHTML = hero.heroName;
+combatheroname.innerHTML = hero.name;
 heroHPdisplay.innerHTML = hero.hitpoints;
 
 // Set the Enemy's Name to match the stored name
-enemyName.innerHTML = enemy.enemyName;
+enemyName.innerHTML = enemy.name;
 enemyHPdisplay.innerHTML = enemy.hitpoints;
 
 // Populate the Hero's Weapon List
@@ -41,17 +42,33 @@ hero.weapons.forEach((weapon, index) => {
 
 // Hero Attack Button is Clicked
 attackButton.addEventListener('click', () => {
+  if (attackStatus === 1) {
+    return;
+  }
+
+  // Change attack status to 1 to indicate an ongoing combat roll
+  attackStatus = 1;
+
+  // Change button to red to indicate an active attack
+  attackButton.className += ' btnred';
+
   heroAttack(
     hero.weapons[heroWeapon.value].weaponName,
     hero.weapons[heroWeapon.value]
   );
-  // Wait two seconds then show enemy attack
-  // If they are alive
+  // Wait two seconds then show enemy attack, if they are alive
   if (enemy.hitpoints > 0) {
     setTimeout(() => {
       enemyAttack(enemy, enemy.weapons[0], enemy.weapons[0].weaponName);
     }, 2000);
   }
+
+  // Change attackStatus to 0 and button color to normal after 5 seconds,
+  // to not allow for spam attacks that can overwhelm the attack system
+  setTimeout(() => {
+    attackStatus = 0;
+    attackButton.className = 'btn btn-secondary';
+  }, 5000);
 });
 
 // Hero Retreat Button is Clicked
