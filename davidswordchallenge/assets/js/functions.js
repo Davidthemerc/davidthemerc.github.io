@@ -208,7 +208,9 @@ const definitionsDOM = (definition, bword, rightDefinedWord) => {
   button.addEventListener('click', () => {
     window.scrollTo(0, 0);
 
+    // If the correct definition is selected
     if (bword === rightDefinedWord) {
+      //If the word is correct
       if (bword === winningWord) {
         displayMessage('SUPER! You guessed the word!', statusEl);
         success.play();
