@@ -360,15 +360,13 @@ const displaySavedWords = (arrayLoop) => {
   arrayLoop.forEach((letter, index) => {
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
-        if (dupeCheck[index][XMLHttpRequestUpload] > 0) {
+        if (dupeCheck[index][x] > 0) {
           continue;
         }
         if (letter[x] !== undefined) {
           //console.log(`Checking ${letter[x]} against ${theRightWord[y]}`);
           if (letter[x] === theRightWord[y] && dupeCheck[index][x] === 0) {
-            boxRowArray[index][
-              x
-            ].className = `boxrow${gameStatus.currentRow} boxyellow`;
+            boxRowArray[index][x].className = `boxrow${index} boxyellow`;
             dupeCheck[index][x] += 1;
             document
               .getElementById(`keyboard-` + letter[x])
@@ -442,7 +440,7 @@ const checkWord = (word) => {
 // Function to allow for hiding the letters, especially after a victory, to allow for taking a result/bragging screenshot
 const toggleWordsVisibility = () => {
   if (toggler === 0) {
-    for (let x = 0; x < 5; x++) {
+    for (let x = 0; x < 6; x++) {
       for (let y = 0; y < 5; y++) {
         rowArray[x][y].style.display = 'block';
         keyboardTray.style.display = 'block';
@@ -450,7 +448,7 @@ const toggleWordsVisibility = () => {
     }
     toggler = 1;
   } else {
-    for (let x = 0; x < 5; x++) {
+    for (let x = 0; x < 6; x++) {
       for (let y = 0; y < 5; y++) {
         rowArray[x][y].style.display = 'none';
         keyboardTray.style.display = 'none';
