@@ -435,7 +435,7 @@ const resetGameFunction = (val) => {
     });
   });
   keyboardArray.forEach((key) => {
-    key.className = 'btnkey btn-primary align-self-center';
+    key.className = 'keyboardkey btnkey btn-primary align-self-center';
   });
 
   winningWord = words[gameStatus.currentWord];
