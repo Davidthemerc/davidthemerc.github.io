@@ -140,29 +140,29 @@ const submitWord = (word) => {
 
   // Yellow tile coloring system
   yourWord.forEach((checkedLetter, index) => {
-    // Old code
-    // for (let y = 0; y < 5; y++) {
-    //   if (dupeCheck[y] > 0) {
-    //     break;
-    //   }
-    //   if (checkedLetter !== undefined) {
-    //     console.log(`Checking ${checkedLetter} against ${theRightWord[y]}`);
-    //     if (
-    //       checkedLetter === theRightWord[y] &&
-    //       dupeCheck[y] === 0 &&
-    //       boxRowArray[gameStatus.currentRow][index].className !==
-    //         `boxrow${index} boxyellow`
-    //     ) {
-    //       boxRowArray[gameStatus.currentRow][
-    //         index
-    //       ].className = `boxrow${gameStatus.currentRow} boxyellow`;
-    //       document
-    //         .getElementById(`keyboard-` + checkedLetter)
-    //         .classList.add('buttonyellow');
-    //       dupeCheck[y] += 1;
-    //     }
-    //   }
-    // }
+    for (let y = 0; y < 5; y++) {
+      if (dupeCheck[index] > 0) {
+        break;
+      }
+      if (checkedLetter !== undefined) {
+        console.log(`Checking ${checkedLetter} against ${theRightWord[y]}`);
+        if (
+          checkedLetter === theRightWord[y] &&
+          dupeCheck[y] === 0 &&
+          boxRowArray[gameStatus.currentRow][index].className !==
+            `boxrow${index} boxyellow`
+        ) {
+          boxRowArray[gameStatus.currentRow][
+            index
+          ].className = `boxrow${gameStatus.currentRow} boxyellow`;
+          document
+            .getElementById(`keyboard-` + checkedLetter)
+            .classList.add('buttonyellow');
+          dupeCheck[y] += 1;
+          break;
+        }
+      }
+    }
   });
 
   // End of submitWord function
@@ -374,29 +374,28 @@ const displaySavedWords = (arrayLoop) => {
 
   // Yellow tile coloring code
   arrayLoop.forEach((letter, index) => {
-    // Old code
-    // for (let x = 0; x < 5; x++) {
-    //   if (dupeCheck[index][x] > 0) {
-    //     continue;
-    //   }
-    //   for (let y = 0; y < 5; y++) {
-    //     if (letter[x] !== undefined) {
-    //       console.log(`Checking ${letter[x]} against ${theRightWord[y]}`);
-    //       if (
-    //         letter[x] === theRightWord[y] &&
-    //         dupeCheck[index][y] === 0 &&
-    //         boxRowArray[index][x].className !== `boxrow${x} boxgreen`
-    //       ) {
-    //         boxRowArray[index][x].className = `boxrow${x} boxyellow`;
-    //         dupeCheck[index][y] += 1;
-    //         document
-    //           .getElementById(`keyboard-` + letter[x])
-    //           .classList.add('buttonyellow');
-    //         break;
-    //       }
-    //     }
-    //   }
-    // }
+    for (let x = 0; x < 5; x++) {
+      if (dupeCheck[index][x] > 0) {
+        continue;
+      }
+      for (let y = 0; y < 5; y++) {
+        if (letter[x] !== undefined) {
+          console.log(`Checking ${letter[x]} against ${theRightWord[y]}`);
+          if (
+            letter[x] === theRightWord[y] &&
+            dupeCheck[index][y] === 0 &&
+            boxRowArray[index][x].className !== `boxrow${x} boxgreen`
+          ) {
+            boxRowArray[index][x].className = `boxrow${x} boxyellow`;
+            dupeCheck[index][y] += 1;
+            document
+              .getElementById(`keyboard-` + letter[x])
+              .classList.add('buttonyellow');
+            break;
+          }
+        }
+      }
+    }
   });
 
   // If we're still in "won" mode, e.g. the player hasn't reset the game
