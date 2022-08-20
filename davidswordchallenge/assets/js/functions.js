@@ -116,6 +116,7 @@ const submitWord = (word) => {
   // tile, because the code will not check for R again, due to skipping. Devising this system was the
   //result of repeated trial and error over a couple of days!
   const dupeCheck = [0, 0, 0, 0, 0];
+  const greenCheck = [0, 0, 0, 0, 0];
 
   // Green tile coloring code. Also handles red (wrong letter) tiles.
   yourWord.forEach((checkedLetter, index) => {
@@ -126,7 +127,7 @@ const submitWord = (word) => {
       document
         .getElementById(`keyboard-` + checkedLetter)
         .classList.add('buttongreen');
-      dupeCheck[index] += 1;
+      greenCheck[index] += 1;
     } else {
       boxRowArray[gameStatus.currentRow][
         index
@@ -140,10 +141,13 @@ const submitWord = (word) => {
   // Yellow tile coloring system
   yourWord.forEach((checkedLetter, index) => {
     for (let y = 0; y < 5; y++) {
-      if (dupeCheck[index] > 0) {
+      if (greenCheck[index] > 0) {
         break;
       }
       if (checkedLetter !== undefined) {
+        if (greenCheck[index][y] > 0) {
+          break;
+        }
         console.log(`Checking ${checkedLetter} against ${theRightWord[y]}`);
         if (
           checkedLetter === theRightWord[y] &&
@@ -337,6 +341,15 @@ const displaySavedWords = (arrayLoop) => {
     [0, 0, 0, 0, 0],
   ];
 
+  const greenCheck = [
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+  ];
+
   // Green tile coloring code. Also handles red (wrong letter) tiles.
   arrayLoop.forEach((letter, index) => {
     for (let x = 0; x < 5; x++) {
@@ -349,7 +362,7 @@ const displaySavedWords = (arrayLoop) => {
           document
             .getElementById(`keyboard-` + letter[x])
             .classList.add('buttongreen');
-          dupeCheck[index][x] += 1;
+          greenCheck[index][x] += 1;
         } else {
           boxRowArray[index][
             x
@@ -365,11 +378,14 @@ const displaySavedWords = (arrayLoop) => {
   // Yellow tile coloring code
   arrayLoop.forEach((letter, index) => {
     for (let x = 0; x < 5; x++) {
-      if (dupeCheck[index][x] > 0) {
+      if (greenCheck[index][x] > 0) {
         continue;
       }
       for (let y = 0; y < 5; y++) {
         if (letter[x] !== undefined) {
+          if (greenCheck[index][y] > 0) {
+            continue;
+          }
           console.log(`Checking ${letter[x]} against ${theRightWord[y]}`);
           if (
             letter[x] === theRightWord[y] &&
@@ -435,7 +451,7 @@ const resetGameFunction = (val) => {
     });
   });
   keyboardArray.forEach((key) => {
-    key.className = 'keyboardkey btnkey btn-primary align-self-center';
+    key.className = 'btnkey btn-primary align-self-center';
   });
 
   winningWord = words[gameStatus.currentWord];
