@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Mercado Casino</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-light navbar-expand-md">
+        <div class="container-fluid"><a class="navbar-brand fs-2" href="#"
+                style="color: var(--bs-white);"><strong>Mercado Casino</strong></a><button data-bs-toggle="collapse"
+                class="navbar-toggler" data-bs-target="#navcol-1"><span class="visually-hidden">Toggle
+                    navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navcol-1">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link active" href="blackjack.html"
+                            style="color: var(--bs-white);">Blackjack</a></li>
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="row">
+            <div class="col text-center" style="padding: 10px;">
+                <p class="fs-5" style="color: var(--bs-body-bg);margin: 0;padding: 0;"><strong>Dealer</strong></p>
+                <p style="margin: 0px;padding: 0px;font-weight: bold;text-align: center;color: rgb(255,0,0);"></p><input
+                    type="text" id="dealercounter"
+                    style="width: 77px;text-align: center;border-radius: 0;background: rgb(6,78,41);padding: 5px 2px;margin: 3px;font-weight: bold;color: var(--bs-body-bg);border-width: 5px;border-color: rgb(171,18,18);font-size: 24px;">
+                <div id="dealertray"></div>
+            </div>
+            <div class="col-12 text-center">
+                <div id="playerstatus" class="playerstatus mb-1"
+                    style="border-width: 6px;border-style: ridge;padding: 3px;">
+                    <a class="fs-5" id="playername" href="player.html"
+                        style="color: var(--bs-body-bg);font-weight: bold;">Player</a><span id="playermoney"
+                        class="fs-5" style="color: var(--bs-body-bg);">, Money: <span
+                            style="text-decoration: underline;">$1000</span></span>
+                </div>
+                <p style="margin: 0px;padding: 0px;font-weight: bold;text-align: center;color: rgb(255,0,0);"></p><input
+                    type="text" id="playercounter"
+                    style="width: 77px;text-align: center;border-radius: 0;background: rgb(6,78,41);padding: 5px 2px;margin: 3px;font-weight: bold;color: var(--bs-body-bg);border-width: 5px;border-color: rgb(171,18,18);font-size: 24px;">
+                <div id="playertray"></div>
+            </div>
+            <div class="col-12 text-center" style="padding: 10px;">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div style="padding: 10px;"><button class="btn btn-primary" id="dealbutton"
+                                style="text-align: center;border-radius: 20px;background: rgb(6,78,41);margin: 3px;border-width: 5px;border-color: rgb(171,18,18);"
+                                value="10000"><strong>Deal</strong></button><button class="btn btn-primary"
+                                id="clearbutton"
+                                style="text-align: center;border-radius: 20px;background: rgb(6,78,41);margin: 3px;border-width: 5px;border-color: rgb(171,18,18);"
+                                value="10000"><strong>Clear Bet</strong></button><button class="btn btn-primary"
+                                id="betbutton"
+                                style="text-align: center;border-radius: 20px;background: rgb(6,78,41);margin: 3px;border-width: 5px;border-color: rgb(171,18,18);"
+                                value="10000"><strong>Bet</strong></button><input type="text" id="betamount"
+                                style="width: 77px;text-align: center;border-radius: 0;background: rgb(6,78,41);padding: 5px 2px;margin: 3px;font-weight: bold;color: var(--bs-body-bg);border-width: 5px;border-color: rgb(171,18,18);"
+                                placeholder="$"><button class="btn btn-primary" id="rebetbutton"
+                                style="text-align: center;border-radius: 20px;background: rgb(6,78,41);margin: 3px;border-width: 5px;border-color: rgb(171,18,18);"
+                                value="10000"><strong>Re-bet</strong></button></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="padding: 10px;"><button class="btn btn-primary" id="hitbutton"
+                                style="text-align: center;border-radius: 20px;background: rgb(6,78,41);margin: 3px;border-width: 5px;border-color: rgb(171,18,18);"
+                                value="10000"><strong>Hit</strong></button><button class="btn btn-primary"
+                                id="staybutton"
+                                style="text-align: center;border-radius: 20px;background: rgb(6,78,41);margin: 3px;border-width: 5px;border-color: rgb(171,18,18);"
+                                value="10000"><strong>Stay</strong></button><button class="btn btn-primary"
+                                id="splitbutton"
+                                style="text-align: center;border-radius: 20px;background: rgb(6,78,41);margin: 3px;border-width: 5px;border-color: rgb(171,18,18);"
+                                value="10000"><strong>Split</strong></button><button class="btn btn-primary"
+                                id="doubledownbutton"
+                                style="text-align: center;border-radius: 20px;background: rgb(6,78,41);margin: 3px;border-width: 5px;border-color: rgb(171,18,18);"
+                                value="10000"><strong>Double Down</strong></button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/functions.js"></script>
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/blackjack.js"></script>
+</body>
+
+</html>
