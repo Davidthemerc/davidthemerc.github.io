@@ -26,16 +26,18 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <p id="status" class="text-center" style="margin: 0px;color: var(--bs-body-bg);font-weight: bold;"></p>
-                <div class="input-group"><span class="input-group-text">Player Name</span><input class="form-control"
-                        type="text"></div>
-                <div class="input-group"><span class="input-group-text">Money</span><input class="form-control"
-                        type="text"></div><button id="returntogame" class="btn btn-primary mt-1" type="button"
-                    style="background: rgb(171,18,18);">Return to Game</button>
+                <div id="status" class="status"></div>
+                <div class="input-group"><span class="input-group-text">Player Name</span><input id="playername"
+                        class="form-control" type="text"></div>
+                <div class="input-group"><span class="input-group-text">Money ($)</span><input id="playermoney"
+                        class="form-control" type="text"></div><button id="returntogame" class="btn btn-primary mt-1"
+                    type="button" style="background: rgb(171,18,18);">Return to Game</button>
             </div>
         </div>
     </div>
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/functions.js"></script>
+    <script src="assets/js/blackjackplayer.js"></script>
 </body>
 
 </html>
