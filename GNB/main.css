@@ -1,0 +1,182 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Hahmlet', serif;
+  background-color: rgb(85, 80, 80);
+  color: white;
+}
+
+.header,
+footer {
+  width: 100%;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgb(20, 19, 19);
+}
+
+.header {
+  height: fit-content;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.goliath {
+  color: rgb(194, 167, 17);
+  margin: 1rem;
+  text-align: center;
+  width: 32%;
+  box-shadow: 2px 2px 2px 2px gray;
+}
+
+.goliath > a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+.goliath > a:active {
+  color: blue;
+}
+
+nav {
+  width: 68%;
+  display: flex;
+  justify-content: center;
+}
+
+.navbarlink {
+  color: white;
+  text-decoration: none;
+  margin: 1rem;
+  padding: 3px;
+}
+
+.navbarlink:hover {
+  outline: 1px white solid;
+}
+
+section {
+  margin: 1rem;
+}
+
+article {
+  display: flex;
+  justify-content: center;
+}
+
+article > p {
+  width: 80%;
+  margin: 0.5rem;
+  clear: both;
+  margin: 1rem;
+}
+
+.img1 {
+  float: left;
+  margin: 1rem;
+  width: 30%;
+}
+
+.img2 {
+  float: right;
+  margin: 1rem;
+  width: 50%;
+}
+
+.img3 {
+  float: right;
+  margin: 1rem;
+  width: 50%;
+}
+
+aside {
+  border: 3px silver solid;
+  padding: 0.5rem;
+  margin: 1rem;
+  margin-bottom: 3rem;
+  width: 20%;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  height: fit-content;
+}
+
+.underline {
+  text-decoration: underline;
+  font-weight: bold;
+}
+
+h1 {
+  text-align: center;
+}
+
+header > a {
+  display: flex;
+  justify-content: center;
+}
+
+a {
+  color: white;
+  font-weight: bold;
+}
+
+footer {
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  bottom: bottom;
+  bottom: 0;
+}
+
+@media (max-width: 900px) {
+  aside {
+    width: 90%;
+  }
+
+  .img1 {
+    width: 60%;
+  }
+
+  .img2 {
+    width: 100%;
+  }
+
+  .img3 {
+    width: 100%;
+  }
+
+  .header,
+  footer {
+    width: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  .header {
+    height: 30vh;
+  }
+
+  .goliath {
+    width: 60%;
+  }
+
+  article {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  article > p > img {
+    width: 100%;
+    display: flex;
+    align-items: center;
+  }
+}
