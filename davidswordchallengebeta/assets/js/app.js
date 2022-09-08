@@ -69,10 +69,7 @@ displaySavedWords(savedWords);
 resetButton.addEventListener('click', () => {
   clearLocal();
   resetGameFunction(1);
-  displayMessage('Game reset!', statusEl);
-  setTimeout(() => {
-    displayMessage('', statusEl);
-  }, 2000);
+  location.reload();
 });
 
 // Add event listeners for all keys on the virtual keyboard

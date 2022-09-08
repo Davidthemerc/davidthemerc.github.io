@@ -145,8 +145,8 @@ const submitWord = (word) => {
         break;
       }
       if (checkedLetter !== undefined) {
-        if (greenCheck[index][y] > 0) {
-          break;
+        if (greenCheck[y] > 0) {
+          continue;
         }
         console.log(`Checking ${checkedLetter} against ${theRightWord[y]}`);
         if (
