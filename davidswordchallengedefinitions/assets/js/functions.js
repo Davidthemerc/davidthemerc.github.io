@@ -20,8 +20,6 @@ const loadGameStatus = () => {
       midnightTime: moment()
         .set({ hour: 0, minute: 0, second: 0, millisecond: 0 })
         .valueOf(),
-      startedTime: moment().valueOf(),
-      endTime: moment().valueOf(),
     };
   }
 };
@@ -198,52 +196,121 @@ const shuffle = (array) => {
 };
 
 // Function to render the definitions and the corresponding response buttons on the DOM
-const gameCheck = (bword) => {
-  //If the word is correct
-  if (bword === winningWord) {
-    displayMessage('SUPER! You guessed the word!', statusEl);
-    success.play();
-    submitWord(bword);
-    setTimeout(() => {
-      displayMessage('', statusEl);
-      gameStatus.currentRow += 1;
-      gameStatus.doneInRows = gameStatus.currentRow;
-      gameStatus.currentScore += 1;
-      gameStatus.wonMode = 1;
-      gameStatus.currentScore += scoreTable[gameStatus.currentRow - 1];
-      gameStatus.endTime = moment().valueOf();
-      victoryMessage();
-      gameStatus.currentRow = 6;
-      saveJSON(gameStatus, 'DWC-gameStatus');
-      quizEl.innerHTML = '';
-      addHideButton();
-      return;
-    }, 3000);
-  } else {
-    // Else, did not guess the word, but did get the definition right.
-    displayMessage('You did not guess the word! Try again!', statusEl);
-    setTimeout(() => {
-      displayMessage('', statusEl);
-    }, 7000);
-    submitWord(bword);
-    // Reset the position of the 'cursor' and reset the current word. This essentially starts a new row.
-    gameStatus.currentRow += 1;
-    gameStatus.currentScore += 1;
-    gameStatus.currentColumn = 0;
-    saveJSON(gameStatus, 'DWC-gameStatus');
-    currentWord = '';
-  }
-  quizEl.innerHTML = '';
+const definitionsDOM = (definition, bword, rightDefinedWord) => {
+  const div = document.createElement('div');
+  const paragraph = document.createElement('li');
+  const button = document.createElement('button');
+  div.className = 'definebox';
+  button.textContent = `Select`;
+  button.className = 'selectbutton';
+  paragraph.textContent = `${definition[0].meanings[0].definitions[0].definition} `;
+  paragraph.className = 'definition';
+  div.appendChild(paragraph);
+  div.appendChild(button);
+  quizEl.appendChild(div);
+  window.scrollTo({
+    left: 0,
+    top: document.body.scrollHeight,
+    behavior: 'smooth',
+  });
 
-  if (gameStatus.currentRow > 5) {
-    displayMessage(
-      `Oh no, you have lost! The word was: ${winningWord}`,
-      statusEl
-    );
-    gameStatus.wonMode = 2;
-    saveJSON(gameStatus, 'DWC-gameStatus');
-    addHideButton();
-  }
+  // Event listener for definition buttons
+  button.addEventListener('click', () => {
+    window.scrollTo(0, 0);
+
+    // If the correct definition is selected
+    if (bword === rightDefinedWord) {
+      //If the word is correct
+      if (bword === winningWord) {
+        displayMessage('SUPER! You guessed the word!', statusEl);
+        success.play();
+        submitWord(rightDefinedWord);
+        setTimeout(() => {
+          displayMessage('', statusEl);
+          gameStatus.currentRow += 1;
+          gameStatus.doneInRows = gameStatus.currentRow;
+          gameStatus.currentScore += 1;
+          gameStatus.wonMode = 1;
+          gameStatus.currentScore += scoreTable[gameStatus.currentRow - 1];
+          victoryMessage();
+          gameStatus.currentRow = 6;
+          saveJSON(gameStatus, 'DWC-gameStatus');
+          quizEl.innerHTML = '';
+          cheaterStopper = 0;
+          addHideButton();
+          return;
+        }, 3000);
+      } else {
+        // Else, did not guess the word, but did get the definition right.
+        displayMessage(
+          'You did not guess the word, but +1 point for the correct definition.',
+          statusEl
+        );
+        setTimeout(() => {
+          displayMessage('', statusEl);
+        }, 3000);
+        submitWord(rightDefinedWord);
+        // Reset the position of the 'cursor' and reset the current word. This essentially starts a new row.
+        gameStatus.currentRow += 1;
+        gameStatus.currentScore += 1;
+        gameStatus.currentColumn = 0;
+        saveJSON(gameStatus, 'DWC-gameStatus');
+        currentWord = '';
+      }
+      quizEl.innerHTML = '';
+      cheaterStopper = 0;
+    } else {
+      if (rightDefinedWord === winningWord) {
+        displayMessage(
+          'SUPER! You guessed the word, although you did not get the definition right.',
+          statusEl
+        );
+        success.play();
+        submitWord(rightDefinedWord);
+        setTimeout(() => {
+          displayMessage('', statusEl);
+          gameStatus.currentRow += 1;
+          gameStatus.doneInRows = gameStatus.currentRow;
+          gameStatus.wonMode = 1;
+          gameStatus.currentScore += scoreTable[gameStatus.currentRow - 1];
+          victoryMessage();
+          gameStatus.currentRow = 6;
+          saveJSON(gameStatus, 'DWC-gameStatus');
+          quizEl.innerHTML = '';
+          cheaterStopper = 0;
+          addHideButton();
+          return;
+        }, 4000);
+      } else {
+        // Else, did not get the right definition! No point for the player!
+        displayMessage(
+          `You did not pick the correct definition. Sorry, you do not get a point.`,
+          statusEl
+        );
+        setTimeout(() => {
+          displayMessage('', statusEl);
+        }, 3000);
+        submitWord(rightDefinedWord);
+        // Play the buzzer sound
+        buzzer.play();
+        quizEl.innerHTML = '';
+        cheaterStopper = 0;
+
+        // Reset the position of the 'cursor' and reset the current word. This essentially starts a new row.
+        gameStatus.currentRow += 1;
+        gameStatus.currentColumn = 0;
+        saveJSON(gameStatus, 'DWC-gameStatus');
+        currentWord = '';
+      }
+    }
+
+    if (gameStatus.currentRow > 5) {
+      displayMessage(
+        `Haha, you have lost! The word was: ${winningWord}`,
+        statusEl
+      );
+    }
+  });
 };
 
 // Function to display previously placed words, color tiles, color keys, etc., when reloading page
@@ -343,9 +410,6 @@ const displaySavedWords = (arrayLoop) => {
   if (gameStatus.wonMode === 1) {
     addHideButton();
     victoryMessage();
-  } else if (gameStatus.wonMode === 2) {
-    displayMessage(`The word was: ${winningWord}`, statusEl);
-    addHideButton();
   }
 
   // Function ends here
@@ -364,8 +428,6 @@ const resetGameFunction = (val) => {
       midnightTime: moment()
         .set({ hour: 0, minute: 0, second: 0, millisecond: 0 })
         .valueOf(),
-      startedTime: moment().valueOf(),
-      endTime: moment().valueOf(),
     };
   }
 
@@ -404,29 +466,22 @@ const checkWord = (word) => {
 
 // Function to allow for hiding the letters, especially after a victory, to allow for taking a result/bragging screenshot
 const toggleWordsVisibility = () => {
-  if (toggler === 1) {
-    if (gameStatus.wonMode === 2) {
-      displayMessage(`The word was: ${winningWord}`, statusEl);
-    }
-
+  if (toggler === 0) {
     for (let x = 0; x < 6; x++) {
       for (let y = 0; y < 5; y++) {
         rowArray[x][y].style.display = 'block';
         keyboardTray.style.display = 'block';
       }
     }
-    toggler = 0;
+    toggler = 1;
   } else {
-    if (gameStatus.wonMode === 2) {
-      displayMessage(``, statusEl);
-    }
     for (let x = 0; x < 6; x++) {
       for (let y = 0; y < 5; y++) {
         rowArray[x][y].style.display = 'none';
         keyboardTray.style.display = 'none';
       }
     }
-    toggler = 1;
+    toggler = 0;
   }
 };
 
@@ -480,28 +535,11 @@ const checkDate = () => {
 };
 
 const victoryMessage = () => {
-  let start = gameStatus.startedTime;
-  let end = gameStatus.endTime;
-  let difference = moment.duration(end - start);
-  difference = Math.abs(difference.as('seconds'));
-  difference = moment
-    .utc(moment.duration(difference, 'seconds').asMilliseconds())
-    .format('HH:mm:ss');
-
   let div = document.createElement('div');
   div.className = 'victory';
   let paragraph = document.createElement('p');
   paragraph.className = 'm-0 p-1';
-  paragraph.textContent = `DWC Word # ${gameStatus.currentWord}: ${gameStatus.doneInRows}/6, Time: ${difference}`;
+  paragraph.textContent = `DWC Word # ${gameStatus.currentWord}: ${gameStatus.doneInRows}/6, Score: ${gameStatus.currentScore} Points`;
   div.appendChild(paragraph);
   statusEl.appendChild(div);
-};
-
-const lookupWord = (word) => {
-  // Only continue here if the word was found!
-  if (validWords.includes(word)) {
-    gameCheck(word);
-  } else {
-    displayMessage('Sorry, this is not a real word!', statusEl);
-  }
 };

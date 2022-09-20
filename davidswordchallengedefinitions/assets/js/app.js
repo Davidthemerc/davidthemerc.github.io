@@ -16,6 +16,7 @@ const resetButton = document.getElementById('reset');
 const nextWordButton = document.getElementById('nextword');
 const goToWordButton = document.getElementById('gotoword');
 let currentWord = '';
+let cheaterStopper = 0;
 const scoreTable = [9, 7, 5, 3, 1, 0];
 const row0 = document.getElementsByClassName('wordrow0');
 const row1 = document.getElementsByClassName('wordrow1');
@@ -48,6 +49,7 @@ boxRowArray.push(Array.from(boxRow3));
 boxRowArray.push(Array.from(boxRow4));
 boxRowArray.push(Array.from(boxRow5));
 
+const buzzer = new Audio('assets/audio/buzzer.mp3');
 const success = new Audio('assets/audio/success.mp3');
 
 let gameStatus = loadGameStatus();
@@ -82,6 +84,11 @@ keyboardArray.forEach((key) => {
 
     // If the html for the 'Enter' key is detected, submit the current word
     if (keyValue === '<i class="fa fa-play"></i>') {
+      if (cheaterStopper === 1) {
+        displayMessage(`Stop trying to cheat!`, statusEl);
+        return;
+      }
+
       try {
         checkWord(currentWord);
       } catch (error) {
@@ -90,6 +97,7 @@ keyboardArray.forEach((key) => {
       }
 
       lookupWord(currentWord.toLowerCase());
+      cheaterStopper = 1;
 
       // Else, if the key is longer than 1 character, then it's backspace
     } else if (keyValue.length > 1) {

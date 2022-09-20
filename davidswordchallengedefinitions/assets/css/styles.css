@@ -1,0 +1,274 @@
+body {
+  background-color: #99aab5;
+}
+
+.box {
+  background: #fff;
+  border-radius: 4px;
+  padding: 75%;
+  border-color: black;
+  border: 2px;
+  border-style: solid;
+}
+
+.boxyellow {
+  background: yellow;
+  border-radius: 4px;
+  padding: 75%;
+  border-color: black;
+}
+
+.boxgreen {
+  background: green;
+  border-radius: 4px;
+  padding: 75%;
+  border-color: black;
+}
+
+.boxred {
+  background: red;
+  border-radius: 4px;
+  padding: 75%;
+  border-color: black;
+}
+
+.innerbox {
+  position: absolute;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.span {
+  padding: 0px;
+  margin: 0px;
+}
+
+.col-lg-2,
+.col-md-3,
+.col-xs-6 {
+  margin-top: 30px !important;
+}
+
+.letter-row {
+  margin: 1rem;
+}
+
+nav {
+  background-color: #7296ae;
+}
+
+.btnkey {
+  margin: 2px;
+  height: 48px;
+  width: 32px;
+  font-weight: bold;
+}
+
+.buttonred {
+  background-color: red;
+  border-color: red;
+}
+
+.buttonyellow {
+  background-color: #c9b458;
+  border-color: #c9b458;
+}
+
+.buttongreen {
+  background-color: #6aaa64;
+  border-color: #6aaa64;
+}
+
+container.fluid {
+  background-color: #7296ae;
+}
+
+.status {
+  color: black;
+  font-weight: bold;
+}
+
+.worddisplay {
+  font-weight: bold;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.quiz {
+  color: black;
+  font-weight: bold;
+}
+
+.definition {
+  display: inline-block;
+}
+
+.definebox {
+  border-style: solid;
+  border-color: black;
+  border-width: 1px;
+  margin: 0.25rem;
+  padding: 0.25rem;
+}
+
+.selectbutton {
+  margin: 0.25rem;
+}
+
+@media (min-width: 450px) {
+  .box {
+    padding: 70%;
+  }
+
+  .boxyellow {
+    background: yellow;
+    border-radius: 4px;
+    padding: 70%;
+    border-color: black;
+  }
+
+  .boxgreen {
+    background: green;
+    border-radius: 4px;
+    padding: 70%;
+    border-color: black;
+  }
+
+  .boxred {
+    background: red;
+    border-radius: 4px;
+    padding: 70;
+    border-color: black;
+  }
+  .btnkey {
+    width: 40px;
+  }
+}
+
+@media (min-width: 500px) {
+  .box {
+    padding: 65%;
+  }
+
+  .boxyellow {
+    background: yellow;
+    border-radius: 4px;
+    padding: 65%;
+    border-color: black;
+  }
+
+  .boxgreen {
+    background: green;
+    border-radius: 4px;
+    padding: 65%;
+    border-color: black;
+  }
+
+  .boxred {
+    background: red;
+    border-radius: 4px;
+    padding: 65%;
+    border-color: black;
+  }
+  .btnkey {
+    width: 45px;
+  }
+}
+
+@media (min-width: 600px) {
+  .box {
+    padding: 65%;
+  }
+
+  .boxyellow {
+    background: yellow;
+    border-radius: 4px;
+    padding: 65%;
+    border-color: black;
+  }
+
+  .boxgreen {
+    background: green;
+    border-radius: 4px;
+    padding: 65%;
+    border-color: black;
+  }
+
+  .boxred {
+    background: red;
+    border-radius: 4px;
+    padding: 65%;
+    border-color: black;
+  }
+  .btnkey {
+    width: 55px;
+  }
+}
+
+@media (min-width: 770px) {
+  .box {
+    padding: 55%;
+  }
+
+  .boxyellow {
+    background: yellow;
+    border-radius: 4px;
+    padding: 55%;
+    border-color: black;
+  }
+
+  .boxgreen {
+    background: green;
+    border-radius: 4px;
+    padding: 55%;
+    border-color: black;
+  }
+
+  .boxred {
+    background: red;
+    border-radius: 4px;
+    padding: 55%;
+    border-color: black;
+  }
+  .btnkey {
+    width: 65px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .box {
+    padding: 40%;
+  }
+
+  .boxyellow {
+    background: yellow;
+    border-radius: 4px;
+    padding: 40%;
+    border-color: black;
+  }
+
+  .boxgreen {
+    background: green;
+    border-radius: 4px;
+    padding: 40%;
+    border-color: black;
+  }
+
+  .boxred {
+    background: red;
+    border-radius: 4px;
+    padding: 40%;
+    border-color: black;
+  }
+  .btnkey {
+    width: 95px;
+  }
+}
+
+.victory {
+  background-color: white;
+  border-width: 5px;
+  border-color: green;
+  border-style: groove;
+  color: rgb(13, 82, 13);
+}
