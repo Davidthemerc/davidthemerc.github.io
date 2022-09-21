@@ -22,6 +22,7 @@ const loadGameStatus = () => {
         .valueOf(),
       startedTime: moment().valueOf(),
       endTime: moment().valueOf(),
+      uses: 0,
     };
   }
 };
@@ -366,6 +367,7 @@ const resetGameFunction = (val) => {
         .valueOf(),
       startedTime: moment().valueOf(),
       endTime: moment().valueOf(),
+      uses: 0,
     };
   }
 
@@ -482,6 +484,7 @@ const checkDate = () => {
 const victoryMessage = () => {
   let start = gameStatus.startedTime;
   let end = gameStatus.endTime;
+  let typed = gameStatus.uses;
   let difference = moment.duration(end - start);
   difference = Math.abs(difference.as('seconds'));
   difference = moment
@@ -492,7 +495,7 @@ const victoryMessage = () => {
   div.className = 'victory';
   let paragraph = document.createElement('p');
   paragraph.className = 'm-0 p-1';
-  paragraph.textContent = `DWC Word # ${gameStatus.currentWord}: ${gameStatus.doneInRows}/6, Time: ${difference}`;
+  paragraph.textContent = `DWC Word # ${gameStatus.currentWord}: ${gameStatus.doneInRows}/6, Letters Typed: ${typed}`;
   div.appendChild(paragraph);
   statusEl.appendChild(div);
 };

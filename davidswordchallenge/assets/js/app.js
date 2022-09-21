@@ -99,6 +99,8 @@ keyboardArray.forEach((key) => {
       keyValue = key.innerHTML;
       try {
         enterLetter(keyValue);
+        gameStatus.uses += 1;
+        saveJSON(gameStatus, 'DWC-gameStatus');
       } catch (error) {
         displayMessage(error, statusEl);
       }
