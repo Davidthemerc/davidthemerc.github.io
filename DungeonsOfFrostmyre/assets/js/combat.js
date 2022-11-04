@@ -20,6 +20,7 @@ saveJSON(enemy, 'DOF-enemyData');
 const enemyName = document.getElementById('enemyname');
 const enemyHPdisplay = document.getElementById('enemyhpdisplay');
 const enemyCombatButtons = document.getElementById('enemycombatbuttons');
+const enemyPortrait = document.getElementById('enemyimage');
 
 // Message Element
 const statusEl = document.getElementById('status');
@@ -28,9 +29,10 @@ const statusEl = document.getElementById('status');
 combatheroname.innerHTML = hero.name;
 heroHPdisplay.innerHTML = hero.hitpoints;
 
-// Set the Enemy's Name to match the stored name
+// Set the Enemy's Name and image to match the stored values
 enemyName.innerHTML = enemy.name;
 enemyHPdisplay.innerHTML = enemy.hitpoints;
+enemyPortrait.src = enemy.imgSrc;
 
 // Populate the Hero's Weapon List
 hero.weapons.forEach((weapon, index) => {
@@ -68,7 +70,7 @@ attackButton.addEventListener('click', () => {
   setTimeout(() => {
     attackStatus = 0;
     attackButton.className = 'btn btn-secondary';
-  }, 5000);
+  }, 4000);
 });
 
 // Hero Retreat Button is Clicked

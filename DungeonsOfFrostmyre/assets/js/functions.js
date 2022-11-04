@@ -36,6 +36,7 @@ const enemyGeneration = () => {
       strengthLevel: 10,
       defenseLevel: 10,
       weapons: [{ weaponName: 'Iron Dagger', weaponStrength: 1 }],
+      imgSrc: 'assets/img/highwayman.png',
     };
 };
 
@@ -198,7 +199,7 @@ const enemyAttack = (enemy, weapon, weaponName) => {
     displayMessage(
       `<b>${enemy.name}</b> has attacked <b>${hero.name}</b> with their ${weaponName} for ${damageAmount} damage!`,
       statusEl,
-      5
+      4
     );
 
     // Restore Hero HP to normal after death, but remove some coins
@@ -233,7 +234,7 @@ const enemyAttack = (enemy, weapon, weaponName) => {
         statusEl,
         3
       )
-    : displayMessage(`<b>${enemy.name}</b> missed!`, statusEl, 3);
+    : displayMessage(`<b>${enemy.name}</b> missed!`, statusEl, 2);
 };
 
 // Function to inflict damage

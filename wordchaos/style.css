@@ -1,0 +1,157 @@
+html {
+  margin: 0;
+  padding: 0;
+  background: rgb(197, 188, 231);
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+#keyboardtray,
+.keyboardrow {
+  display: flex;
+}
+
+.keyboardkey {
+  width: 35px;
+  height: 35px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+#playerboard {
+  margin-bottom: 1rem;
+  padding: 0.25rem;
+  border: 2px black solid;
+  background-color: green;
+  color: white;
+}
+
+.letterrow {
+  display: flex;
+  flex-direction: row;
+  border-top: 2px green solid;
+  border-left: 2px green solid;
+  border-right: 2px green solid;
+  background-color: rgb(17, 139, 17);
+}
+
+.letterrow:last-of-type {
+  border-bottom: 2px rgb(2, 51, 2) solid;
+}
+
+.letterspace {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 6.5vw;
+  width: 6.5vw;
+  margin: 0.1rem;
+  border: 1px black solid;
+  color: black;
+  font-weight: bold;
+  font-size: 5vw;
+  background-color: rgb(39, 189, 39);
+}
+
+.whitespace {
+  background-color: white;
+}
+
+.red {
+  background-color: red;
+}
+
+.green {
+  background-color: green;
+}
+
+.wrapper {
+  margin: 1rem;
+  margin-bottom: 2.5rem;
+  width: 70%;
+  height: 30vh;
+  border-radius: 1rem;
+  box-shadow: 0 4em 5em rgba((27, 8, 53, 0.2), green, blue, alpha);
+}
+
+.container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.wc {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+#wheel {
+  max-height: inherit;
+  width: inherit;
+}
+
+#finalvalue {
+  border: 2px black solid;
+  margin-top: 1rem;
+  font-size: 24px;
+  background-color: green;
+  padding: 0.25rem;
+  color: white;
+}
+
+@media (min-width: 600px) {
+  .letterspace {
+    height: 3.5vw;
+    width: 3.5vw;
+    font-size: 3vw;
+    margin: 0.25rem;
+  }
+
+  .board {
+    display: flex;
+    flex-direction: column;
+    align-items: baseline;
+  }
+  .wrapper {
+    width: 20%;
+    height: 45vh;
+  }
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+#spin-btn {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  top: 50%;
+  left: 50%;
+  height: 20%;
+  width: 20%;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 0;
+  background: radial-gradient(#fdcf3b 50%, #d88a40 85%);
+  color: #c66e16;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+img {
+  position: absolute;
+  width: 4em;
+  top: 38%;
+  right: -15%;
+}

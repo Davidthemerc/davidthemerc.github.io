@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordChaos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="board">
+        <span class="wc">Word Chaos</span>
+        <div id="playerboard" class="bold">Money: $0</div>
+        <div id="row1" class="letterrow">
+            <div id="0" class="letterspace row1"></div>
+            <div id="1" class="letterspace row1"></div>
+            <div id="2" class="letterspace row1"></div>
+            <div id="3" class="letterspace row1"></div>
+            <div id="4" class="letterspace row1"></div>
+            <div id="5" class="letterspace row1"></div>
+            <div id="6" class="letterspace row1"></div>
+            <div id="7" class="letterspace row1"></div>
+            <div id="8" class="letterspace row1"></div>
+            <div id="9" class="letterspace row1"></div>
+            <div id="10" class="letterspace row1"></div>
+            <div id="11" class="letterspace row1"></div>
+        </div>
+        <div id="row2" class="letterrow">
+            <div id="12" class="letterspace row2"></div>
+            <div id="13" class="letterspace row2"></div>
+            <div id="14" class="letterspace row2"></div>
+            <div id="15" class="letterspace row2"></div>
+            <div id="16" class="letterspace row2"></div>
+            <div id="17" class="letterspace row2"></div>
+            <div id="18" class="letterspace row2"></div>
+            <div id="19" class="letterspace row2"></div>
+            <div id="20" class="letterspace row2"></div>
+            <div id="21" class="letterspace row2"></div>
+            <div id="22" class="letterspace row2"></div>
+            <div id="23" class="letterspace row2"></div>
+        </div>
+        <div id="row3" class="letterrow">
+            <div id="24" class="letterspace row3"></div>
+            <div id="25" class="letterspace row3"></div>
+            <div id="26" class="letterspace row3"></div>
+            <div id="27" class="letterspace row3"></div>
+            <div id="28" class="letterspace row3"></div>
+            <div id="29" class="letterspace row3"></div>
+            <div id="30" class="letterspace row3"></div>
+            <div id="31" class="letterspace row3"></div>
+            <div id="32" class="letterspace row3"></div>
+            <div id="33" class="letterspace row3"></div>
+            <div id="34" class="letterspace row3"></div>
+            <div id="35" class="letterspace row3"></div>
+        </div>
+
+        <div id="row4" class="letterrow">
+            <div id="36" class="letterspace row4"></div>
+            <div id="37" class="letterspace row4"></div>
+            <div id="38" class="letterspace row4"></div>
+            <div id="39" class="letterspace row4"></div>
+            <div id="40" class="letterspace row4"></div>
+            <div id="41" class="letterspace row4"></div>
+            <div id="42" class="letterspace row4"></div>
+            <div id="43" class="letterspace row4"></div>
+            <div id="44" class="letterspace row4"></div>
+            <div id="45" class="letterspace row4"></div>
+            <div id="46" class="letterspace row4"></div>
+            <div id="47" class="letterspace row4"></div>
+        </div>
+        <div class="wrapper">
+            <div class="container">
+                <canvas id="wheel"></canvas>
+                <button id="spin-btn">Spin</button>
+                <img src="img/spinner-arrow.svg" alt="spinner-arrow">
+            </div>
+        </div>
+
+        <div id="keyboardtray">
+            <div class="keyboardrow"><button class="keyboardkey btnkey align-self-center" id="keyboard-q"
+                    type="button">Q</button><button class="keyboardkey btnkey align-self-center" id="keyboard-w"
+                    type="button">W</button><button class="keyboardkey btnkey align-self-center" id="keyboard-e"
+                    type="button">E</button><button class="keyboardkey btnkey align-self-center" id="keyboard-r"
+                    type="button">R</button><button class="keyboardkey btnkey align-self-center" id="keyboard-t"
+                    type="button">T</button><button class="keyboardkey btnkey align-self-center" id="keyboard-y"
+                    type="button">Y</button><button class="keyboardkey btnkey align-self-center" id="keyboard-u"
+                    type="button">U</button><button class="keyboardkey btnkey align-self-center" id="keyboard-i"
+                    type="button">I</button><button class="keyboardkey btnkey align-self-center" id="keyboard-o"
+                    type="button">O</button><button class="keyboardkey btnkey align-self-center" id="keyboard-p"
+                    type="button">P</button></div>
+        </div>
+        <div class="keyboardrow">
+            <button class="keyboardkey btnkey align-self-center" id="keyboard-a" type="button">A</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-s" type="button">S</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-d" type="button">D</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-f" type="button">F</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-g" type="button">G</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-h" type="button">H</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-j" type="button">J</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-k" type="button">K</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-l" type="button">L</button>
+        </div>
+        <div class="keyboardrow">
+            <button class="keyboardkey btnkey align-self-center" id="keyboard-z" type="button">Z</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-x" type="button">X</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-c" type="button">C</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-v" type="button">V</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-b" type="button">B</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-n" type="button">N</button><button
+                class="keyboardkey btnkey align-self-center" id="keyboard-m" type="button">M</button>
+        </div>
+
+        <div id="finalvalue" class="bold"></div>
+
+    </div>
+
+    </div>
+    </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/puzzles.js"></script>
+    <script src="js/functions.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
