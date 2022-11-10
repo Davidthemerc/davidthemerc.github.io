@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="style.css">
+    <title>David's Dynamic Loteria v.2</title>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-auto">
+                <div class="d-flex justify-content-center mt-1">
+                    <h3>David's Loteria Card</h3>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <label class="mb-2"><b>Game Type:</b>
+                        <select class="conditions" id="conditions">
+                            <option value="0">Four in a Row</option>
+                            <option value="1">Corners</option>
+                            <option value="2">X Cross</option>
+                            <option value="3">Frame</option>
+                            <option value="4">Center</option>
+                            <option value="5">Full Card</option>
+                        </select></label>
+                    <label class="mb-2 ms-1"><b>Voice:</b>
+                        <select class="voice" id="voice">
+                            <option value="0">Female</option>
+                            <option value="1">Male</option>
+                        </select></label>
+                </div>
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div id="0" class="0 grid"></div>
+                            </td>
+                            <td>
+                                <div id="1" class="1 grid"></div>
+                            </td>
+                            <td>
+                                <div id="2" class="2 grid"></div>
+                            </td>
+                            <td>
+                                <div id="3" class="3 grid"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div id="4" class="4 grid"></div>
+                            </td>
+                            <td>
+                                <div id="5" class="5 grid"></div>
+                            </td>
+                            <td>
+                                <div id="6" class="6 grid"></div>
+                            </td>
+                            <td>
+                                <div id="7" class="7 grid"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div id="8" class="8 grid"></div>
+                            </td>
+                            <td>
+                                <div id="9" class="9 grid"></div>
+                            </td>
+                            <td>
+                                <div id="10" class="10 grid"></div>
+                            </td>
+                            <td>
+                                <div id="11" class="11 grid"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div id="12" class="12 grid"></div>
+                            </td>
+                            <td>
+                                <div id="13" class="13 grid"></div>
+                            </td>
+                            <td>
+                                <div id="14" class="14 grid"></div>
+                            </td>
+                            <td>
+                                <div id="15" class="15 grid"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="d-flex justify-content-center mt-2">
+                    <select id="grid0">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                    <select id="grid1">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                    <select id="grid2">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                    <select id="grid3">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                </div>
+
+                <div class="d-flex justify-content-center">
+                    <select id="grid4">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                    <select id="grid5">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                    <select id="grid6">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                    <select id="grid7">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                </div>
+
+                <div class="d-flex justify-content-center">
+                    <select id="grid8">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                    <select id="grid9">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                    <select id="grid10">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                    <select id="grid11">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                </div>
+
+                <div class="d-flex justify-content-center">
+                    <select id="grid12">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                    <select id="grid13">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                    <select id="grid14">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                    <select id="grid15">
+                        <option value="0">1 - El Gallo</option>
+                        <option value="1">2 - El Diablito</option>
+                        <option value="2">3 - La Dama</option>
+                        <option value="3">4 - El Catrin</option>
+                        <option value="4">5 - El Paraguas</option>
+                        <option value="5">6 - La Sirena</option>
+                        <option value="6">7 - La Escalera</option>
+                        <option value="7">8 - La Botella</option>
+                        <option value="8">9 - El Barril</option>
+                        <option value="9">10 - El Arbol</option>
+                        <option value="10">11 - El Melon</option>
+                        <option value="11">12 - El Valiente</option>
+                        <option value="12">13 - El Gorrito</option>
+                        <option value="13">14 - La Muerte</option>
+                        <option value="14">15 - La Pera</option>
+                        <option value="15">16 - La Bandera</option>
+                        <option value="16">17 - El Bandolon</option>
+                        <option value="17">18 - El Violoncello</option>
+                        <option value="18">19 - La Garza</option>
+                        <option value="19">20 - El Pajaro</option>
+                        <option value="20">21 - La Mano</option>
+                        <option value="21">22 - La Bota</option>
+                        <option value="22">23 - La Luna</option>
+                        <option value="23">24 - El Cotorro</option>
+                        <option value="24">25 - El Borracho</option>
+                        <option value="25">26 - El Negrito</option>
+                        <option value="26">27 - El Corazon</option>
+                        <option value="27">28 - La Sandia</option>
+                        <option value="28">29 - El Tambor</option>
+                        <option value="29">30 - El Camaron</option>
+                        <option value="30">31 - Las Jaras</option>
+                        <option value="31">32 - El Musico</option>
+                        <option value="32">33 - La Arana</option>
+                        <option value="33">34 - El Soldado</option>
+                        <option value="34">35 - La Estrella</option>
+                        <option value="35">36 - El Cazo</option>
+                        <option value="36">37 - El Mundo</option>
+                        <option value="37">38 - El Apache</option>
+                        <option value="38">39 - El Nopal</option>
+                        <option value="39">40 - El Alacran</option>
+                        <option value="40">41 - La Rosa</option>
+                        <option value="41">42 - La Calavera</option>
+                        <option value="42">43 - La Campana</option>
+                        <option value="43">44 - El Cantarito</option>
+                        <option value="44">45 - El Venado</option>
+                        <option value="45">46 - El Sol</option>
+                        <option value="46">47 - La Corona</option>
+                        <option value="47">48 - La Chalupa</option>
+                        <option value="48">49 - El Pino</option>
+                        <option value="49">50 - El Pescado</option>
+                        <option value="50">51 - La Palma</option>
+                        <option value="51">52 - La Maceta</option>
+                        <option value="52">53 - El Arpa</option>
+                        <option value="53">54 - La Rana</option>
+                    </select>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <button id="clear" class="mt-2">Clear Card</button>
+                    <button id="newCard" class="ms-2 mt-2">New Card</button>
+                    <button id="lockCard" class="ms-2 mt-2">Lock Card</button>
+                </div>
+                <label class="d-flex justify-content-center mt-2 mb-2"><b>Custom Card:&nbsp;</b>
+                    <select class="customCards" id="customCards" onchange="selectorDetector();">
+                        <option disabled selected="selected" value="0">David Only - Select One</option>
+                        <option value="1">Default Card (3 Trees in a Row)</option>
+                        <option value="2">Card 2: The Drunk Is Dead</option>
+                        <option value="3">Card 3: El Melon & La Sandia</option>
+                        <option value="4">Card 4: Just Some Variety</option>
+                    </select></label>
+            </div>
+        </div>
+    </div>
+    </div>
+    <script src="loteria-functions.js"></script>
+    <script src="loteria-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>
