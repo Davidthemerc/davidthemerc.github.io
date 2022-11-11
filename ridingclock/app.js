@@ -25,18 +25,19 @@ let [greenMilliseconds, greenSeconds, greenMinutes] = [0, 0, 0];
 let int = null;
 let color = 'white';
 
-control.addEventListener('click', () => {
-  if (control.innerHTML === 'CONTROL: NEUTRAL') {
-    control.innerHTML = 'CONTROL: GREEN';
-    control.style.color = 'green';
-  } else if (control.innerHTML === 'CONTROL: GREEN') {
-    control.innerHTML = 'CONTROL: RED';
-    control.style.color = 'red';
-  } else {
-    control.innerHTML = 'CONTROL: NEUTRAL';
-    control.style.color = 'white';
-  }
-});
+// Depreciated functionality
+// control.addEventListener('click', () => {
+//   if (control.innerHTML === 'CONTROL: NEUTRAL') {
+//     control.innerHTML = 'CONTROL: GREEN';
+//     control.style.color = 'green';
+//   } else if (control.innerHTML === 'CONTROL: GREEN') {
+//     control.innerHTML = 'CONTROL: RED';
+//     control.style.color = 'red';
+//   } else {
+//     control.innerHTML = 'CONTROL: NEUTRAL';
+//     control.style.color = 'white';
+//   }
+// });
 
 redTimeButton.addEventListener('click', () => {
   if (int !== null) {
@@ -44,10 +45,14 @@ redTimeButton.addEventListener('click', () => {
   }
   int = setInterval(displayTimer, 10, 1);
   console.log('Red time start');
+  control.innerHTML = 'CONTROL: RED';
+  control.style.color = 'RED';
 });
 
 neutralTimeButton.addEventListener('click', () => {
   clearInterval(int);
+  control.innerHTML = 'CONTROL: NEUTRAL';
+  control.style.color = 'white';
 });
 
 greenTimeButton.addEventListener('click', () => {
@@ -56,12 +61,16 @@ greenTimeButton.addEventListener('click', () => {
   }
   int = setInterval(displayTimer, 10, -1);
   console.log('Green time start');
+  control.innerHTML = 'CONTROL: GREEN';
+  control.style.color = 'green';
 });
 
 resetButton.addEventListener('click', () => {
   clearInterval(int);
   redDot.style.display = 'none';
   greenDot.style.display = 'none';
+  control.innerHTML = 'CONTROL: NEUTRAL';
+  control.style.color = 'white';
 
   [milliseconds, seconds, minutes] = [0, 0, 0];
   redMilliseconds = 0;
