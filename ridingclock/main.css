@@ -1,0 +1,205 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  color: white;
+  font-family: Digital7;
+  height: 100%;
+  box-sizing: border-box;
+  justify-content: center;
+  display: flex;
+}
+
+#adjust {
+  display: none;
+}
+
+@font-face {
+  font-family: Digital7;
+  src: url(digital-7.ttf);
+}
+
+.ridingclockmain {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+#reddot,
+#greendot {
+  width: 45px;
+  height: 45px;
+  margin: 1rem;
+  border-radius: 100%;
+  /*Invisible until called upon*/
+  display: none;
+}
+
+#reddot {
+  background-color: red;
+}
+
+#clock {
+  width: 45vw;
+  height: 45vh;
+  display: flex;
+  font-size: 160px;
+  font-weight: bold;
+  align-items: center;
+  justify-content: center;
+}
+
+#greendot {
+  background-color: green;
+}
+
+button {
+  margin: 1rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  font-family: Digital7;
+  font-size: 24px;
+}
+
+#timeup,
+#timedown,
+#timeupfast,
+#timedownfast {
+  width: 55px;
+  height: 55px;
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+#control {
+  font-size: 24px;
+  margin: 0.5rem;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#redtime,
+#greentime {
+  color: white;
+}
+
+#redtime {
+  background-color: red;
+}
+
+#greentime {
+  background-color: green;
+}
+
+#redtime,
+#greentime,
+#neutraltime {
+  width: 100px;
+}
+
+.background {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 95vw;
+  height: 95vh;
+  background-color: black;
+  border-radius: 1rem;
+}
+
+.toparea {
+  height: 33%;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
+.toparea,
+.middlearea,
+.bottomarea {
+  display: flex;
+  flex-direction: row;
+}
+
+.middlearea {
+  margin-left: 1rem;
+}
+
+@media (max-width: 1000px) {
+  .clock {
+    font-size: 144px;
+  }
+  .middlearea {
+    flex-direction: row;
+  }
+
+  @media (max-width: 800px) {
+    .toparea {
+      display: flex;
+      height: fit-content;
+      margin: 1rem;
+      text-align: center;
+    }
+
+    .middlearea,
+    .bottomarea {
+      display: flex;
+      width: 75%;
+      flex-direction: column;
+      height: fit-content;
+      margin: 1rem;
+      text-align: center;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #reddot,
+    #greendot {
+      width: 45px;
+      height: 45px;
+      border-radius: 100%;
+      margin: 0.5rem;
+    }
+
+    #clock {
+      height: 20%;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    #clock {
+      font-size: 320px;
+      margin: 7rem;
+      margin-left: 6rem;
+      margin-right: 6rem;
+    }
+
+    #control {
+      font-size: 60px;
+      text-align: center;
+    }
+
+    .middlearea {
+      align-items: center;
+    }
+
+    #reddot,
+    #greendot {
+      width: 100px;
+      height: 100px;
+      margin: 1rem;
+      border-radius: 100%;
+    }
+  }
+}
+
+@media (max-width: 500px) {
+  #clock {
+    font-size: 25vw;
+  }
+}
