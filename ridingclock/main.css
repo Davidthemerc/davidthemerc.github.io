@@ -219,7 +219,7 @@ button {
 
 @media (max-height: 445px) {
   #clock {
-    font-size: 55vh;
+    font-size: 40vh;
   }
   .toparea,
   .middlearea,
