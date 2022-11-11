@@ -45,14 +45,12 @@ redTimeButton.addEventListener('click', () => {
   }
   int = setInterval(displayTimer, 10, 1);
   console.log('Red time start');
-  control.innerHTML = 'CONTROL: RED';
-  control.style.color = 'RED';
+  controlModification('RED');
 });
 
 neutralTimeButton.addEventListener('click', () => {
   clearInterval(int);
-  control.innerHTML = 'CONTROL: NEUTRAL';
-  control.style.color = 'white';
+  controlModification('NEUTRAL');
 });
 
 greenTimeButton.addEventListener('click', () => {
@@ -61,24 +59,18 @@ greenTimeButton.addEventListener('click', () => {
   }
   int = setInterval(displayTimer, 10, -1);
   console.log('Green time start');
-  control.innerHTML = 'CONTROL: GREEN';
-  control.style.color = 'green';
+  controlModification('GREEN');
 });
 
 resetButton.addEventListener('click', () => {
   clearInterval(int);
   redDot.style.display = 'none';
   greenDot.style.display = 'none';
-  control.innerHTML = 'CONTROL: NEUTRAL';
-  control.style.color = 'white';
+  controlModification('NEUTRAL');
 
   [milliseconds, seconds, minutes] = [0, 0, 0];
-  redMilliseconds = 0;
-  redSeconds = 0;
-  redMinutes = 0;
-  greenMilliseconds = 0;
-  greenSeconds = 0;
-  greenMinutes = 0;
+  [redMilliseconds, redSeconds, redMinutes] = [0, 0, 0];
+  [greenMilliseconds, greenSeconds, greenMinutes] = [0, 0, 0];
   clock.innerHTML = '00:00';
   clock.style.color = 'white';
 });
@@ -96,8 +88,7 @@ resetButton.addEventListener('click', () => {
 // });
 
 timeDownButton.addEventListener('click', () => {
-  //Check current color
-
+  // Don't allow clock up/down modifications due to 0 time
   if (clock.innerHTML === '00:00') {
     return;
   }
@@ -113,29 +104,13 @@ timeDownButton.addEventListener('click', () => {
   } else if (color === 'green') {
     greenSeconds -= 1;
   }
-
-  minutes = redMinutes - greenMinutes;
-  seconds = redSeconds - greenSeconds;
-  milliseconds = redMilliseconds - greenMilliseconds;
-  minutes = Math.abs(minutes);
-  seconds = Math.abs(seconds);
-
+  // Clock control & checking for the dot condition (1+ min)
+  clockControl();
   dotCheck();
-
-  let m = minutes < 10 ? '0' + minutes : minutes;
-  let s = seconds < 10 ? '0' + seconds : seconds;
-
-  if (minutes === 0 && seconds === 0) {
-    clock.style.color = 'white';
-    color = 'white';
-  }
-
-  clock.innerHTML = `${m}:${s}`;
 });
 
 timeUpButton.addEventListener('click', () => {
-  //Check current color
-
+  // Don't allow clock up/down modifications due to 0 time
   if (clock.innerHTML === '00:00') {
     return;
   }
@@ -151,29 +126,13 @@ timeUpButton.addEventListener('click', () => {
   } else if (color === 'green') {
     greenSeconds += 1;
   }
-
-  minutes = redMinutes - greenMinutes;
-  seconds = redSeconds - greenSeconds;
-  milliseconds = redMilliseconds - greenMilliseconds;
-  minutes = Math.abs(minutes);
-  seconds = Math.abs(seconds);
-
+  // Clock control & checking for the dot condition (1+ min)
+  clockControl();
   dotCheck();
-
-  let m = minutes < 10 ? '0' + minutes : minutes;
-  let s = seconds < 10 ? '0' + seconds : seconds;
-
-  if (minutes === 0 && seconds === 0) {
-    clock.style.color = 'white';
-    color = 'white';
-  }
-
-  clock.innerHTML = `${m}:${s}`;
 });
 
 timeDownFastButton.addEventListener('click', () => {
-  //Check current color
-
+  // Don't allow clock up/down modifications due to 0 time
   if (clock.innerHTML === '00:00') {
     return;
   }
@@ -191,29 +150,13 @@ timeDownFastButton.addEventListener('click', () => {
   } else if (color === 'green') {
     greenSeconds -= 5;
   }
-
+  // Clock control & checking for the dot condition (1+ min)
+  clockControl();
   dotCheck();
-
-  minutes = redMinutes - greenMinutes;
-  seconds = redSeconds - greenSeconds;
-  milliseconds = redMilliseconds - greenMilliseconds;
-  minutes = Math.abs(minutes);
-  seconds = Math.abs(seconds);
-
-  let m = minutes < 10 ? '0' + minutes : minutes;
-  let s = seconds < 10 ? '0' + seconds : seconds;
-
-  if (minutes === 0 && seconds === 0) {
-    clock.style.color = 'white';
-    color = 'white';
-  }
-
-  clock.innerHTML = `${m}:${s}`;
 });
 
 timeUpFastButton.addEventListener('click', () => {
-  //Check current color
-
+  // Don't allow clock up/down modifications due to 0 time
   if (clock.innerHTML === '00:00') {
     return;
   }
@@ -231,22 +174,7 @@ timeUpFastButton.addEventListener('click', () => {
   } else if (color === 'green') {
     greenSeconds += 5;
   }
-
-  minutes = redMinutes - greenMinutes;
-  seconds = redSeconds - greenSeconds;
-  milliseconds = redMilliseconds - greenMilliseconds;
-  minutes = Math.abs(minutes);
-  seconds = Math.abs(seconds);
-
+  // Clock control & checking for the dot condition (1+ min)
+  clockControl();
   dotCheck();
-
-  let m = minutes < 10 ? '0' + minutes : minutes;
-  let s = seconds < 10 ? '0' + seconds : seconds;
-
-  if (minutes === 0 && seconds === 0) {
-    clock.style.color = 'white';
-    color = 'white';
-  }
-
-  clock.innerHTML = `${m}:${s}`;
 });

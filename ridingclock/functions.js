@@ -100,10 +100,7 @@ const displayTimer = (way) => {
     greenDot.style.display = 'none';
   }
 
-  let m = minutes < 10 ? '0' + minutes : minutes;
-  let s = seconds < 10 ? '0' + seconds : seconds;
-
-  clock.innerHTML = `${m}:${s}`;
+  clockControl();
 
   if (color === 'red') {
     clock.style.color = 'red';
@@ -132,4 +129,28 @@ const dotCheck = () => {
   } else {
     redDot.style.display = 'none';
   }
+};
+
+const clockControl = () => {
+  minutes = redMinutes - greenMinutes;
+  seconds = redSeconds - greenSeconds;
+  milliseconds = redMilliseconds - greenMilliseconds;
+  minutes = Math.abs(minutes);
+  seconds = Math.abs(seconds);
+
+  let m = minutes < 10 ? '0' + minutes : minutes;
+  let s = seconds < 10 ? '0' + seconds : seconds;
+
+  if (minutes === 0 && seconds === 0) {
+    clock.style.color = 'white';
+    color = 'white';
+  }
+
+  clock.innerHTML = `${m}:${s}`;
+};
+
+const controlModification = (color) => {
+  control.innerHTML = `CONTROL: ${color}`;
+  color === 'NEUTRAL' ? (color = 'white') : color;
+  control.style.color = `${color}`;
 };
