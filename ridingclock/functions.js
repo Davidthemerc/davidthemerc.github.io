@@ -1,9 +1,9 @@
 const displayTimer = (way) => {
   if (way === 1) {
-    redmilliseconds += 10;
+    redMilliseconds += 10;
 
-    if (redmilliseconds == 1000) {
-      redmilliseconds = 0;
+    if (redMilliseconds == 1000) {
+      redMilliseconds = 0;
       redSeconds++;
     }
 
@@ -12,10 +12,10 @@ const displayTimer = (way) => {
       redMinutes++;
     }
   } else {
-    greenmilliseconds += 10; //Normally 10
+    greenMilliseconds += 10; //Normally 10
 
-    if (greenmilliseconds == 1000) {
-      greenmilliseconds = 0;
+    if (greenMilliseconds == 1000) {
+      greenMilliseconds = 0;
       greenSeconds++;
     }
 
@@ -25,24 +25,47 @@ const displayTimer = (way) => {
     }
   }
 
-  minutes = redMinutes - greenMinutes;
-  seconds = redSeconds - greenSeconds;
-  milliseconds = redmilliseconds - greenmilliseconds;
+  // Debugging elements
+  // redMinutesEl.innerHTML = redMinutes;
+  // redSecondsEl.innerHTML = redSeconds;
+  // greenMinutesEl.innerHTML = greenMinutes;
+  // greenSecondsEl.innerHTML = greenSeconds;
 
-  if (seconds < 0 && minutes <= 0) {
+  // Minute tick off stabilization
+  // Green downward
+  if (redSeconds > greenSeconds) {
+    if (redMinutes < greenMinutes) {
+      greenMinutes -= 1;
+      redSeconds = 0;
+      greenSeconds = 59;
+    }
+  }
+  // Minute tick off stabilization
+  // Red downward
+  if (redSeconds < greenSeconds) {
+    if (redMinutes > greenMinutes) {
+      redMinutes -= 1;
+      greenSeconds = 0;
+      redSeconds = 59;
+    }
+  }
+
+  minutes = greenMinutes - redMinutes;
+  seconds = greenSeconds - redSeconds;
+  milliseconds = redMilliseconds - greenMilliseconds;
+
+  minutes = Math.abs(minutes);
+  seconds = Math.abs(seconds);
+  milliseconds = Math.abs(milliseconds);
+
+  if (redMinutes * 60 + redSeconds < greenMinutes * 60 + greenSeconds) {
     // Green
     color = 'green';
-    //console.log('Green time');
-    minutes = Math.abs(minutes);
-    seconds = Math.abs(seconds);
-    milliseconds = Math.abs(milliseconds);
+    console.log('Green time');
   } else {
     // Red
     color = 'red';
-    //console.log('Red time');
-    minutes = Math.abs(minutes);
-    seconds = Math.abs(seconds);
-    milliseconds = Math.abs(milliseconds);
+    console.log('Red time');
   }
 
   if (seconds === 0 && minutes === 0) {
@@ -77,5 +100,22 @@ const displayTimer = (way) => {
   }
 };
 
-let tid = 0;
-let speed = 100;
+const dotCheck = () => {
+  if (seconds === 0 && minutes === 0) {
+    color = 'white';
+  }
+
+  if (greenMinutes >= 1 && minutes >= 1) {
+    greenDot.style.display = 'flex';
+    redDot.style.display = 'none';
+  } else {
+    greenDot.style.display = 'none';
+  }
+
+  if (redMinutes >= 1 && minutes >= 1) {
+    redDot.style.display = 'flex';
+    greenDot.style.display = 'none';
+  } else {
+    redDot.style.display = 'none';
+  }
+};

@@ -10,10 +10,6 @@ body {
   display: flex;
 }
 
-#adjust {
-  display: none;
-}
-
 @font-face {
   font-family: Digital7;
   src: url(digital-7.ttf);
@@ -25,6 +21,10 @@ body {
   align-items: center;
   margin-top: 1rem;
   margin-bottom: 1rem;
+}
+
+#adjust {
+  display: none;
 }
 
 #reddot,
@@ -45,7 +45,7 @@ body {
   width: 45vw;
   height: 45vh;
   display: flex;
-  font-size: 160px;
+  font-size: 172px;
   font-weight: bold;
   align-items: center;
   justify-content: center;
@@ -202,4 +202,11 @@ button {
   #clock {
     font-size: 25vw;
   }
+}
+
+#redseconds,
+#redminutes,
+#greenseconds,
+#greenminutes {
+  font-size: 64px;
 }

@@ -12,10 +12,16 @@ const timeUpFastButton = document.getElementById('timeupfast');
 const redTimeButton = document.getElementById('redtime');
 const neutralTimeButton = document.getElementById('neutraltime');
 const greenTimeButton = document.getElementById('greentime');
+// Debugging elements
+// const redSecondsEl = document.getElementById('redseconds');
+// const redMinutesEl = document.getElementById('redminutes');
+// const greenSecondsEl = document.getElementById('greenseconds');
+// const greenMinutesEl = document.getElementById('greenminutes');
+
 // Important time-related global variables
 let [milliseconds, seconds, minutes] = [0, 0, 0];
-let [redmilliseconds, redSeconds, redMinutes] = [0, 0, 0];
-let [greenmilliseconds, greenSeconds, greenMinutes] = [0, 0, 0];
+let [redMilliseconds, redSeconds, redMinutes] = [0, 0, 0];
+let [greenMilliseconds, greenSeconds, greenMinutes] = [0, 0, 0];
 let int = null;
 let color = 'white';
 
@@ -56,50 +62,61 @@ resetButton.addEventListener('click', () => {
   clearInterval(int);
 
   [milliseconds, seconds, minutes] = [0, 0, 0];
-  redmilliseconds = 0;
+  redMilliseconds = 0;
   redSeconds = 0;
   redMinutes = 0;
-  greenmilliseconds = 0;
+  greenMilliseconds = 0;
   greenSeconds = 0;
   greenMinutes = 0;
   clock.innerHTML = '00:00';
   clock.style.color = 'white';
 });
 
-adjustButton.addEventListener('click', () => {
-  let selectColor = prompt('Specify Color (Red/Green)');
-  let manMinutes = prompt('Enter Manual Minutes (05 for 5 Mins)');
-  let manSeconds = prompt('Enter Manual Second (05 for 5 Sec)');
-  manMinutes = parseInt(manMinutes);
-  manSeconds = parseInt(manSeconds);
+// adjustButton.addEventListener('click', () => {
+//   let selectColor = prompt('Specify Color (Red/Green)');
+//   let manMinutes = prompt('Enter Manual Minutes (05 for 5 Mins)');
+//   let manSeconds = prompt('Enter Manual Second (05 for 5 Sec)');
+//   manMinutes = parseInt(manMinutes);
+//   manSeconds = parseInt(manSeconds);
 
-  if (selectColor === 'red') {
-    //Red Selected
-  }
-});
+//   if (selectColor === 'red') {
+//     //Red Selected
+//   }
+// });
 
 timeDownButton.addEventListener('click', () => {
   //Check current color
-  if (color === 'red' && redSeconds >= 1) {
-    redSeconds -= 1;
-  } else if (color === 'white') {
-    // Do nothing
+
+  if (clock.innerHTML === '00:00') {
     return;
-  } else if (color === 'green' && greenSeconds >= 1) {
+  }
+
+  if (color === 'red' && redSeconds === 0) {
+    redMinutes -= 1;
+    redSeconds = 59;
+  } else if (color === 'green' && greenSeconds === 0) {
+    greenMinutes -= 1;
+    greenSeconds = 59;
+  } else if (color === 'red') {
+    redSeconds -= 1;
+  } else if (color === 'green') {
     greenSeconds -= 1;
   }
 
   minutes = redMinutes - greenMinutes;
   seconds = redSeconds - greenSeconds;
-  milliseconds = redmilliseconds - greenmilliseconds;
+  milliseconds = redMilliseconds - greenMilliseconds;
   minutes = Math.abs(minutes);
   seconds = Math.abs(seconds);
+
+  dotCheck();
 
   let m = minutes < 10 ? '0' + minutes : minutes;
   let s = seconds < 10 ? '0' + seconds : seconds;
 
   if (minutes === 0 && seconds === 0) {
     clock.style.color = 'white';
+    color = 'white';
   }
 
   clock.innerHTML = `${m}:${s}`;
@@ -107,26 +124,37 @@ timeDownButton.addEventListener('click', () => {
 
 timeUpButton.addEventListener('click', () => {
   //Check current color
-  if (color === 'red') {
-    redSeconds += 1;
-  } else if (color === 'white') {
-    // Do nothing
+
+  if (clock.innerHTML === '00:00') {
     return;
+  }
+
+  if (color === 'red' && redSeconds === 59) {
+    redMinutes += 1;
+    redSeconds = 0;
+  } else if (color === 'green' && greenSeconds === 59) {
+    greenMinutes += 1;
+    greenSeconds = 0;
+  } else if (color === 'red') {
+    redSeconds += 1;
   } else if (color === 'green') {
     greenSeconds += 1;
   }
 
   minutes = redMinutes - greenMinutes;
   seconds = redSeconds - greenSeconds;
-  milliseconds = redmilliseconds - greenmilliseconds;
+  milliseconds = redMilliseconds - greenMilliseconds;
   minutes = Math.abs(minutes);
   seconds = Math.abs(seconds);
+
+  dotCheck();
 
   let m = minutes < 10 ? '0' + minutes : minutes;
   let s = seconds < 10 ? '0' + seconds : seconds;
 
   if (minutes === 0 && seconds === 0) {
     clock.style.color = 'white';
+    color = 'white';
   }
 
   clock.innerHTML = `${m}:${s}`;
@@ -134,18 +162,30 @@ timeUpButton.addEventListener('click', () => {
 
 timeDownFastButton.addEventListener('click', () => {
   //Check current color
-  if (color === 'red' && redSeconds >= 5) {
-    redSeconds -= 5;
-  } else if (color === 'white') {
-    // Do nothing
+
+  if (clock.innerHTML === '00:00') {
     return;
-  } else if (color === 'green' && greenSeconds >= 5) {
+  }
+
+  if (color === 'red' && redSeconds <= 4) {
+    let diff = 5 - redSeconds;
+    redMinutes -= 1;
+    redSeconds = 60 - diff;
+  } else if (color === 'green' && greenSeconds <= 4) {
+    let diff = 5 - greenSeconds;
+    greenMinutes -= 1;
+    greenSeconds = 60 - diff;
+  } else if (color === 'red') {
+    redSeconds -= 5;
+  } else if (color === 'green') {
     greenSeconds -= 5;
   }
 
+  dotCheck();
+
   minutes = redMinutes - greenMinutes;
   seconds = redSeconds - greenSeconds;
-  milliseconds = redmilliseconds - greenmilliseconds;
+  milliseconds = redMilliseconds - greenMilliseconds;
   minutes = Math.abs(minutes);
   seconds = Math.abs(seconds);
 
@@ -154,6 +194,7 @@ timeDownFastButton.addEventListener('click', () => {
 
   if (minutes === 0 && seconds === 0) {
     clock.style.color = 'white';
+    color = 'white';
   }
 
   clock.innerHTML = `${m}:${s}`;
@@ -161,26 +202,39 @@ timeDownFastButton.addEventListener('click', () => {
 
 timeUpFastButton.addEventListener('click', () => {
   //Check current color
-  if (color === 'red') {
-    redSeconds += 5;
-  } else if (color === 'white') {
-    // Do nothing
+
+  if (clock.innerHTML === '00:00') {
     return;
+  }
+
+  if (color === 'red' && redSeconds >= 55) {
+    let diff = 60 - redSeconds;
+    redMinutes += 1;
+    redSeconds = 0 + 5 - diff;
+  } else if (color === 'green' && greenSeconds >= 55) {
+    let diff = 60 - greenSeconds;
+    greenMinutes += 1;
+    greenSeconds = 0 + 5 - diff;
+  } else if (color === 'red') {
+    redSeconds += 5;
   } else if (color === 'green') {
     greenSeconds += 5;
   }
 
   minutes = redMinutes - greenMinutes;
   seconds = redSeconds - greenSeconds;
-  milliseconds = redmilliseconds - greenmilliseconds;
+  milliseconds = redMilliseconds - greenMilliseconds;
   minutes = Math.abs(minutes);
   seconds = Math.abs(seconds);
+
+  dotCheck();
 
   let m = minutes < 10 ? '0' + minutes : minutes;
   let s = seconds < 10 ? '0' + seconds : seconds;
 
   if (minutes === 0 && seconds === 0) {
     clock.style.color = 'white';
+    color = 'white';
   }
 
   clock.innerHTML = `${m}:${s}`;
