@@ -62,14 +62,17 @@ const displayTimer = (way) => {
     // Green
     color = 'green';
     console.log('Green time');
+    controlModification('GREEN');
   } else {
     // Red
     color = 'red';
     console.log('Red time');
+    controlModification('RED');
   }
 
   if (seconds === 0 && minutes === 0) {
     color = 'white';
+    controlModification('NEUTRAL');
   }
 
   if (greenMinutes >= 1 && minutes >= 1) {
@@ -145,10 +148,6 @@ const clockControl = () => {
   if (minutes === 0 && seconds === 0) {
     clock.style.color = 'white';
     color = 'white';
-  } else if (color === 'green') {
-    controlModification('GREEN');
-  } else {
-    controlModification('RED');
   }
 
   clock.innerHTML = `${m}:${s}`;
