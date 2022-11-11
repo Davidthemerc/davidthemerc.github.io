@@ -60,6 +60,8 @@ greenTimeButton.addEventListener('click', () => {
 
 resetButton.addEventListener('click', () => {
   clearInterval(int);
+  redDot.style.display = 'none';
+  greenDot.style.display = 'none';
 
   [milliseconds, seconds, minutes] = [0, 0, 0];
   redMilliseconds = 0;

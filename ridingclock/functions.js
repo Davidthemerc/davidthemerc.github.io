@@ -86,6 +86,20 @@ const displayTimer = (way) => {
     redDot.style.display = 'none';
   }
 
+  if (color === 'red' && minutes >= 1) {
+    redDot.style.display = 'flex';
+    greenDot.style.display = 'none';
+  } else {
+    redDot.style.display = 'none';
+  }
+
+  if (color === 'green' && minutes >= 1) {
+    greenDot.style.display = 'flex';
+    redDot.style.display = 'none';
+  } else {
+    greenDot.style.display = 'none';
+  }
+
   let m = minutes < 10 ? '0' + minutes : minutes;
   let s = seconds < 10 ? '0' + seconds : seconds;
 

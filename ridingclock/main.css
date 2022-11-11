@@ -45,7 +45,7 @@ body {
   width: 45vw;
   height: 45vh;
   display: flex;
-  font-size: 172px;
+  font-size: 25vw;
   font-weight: bold;
   align-items: center;
   justify-content: center;
@@ -115,6 +115,7 @@ button {
 .toparea {
   height: 33%;
   width: 100%;
+  margin: 2rem;
   justify-content: center;
   align-items: center;
 }
@@ -130,83 +131,88 @@ button {
   margin-left: 1rem;
 }
 
-@media (max-width: 1000px) {
-  .clock {
-    font-size: 144px;
-  }
-  .middlearea {
-    flex-direction: row;
-  }
-
-  @media (max-width: 800px) {
-    .toparea {
-      display: flex;
-      height: fit-content;
-      margin: 1rem;
-      text-align: center;
-    }
-
-    .middlearea,
-    .bottomarea {
-      display: flex;
-      width: 75%;
-      flex-direction: column;
-      height: fit-content;
-      margin: 1rem;
-      text-align: center;
-      justify-content: center;
-      align-items: center;
-    }
-
-    #reddot,
-    #greendot {
-      width: 45px;
-      height: 45px;
-      border-radius: 100%;
-      margin: 0.5rem;
-    }
-
-    #clock {
-      height: 20%;
-    }
+@media (max-width: 800px) {
+  .toparea {
+    display: flex;
+    height: fit-content;
+    margin: 1rem;
+    text-align: center;
   }
 
-  @media (min-width: 1200px) {
-    #clock {
-      font-size: 320px;
-      margin: 7rem;
-      margin-left: 6rem;
-      margin-right: 6rem;
-    }
-
-    #control {
-      font-size: 60px;
-      text-align: center;
-    }
-
-    .middlearea {
-      align-items: center;
-    }
-
-    #reddot,
-    #greendot {
-      width: 100px;
-      height: 100px;
-      margin: 1rem;
-      border-radius: 100%;
-    }
-  }
-}
-
-@media (max-width: 500px) {
   #clock {
-    font-size: 25vw;
+    font-size: 40vw;
+  }
+
+  button {
+    margin: 0.25rem;
+  }
+
+  .background {
+    background-color: none;
+    justify-content: center;
+    align-items: center;
+  }
+
+  body {
+    background-color: black;
+  }
+
+  .middlearea,
+  .bottomarea {
+    display: flex;
+    width: 75%;
+    flex-direction: row;
+    height: fit-content;
+    margin: 1rem;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #reddot,
+  #greendot {
+    width: 45px;
+    height: 45px;
+    border-radius: 100%;
+    margin: 0.5rem;
   }
 }
 
-#redseconds,
-#redminutes,
-#greenseconds,
-#greenminutes {
-  font-size: 64px;
+@media (min-width: 1200px) {
+  #clock {
+    font-size: 320px;
+    margin: 7rem;
+    margin-left: 6rem;
+    margin-right: 6rem;
+  }
+
+  #control {
+    font-size: 60px;
+    text-align: center;
+  }
+
+  .middlearea {
+    align-items: center;
+  }
+
+  #reddot,
+  #greendot {
+    width: 100px;
+    height: 100px;
+    margin: 1rem;
+    border-radius: 100%;
+  }
+}
+
+@media (max-width: 667px) {
+  #clock {
+    font-size: 30vw;
+    margin-left: 3rem;
+    margin-right: 3rem;
+  }
+  .middlearea,
+  .toparea,
+  .bottomarea {
+    margin: 0;
+  }
 }
