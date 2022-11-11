@@ -58,7 +58,7 @@ const displayTimer = (way) => {
   seconds = Math.abs(seconds);
   milliseconds = Math.abs(milliseconds);
 
-  if (redMinutes * 60 + redSeconds < greenMinutes * 60 + greenSeconds) {
+  if (redMinutes * 60 + redSeconds <= greenMinutes * 60 + greenSeconds) {
     // Green
     color = 'green';
     console.log('Green time');
@@ -114,6 +114,7 @@ const displayTimer = (way) => {
 const dotCheck = () => {
   if (seconds === 0 && minutes === 0) {
     color = 'white';
+    controlModification('NEUTRAL');
   }
 
   if (greenMinutes >= 1 && minutes >= 1) {
@@ -144,6 +145,10 @@ const clockControl = () => {
   if (minutes === 0 && seconds === 0) {
     clock.style.color = 'white';
     color = 'white';
+  } else if (color === 'green') {
+    controlModification('GREEN');
+  } else {
+    controlModification('RED');
   }
 
   clock.innerHTML = `${m}:${s}`;

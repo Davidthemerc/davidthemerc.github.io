@@ -8,6 +8,7 @@ body {
   box-sizing: border-box;
   justify-content: center;
   display: flex;
+  background-color: black;
 }
 
 @font-face {

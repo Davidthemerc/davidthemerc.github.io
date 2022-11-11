@@ -133,7 +133,7 @@ timeUpButton.addEventListener('click', () => {
 
 timeDownFastButton.addEventListener('click', () => {
   // Don't allow clock up/down modifications due to 0 time
-  if (clock.innerHTML === '00:00') {
+  if (clock.innerHTML === '00:00' || seconds < 5) {
     return;
   }
 
