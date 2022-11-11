@@ -8,6 +8,7 @@ html {
   display: flex;
   flex-direction: column;
   width: 100%;
+  background-color: brown;
 }
 
 header {
@@ -42,12 +43,38 @@ main > p {
   margin: 0;
   margin-top: 1rem;
   color: black;
-  text-align: center;
 }
 
 p,
 li {
   font-size: 1.2rem;
+  margin-left: 0.25rem;
+  margin-right: 0.25rem;
+}
+
+.centered {
+  text-align: center;
+}
+
+.sidebyside {
+  display: flex;
+  flex-direction: row;
+}
+
+.nomargin {
+  margin-bottom: 0;
+}
+
+.nopad {
+  padding: 0;
+}
+
+.nomargintop {
+  margin-top: 0;
+}
+
+ul {
+  margin: 0;
 }
 
 .bold {
@@ -59,7 +86,6 @@ li {
 }
 
 main > p {
-  text-align: center;
   color: black;
   font-weight: bold;
   font-size: 1.25rem;
@@ -106,6 +132,10 @@ main > p {
   padding: 0.25rem;
 }
 
+.apply {
+  background-color: brown;
+}
+
 .headerlink {
   text-decoration: none;
   padding: 0.5rem;
@@ -120,12 +150,12 @@ label {
   align-items: center;
 }
 
-a:hover {
-  background-color: black;
+a:active {
+  background-color: rgb(29, 25, 25);
 }
 
-.headerlink:hover {
-  background-color: black;
+.headerlink:active {
+  background-color: rgb(29, 25, 25);
 }
 
 footer {
@@ -159,9 +189,17 @@ main > section {
   width: 25vw;
 }
 
+.img50 {
+  width: 50vw;
+}
+
+.img75 {
+  width: 75vw;
+}
+
 /* 1000 PX or Less Media Section*/
 
-@media (max-width: 1000px) {
+@media (max-width: 1200px) {
   header {
     flex-direction: column;
     height: fit-content;
@@ -169,6 +207,7 @@ main > section {
 
   header > section {
     height: 10vh;
+    padding: 3px;
   }
 
   .mainlogo {
@@ -201,7 +240,7 @@ main > section {
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 700px) {
   body {
     display: flex;
     flex-direction: column;
@@ -219,7 +258,7 @@ main > section {
   }
   .left {
     width: 100%;
-    height: 130px;
+    height: 185px;
   }
   .right {
     width: 100%;
@@ -242,6 +281,17 @@ main > section {
     border-radius: 2rem;
   }
   main {
-    margin-top: 245px;
+    margin-top: 305px;
+  }
+}
+@media (max-height: 600px) {
+  .mainsearch {
+    height: 40%;
+  }
+}
+
+@media (max-height: 400px) {
+  .mainsearch {
+    height: 50%;
   }
 }
