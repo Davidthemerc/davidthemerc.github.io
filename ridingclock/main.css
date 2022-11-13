@@ -118,14 +118,14 @@ span {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 95vw;
-  height: 95vh;
+  width: 95%;
+  height: 95%;
   background-color: black;
   border-radius: 1rem;
 }
 
 .toparea {
-  height: 33%;
+  height: fit-content;
   width: 100%;
   margin: 2rem;
   justify-content: center;
@@ -189,17 +189,13 @@ span {
 @media (min-width: 1200px) {
   #clock {
     font-size: 30vw;
-    margin: 7rem;
-    margin-left: 6rem;
-    margin-right: 6rem;
-  }
-
-  .toparea {
-    padding-bottom: 12vh;
+    margin-left: 7rem;
+    margin-right: 7rem;
   }
 
   #control {
     font-size: 60px;
+    font-weight: bold;
     text-align: center;
   }
 
@@ -232,7 +228,6 @@ span {
 @media (max-height: 445px) {
   #clock {
     font-size: 50vh;
-    margin-bottom: 0.5rem;
   }
   .toparea,
   .middlearea,

@@ -180,11 +180,14 @@ timeUpButton.addEventListener('click', () => {
 
 timeDownFastButton.addEventListener('click', () => {
   // Don't allow clock up/down modifications due to 0 time
-  if (clock.innerHTML === '00:00' || timeMaster.seconds <= 5) {
+  if (
+    clock.innerHTML === '00:00' ||
+    (timeMaster.seconds <= 5 && timeMaster.minutes === 0)
+  ) {
     return;
   }
 
-  if (timeMaster.color === 'red' && timeMaster.redSeconds <= 4) {
+  if (timeMaster.color === 'red' && timeMaster.Seconds <= 4) {
     let diff = 5 - timeMaster.redSeconds;
     timeMaster.redMinutes -= 1;
     timeMaster.redSeconds = 60 - diff;
@@ -209,7 +212,7 @@ timeUpFastButton.addEventListener('click', () => {
   }
 
   if (timeMaster.color === 'red' && timeMaster.redSeconds >= 55) {
-    let diff = 60 - redSeconds;
+    let diff = 60 - timeMaster.redSeconds;
     timeMaster.redMinutes += 1;
     timeMaster.redSeconds = 0 + 5 - diff;
   } else if (timeMaster.color === 'green' && timeMaster.greenSeconds >= 55) {

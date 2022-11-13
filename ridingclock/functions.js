@@ -1,4 +1,5 @@
 const displayTimer = (way) => {
+  // Takes in the "way" parameter, which determines which ways
   if (way === 1) {
     timeMaster.redMilliseconds += 10;
 
@@ -154,10 +155,11 @@ const clockControl = () => {
 };
 
 const controlModification = (color) => {
+  color = color.toUpperCase();
+  color === 'WHITE' ? (color = 'NEUTRAL') : color;
+  control.innerHTML = `CONTROL: ${color}`;
   color === 'NEUTRAL' ? (color = 'white') : color;
   control.style.color = `${color}`;
-  color = color.toUpperCase();
-  control.innerHTML = `CONTROL: ${color}`;
 };
 
 // Function to load saved localstorage data
