@@ -68,17 +68,61 @@ resetButton.addEventListener('click', () => {
   clock.style.color = 'white';
 });
 
-// adjustButton.addEventListener('click', () => {
-//   let selectColor = prompt('Specify Color (Red/Green)');
-//   let manMinutes = prompt('Enter Manual Minutes (05 for 5 Mins)');
-//   let manSeconds = prompt('Enter Manual Second (05 for 5 Sec)');
-//   manMinutes = parseInt(manMinutes);
-//   manSeconds = parseInt(manSeconds);
+adjustButton.addEventListener('click', () => {
+  let selectColor = prompt('Specify Color (Red/Green)');
+  selectColor = selectColor.toLowerCase();
 
-//   if (selectColor === 'red') {
-//     //Red Selected
-//   }
-// });
+  if (selectColor !== 'red' && selectColor !== 'green') {
+    // Houston, we have a problem...a color wasn't typed.
+    alert('Please specify Red or Green!');
+    return;
+  }
+
+  let manMinutes = prompt('Enter Manual Minutes (05 for 5 Mins)');
+  let manSeconds = prompt('Enter Manual Second (05 for 5 Sec)');
+  manMinutes = parseInt(manMinutes);
+  manSeconds = parseInt(manSeconds);
+
+  if (selectColor === 'red') {
+    //Red Selected
+    // Reset master time object
+    timeManipulation(
+      0,
+      manSeconds,
+      manMinutes,
+      0,
+      manSeconds,
+      manMinutes,
+      0,
+      0,
+      0,
+      null,
+      selectColor
+    );
+  } else {
+    //Red Selected
+    // Reset master time object
+    timeManipulation(
+      0,
+      manSeconds,
+      manMinutes,
+      0,
+      0,
+      0,
+      0,
+      manSeconds,
+      manMinutes,
+      null,
+      selectColor
+    );
+  }
+
+  // Clock control & checking for the dot condition (1+ min)
+  clockControl();
+  clockColorCheck();
+  controlModification(timeMaster.color);
+  dotCheck();
+});
 
 timeDownButton.addEventListener('click', () => {
   // Don't allow clock up/down modifications due to 0 time
@@ -126,7 +170,7 @@ timeUpButton.addEventListener('click', () => {
 
 timeDownFastButton.addEventListener('click', () => {
   // Don't allow clock up/down modifications due to 0 time
-  if (clock.innerHTML === '00:00' || timeMaster.seconds < 5) {
+  if (clock.innerHTML === '00:00' || timeMaster.seconds <= 5) {
     return;
   }
 

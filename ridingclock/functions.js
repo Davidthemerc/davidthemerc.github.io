@@ -154,9 +154,10 @@ const clockControl = () => {
 };
 
 const controlModification = (color) => {
-  control.innerHTML = `CONTROL: ${color}`;
   color === 'NEUTRAL' ? (color = 'white') : color;
   control.style.color = `${color}`;
+  color = color.toUpperCase();
+  control.innerHTML = `CONTROL: ${color}`;
 };
 
 // Function to load saved localstorage data
@@ -201,4 +202,34 @@ const clockColorCheck = () => {
   } else {
     clock.style.color = 'white';
   }
+};
+
+const timeManipulation = (
+  mil,
+  sec,
+  min,
+  rml,
+  rsec,
+  rmin,
+  gmil,
+  gsec,
+  gmin,
+  tint,
+  tcolor
+) => {
+  // Set master time object
+  timeMaster = {
+    milliseconds: mil,
+    seconds: sec,
+    minutes: min,
+    redMilliseconds: rml,
+    redSeconds: rsec,
+    redMinutes: rmin,
+    greenMilliseconds: gmil,
+    greenSeconds: gsec,
+    greenMinutes: gmin,
+    int: tint,
+    color: tcolor,
+  };
+  saveJSON(timeMaster, 'RC-data');
 };

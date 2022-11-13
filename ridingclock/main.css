@@ -3,7 +3,6 @@ body {
   margin: 0;
   padding: 0;
   color: white;
-  font-family: Digital7;
   height: 100%;
   box-sizing: border-box;
   justify-content: center;
@@ -24,9 +23,10 @@ body {
   margin-bottom: 1rem;
 }
 
+/*
 #adjust {
   display: none;
-}
+}*/
 
 #reddot,
 #greendot {
@@ -50,6 +50,7 @@ body {
   font-weight: bold;
   align-items: center;
   justify-content: center;
+  font-family: Digital7;
 }
 
 #greendot {
@@ -58,10 +59,18 @@ body {
 
 button {
   margin: 1rem;
+  border: 3px rgb(65, 65, 65) solid;
   border-radius: 0.5rem;
   padding: 0.5rem;
-  font-family: Digital7;
   font-size: 24px;
+  text-align: center;
+}
+
+.timer0,
+.timer1,
+.timer2,
+span {
+  text-align: center;
 }
 
 #timeup,
@@ -98,9 +107,12 @@ button {
 }
 
 #redtime,
-#greentime,
+#greentime {
+  width: 120px;
+}
+
 #neutraltime {
-  width: 100px;
+  width: 150px;
 }
 
 .background {
@@ -245,4 +257,40 @@ button:active {
 #redtime:focus,
 #neutraltime:focus {
   border: 3px blue solid;
+}
+
+@media (max-width: 500px) {
+  button,
+  #redtime,
+  #greentime,
+  #neutraltime,
+  #control {
+    font-size: 5vw;
+    font-weight: bold;
+    width: 32vw;
+    height: 16vw;
+  }
+  #adjust {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  #timedown,
+  #timeup,
+  #timedownfast,
+  #timeupfast {
+    width: 15vw;
+    height: 15vw;
+  }
+  #control {
+    font-size: 10vw;
+  }
+  .middlearea {
+    flex-direction: column;
+  }
+  .timer0 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 }
