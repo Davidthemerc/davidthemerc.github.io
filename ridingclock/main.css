@@ -232,7 +232,7 @@ span {
 @media (max-height: 445px) {
   #clock {
     font-size: 50vh;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
   }
   .toparea,
   .middlearea,
