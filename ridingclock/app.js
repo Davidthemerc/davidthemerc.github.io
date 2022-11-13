@@ -26,7 +26,6 @@ redTimeButton.addEventListener('click', () => {
     clearInterval(timeMaster.int);
   }
   timeMaster.int = setInterval(displayTimer, 10, 1);
-  console.log('Red time start');
   controlModification('RED');
 });
 
@@ -40,7 +39,6 @@ greenTimeButton.addEventListener('click', () => {
     clearInterval(timeMaster.int);
   }
   timeMaster.int = setInterval(displayTimer, 10, -1);
-  console.log('Green time start');
   controlModification('GREEN');
 });
 
