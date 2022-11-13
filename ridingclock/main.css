@@ -148,7 +148,7 @@ span {
   }
 
   #clock {
-    font-size: 40vw;
+    font-size: 30vw;
   }
 
   button {
@@ -231,7 +231,8 @@ span {
 
 @media (max-height: 445px) {
   #clock {
-    font-size: 40vh;
+    font-size: 50vh;
+    margin-bottom: 1rem;
   }
   .toparea,
   .middlearea,
