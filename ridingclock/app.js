@@ -74,12 +74,22 @@ adjustButton.addEventListener('click', () => {
 
   if (selectColor !== 'red' && selectColor !== 'green') {
     // Houston, we have a problem...a color wasn't typed.
-    alert('Please specify Red or Green!');
+    alert('Please specify Red or Green! Canceling.');
     return;
   }
 
-  let manMinutes = prompt('Enter Manual Minutes (05 for 5 Mins)');
-  let manSeconds = prompt('Enter Manual Second (05 for 5 Sec)');
+  let manMinutes = prompt('Enter Manual Minutes:');
+  if (isNaN(manMinutes) === true) {
+    alert('Please enter valid minutes! Canceling.');
+    return;
+  }
+
+  let manSeconds = prompt('Enter Manual Seconds:');
+  if (isNaN(manSeconds) === true) {
+    alert('Please enter valid seconds! Canceling.');
+    return;
+  }
+
   manMinutes = parseInt(manMinutes);
   manSeconds = parseInt(manSeconds);
 

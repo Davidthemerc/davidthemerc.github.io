@@ -58,7 +58,7 @@ body {
 }
 
 button {
-  margin: 1rem;
+  margin: 0.5rem;
   border: 3px rgb(65, 65, 65) solid;
   border-radius: 0.5rem;
   padding: 0.5rem;
@@ -79,8 +79,6 @@ span {
 #timedownfast {
   width: 55px;
   height: 55px;
-  margin-left: 0.5rem;
-  margin-right: 0.5rem;
 }
 
 #control {
@@ -139,10 +137,6 @@ span {
 .bottomarea {
   display: flex;
   flex-direction: row;
-}
-
-.middlearea {
-  margin-left: 1rem;
 }
 
 @media (max-width: 800px) {
