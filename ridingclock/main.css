@@ -181,10 +181,14 @@ button {
 
 @media (min-width: 1200px) {
   #clock {
-    font-size: 320px;
+    font-size: 30vw;
     margin: 7rem;
     margin-left: 6rem;
     margin-right: 6rem;
+  }
+
+  .toparea {
+    padding-bottom: 12vh;
   }
 
   #control {
@@ -227,4 +231,17 @@ button {
   .bottomarea {
     margin: 0;
   }
+}
+
+#greentime:active,
+#redtime:active,
+#neutraltime:active,
+button:active {
+  background-color: yellow;
+}
+
+#greentime:focus,
+#redtime:focus,
+#neutraltime:focus {
+  border: 3px blue solid;
 }

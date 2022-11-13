@@ -18,59 +18,54 @@ const greenTimeButton = document.getElementById('greentime');
 // const greenSecondsEl = document.getElementById('greenseconds');
 // const greenMinutesEl = document.getElementById('greenminutes');
 
-// Important time-related global variables
-let [milliseconds, seconds, minutes] = [0, 0, 0];
-let [redMilliseconds, redSeconds, redMinutes] = [0, 0, 0];
-let [greenMilliseconds, greenSeconds, greenMinutes] = [0, 0, 0];
-let int = null;
-let color = 'white';
-
-// Depreciated functionality
-// control.addEventListener('click', () => {
-//   if (control.innerHTML === 'CONTROL: NEUTRAL') {
-//     control.innerHTML = 'CONTROL: GREEN';
-//     control.style.color = 'green';
-//   } else if (control.innerHTML === 'CONTROL: GREEN') {
-//     control.innerHTML = 'CONTROL: RED';
-//     control.style.color = 'red';
-//   } else {
-//     control.innerHTML = 'CONTROL: NEUTRAL';
-//     control.style.color = 'white';
-//   }
-// });
+// New condensed object for local storage
+let timeMaster = getJSON('RC-data');
 
 redTimeButton.addEventListener('click', () => {
-  if (int !== null) {
-    clearInterval(int);
+  if (timeMaster.int !== null) {
+    clearInterval(timeMaster.int);
   }
-  int = setInterval(displayTimer, 10, 1);
+  timeMaster.int = setInterval(displayTimer, 10, 1);
   console.log('Red time start');
   controlModification('RED');
 });
 
 neutralTimeButton.addEventListener('click', () => {
-  clearInterval(int);
+  clearInterval(timeMaster.int);
   controlModification('NEUTRAL');
 });
 
 greenTimeButton.addEventListener('click', () => {
-  if (int !== null) {
-    clearInterval(int);
+  if (timeMaster.int !== null) {
+    clearInterval(timeMaster.int);
   }
-  int = setInterval(displayTimer, 10, -1);
+  timeMaster.int = setInterval(displayTimer, 10, -1);
   console.log('Green time start');
   controlModification('GREEN');
 });
 
 resetButton.addEventListener('click', () => {
-  clearInterval(int);
+  clearInterval(timeMaster.int);
   redDot.style.display = 'none';
   greenDot.style.display = 'none';
   controlModification('NEUTRAL');
 
-  [milliseconds, seconds, minutes] = [0, 0, 0];
-  [redMilliseconds, redSeconds, redMinutes] = [0, 0, 0];
-  [greenMilliseconds, greenSeconds, greenMinutes] = [0, 0, 0];
+  // Reset master time object
+  timeMaster = {
+    milliseconds: 0,
+    seconds: 0,
+    minutes: 0,
+    redMilliseconds: 0,
+    redSeconds: 0,
+    redMinutes: 0,
+    greenMilliseconds: 0,
+    greenSeconds: 0,
+    greenMinutes: 0,
+    int: null,
+    color: 'white',
+  };
+  saveJSON(timeMaster, 'RC-data');
+
   clock.innerHTML = '00:00';
   clock.style.color = 'white';
 });
@@ -93,16 +88,16 @@ timeDownButton.addEventListener('click', () => {
     return;
   }
 
-  if (color === 'red' && redSeconds === 0) {
-    redMinutes -= 1;
-    redSeconds = 59;
-  } else if (color === 'green' && greenSeconds === 0) {
-    greenMinutes -= 1;
-    greenSeconds = 59;
-  } else if (color === 'red') {
-    redSeconds -= 1;
-  } else if (color === 'green') {
-    greenSeconds -= 1;
+  if (timeMaster.color === 'red' && timeMaster.redSeconds === 0) {
+    timeMaster.redMinutes -= 1;
+    timeMaster.redSeconds = 59;
+  } else if (timeMaster.color === 'green' && timeMaster.greenSeconds === 0) {
+    timeMaster.greenMinutes -= 1;
+    timeMaster.greenSeconds = 59;
+  } else if (timeMaster.color === 'red') {
+    timeMaster.redSeconds -= 1;
+  } else if (timeMaster.color === 'green') {
+    timeMaster.greenSeconds -= 1;
   }
   // Clock control & checking for the dot condition (1+ min)
   clockControl();
@@ -115,16 +110,16 @@ timeUpButton.addEventListener('click', () => {
     return;
   }
 
-  if (color === 'red' && redSeconds === 59) {
-    redMinutes += 1;
-    redSeconds = 0;
-  } else if (color === 'green' && greenSeconds === 59) {
-    greenMinutes += 1;
-    greenSeconds = 0;
-  } else if (color === 'red') {
-    redSeconds += 1;
-  } else if (color === 'green') {
-    greenSeconds += 1;
+  if (timeMaster.color === 'red' && timeMaster.redSeconds === 59) {
+    timeMaster.redMinutes += 1;
+    timeMaster.redSeconds = 0;
+  } else if (timeMaster.color === 'green' && timeMaster.greenSeconds === 59) {
+    timeMaster.greenMinutes += 1;
+    timeMaster.greenSeconds = 0;
+  } else if (timeMaster.color === 'red') {
+    timeMaster.redSeconds += 1;
+  } else if (timeMaster.color === 'green') {
+    timeMaster.greenSeconds += 1;
   }
   // Clock control & checking for the dot condition (1+ min)
   clockControl();
@@ -133,22 +128,22 @@ timeUpButton.addEventListener('click', () => {
 
 timeDownFastButton.addEventListener('click', () => {
   // Don't allow clock up/down modifications due to 0 time
-  if (clock.innerHTML === '00:00' || seconds < 5) {
+  if (clock.innerHTML === '00:00' || timeMaster.seconds < 5) {
     return;
   }
 
-  if (color === 'red' && redSeconds <= 4) {
-    let diff = 5 - redSeconds;
-    redMinutes -= 1;
-    redSeconds = 60 - diff;
-  } else if (color === 'green' && greenSeconds <= 4) {
-    let diff = 5 - greenSeconds;
-    greenMinutes -= 1;
-    greenSeconds = 60 - diff;
-  } else if (color === 'red') {
-    redSeconds -= 5;
-  } else if (color === 'green') {
-    greenSeconds -= 5;
+  if (timeMaster.color === 'red' && timeMaster.redSeconds <= 4) {
+    let diff = 5 - timeMaster.redSeconds;
+    timeMaster.redMinutes -= 1;
+    timeMaster.redSeconds = 60 - diff;
+  } else if (timeMaster.color === 'green' && timeMaster.greenSeconds <= 4) {
+    let diff = 5 - timeMaster.greenSeconds;
+    timeMaster.greenMinutes -= 1;
+    timeMaster.greenSeconds = 60 - diff;
+  } else if (timeMaster.color === 'red') {
+    timeMaster.redSeconds -= 5;
+  } else if (timeMaster.color === 'green') {
+    timeMaster.greenSeconds -= 5;
   }
   // Clock control & checking for the dot condition (1+ min)
   clockControl();
@@ -161,20 +156,23 @@ timeUpFastButton.addEventListener('click', () => {
     return;
   }
 
-  if (color === 'red' && redSeconds >= 55) {
+  if (timeMaster.color === 'red' && timeMaster.redSeconds >= 55) {
     let diff = 60 - redSeconds;
-    redMinutes += 1;
-    redSeconds = 0 + 5 - diff;
-  } else if (color === 'green' && greenSeconds >= 55) {
-    let diff = 60 - greenSeconds;
-    greenMinutes += 1;
-    greenSeconds = 0 + 5 - diff;
-  } else if (color === 'red') {
-    redSeconds += 5;
-  } else if (color === 'green') {
-    greenSeconds += 5;
+    timeMaster.redMinutes += 1;
+    timeMaster.redSeconds = 0 + 5 - diff;
+  } else if (timeMaster.color === 'green' && timeMaster.greenSeconds >= 55) {
+    let diff = 60 - timeMaster.greenSeconds;
+    timeMaster.greenMinutes += 1;
+    timeMaster.greenSeconds = 0 + 5 - diff;
+  } else if (timeMaster.color === 'red') {
+    timeMaster.redSeconds += 5;
+  } else if (timeMaster.color === 'green') {
+    timeMaster.greenSeconds += 5;
   }
   // Clock control & checking for the dot condition (1+ min)
   clockControl();
   dotCheck();
 });
+
+// Reload saved time on load
+reloadTime();

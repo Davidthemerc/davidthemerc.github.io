@@ -1,27 +1,27 @@
 const displayTimer = (way) => {
   if (way === 1) {
-    redMilliseconds += 10;
+    timeMaster.redMilliseconds += 10;
 
-    if (redMilliseconds == 1000) {
-      redMilliseconds = 0;
-      redSeconds++;
+    if (timeMaster.redMilliseconds == 1000) {
+      timeMaster.redMilliseconds = 0;
+      timeMaster.redSeconds++;
     }
 
-    if (redSeconds == 60) {
-      redSeconds = 0;
-      redMinutes++;
+    if (timeMaster.redSeconds == 60) {
+      timeMaster.redSeconds = 0;
+      timeMaster.redMinutes++;
     }
   } else {
-    greenMilliseconds += 10; //Normally 10
+    timeMaster.greenMilliseconds += 10; //Normally 10
 
-    if (greenMilliseconds == 1000) {
-      greenMilliseconds = 0;
-      greenSeconds++;
+    if (timeMaster.greenMilliseconds == 1000) {
+      timeMaster.greenMilliseconds = 0;
+      timeMaster.greenSeconds++;
     }
 
-    if (greenSeconds == 60) {
-      greenSeconds = 0;
-      greenMinutes++;
+    if (timeMaster.greenSeconds == 60) {
+      timeMaster.greenSeconds = 0;
+      timeMaster.greenMinutes++;
     }
   }
 
@@ -33,70 +33,73 @@ const displayTimer = (way) => {
 
   // Minute tick off stabilization
   // Green downward
-  if (redSeconds > greenSeconds) {
-    if (redMinutes < greenMinutes) {
-      greenMinutes -= 1;
-      redSeconds = 0;
-      greenSeconds = 59;
+  if (timeMaster.redSeconds > timeMaster.greenSeconds) {
+    if (timeMaster.redMinutes < timeMaster.greenMinutes) {
+      timeMaster.greenMinutes -= 1;
+      timeMaster.redSeconds = 0;
+      timeMaster.greenSeconds = 59;
     }
   }
   // Minute tick off stabilization
   // Red downward
-  if (redSeconds < greenSeconds) {
-    if (redMinutes > greenMinutes) {
-      redMinutes -= 1;
-      greenSeconds = 0;
-      redSeconds = 59;
+  if (timeMaster.redSeconds < timeMaster.greenSeconds) {
+    if (timeMaster.redMinutes > timeMaster.greenMinutes) {
+      timeMaster.redMinutes -= 1;
+      timeMaster.greenSeconds = 0;
+      timeMaster.redSeconds = 59;
     }
   }
 
-  minutes = greenMinutes - redMinutes;
-  seconds = greenSeconds - redSeconds;
-  milliseconds = redMilliseconds - greenMilliseconds;
+  timeMaster.minutes = timeMaster.greenMinutes - timeMaster.redMinutes;
+  timeMaster.seconds = timeMaster.greenSeconds - timeMaster.redSeconds;
+  timeMaster.milliseconds =
+    timeMaster.redMilliseconds - timeMaster.greenMilliseconds;
 
-  minutes = Math.abs(minutes);
-  seconds = Math.abs(seconds);
-  milliseconds = Math.abs(milliseconds);
+  timeMaster.minutes = Math.abs(timeMaster.minutes);
+  timeMaster.seconds = Math.abs(timeMaster.seconds);
+  timeMaster.milliseconds = Math.abs(timeMaster.milliseconds);
 
-  if (redMinutes * 60 + redSeconds <= greenMinutes * 60 + greenSeconds) {
+  if (
+    timeMaster.redMinutes * 60 + timeMaster.redSeconds <=
+    timeMaster.greenMinutes * 60 + timeMaster.greenSeconds
+  ) {
     // Green
-    color = 'green';
-    console.log('Green time');
-    controlModification('GREEN');
+    timeMaster.color = 'green';
   } else {
     // Red
-    color = 'red';
-    console.log('Red time');
-    controlModification('RED');
+    timeMaster.color = 'red';
   }
 
-  if (seconds === 0 && minutes === 0) {
-    color = 'white';
-    controlModification('NEUTRAL');
+  if (
+    timeMaster.seconds === 0 &&
+    timeMaster.minutes === 0 &&
+    timeMaster.milliseconds === 0
+  ) {
+    timeMaster.color = 'white';
   }
 
-  if (greenMinutes >= 1 && minutes >= 1) {
+  if (timeMaster.greenMinutes >= 1 && timeMaster.minutes >= 1) {
     greenDot.style.display = 'flex';
     redDot.style.display = 'none';
   } else {
     greenDot.style.display = 'none';
   }
 
-  if (redMinutes >= 1 && minutes >= 1) {
+  if (timeMaster.redMinutes >= 1 && timeMaster.minutes >= 1) {
     redDot.style.display = 'flex';
     greenDot.style.display = 'none';
   } else {
     redDot.style.display = 'none';
   }
 
-  if (color === 'red' && minutes >= 1) {
+  if (timeMaster.color === 'red' && timeMaster.minutes >= 1) {
     redDot.style.display = 'flex';
     greenDot.style.display = 'none';
   } else {
     redDot.style.display = 'none';
   }
 
-  if (color === 'green' && minutes >= 1) {
+  if (timeMaster.color === 'green' && timeMaster.minutes >= 1) {
     greenDot.style.display = 'flex';
     redDot.style.display = 'none';
   } else {
@@ -104,30 +107,23 @@ const displayTimer = (way) => {
   }
 
   clockControl();
-
-  if (color === 'red') {
-    clock.style.color = 'red';
-  } else if (color === 'green') {
-    clock.style.color = 'green';
-  } else {
-    clock.style.color = 'white';
-  }
+  clockColorCheck();
 };
 
 const dotCheck = () => {
-  if (seconds === 0 && minutes === 0) {
-    color = 'white';
+  if (timeMaster.seconds === 0 && timeMaster.minutes === 0) {
+    timeMaster.color = 'white';
     controlModification('NEUTRAL');
   }
 
-  if (greenMinutes >= 1 && minutes >= 1) {
+  if (timeMaster.greenMinutes >= 1 && timeMaster.minutes >= 1) {
     greenDot.style.display = 'flex';
     redDot.style.display = 'none';
   } else {
     greenDot.style.display = 'none';
   }
 
-  if (redMinutes >= 1 && minutes >= 1) {
+  if (timeMaster.redMinutes >= 1 && timeMaster.minutes >= 1) {
     redDot.style.display = 'flex';
     greenDot.style.display = 'none';
   } else {
@@ -136,25 +132,73 @@ const dotCheck = () => {
 };
 
 const clockControl = () => {
-  minutes = redMinutes - greenMinutes;
-  seconds = redSeconds - greenSeconds;
-  milliseconds = redMilliseconds - greenMilliseconds;
-  minutes = Math.abs(minutes);
-  seconds = Math.abs(seconds);
+  timeMaster.minutes = timeMaster.redMinutes - timeMaster.greenMinutes;
+  timeMaster.seconds = timeMaster.redSeconds - timeMaster.greenSeconds;
+  timeMaster.milliseconds =
+    timeMaster.redMilliseconds - timeMaster.greenMilliseconds;
+  timeMaster.minutes = Math.abs(timeMaster.minutes);
+  timeMaster.seconds = Math.abs(timeMaster.seconds);
 
-  let m = minutes < 10 ? '0' + minutes : minutes;
-  let s = seconds < 10 ? '0' + seconds : seconds;
+  let m =
+    timeMaster.minutes < 10 ? '0' + timeMaster.minutes : timeMaster.minutes;
+  let s =
+    timeMaster.seconds < 10 ? '0' + timeMaster.seconds : timeMaster.seconds;
 
-  if (minutes === 0 && seconds === 0) {
+  if (timeMaster.minutes === 0 && timeMaster.seconds === 0) {
     clock.style.color = 'white';
-    color = 'white';
+    timeMaster.color = 'white';
   }
 
   clock.innerHTML = `${m}:${s}`;
+  saveJSON(timeMaster, 'RC-data');
 };
 
 const controlModification = (color) => {
   control.innerHTML = `CONTROL: ${color}`;
   color === 'NEUTRAL' ? (color = 'white') : color;
   control.style.color = `${color}`;
+};
+
+// Function to load saved localstorage data
+const getJSON = (savedName) => {
+  const saveJSON = localStorage.getItem(savedName);
+
+  if (saveJSON !== null) {
+    return JSON.parse(saveJSON);
+  } else
+    return {
+      milliseconds: 0,
+      seconds: 0,
+      minutes: 0,
+      redMilliseconds: 0,
+      redSeconds: 0,
+      redMinutes: 0,
+      greenMilliseconds: 0,
+      greenSeconds: 0,
+      greenMinutes: 0,
+      int: null,
+      color: 'white',
+    };
+};
+
+// Function to save localstorage data
+const saveJSON = (savedItem, savedName) => {
+  localStorage.setItem(savedName, JSON.stringify(savedItem));
+};
+
+const reloadTime = () => {
+  clockControl();
+  dotCheck();
+  controlModification(timeMaster.color);
+  clockColorCheck();
+};
+
+const clockColorCheck = () => {
+  if (timeMaster.color === 'red') {
+    clock.style.color = 'red';
+  } else if (timeMaster.color === 'green') {
+    clock.style.color = 'green';
+  } else {
+    clock.style.color = 'white';
+  }
 };
