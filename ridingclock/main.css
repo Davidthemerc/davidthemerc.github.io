@@ -51,6 +51,8 @@ body {
   align-items: center;
   justify-content: center;
   font-family: Digital7;
+  margin-left: 4rem;
+  margin-right: 4rem;
 }
 
 #greendot {

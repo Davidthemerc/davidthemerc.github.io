@@ -51,6 +51,17 @@ const displayTimer = (way) => {
     }
   }
 
+  // Additional minute tick off stabilization
+  if (timeMaster.redSeconds === timeMaster.greenSeconds) {
+    timeMaster.redSeconds = 0;
+    timeMaster.greenSeconds = 0;
+  }
+
+  if (timeMaster.redMinutes === timeMaster.greenMinutes) {
+    timeMaster.redMinutes = 0;
+    timeMaster.greenMinutes = 0;
+  }
+
   timeMaster.minutes = timeMaster.greenMinutes - timeMaster.redMinutes;
   timeMaster.seconds = timeMaster.greenSeconds - timeMaster.redSeconds;
   timeMaster.milliseconds =

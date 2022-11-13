@@ -69,6 +69,7 @@ resetButton.addEventListener('click', () => {
 });
 
 adjustButton.addEventListener('click', () => {
+  clearInterval(timeMaster.int);
   let selectColor = prompt('Specify Color (Red/Green)');
   selectColor = selectColor.toLowerCase();
 
