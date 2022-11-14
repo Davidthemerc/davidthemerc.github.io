@@ -240,7 +240,7 @@ main > section {
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 850px) {
   body {
     display: flex;
     flex-direction: column;
