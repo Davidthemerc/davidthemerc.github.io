@@ -10,6 +10,8 @@ for (let i = 0; i <= 53; i++) {
 // Define global variables
 let image;
 let beans;
+let lockColor = 'rgb(152, 163, 214)';
+let lockStatus = document.getElementById('lockStatus');
 
 // Define buenas audio
 const audio = new Audio('audio/Buenas.mp3'); // Female voice

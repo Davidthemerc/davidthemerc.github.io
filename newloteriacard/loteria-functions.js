@@ -26,7 +26,13 @@ let initialSetup = () => {
     // Setup the event listener to click on the card
     grid[i].addEventListener('click', () => {
       // Assign each card an image and append it to the appropriate div
-      // But, we want to show the bean instead if the card has been clicked
+      // We want to show a bean if the card has been clicked
+
+      if (locked === 0) {
+        // Card isn't locked. No adding beans while unlocked.
+        // The card must be locked to be usable for play.
+        return;
+      }
 
       if (trackerArray[i] === 1) {
         // If the bean isn't active, show it
@@ -77,6 +83,12 @@ let reloadCard = () => {
 
 // Check if there's a winning condition
 let buenasCheck = () => {
+  if (locked === 0) {
+    // Card isn't locked. No audio calls while locked.
+    // The card must be locked to be usable for play.
+    return;
+  }
+
   if (conditionsValue === '6') {
     // No audio call; full manual
     return;
@@ -345,15 +357,9 @@ let selectorArranger = (i) => {
 const lockCard = () => {
   if (locked === 0) {
     // Lock the card. Show the locked card background color style.
-    document.getElementsByTagName('body')[0].style.backgroundColor =
-      'rgb(255,255,255)';
-    locked = 1;
-    saveJSON(locked, 'newLoteriaLock');
+    lockDOM('lock');
   } else {
-    locked = 0;
-    saveJSON(locked, 'newLoteriaLock');
-    document.getElementsByTagName('body')[0].style.backgroundColor =
-      'rgb(224, 215, 255)';
+    lockDOM('unlock');
   }
 };
 
@@ -369,8 +375,28 @@ const beanSetup = (i) => {
 const checkIfLocked = () => {
   if (locked === 1) {
     // Card is locked. Show the locked card background color style.
-    document.getElementsByTagName('body')[0].style.backgroundColor =
-      'rgb(255,255,255)';
+    lockDOM('lock');
+  } else {
+    lockDOM('unlock');
   }
-  // Else, card isn't locked. Do nothing.
+};
+
+const lockDOM = (status) => {
+  if (status === 'lock') {
+    locked = 1;
+    saveJSON(locked, 'newLoteriaLock');
+    document.getElementsByTagName('body')[0].style.backgroundColor = lockColor;
+    lockStatus.innerHTML = 'Locked';
+    lockStatus.style = '';
+    lockStatus.style.border = '';
+  } else {
+    locked = 0;
+    saveJSON(locked, 'newLoteriaLock');
+    document.getElementsByTagName('body')[0].style.backgroundColor =
+      'rgb(255, 255, 255)';
+    // Else, card isn't locked. Do nothing.
+    lockStatus.innerHTML = 'Unlocked';
+    lockStatus.style.padding = '.1rem';
+    lockStatus.style.border = '1px black solid';
+  }
 };
