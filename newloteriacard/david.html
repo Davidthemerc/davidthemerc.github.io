@@ -1003,10 +1003,22 @@
                         <option value="53">54 - La Rana</option>
                     </select>
                 </div>
-                <div class="d-flex justify-content-center">
-                    <button id="clear" class="mt-2">Clear Card</button>
-                    <button id="newCard" class="ms-2 mt-2">New Card</button>
-                    <button id="lockCard" class="ms-2 mt-2">Lock Card</button>
+                <div class="tall">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <select id="beanselect">
+                            <option value="0">Bean 1</option>
+                            <option value="1">Bean 2</option>
+                            <option value="2">Bean 3</option>
+                            <option value="3">Bean 4</option>
+                            <option value="4">No me importa!</option>
+                            <option value="4">No me importa!</option>
+                        </select>
+                        <button id="clear" class="bar">Clear Card</button>
+                        <button id="newCard" class="bar">New Card</button>
+                        <button id="lockCard" class="bar">Lock Card</button>
+                    </div>
+                    <div class="d-flex justify-content-center align-items-center"><span id="lockStatus"
+                            class="bar">Unlocked</span></div>
                 </div>
                 <label class="d-flex justify-content-center mt-2 mb-2"><b>Custom Card:&nbsp;</b>
                     <select class="customCards" id="customCards" onchange="selectorDetector();">

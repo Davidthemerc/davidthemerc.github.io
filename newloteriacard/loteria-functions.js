@@ -294,11 +294,7 @@ let selectorDetector = () => {
 let customCardArranger = (set) => {
   for (let i = 0; i < 16; i++) {
     // Assign each card an image and append it to the appropriate div
-    image = imageList[set[i]];
-    grid[i].innerHTML = '';
-    grid[i].appendChild(image);
-    shuffled[i] = set[i];
-    selectorArranger(i);
+    lesserArranger(i);
     saveJSON(shuffled, 'newLoteriaCard');
   }
 };
