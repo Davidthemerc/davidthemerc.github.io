@@ -268,18 +268,28 @@ let cambio = () => {
 };
 
 let selectorDetector = () => {
-  let sel = document.getElementById('customCards').value;
+  let sel = document.getElementById('customCards');
 
-  if (sel === '1') {
+  sel.addEventListener('click', () => {
+    oldIndex = sel.selectedIndex;
+  });
+
+  if (locked === 1) {
+    // Card is locked. Do nothing!
+    sel.selectedIndex = oldIndex;
+    return;
+  }
+
+  if (sel.value === '1') {
     customCardArranger(defaultCard);
     shuffled = defaultCard;
-  } else if (sel === '2') {
+  } else if (sel.value === '2') {
     customCardArranger(theDeadDrunk);
     shuffled = theDeadDrunk;
-  } else if (sel === '3') {
+  } else if (sel.value === '3') {
     customCardArranger(fuckedUpCard);
     shuffled = fuckedUpCard;
-  } else if (sel === '4') {
+  } else if (sel.value === '4') {
     customCardArranger(variety);
     shuffled = variety;
   }
