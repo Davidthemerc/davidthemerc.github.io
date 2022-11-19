@@ -52,7 +52,7 @@ let initialSetup = () => {
     image = imageList[shuffled[i]];
     grid[i].innerHTML = '';
     grid[i].appendChild(image);
-    beanSetup(i);
+    beanSetup(i, theBeans[currentBean].dir);
 
     if (trackerArray[i] === 0) {
       beans[i].style.display = 'none';
@@ -89,7 +89,7 @@ let buenasCheck = () => {
     return;
   }
 
-  if (conditionsValue === '6') {
+  if (conditionsValue === '7') {
     // No audio call; full manual
     return;
   }
@@ -177,10 +177,22 @@ let buenasCheck = () => {
   ) {
     buenasPues();
   }
+  // Four card corners
+  // If all four corners are filled, buenas!
+  if (
+    conditionsValue === '2' &&
+    trackerArray[0] &&
+    trackerArray[3] &&
+    trackerArray[12] &&
+    trackerArray[15]
+  ) {
+    buenasPues();
+  }
+
   // X Cross checks
   // If the X Cross is complete, buenas!
   if (
-    conditionsValue === '2' &&
+    conditionsValue === '3' &&
     trackerArray[0] &&
     trackerArray[3] &&
     trackerArray[5] &&
@@ -195,7 +207,7 @@ let buenasCheck = () => {
   // Frame checks
   // If the Frame is complete, buenas!
   if (
-    conditionsValue === '3' &&
+    conditionsValue === '4' &&
     trackerArray[0] &&
     trackerArray[1] &&
     trackerArray[2] &&
@@ -214,7 +226,7 @@ let buenasCheck = () => {
   // Center checks
   // If the center is complete, buenas!
   if (
-    conditionsValue === '4' &&
+    conditionsValue === '5' &&
     trackerArray[5] &&
     trackerArray[6] &&
     trackerArray[9] &&
@@ -225,7 +237,7 @@ let buenasCheck = () => {
   // Full card check
   // If all cards are complete, buenas!
   if (
-    conditionsValue === '5' &&
+    conditionsValue === '6' &&
     trackerArray.every((val, i, arr) => val === arr[0])
   ) {
     buenasPues();
@@ -385,7 +397,7 @@ const lockCard = () => {
 const beanSetup = (i) => {
   let bean = document.createElement('img');
   bean.style.display = 'none';
-  bean.src = 'images/bean.png';
+  bean.src = theBeans[currentBean].dir;
   bean.className = 'bean';
   grid[i].appendChild(bean);
   beans = document.getElementsByClassName('bean');

@@ -13,6 +13,8 @@ let beans;
 let oldIndex;
 let lockColor = 'rgb(152, 163, 214)';
 let lockStatus = document.getElementById('lockStatus');
+let beanselect = document.getElementById('beanselect');
+let currentBean = 0;
 
 // Define buenas audio
 const audio = new Audio('audio/Buenas.mp3'); // Female voice
@@ -23,6 +25,13 @@ const audio5 = new Audio('audio/paper.mp3');
 
 let bean = new Image(264, 390);
 bean.src = 'images/bean.png';
+
+const theBeans = [
+  { id: 0, dir: 'images/bean.png', name: 'bean1' },
+  { id: 1, dir: 'images/bean2.png', name: 'bean2' },
+  { id: 2, dir: 'images/bean3.png', name: 'bean3' },
+  { id: 2, dir: 'images/bean4.png', name: 'bean4' },
+];
 
 // Define the "Loteria Array" as 0-53 to represent the 54 possible cards
 let loteriaArray = [
@@ -120,6 +129,12 @@ newButton.addEventListener('click', (e) => {
 // Lock card event listener
 lockButton.addEventListener('click', () => {
   lockCard();
+});
+
+// Bean selector event listener
+beanselect.addEventListener('change', (e) => {
+  currentBean = e.target.value;
+  reloadCard();
 });
 
 // Check if the card is locked
