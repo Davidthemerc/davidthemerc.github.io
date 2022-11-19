@@ -52,7 +52,7 @@ let initialSetup = () => {
     image = imageList[shuffled[i]];
     grid[i].innerHTML = '';
     grid[i].appendChild(image);
-    beanSetup(i, theBeans[currentBean].dir);
+    beanSetup(i);
 
     if (trackerArray[i] === 0) {
       beans[i].style.display = 'none';
@@ -379,8 +379,6 @@ let lesserArranger = (i) => {
 
   beans = document.getElementsByClassName('bean');
 
-  clearBeanTracking();
-
   // Save the change to local storage
   saveJSON(shuffled, 'newLoteriaCard');
 };
@@ -390,6 +388,9 @@ const lockCard = () => {
     // Lock the card. Show the locked card background color style.
     lockDOM('lock');
   } else {
+    // We're unlocking the card, so clear the beans
+    clearBeanTracking();
+    // Unlock the card
     lockDOM('unlock');
   }
 };
@@ -413,8 +414,6 @@ const checkIfLocked = () => {
 };
 
 const lockDOM = (status) => {
-  clearBeanTracking();
-
   if (status === 'lock') {
     locked = 1;
     saveJSON(locked, 'newLoteriaLock');
