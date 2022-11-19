@@ -77,6 +77,10 @@ let reloadCard = () => {
 
 // Check if there's a winning condition
 let buenasCheck = () => {
+  if (conditionsValue === '6') {
+    // No audio call; full manual
+    return;
+  }
   // Horizontal row checks
   // If any of the horizontal rows are complete, buenas!
   if (
