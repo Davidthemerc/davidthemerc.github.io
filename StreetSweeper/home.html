@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Street Sweeper</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/Footer-Dark.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body>
+    <header class="bg-dark">
+        <div class="container">
+            <div class="row text-center d-flex justify-content-center pb-2">
+                <div class="col-auto align-self-center"><img class="sword" src="assets/img/Sword.png"
+                        style="width: 125px;height: 125px;"></div>
+                <div class="col-auto align-self-center"><span class="fs-1 fw-bold text-light">Street
+                        Sweeper<br></span><span class="fs-6 text-light">Fight your way through the mean streets of
+                        Farso!</span></div>
+            </div>
+        </div>
+    </header>
+    <div class="container">
+        <div class="row">
+            <div class="col-12 background">
+                <div class="container">
+                    <div class="row text-center main">
+                        <div class="col-12 foreground">
+                            <div class="gameinfo" id="gameinfo"><a href="hero.html" class="herolink"
+                                    id="herolink">Lardor</a><br><span id="gameday">Day: Mondas</span>&nbsp;|&nbsp;<span
+                                    id="gametime">Hour: 5
+                                    PM</span></div><br>
+                            <div id="status" class="status"></div>
+                        </div>
+                        <div class="col-12 foreground">
+                            <p class="fs-4 fw-bold m-0">Welcome to Arandar</p>
+                        </div>
+                        <div class="col-sm-6 foreground town-cell">
+                            <p class="fw-bold town-service-title">Tomas's House</p><small
+                                style="font-style: italic;">Welcome Home</small>
+                            <div class="row tex-center">
+                                <div class="col-12 mt-1">
+                                    <p class="m-0">Monks</p><button class="townbutton" id="healing" type="button">Heal
+                                        Yourself</button>
+                                    <p class="m-0" style="font-style: italic;">Free</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 foreground town-cell">
+                            <p class="fw-bold town-service-title">Angus's Gun Shop</p><small
+                                style="font-style: italic;">G'day. I've got all the guns you'd never get down
+                                under!</small>
+                            <div><button class="townbutton" id="enter-mtnpass" type="button">Enter Gun Shop</button>
+                            </div>
+                        </div>
+                        <div class="col-12 foreground town-cell">
+                            <p class="fw-bold town-service-title">Leave Home</p><small
+                                style="font-style: italic;">Return to the mean streets of Farso</small>
+                            <div><button class="townbutton" id="leave-town" type="button">Leave Home</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="footer-dark">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Street Sweeper</h3>
+                    <p><span>Fight your way through the mean streets of Farso!</span><br></p>
+                </div>
+            </div>
+            <p class="copyright">David Mercado © 2022</p>
+        </div>
+    </footer>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/vars.js"></script>
+    <script src="assets/js/functions.js"></script>
+    <script src="assets/js/init.js"></script>
+    <script src="assets/js/town.js"></script>
+</body>
+
+</html>
