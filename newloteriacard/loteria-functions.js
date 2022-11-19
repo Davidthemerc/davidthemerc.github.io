@@ -31,12 +31,10 @@ let initialSetup = () => {
       if (trackerArray[i] === 1) {
         // If the bean isn't active, show it
         trackerArray[i] = 0;
-        console.log('Hide bean');
         beans[i].style.display = 'none';
       } else {
         // If the bean is active, hide it
         trackerArray[i] = 1;
-        console.log('Show bean');
         beans[i].style.display = 'flex';
       }
       // Save the change to local storage
@@ -307,6 +305,17 @@ let selectorArranger = (i) => {
   currentInput.addEventListener('change', () => {
     if (locked === 1) {
       // Card is locked. Do nothing!
+      currentInput.selectedIndex = oldIndex;
+      return;
+    }
+
+    if (currentCard.includes(currentInput.selectedIndex)) {
+      // Don't allow selecting the loteria tile already in use on this card
+      alert(
+        `#${
+          currentInput.selectedIndex + 1
+        } is already in use! Pick a different one!`
+      );
       currentInput.selectedIndex = oldIndex;
       return;
     }

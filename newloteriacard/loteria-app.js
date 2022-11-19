@@ -68,6 +68,9 @@ let lockButton = document.getElementById('lockCard');
 let shuffled = getJSON('newLoteriaCard');
 saveJSON(shuffled, 'newLoteriaCard');
 
+// Assign part of the shuffled variable to a variable to track just the 16 displayed cards
+let currentCard = shuffled.slice(0, -38);
+
 // Call the function to assign individual cards randomly to the entire loteria card
 // Unless there's a card already, then we'll just load that
 initialSetup();
@@ -105,6 +108,9 @@ newButton.addEventListener('click', (e) => {
 
   // Announce 'cambio' to prevent cheating
   cambio();
+
+  // Assign part of the shuffled variable to a variable to track just the 16 displayed cards
+  let currentCard = shuffled.slice(0, -38);
 });
 
 // Lock card event listener
