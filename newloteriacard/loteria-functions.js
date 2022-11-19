@@ -1,5 +1,10 @@
 'use strict';
 
+// Random number function
+// Accepts minimum and maximum number as parameters
+const ranBetween = (min, max) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
+
 // Shuffle the card array so that we'll get a random, non-repeating set
 let shuffle = (array) => {
   let i = array.length,
@@ -68,6 +73,9 @@ let reloadCard = () => {
     // Assign each card an image and append it to the appropriate div
     // But, we want to show the bean instead if the card has been clicked
 
+    if (beanSelect.selectedIndex >= 4) {
+      currentBean = ranBetween(0, 3);
+    }
     image = imageList[shuffled[i]];
     grid[i].innerHTML = '';
     grid[i].appendChild(image);
@@ -418,7 +426,10 @@ const lockDOM = (status) => {
     locked = 1;
     saveJSON(locked, 'newLoteriaLock');
     document.getElementsByTagName('body')[0].style.backgroundColor = lockColor;
-    lockStatus.innerHTML = 'Locked';
+    location.href.includes('espanol.html')
+      ? (lockStatus.innerHTML = 'Bloqueada')
+      : (lockStatus.innerHTML = 'Locked');
+
     lockStatus.style = '';
     lockStatus.style.border = '';
   } else {
@@ -427,7 +438,9 @@ const lockDOM = (status) => {
     document.getElementsByTagName('body')[0].style.backgroundColor =
       'rgb(255, 255, 255)';
     // Else, card isn't locked. Do nothing.
-    lockStatus.innerHTML = 'Unlocked';
+    location.href.includes('espanol.html')
+      ? (lockStatus.innerHTML = 'Desbloqueada')
+      : (lockStatus.innerHTML = 'Unlocked');
     lockStatus.style.padding = '.1rem';
     lockStatus.style.border = '1px black solid';
   }

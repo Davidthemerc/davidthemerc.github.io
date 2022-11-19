@@ -13,7 +13,7 @@ let beans;
 let oldIndex;
 let lockColor = 'rgb(152, 163, 214)';
 let lockStatus = document.getElementById('lockStatus');
-let beanselect = document.getElementById('beanselect');
+let beanSelect = document.getElementById('beanselect');
 let currentBean = 0;
 
 // Define buenas audio
@@ -132,7 +132,7 @@ lockButton.addEventListener('click', () => {
 });
 
 // Bean selector event listener
-beanselect.addEventListener('change', (e) => {
+beanSelect.addEventListener('change', (e) => {
   currentBean = e.target.value;
   reloadCard();
 });
