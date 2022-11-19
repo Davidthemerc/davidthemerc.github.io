@@ -10,6 +10,7 @@ for (let i = 0; i <= 53; i++) {
 // Define global variables
 let image;
 let beans;
+let oldIndex;
 let lockColor = 'rgb(152, 163, 214)';
 let lockStatus = document.getElementById('lockStatus');
 
@@ -18,6 +19,7 @@ const audio = new Audio('audio/Buenas.mp3'); // Female voice
 const audio2 = new Audio('audio/Buenas2.mp3'); // Male voice
 const audio3 = new Audio('audio/CambioMale.mp3'); // Male voice
 const audio4 = new Audio('audio/CambioFemale.mp3'); // Female voice
+const audio5 = new Audio('audio/paper.mp3');
 
 let bean = new Image(264, 390);
 bean.src = 'images/bean.png';
@@ -93,7 +95,7 @@ clearButton.addEventListener('click', (e) => {
   clearBeanTracking();
 });
 
-// Clear card event listener
+// New card event listener
 newButton.addEventListener('click', (e) => {
   if (locked === 1) {
     // Card is locked. Do nothing!
@@ -104,15 +106,15 @@ newButton.addEventListener('click', (e) => {
   shuffled = shuffle(loteriaArray);
   saveJSON(shuffled, 'newLoteriaCard');
   for (let i = 0; i < 16; i++) {
-    selectorArranger(i);
+    lesserArranger(i);
   }
   clearBeanTracking();
 
-  // Announce 'cambio' to prevent cheating
-  cambio();
+  // Play the paper shuffle audio
+  audio5.play();
 
   // Assign part of the shuffled variable to a variable to track just the 16 displayed cards
-  let currentCard = shuffled.slice(0, -38);
+  currentCard = shuffled.slice(0, -38);
 });
 
 // Lock card event listener

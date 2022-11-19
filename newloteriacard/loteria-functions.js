@@ -315,7 +315,10 @@ let selectorArranger = (i) => {
   // Arrange the input selectors to match the card
   let currentInput = document.getElementById(`grid${i}`);
   currentInput.selectedIndex = shuffled[i];
-  let oldIndex = currentInput.selectedIndex;
+
+  currentInput.addEventListener('click', () => {
+    oldIndex = currentInput.selectedIndex;
+  });
 
   // Add an event listener for each input selector
   currentInput.addEventListener('change', () => {
@@ -336,9 +339,6 @@ let selectorArranger = (i) => {
       return;
     }
 
-    // Announce 'cambio' to prevent cheating
-    cambio();
-
     image = imageList[currentInput.selectedIndex];
     shuffled[i] = currentInput.selectedIndex;
     grid[i].innerHTML = '';
@@ -352,6 +352,25 @@ let selectorArranger = (i) => {
     // Save the change to local storage
     saveJSON(shuffled, 'newLoteriaCard');
   });
+};
+
+let lesserArranger = (i) => {
+  // Arrange the input selectors to match the card
+  let currentInput = document.getElementById(`grid${i}`);
+  currentInput.selectedIndex = shuffled[i];
+
+  image = imageList[currentInput.selectedIndex];
+  shuffled[i] = currentInput.selectedIndex;
+  grid[i].innerHTML = '';
+  grid[i].appendChild(image);
+  beanSetup(i);
+
+  beans = document.getElementsByClassName('bean');
+
+  clearBeanTracking();
+
+  // Save the change to local storage
+  saveJSON(shuffled, 'newLoteriaCard');
 };
 
 const lockCard = () => {
@@ -382,6 +401,8 @@ const checkIfLocked = () => {
 };
 
 const lockDOM = (status) => {
+  clearBeanTracking();
+
   if (status === 'lock') {
     locked = 1;
     saveJSON(locked, 'newLoteriaLock');
