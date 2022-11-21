@@ -19,12 +19,13 @@ header {
 }
 
 main {
-  height: 87vh;
   width: 100%;
 }
 
 footer {
-  height: 5vh;
+  position: fixed;
+  bottom: 0;
+  height: 3vh;
   width: 100%;
   background-color: black;
 }
@@ -41,12 +42,25 @@ footer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: cenflex-startter;
+  justify-content: flex-start;
+}
+
+.flexnoncenter {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  flex-direction: row;
 }
 
 /* "Shortcut" CSS*/
 .bold {
   font-weight: bold;
+}
+
+.underline {
+  text-decoration: underline;
 }
 
 .larger {
@@ -58,6 +72,37 @@ footer {
   margin: 1rem;
 }
 
+.img50 {
+  width: 50%;
+  margin: 1rem;
+}
+
+.statusinput {
+  margin-top: 1rem;
+  margin-left: 1rem;
+}
+
+.centered {
+  text-align: center;
+}
+
+.margintop {
+  margin-top: 1rem;
+}
+
+.marginbottom {
+  margin-bottom: 1rem;
+}
+
+.nomargin {
+  margin: 0;
+}
+
+.nopad {
+  padding: 0.25rem;
+  margin: 0.25rem;
+}
+
 /* Page Element CSS */
 
 button {
@@ -67,23 +112,100 @@ button {
 }
 
 h1 {
-  font-size: 64px;
+  font-size: 48px;
   border: 2px black solid;
   border-radius: 1rem;
   padding: 1rem;
   margin: 1rem;
-  font-weight: bold;
   font-family: 'Hunting', sans-serif;
   background-color: bisque;
   color: brown;
 }
 
+input,
+select {
+  height: 25px;
+  width: 60vw;
+}
+
+.status {
+  margin: 0.25rem;
+}
+
+.statusgroup {
+  margin-left: 1rem;
+  margin-top: 1rem;
+}
+
+.statusEl {
+  text-align: center;
+  color: brown;
+  font-weight: bold;
+}
+
+.trophycase {
+  border: 5px gold solid;
+  border-radius: 2rem;
+  width: 75vw;
+  height: 65vh;
+  background-color: rgb(66, 49, 49);
+  color: white;
+}
+
+.statusarea {
+  width: 75%;
+  height: fit-content;
+  background-color: rgb(20, 20, 20);
+  color: white;
+}
+
+.weapondisplay,
+.ammodisplay,
+.magdisplay {
+  width: 50%;
+}
+
+.huntarea {
+  width: 95%;
+}
+
+.woods {
+  width: 100%;
+}
+
+.turkey {
+  width: 10%;
+  position: absolute;
+}
+
+#reset {
+  background-color: darkred;
+}
+
 /* Footer CSS */
 footer > span {
   color: white;
-  font-size: 3vh;
+  font-size: 2vh;
 }
 
-footer {
-  position: fixed;
+@media (orientation: landscape) {
+  .weapondisplay,
+  .ammodisplay,
+  .magdisplay {
+    font-size: 4vw;
+  }
+}
+
+@media (orientation: portrait) {
+  .weapondisplay,
+  .ammodisplay,
+  .magdisplay {
+    font-size: 2vh;
+  }
+}
+
+/* JavaScript triggered CSS */
+
+.busy {
+  background-color: rgb(60, 60, 60);
 }

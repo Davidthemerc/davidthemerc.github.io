@@ -15,11 +15,15 @@
 
     <main class="flextop">
         <h1>The Lodge</h1>
-        <img class="img75" src="assets/images/lodge.png" alt="A depiction of a small hunting lodge">
+        <img class="img50" src="assets/images/lodge.png" alt="A depiction of a small hunting lodge">
         <span class="bold larger">Welcome hunters!</span>
         <button id="gohunt">Go Hunting!</button>
         <button id="armory">Visit the Armory</button>
         <button id="trophies">Visit the Trophy Room</button>
+        <span class="bold status"><a href="hunter.html" id="huntername">Hunter</a> Status</span>
+        <span class="status">Weapon: <span id="statusweapon" class="bold">None</span></span>
+        <span id="turkeys" class="status">Turkeys Bagged: <span id="bagged">0</span></span>
+        <span class="bold larger margintop">Tip of the Day: Don't forget your weapon!</span>
     </main>
 
     <footer class="flex">
@@ -27,6 +31,9 @@
             Copyright 2022 Davidthemerc</span>
     </footer>
 
+    <script src="assets/js/vars.js"></script>
+    <script src="assets/js/functions.js"></script>
+    <script src="assets/js/lodge.js"></script>
 </body>
 
 </html>
