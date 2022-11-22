@@ -59,8 +59,16 @@ footer {
   font-weight: bold;
 }
 
+.gold {
+  color: gold;
+}
+
 .underline {
   text-decoration: underline;
+}
+
+.large {
+  font-size: 18px;
 }
 
 .larger {
@@ -92,6 +100,10 @@ footer {
 
 .marginbottom {
   margin-bottom: 1rem;
+}
+
+.marginbottomend {
+  margin-bottom: 3rem;
 }
 
 .nomargin {
@@ -144,12 +156,64 @@ select {
 }
 
 .trophycase {
-  border: 5px gold solid;
+  border: 5px silver solid;
   border-radius: 2rem;
   width: 75vw;
-  height: 65vh;
   background-color: rgb(66, 49, 49);
   color: white;
+}
+
+.trophytext {
+  text-decoration: underline;
+}
+
+.turkeytitle,
+.turkeyheight,
+.turkeyweight {
+  margin: 0;
+}
+
+.trophyitem {
+  margin: 1rem;
+}
+
+#weapon {
+  text-align: center;
+}
+
+.armory-revolvers {
+  border: 2px black solid;
+  width: 90%;
+}
+
+.armory-weapon-title {
+  color: darkblue;
+}
+
+.armory-options > button {
+  width: 90%;
+}
+
+.armory-lower {
+  flex-direction: row;
+}
+.armory-options-dashes {
+  width: 25%;
+}
+
+.armory-options-dashes > span {
+  margin: 0.25rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.armory-options-labels > span {
+  margin: 0.25rem;
+  padding: 0.25rem;
+  border: 2px black solid;
+  border-radius: 20%;
+  background-color: darkgray;
+  color: rgb(0, 107, 0);
 }
 
 .statusarea {

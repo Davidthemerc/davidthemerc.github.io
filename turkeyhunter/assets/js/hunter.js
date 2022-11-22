@@ -4,6 +4,7 @@ const backToLodge = document.getElementById('backtolodge');
 const hunterNameEl = document.getElementById('huntername');
 const weaponSelectEl = document.getElementById('weaponselect');
 const weaponAmmo = document.getElementById('ammo');
+const moneyEl = document.getElementById('money');
 
 // Load hunter data
 let hunter = loadHunter();
@@ -27,6 +28,9 @@ weaponAmmo.innerHTML = hunter.weapons[hunter.currentWeapon].weaponAmmo;
 if (hunter.currentWeapon === 0) {
   weaponAmmo.innerHTML = '∞';
 }
+
+// Assign the count of bagged turkeys to the bagged turkeys status element
+moneyEl.innerHTML = `$${hunter.money}`;
 
 // Assign event listener to Hunter name input
 // So the user can change their name if they like
@@ -54,7 +58,7 @@ weaponSelectEl.addEventListener('change', (e) => {
     );
   }
 
-  // Reopulate the weapon ammo field
+  // Repopulate the weapon ammo field
   weaponAmmo.innerHTML = hunter.weapons[hunter.currentWeapon].weaponAmmo;
   // If the weapon is fists, show the infinity symbol
   if (hunter.currentWeapon === 0) {

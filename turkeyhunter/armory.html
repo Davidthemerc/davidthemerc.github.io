@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turkey Hunter</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+
+<body>
+
+    <header class="flex">Turkey Hunter</header>
+
+    <main class="flex">
+
+        <h2>The Lodge Armory</h2>
+
+        <img src="assets/images/armory.png" alt="An armory full of deadly weapons" class="img75">
+
+        <span class="bold larger marginbottom">We have all the equipment you'll need!</span>
+
+        <span class="marginbottom large">Money: <span id="money" class="bold">$</span></span>
+
+        <div class="armory-revolvers flex">
+            <div class="armory-weapon-title">
+                <span class="bold larger">Revolvers</span>
+            </div>
+            <div class="armory-lower flex bold">
+                <div class="armory-options">
+                    <button id="revolver-upgrade" class="nopad same">Upgrade Revolver</button>
+                    <button id="revolver-ammo" class="nopad same">Buy Ammo (120 Rounds)</button>
+                </div>
+                <div class="armory-options-dashes flex">
+                    <span>Price -</span>
+                    <span>Price -</span>
+                </div>
+                <div class="armory-options-labels flex">
+                    <span>$1,000</span>
+                    <span>$20</span>
+                </div>
+            </div>
+        </div>
+
+        <button id="backtolodge">Back to Lodge</button>
+
+        <div id="status" class="statusEl"></div>
+
+    </main>
+
+    <div class="marginbottomend"></div>
+
+    <footer class="flex">
+        <span>
+            Copyright 2022 Davidthemerc</span>
+    </footer>
+    <script src="assets/js/vars.js"></script>
+    <script src="assets/js/functions.js"></script>
+    <script src="assets/js/armory.js"></script>
+</body>
+
+</html>

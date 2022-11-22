@@ -28,6 +28,7 @@ audio.forEach((sound, index) => {
 
 const defaultHunter = {
   name: 'Hunter',
+  money: 1020,
   turkeysBagged: [],
   currentWeapon: 0,
   weapons: [
@@ -45,7 +46,7 @@ const defaultHunter = {
       weaponEmptySound: 8,
     },
     {
-      weaponName: 'Revolver',
+      weaponName: 'G2 Revolver',
       weaponID: 1,
       currentMag: 0,
       weaponDamage: 1,
@@ -57,5 +58,88 @@ const defaultHunter = {
       weaponReloadTime: 3.5,
       weaponEmptySound: 3,
     },
+  ],
+};
+
+const armoryWeapons = [
+  {
+    weaponName: 'Shotgun',
+    weaponID: 2,
+    currentMag: 0,
+    weaponDamage: 1,
+    weaponMag: 12,
+    weaponAmmo: 240,
+    weaponFireSound: 1,
+    weaponFiringTime: 1,
+    weaponReloadSound: 2,
+    weaponReloadTime: 3.5,
+    weaponEmptySound: 3,
+  },
+];
+
+const armoryAmmo = [
+  // Fist Ammo. Lol. Not used
+  { ammoName: 'Fist Ammo', cost: 20, amount: 120 },
+  { ammoName: 'Revolver rounds', cost: 20, amount: 120 },
+];
+
+const armoryUpgrades = [
+  // Brass Knuckles are never to be used LOL
+  { upgradeName: 'Brass Knuckles', upgradeCost: 1000, upgradeTier: 1 },
+  { upgradeName: 'G2+ Revolver', upgradeCost: 1000, upgradeTier: 2 },
+];
+
+const turkeyNames = {
+  first: [
+    'Wild',
+    'Pumpkin',
+    'Nell',
+    'Cranberry',
+    'Pudgy',
+    'Puddin',
+    'Tom',
+    'Ms',
+    'Bless',
+    'Autumn',
+    'Acorn',
+    'Pecan',
+    'Jive',
+    'Joy',
+    'Rafter',
+    'Happy',
+    'Remy',
+    'Sleepy',
+    'Chick',
+    'Snood',
+    'Caruncles',
+    'Stuffy',
+  ],
+  last: [
+    `O'Turkey`,
+    `O'McBird`,
+    `O'Gizzard`,
+    `O'Gobbler`,
+    `O'McFeathers`,
+    `O'Buzzard`,
+    `O'Wishbone`,
+    `O'Bird`,
+    `O'Gobble`,
+    `O'Stuffin`,
+    `O'MacStuffin`,
+    `O'Gobbles`,
+    `O'Butterball`,
+    'Drumstick',
+    'Feathers',
+    'Wattle',
+    'Cornucopia',
+    'Gobbler',
+    'Roast',
+    'Giblets',
+    'Wattle',
+    'Giblets',
+    'Gobble',
+    'Feather',
+    'MacGravy',
+    'Giblet',
   ],
 };

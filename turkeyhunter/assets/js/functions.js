@@ -94,15 +94,15 @@ const reloadWeapon = () => {
 const ammoHandling = (weapon, action) => {
   // Don't allow this function to run in the middle of a gun shot or reload
 
-  bulletTime = 1;
-  statusArea.className += ' busy';
-
   let currentMag = hunter.weapons[weapon].currentMag;
   let currentAmmo = hunter.weapons[weapon].weaponAmmo;
   let fullMag = hunter.weapons[weapon].weaponMag;
 
   // Reloading
   if (action === 'reload') {
+    bulletTime = 1;
+    statusArea.className += ' busy';
+
     // Start pause timer (no other actions while it's running)
     setTimeout(() => {
       bulletTime = 0;
@@ -145,8 +145,33 @@ const ammoHandling = (weapon, action) => {
     playAudio(hunter.weapons[hunter.currentWeapon].weaponReloadSound);
   }
 
+  // Buying Ammo
+  if (action === 'buying') {
+    // Check the armory ammo array for ammo costs
+    if (hunter.money >= armoryAmmo[weapon].cost) {
+      // Handle money first
+      moneyHandling(armoryAmmo[weapon].cost, '-');
+      moneyEl.innerHTML = `$${hunter.money}`;
+      // Add ammo
+      hunter.weapons[weapon].weaponAmmo += armoryAmmo[weapon].amount;
+      // Let user know they bought ammo succesfsully
+      displayMessage(
+        `Bought ${armoryAmmo[weapon].amount} ${armoryAmmo[weapon].ammoName}.`,
+        statusEl
+      );
+    } else {
+      displayMessage(
+        `Sorry, you don't have enough money to buy ${armoryAmmo[weapon].ammoName}.`,
+        statusEl
+      );
+    }
+  }
+
   // Firing
   if (action === 'firing') {
+    bulletTime = 1;
+    statusArea.className += ' busy';
+
     // Start pause timer (no other actions while it's running)
     setTimeout(() => {
       bulletTime = 0;
@@ -186,21 +211,28 @@ const weaponDamage = (weapon) => {
   // Tier 0 Weapons
   // Fist
   if (weaponTier === 0) {
-    damage = ranBetween(1, 10);
+    damage = ranBetween(1, 15);
   }
 
   // Tier 1 Weapons
   // Revolver, etc.
   if (weaponTier === 1) {
+    damage = ranBetween(8, 20);
+  }
+
+  // Tier 2 Weapons
+  // Upgraded Revolver, etc.
+  if (weaponTier === 2) {
     damage = ranBetween(12, 20);
   }
 
   if (damage === 20) {
     // Critical hit!
     return turkeyHealth;
-  }
-
-  if (damage >= 14) {
+  } else if (damage >= 17) {
+    // Successful greater hit! Return 2 damage
+    return 2;
+  } else if (damage >= 15) {
     // Successful hit! Return 1 damage
     return 1;
   } else {
@@ -234,4 +266,93 @@ const getAbsoluteHeight = (el) => {
     parseFloat(styles['marginTop']) + parseFloat(styles['marginBottom']);
 
   return Math.ceil(el.offsetHeight + margin);
+};
+
+const trophyCase = () => {
+  hunter.turkeysBagged.forEach((turkey) => {
+    const trophyitem = document.createElement('div');
+    const turkeyTitle = document.createElement('p');
+    const turkeyWeight = document.createElement('p');
+    const turkeyHeight = document.createElement('p');
+    const sellButton = document.createElement('button');
+    trophyitem.id = turkey.uuid;
+    turkey.trueTrophy === true
+      ? (trophyitem.className = 'flex trophyitem gold')
+      : (trophyitem.className = 'flex trophyitem');
+    turkeyTitle.className = 'turkeytitle bold larger';
+    turkeyWeight.className = 'turkeyweight';
+    turkeyHeight.className = 'turkeyheight';
+    sellButton.className = 'nopad';
+    turkeyTitle.textContent = `${turkey.firstName} ${turkey.lastName}`;
+    turkeyWeight.textContent = turkey.weight;
+    turkeyHeight.textContent = turkey.height;
+    sellButton.textContent = 'Sell This Turkey';
+
+    sellButton.addEventListener('click', () => {
+      // Sell the turkey for cold hard cash
+      moneyHandling(turkey.weightInt * 0.25, '+');
+      displayMessage(
+        `Sold ${turkey.firstName} ${turkey.lastName} for $${(
+          turkey.weightInt * 0.25
+        ).toFixed(2)}.`,
+        statusEl
+      );
+      // Find index of this turkey
+      const turkeyIndex = hunter.turkeysBagged.findIndex(
+        (thisTurkey) => thisTurkey.uuid === turkey.uuid
+      );
+      hunter.turkeysBagged.splice(turkeyIndex, 1);
+      document.getElementById(turkey.uuid).remove();
+      saveJSON(hunter, 'TH-HunterData');
+    });
+
+    trophyitem.appendChild(turkeyTitle);
+    trophyitem.appendChild(turkeyWeight);
+    trophyitem.appendChild(turkeyHeight);
+    trophyitem.appendChild(sellButton);
+    trophyCaseEl.appendChild(trophyitem);
+  });
+};
+
+// Function to generate turkey name (first or last)
+const turkeyName = (type) => {
+  if (type === 'first') {
+    return turkeyNames.first[ranBetween(0, 21)];
+  } else {
+    return turkeyNames.last[ranBetween(0, 25)];
+  }
+};
+
+// Function to add/remove coins
+const moneyHandling = (amount, action) => {
+  action === '-' ? (hunter.money -= amount) : (hunter.money += amount);
+  if (hunter.money < 0) {
+    hunter.money = 0;
+  }
+  saveJSON(hunter, 'TH-HunterData');
+};
+
+const weaponUpgrade = (ID) => {
+  // Check if the hunter has the required funds
+  if (
+    hunter.money >= armoryUpgrades[ID].upgradeCost &&
+    hunter.weapons[ID].weaponDamage !== 2
+  ) {
+    // Upgrade weapon tier
+    hunter.weapons[ID].weaponDamage = armoryUpgrades[ID].upgradeTier;
+    displayMessage(
+      `Upgraded ${hunter.weapons[ID].weaponName} to ${armoryUpgrades[ID].upgradeName}`,
+      statusEl
+    );
+    hunter.weapons[ID].weaponName = armoryUpgrades[ID].upgradeName;
+    moneyHandling(1000, '-');
+    moneyEl.innerHTML = `$${hunter.money}`;
+    saveJSON(hunter, 'TH-HunterData');
+  } else {
+    if (hunter.weapons[ID].weaponDamage === 2) {
+      displayMessage(`You already have that upgrade!`, statusEl);
+    } else if (hunter.money < 1000) {
+      displayMessage(`You don't have enough money!`, statusEl);
+    }
+  }
 };

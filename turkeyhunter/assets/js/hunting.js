@@ -11,10 +11,88 @@ const woodsImage = document.getElementById('woods');
 // Turkey is alive!
 const turkey = document.createElement('img');
 let turkeyHealth = ranBetween(2, 4);
+let winning = 0;
 turkey.src = 'assets/images/turkey.png';
 turkey.className = 'turkey';
 huntarea.appendChild(turkey);
 turkey.style.display = 'none';
+
+// Turkey event listener
+turkey.addEventListener('click', () => {
+  if (bulletTime === 1) {
+    return;
+  }
+
+  try {
+    // Fire weapon
+    fireWeapon();
+
+    playAudio(4);
+
+    // If the code arrives at this point, it's a hit
+    turkeyHealth -= weaponDamage(hunter.currentWeapon);
+
+    if (turkeyHealth > 0) {
+      turkey.style.display = 'none';
+      // It's still alive!
+      setTimeout(() => {
+        // About 20% of the time, play the wounded audio
+        // We don't want it happening too much
+        if (ranBetween(1, 10) > 8) {
+          playAudio(ranBetween(14, 17));
+        }
+      }, 3000);
+    }
+
+    if (turkeyHealth === 0 || turkeyHealth <= 0) {
+      huntarea.removeChild(turkey);
+      winning = 1;
+      setTimeout(() => {
+        let turkeyStats = {
+          weight: ranBetween(18, 26),
+          height: ranBetween(38, 48),
+        };
+
+        let turkeyRandomizer = ranBetween(1, 5);
+
+        // If the weight lands on 36 pounds, assign a larger possible range
+        if (turkeyRandomizer === 5) {
+          turkeyStats.weight = ranBetween(26, 49);
+          turkeyStats.height = ranBetween(49, 60);
+        }
+
+        // The man will comment here
+        turkeyRandomizer === 5 ? playAudio(13) : playAudio(ranBetween(9, 12));
+
+        turkeyRandomizer === 5
+          ? alert(
+              `The turkey you shot weighed ${turkeyStats.weight} pounds and was ${turkeyStats.height} inches tall! That's a trophy!`
+            )
+          : alert(
+              `The turkey you shot weighed ${turkeyStats.weight} pounds and was ${turkeyStats.height} inches tall!`
+            );
+
+        // Add strings to object for storage
+        turkeyStats = {
+          firstName: turkeyName('first'),
+          lastName: turkeyName('last'),
+          weightInt: turkeyStats.weight,
+          weight: `${turkeyStats.weight} Lbs.`,
+          height: `${turkeyStats.height} Inches Tall`,
+          uuid: uuidv4(),
+          trueTrophy: turkeyRandomizer === 5 ? true : false,
+        };
+
+        // Allows for a small chance of monster turkey sizes
+        hunter.turkeysBagged.push(turkeyStats);
+        saveJSON(hunter, 'TH-HunterData');
+        location.assign('index.html');
+      }, 3000);
+    }
+  } catch (error) {
+    playAudio(4);
+  }
+});
 
 // Pick a random woods image
 woodsImage.src = `assets/images/woods${ranBetween(1, 15)}.png`;
@@ -51,81 +129,26 @@ reloadButton.addEventListener('click', () => {
   reloadWeapon();
 });
 
+// Assign event listener to keyboard. If R key is pressed, also reload.
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'r') {
+    reloadWeapon();
+  }
+});
+
 // Assign event listener to return to lodge button
 // So the user can return to the main page
 backToLodge.addEventListener('click', () => {
   location.assign('index.html');
 });
 
+// Turkeys show for 600-900 milliseconds, spawning 6 times that often
+let timeDiff = ranBetween(600, 900);
+
 let turkeyInterval = setInterval(function () {
   turkey.style.display = 'block';
   //  Do whatever in here that happens every 3 seconds
   // Every 3 seconds, show turkey in a random spot inside the div
-  turkey.addEventListener('click', () => {
-    if (bulletTime === 1) {
-      return;
-    }
-
-    try {
-      // Fire weapon
-      fireWeapon();
-
-      playAudio(4);
-
-      // If the code arrives at this point, it's a hit
-      turkeyHealth -= weaponDamage(hunter.currentWeapon);
-
-      if (turkeyHealth > 0) {
-        turkey.style.display = 'none';
-        // It's still alive!
-        setTimeout(() => {
-          playAudio(ranBetween(14, 17));
-        }, 3000);
-      }
-
-      if (turkeyHealth === 0) {
-        huntarea.removeChild(turkey);
-        setTimeout(() => {
-          let turkeyStats = {
-            weight: ranBetween(12, 26),
-            height: ranBetween(32, 48),
-          };
-
-          let turkeyRandomizer = ranBetween(1, 5);
-
-          // If the weight lands on 36 pounds, assign a larger possible range
-          if (turkeyRandomizer === 5) {
-            turkeyStats.weight = ranBetween(26, 49);
-            turkeyStats.height = ranBetween(49, 60);
-          }
-
-          // The man will comment here
-          turkeyRandomizer === 5 ? playAudio(13) : playAudio(ranBetween(9, 12));
-
-          turkeyRandomizer === 5
-            ? alert(
-                `The turkey you shot weighed ${turkeyStats.weight} pounds and was ${turkeyStats.height} inches tall! That's a trophy!`
-              )
-            : alert(
-                `The turkey you shot weighed ${turkeyStats.weight} pounds and was ${turkeyStats.height} inches tall!`
-              );
-
-          // Add strings to object for storage
-          turkeyStats = {
-            weight: `${turkeyStats.weight} Lbs.`,
-            height: `${turkeyStats.height} Inches Tall`,
-          };
-
-          // Allows for a small chance of monster turkey sizes
-          hunter.turkeysBagged.push(turkeyStats);
-          saveJSON(hunter, 'TH-HunterData');
-          location.assign('index.html');
-        }, 3000);
-      }
-    } catch (error) {
-      playAudio(4);
-    }
-  });
 
   // Div heights (temporary, move to turkey function)
   let heightToHunt =
@@ -142,13 +165,16 @@ let turkeyInterval = setInterval(function () {
     widthToHunt + getAbsoluteHeight(huntarea) - getAbsoluteHeight(turkey) - 100
   )}px`;
 
-  // Turkeys show for 3000 milliseconds (3 seconds), spawning very 6 seconds
   setTimeout(() => {
     turkey.style.display = 'none';
-  }, 3000);
-}, 6000);
+  }, timeDiff);
+}, timeDiff * 6);
 
 // Function to eventually stop turkeys from spawning
 setTimeout(function () {
   clearInterval(turkeyInterval);
-}, 48000);
+  if (winning === 0) {
+    alert('The turkey escaped!');
+    location.assign('index.html');
+  }
+}, 16000);
