@@ -236,6 +236,7 @@ const weaponDamage = (weapon) => {
 
   if (damage === 20) {
     // Critical hit!
+    playAudio(19);
     return turkeyHealth;
   } else if (damage >= 17) {
     // Successful greater hit! Return 2 damage

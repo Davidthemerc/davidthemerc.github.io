@@ -17,6 +17,10 @@ const audio = [
   { id: 15, dir: 'assets/audio/man_wounded2.mp3', name: 'wounded2' },
   { id: 16, dir: 'assets/audio/man_wounded3.mp3', name: 'wounded3' },
   { id: 17, dir: 'assets/audio/man_wounded4.mp3', name: 'wounded4' },
+  { id: 18, dir: 'assets/audio/man_unfortunately.mp3', name: 'unfortunately' },
+  { id: 19, dir: 'assets/audio/man_sniped.mp3', name: 'sniped' },
+  { id: 20, dir: 'assets/audio/shotgun_shot.mp3', name: 'shotgunshot' },
+  { id: 21, dir: 'assets/audio/shotgun_reload.mp3', name: 'shotgunreload' },
 ];
 
 const audioList = Array();
@@ -32,6 +36,8 @@ const defaultHunter = {
   turkeysBagged: [],
   turkeysBaggedCount: 0,
   currentWeapon: 0,
+  introPlayed: false,
+  profileIntro: false,
   weapons: [
     {
       weaponName: 'Fists',
@@ -54,7 +60,7 @@ const defaultHunter = {
       weaponMag: 6,
       weaponAmmo: 120,
       weaponFireSound: 1,
-      weaponFiringTime: 1,
+      weaponFiringTime: 1.9,
       weaponReloadSound: 2,
       weaponReloadTime: 3.5,
       weaponEmptySound: 3,
@@ -67,13 +73,13 @@ const armoryWeapons = [
     weaponName: 'Shotgun',
     weaponID: 2,
     currentMag: 0,
-    weaponDamage: 1,
-    weaponMag: 12,
-    weaponAmmo: 240,
-    weaponFireSound: 1,
-    weaponFiringTime: 1,
-    weaponReloadSound: 2,
-    weaponReloadTime: 3.5,
+    weaponDamage: 2,
+    weaponMag: 7,
+    weaponAmmo: 84,
+    weaponFireSound: 20,
+    weaponFiringTime: 2.1,
+    weaponReloadSound: 21,
+    weaponReloadTime: 4.7,
     weaponEmptySound: 3,
   },
 ];

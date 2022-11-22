@@ -181,7 +181,8 @@ select {
   text-align: center;
 }
 
-.armory-revolvers {
+.armory-revolvers,
+.armory-shotguns {
   border: 2px black solid;
   width: 90%;
 }
@@ -197,8 +198,9 @@ select {
 .armory-lower {
   flex-direction: row;
 }
+
 .armory-options-dashes {
-  width: 25%;
+  width: 40%;
 }
 
 .armory-options-dashes > span {
@@ -244,6 +246,10 @@ select {
 
 #reset {
   background-color: darkred;
+}
+
+.oos {
+  color: red;
 }
 
 /* Footer CSS */

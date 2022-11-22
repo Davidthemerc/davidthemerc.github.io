@@ -10,8 +10,14 @@ const moneyEl = document.getElementById('money');
 // Load hunter data
 const hunter = loadHunter();
 
+// Play welcome to Turkey Hunter audio if the userdata indicates first time play
+if (hunter.introPlayed) {
+  playAudio(8);
+  hunter.introPlayed === true;
+}
+
 // Assign the hunter's saved name to the link on the page
-hunterNameEl.innerHTML = hunter.name;
+hunterNameEl.innerHTML = `${hunter.name} (Inventory)`;
 
 // Assign the hunter's current weapon to the weapon status element
 statusWeaponEl.innerHTML = hunter.weapons[hunter.currentWeapon].weaponName;

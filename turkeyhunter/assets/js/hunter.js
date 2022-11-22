@@ -9,6 +9,13 @@ const moneyEl = document.getElementById('money');
 // Load hunter data
 let hunter = loadHunter();
 
+// Play audio offering apologies for only giving a revolver.
+// Not the best turkey hunting weapon, but it'll do.
+if (hunter.profileIntro) {
+  playAudio(18);
+  hunter.profileIntro === true;
+}
+
 // Populate the hunter name field
 hunterNameEl.value = hunter.name;
 
