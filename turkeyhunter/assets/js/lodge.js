@@ -17,7 +17,7 @@ hunterNameEl.innerHTML = hunter.name;
 statusWeaponEl.innerHTML = hunter.weapons[hunter.currentWeapon].weaponName;
 
 // Assign the count of bagged turkeys to the bagged turkeys status element
-baggedEl.innerHTML = hunter.turkeysBagged.length;
+baggedEl.innerHTML = hunter.turkeysBaggedCount;
 
 // Assign the hunter's money to the money element
 moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;

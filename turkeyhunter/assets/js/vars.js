@@ -30,6 +30,7 @@ const defaultHunter = {
   name: 'Hunter',
   money: 1020,
   turkeysBagged: [],
+  turkeysBaggedCount: 0,
   currentWeapon: 0,
   weapons: [
     {

@@ -85,6 +85,7 @@ turkey.addEventListener('click', () => {
 
         // Allows for a small chance of monster turkey sizes
         hunter.turkeysBagged.push(turkeyStats);
+        hunter.turkeysBaggedCount += 1;
         saveJSON(hunter, 'TH-HunterData');
         location.assign('index.html');
       }, 3000);
