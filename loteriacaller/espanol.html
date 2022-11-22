@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" href="style.css">
-    <title>David's Loteria Caller</title>
+    <title>David's Llamador de Lotería</title>
 </head>
 
 <body>
@@ -16,26 +16,26 @@
         <div class="row d-flex justify-content-center">
             <div class="col-auto">
                 <div class="d-flex justify-content-center mt-1">
-                    <a href="espanol.html">David's Loteria Caller</a>
+                    <a href="index.html">David's Llamador de Lotería</a>
                 </div>
                 <div class="d-flex justify-content-center voiceDesc mb-2">
 
-                    Select Voice:&nbsp;<select id="voiceSelect">
-                        <option value="0">Female</option>
-                        <option value="1">Male</option>
+                    Seleccionar Voz:&nbsp;<select id="voiceSelect">
+                        <option value="0">Femenina</option>
+                        <option value="1">Masculino</option>
                     </select>
                 </div>
                 <div id="errorMessages" class="d-flex justify-content-center errorMessages mb-2"></div>
                 <div id="cardArea" class="d-flex justify-content-center">
                 </div>
-                <div class="d-flex justify-content-center">
-                    <button id="startoff" class="mt-2">Start Game</button>
-                    <button id="repeat" class="mt-2 ms-2">Repeat Current Card</button>
-                    <button id="call" class="mt-2 ms-2">Call Next Card</button>
-                    <button id="reset" class="mt-2 ms-2">Reset Game</button>
-                </div>
                 <div class="d-flex justify-content-center mb-2">
-                    <p><b>Previously Called Cards:</b></p>
+                    <button id="startoff" class="mt-2">Empezar</button>
+                    <button id="repeat" class="mt-2 ms-2">Repita La Tarjeta</button>
+                    <button id="call" class="mt-2 ms-2">Siguiente Tarjeta</button>
+                    <button id="reset" class="mt-2 ms-2">Reiniciar El Juego</button>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <p><b>Tarjetas Previamente Llamadas:</b></p>
                 </div>
                 <div id="calledCards">
                 </div>
