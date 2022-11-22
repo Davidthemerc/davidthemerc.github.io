@@ -79,11 +79,19 @@ const fireWeapon = () => {
 
 // Function to reload a gun
 const reloadWeapon = () => {
+  // Check the current ammo in the magazine first
+  let currentWeapon = hunter.currentWeapon;
+
+  if (
+    hunter.weapons[currentWeapon].currentMag ===
+    hunter.weapons[currentWeapon].weaponMag
+  ) {
+    return;
+  }
+
   if (bulletTime === 1) {
     return;
   }
-  // Check the current ammo in the magazine first
-  let currentWeapon = hunter.currentWeapon;
 
   try {
     ammoHandling(currentWeapon, 'reload');
@@ -313,6 +321,7 @@ const trophyCase = () => {
       hunter.turkeysBagged.splice(turkeyIndex, 1);
       document.getElementById(turkey.uuid).remove();
       saveJSON(hunter, 'TH-HunterData');
+      moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;
     });
 
     trophyitem.appendChild(turkeyTitle);
