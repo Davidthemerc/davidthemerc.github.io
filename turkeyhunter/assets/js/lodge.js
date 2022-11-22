@@ -19,8 +19,8 @@ statusWeaponEl.innerHTML = hunter.weapons[hunter.currentWeapon].weaponName;
 // Assign the count of bagged turkeys to the bagged turkeys status element
 baggedEl.innerHTML = hunter.turkeysBagged.length;
 
-// Assign the count of bagged turkeys to the bagged turkeys status element
-moneyEl.innerHTML = `$${hunter.money}`;
+// Assign the hunter's money to the money element
+moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;
 
 // Assign event listener to the go hunting button
 goHuntButton.addEventListener('click', () => {

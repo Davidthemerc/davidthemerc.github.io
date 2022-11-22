@@ -269,6 +269,9 @@ const getAbsoluteHeight = (el) => {
 };
 
 const trophyCase = () => {
+  // Assign the hunter's money to the money element
+  moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;
+
   hunter.turkeysBagged.forEach((turkey) => {
     const trophyitem = document.createElement('div');
     const turkeyTitle = document.createElement('p');
@@ -276,9 +279,15 @@ const trophyCase = () => {
     const turkeyHeight = document.createElement('p');
     const sellButton = document.createElement('button');
     trophyitem.id = turkey.uuid;
+    // If this is a trophy turkey, give it gold text
     turkey.trueTrophy === true
       ? (trophyitem.className = 'flex trophyitem gold')
       : (trophyitem.className = 'flex trophyitem');
+    // Trophy Turkeys are worth 2x normal value
+    let turkeySellValue = 0;
+    turkey.trueTrophy
+      ? (turkeySellValue = turkey.weightInt * 0.5)
+      : (turkeySellValue = turkey.weightInt * 0.25);
     turkeyTitle.className = 'turkeytitle bold larger';
     turkeyWeight.className = 'turkeyweight';
     turkeyHeight.className = 'turkeyheight';
@@ -312,6 +321,13 @@ const trophyCase = () => {
     trophyitem.appendChild(sellButton);
     trophyCaseEl.appendChild(trophyitem);
   });
+
+  if (hunter.turkeysBagged.length === 0) {
+    const noTurkey = document.createElement('p');
+    noTurkey.textContent = 'No turkeys yet!';
+    noTurkey.className = 'centered nomargin marginbottom';
+    trophyCaseEl.appendChild(noTurkey);
+  }
 };
 
 // Function to generate turkey name (first or last)
@@ -346,7 +362,7 @@ const weaponUpgrade = (ID) => {
     );
     hunter.weapons[ID].weaponName = armoryUpgrades[ID].upgradeName;
     moneyHandling(1000, '-');
-    moneyEl.innerHTML = `$${hunter.money}`;
+    moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;
     saveJSON(hunter, 'TH-HunterData');
   } else {
     if (hunter.weapons[ID].weaponDamage === 2) {

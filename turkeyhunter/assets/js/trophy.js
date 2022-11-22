@@ -1,4 +1,5 @@
 // Define page elements
+const moneyEl = document.getElementById('money');
 const trophyCaseEl = document.getElementById('trophycase');
 const backToLodge = document.getElementById('backtolodge');
 

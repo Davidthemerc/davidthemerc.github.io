@@ -29,8 +29,8 @@ if (hunter.currentWeapon === 0) {
   weaponAmmo.innerHTML = '∞';
 }
 
-// Assign the count of bagged turkeys to the bagged turkeys status element
-moneyEl.innerHTML = `$${hunter.money}`;
+// Assign the hunter's money to the money element
+moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;
 
 // Assign event listener to Hunter name input
 // So the user can change their name if they like
