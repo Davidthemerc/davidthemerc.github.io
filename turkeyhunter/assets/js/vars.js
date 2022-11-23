@@ -74,7 +74,7 @@ audio.forEach((sound, index) => {
 
 const defaultHunter = {
   name: 'Hunter',
-  money: 5000,
+  money: 50,
   turkeysBagged: [],
   turkeysBaggedCount: 0,
   currentWeapon: 0,
