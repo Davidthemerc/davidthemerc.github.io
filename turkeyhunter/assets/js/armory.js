@@ -6,6 +6,9 @@ const revolverAmmoButton = document.getElementById('revolver-ammo');
 const shotgunBuyButton = document.getElementById('shotgun-buy');
 const shotgunUpgradeButton = document.getElementById('shotgun-upgrade');
 const shotgunAmmoButton = document.getElementById('shotgun-ammo');
+const rifleBuyButton = document.getElementById('rifle-buy');
+const rifleUpgradeButton = document.getElementById('rifle-upgrade');
+const rifleAmmoButton = document.getElementById('rifle-ammo');
 const backToLodge = document.getElementById('backtolodge');
 
 // Load hunter data
@@ -36,6 +39,20 @@ shotgunUpgradeButton.addEventListener('click', () => {
 // Assign event listener to the shotgun ammo button
 shotgunAmmoButton.addEventListener('click', () => {
   ammoHandling(2, 'buying');
+});
+
+// Assign event listener to the rifle buy button
+rifleBuyButton.addEventListener('click', () => {
+  armoryHandling(3, 'buying');
+});
+// Assign event listener to the rifle upgrade button
+rifleUpgradeButton.addEventListener('click', () => {
+  armoryHandling(3, 'upgrade');
+});
+
+// Assign event listener to the rifle ammo button
+rifleAmmoButton.addEventListener('click', () => {
+  ammoHandling(3, 'buying');
 });
 
 // Assign event listener to return to lodge button

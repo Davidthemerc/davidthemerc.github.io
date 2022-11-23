@@ -109,7 +109,15 @@ const reloadWeapon = () => {
 
 // Function to handle ammo in weapons
 const ammoHandling = (weapon, action) => {
-  // Don't allow this function to run in the middle of a gun shot or reload
+  checkWeapon = hunter.weapons.findIndex(({ weaponID }) => weaponID === weapon);
+
+  if (checkWeapon === -1) {
+    displayMessage(
+      `You don't have the ${armoryWeapons[weapon].weaponName}!`,
+      statusEl
+    );
+    return;
+  }
 
   let currentMag = hunter.weapons[weapon].currentMag;
   let currentAmmo = hunter.weapons[weapon].weaponAmmo;
@@ -196,20 +204,20 @@ const ammoHandling = (weapon, action) => {
   // Buying Ammo
   if (action === 'buying') {
     // Check the armory ammo array for ammo costs
-    if (hunter.money >= armoryAmmo[weapon].cost) {
+    if (hunter.money >= armoryAmmo[checkWeapon].cost) {
       // Handle money first
-      moneyHandling(armoryAmmo[weapon].cost, '-');
+      moneyHandling(armoryAmmo[checkWeapon].cost, '-');
       moneyEl.innerHTML = `$${hunter.money}`;
       // Add ammo
-      hunter.weapons[weapon].weaponAmmo += armoryAmmo[weapon].amount;
+      hunter.weapons[checkWeapon].weaponAmmo += armoryAmmo[checkWeapon].amount;
       // Let user know they bought ammo succesfsully
       displayMessage(
-        `Bought ${armoryAmmo[weapon].amount} ${armoryAmmo[weapon].ammoName}.`,
+        `Bought ${armoryAmmo[checkWeapon].amount} ${armoryAmmo[checkWeapon].ammoName}.`,
         statusEl
       );
     } else {
       displayMessage(
-        `Sorry, you don't have enough money to buy ${armoryAmmo[weapon].ammoName}.`,
+        `Sorry, you don't have enough money to buy ${armoryAmmo[checkWeapon].ammoName}.`,
         statusEl
       );
     }
@@ -275,9 +283,25 @@ const weaponDamage = (weapon) => {
   }
 
   // Tier 3 Weapons
-  // Upgraded Revolver, etc.
+  // Shotgun, etc.
   if (weaponTier === 3) {
     damage = ranBetween(14, 20);
+  }
+
+  // Tier 4 Weapons
+  // Upgraded Shotgun, Rifle, etc.
+  if (weaponTier === 4) {
+    damage = ranBetween(15, 20);
+  }
+
+  // Tier 5 Weapons
+  // Upgraded Rifle, etc.
+  if (weaponTier === 5) {
+    damage = ranBetween(17, 20);
+  }
+
+  if (damage >= 15) {
+    playAudio(0);
   }
 
   if (damage === 20) {
@@ -355,6 +379,9 @@ const trophyCase = () => {
     sellButton.addEventListener('click', () => {
       // Sell the turkey for cold hard cash
       moneyHandling(turkeySellValue, '+');
+      // Sale sound
+      playAudio(ranBetween(37, 39));
+      // Turkey sale message
       displayMessage(
         `Sold ${turkey.firstName} ${
           turkey.lastName
@@ -380,7 +407,7 @@ const trophyCase = () => {
 
   if (hunter.turkeysBagged.length === 0) {
     const noTurkey = document.createElement('p');
-    noTurkey.textContent = 'No turkeys yet!';
+    noTurkey.textContent = 'Go get some turkeys!';
     noTurkey.className = 'centered nomargin marginbottom';
     trophyCaseEl.appendChild(noTurkey);
   }
@@ -405,26 +432,51 @@ const moneyHandling = (amount, action) => {
 };
 
 const armoryHandling = (ID, action) => {
+  // Scroll down
+  window.scrollTo(0, document.body.scrollHeight);
   // Upgrading
   if (action === 'upgrade') {
+    // Check if the hunter has the weapon they're trying to upgrade
+    // If they don't have it, stop the upgrade process
+    if (hunter.weapons.find(({ weaponID }) => weaponID === ID) === undefined) {
+      displayMessage(
+        `You don't have the ${armoryWeapons[ID].weaponName}!`,
+        statusEl
+      );
+      return;
+    }
+
+    let weaponToUpgradeID = hunter.weapons.findIndex(
+      ({ weaponID }) => weaponID === ID
+    );
+
     // Check if the hunter has the required funds
     if (
       hunter.money >= armoryUpgrades[ID].upgradeCost &&
-      hunter.weapons[ID].weaponDamage !== 2
+      hunter.weapons[weaponToUpgradeID].weaponDamage !==
+        armoryUpgrades[ID].upgradeTier
     ) {
       // Upgrade weapon tier
-      hunter.weapons[ID].weaponDamage = armoryUpgrades[ID].upgradeTier;
+      hunter.weapons[weaponToUpgradeID].weaponDamage =
+        armoryUpgrades[ID].upgradeTier;
       displayMessage(
-        `Upgraded ${hunter.weapons[ID].weaponName} to ${armoryUpgrades[ID].upgradeName}`,
+        `Upgraded ${hunter.weapons[weaponToUpgradeID].weaponName} to ${armoryUpgrades[ID].upgradeName}!`,
         statusEl
       );
-      hunter.weapons[ID].weaponName = armoryUpgrades[ID].upgradeName;
+      hunter.weapons[weaponToUpgradeID].weaponName =
+        armoryUpgrades[ID].upgradeName;
       moneyHandling(armoryUpgrades[ID].upgradeCost, '-');
       moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;
       saveJSON(hunter, 'TH-HunterData');
     } else {
-      if (hunter.weapons[ID].weaponDamage === 2) {
-        displayMessage(`You already have that upgrade!`, statusEl);
+      if (
+        hunter.weapons[weaponToUpgradeID].weaponDamage ===
+        armoryUpgrades[ID].upgradeTier
+      ) {
+        displayMessage(
+          `You already have the ${armoryUpgrades[ID].upgradeName} upgrade!`,
+          statusEl
+        );
       } else if (hunter.money < armoryUpgrades[ID].upgradeCost) {
         displayMessage(`You don't have enough money!`, statusEl);
       }
@@ -434,21 +486,30 @@ const armoryHandling = (ID, action) => {
   if (action === 'buying') {
     if (
       hunter.money >= armoryWeaponCosts[ID].weaponCost &&
-      hunter.weapons.find(({ basicName }) => basicName === 'shotgun') ===
-        undefined
+      hunter.weapons.find(({ weaponID }) => weaponID === ID) === undefined
     ) {
-      // Add the shotgun to the hunter's weapons array
+      // Add the weapon to the hunter's weapons array
       hunter.weapons.push(armoryWeapons[ID]);
       // Take the hunter's money
       moneyHandling(armoryWeaponCosts[ID].weaponCost, '-');
-    } else if (hunter.money < armoryWeaponCosts[ID].weaponCost) {
+      // Tell the user they bought the weapon
       displayMessage(
-        `You can't afford the ${armoryWeaponCosts[ID].name}.`,
+        `You bought the ${armoryWeaponCosts[ID].weaponName}.`,
+        statusEl
+      );
+
+      // Update the money display element
+      moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;
+    } else if (
+      hunter.weapons.find(({ weaponID }) => weaponID === ID) !== undefined
+    ) {
+      displayMessage(
+        `You already have the ${armoryWeaponCosts[ID].weaponName}.`,
         statusEl
       );
     } else {
       displayMessage(
-        `You already have the ${armoryWeaponCosts[ID].name}.`,
+        `You can't afford the ${armoryWeaponCosts[ID].weaponName}.`,
         statusEl
       );
     }

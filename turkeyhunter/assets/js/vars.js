@@ -18,7 +18,7 @@ const audio = [
   { id: 16, dir: 'assets/audio/man_wounded3.mp3', name: 'wounded3' },
   { id: 17, dir: 'assets/audio/man_wounded4.mp3', name: 'wounded4' },
   { id: 18, dir: 'assets/audio/man_unfortunately.mp3', name: 'unfortunately' },
-  { id: 19, dir: 'assets/audio/man_unfortunately.mp3', name: 'NA' },
+  { id: 19, dir: 'assets/audio/shotgun_empty.mp3', name: 'NA' },
   { id: 20, dir: 'assets/audio/shotgun_shot.mp3', name: 'shotgunshot' },
   { id: 21, dir: 'assets/audio/shotgun_reload.mp3', name: 'shotgunreload' },
   { id: 22, dir: 'assets/audio/man_sniped1.mp3', name: 'sniped1' },
@@ -57,6 +57,12 @@ const audio = [
     dir: 'assets/audio/shotgun_reload1.mp3',
     name: 'shotgun reload 1 shells',
   },
+  { id: 34, dir: 'assets/audio/rifle_shot.mp3', name: 'rifle shot' },
+  { id: 35, dir: 'assets/audio/rifle_reload.mp3', name: 'rifle reload' },
+  { id: 36, dir: 'assets/audio/rifle_empty.mp3', name: 'rifle empty' },
+  { id: 37, dir: 'assets/audio/sale1.mp3', name: 'turkey sale 1' },
+  { id: 38, dir: 'assets/audio/sale2.mp3', name: 'turkey sale 2' },
+  { id: 39, dir: 'assets/audio/sale3.mp3', name: 'turkey sale 3' },
 ];
 
 const audioList = Array();
@@ -68,7 +74,7 @@ audio.forEach((sound, index) => {
 
 const defaultHunter = {
   name: 'Hunter',
-  money: 1000,
+  money: 5000,
   turkeysBagged: [],
   turkeysBaggedCount: 0,
   currentWeapon: 0,
@@ -128,7 +134,7 @@ const armoryWeapons = [
     currentMag: 0,
     weaponDamage: 1,
     weaponMag: 6,
-    weaponAmmo: 120,
+    weaponAmmo: 72,
     weaponFireSound: 1,
     weaponFiringTime: 1.9,
     weaponReloadSound: 2,
@@ -147,7 +153,21 @@ const armoryWeapons = [
     weaponFiringTime: 2.1,
     weaponReloadSound: 21,
     weaponReloadTime: 4.7,
-    weaponEmptySound: 3,
+    weaponEmptySound: 19,
+  },
+  {
+    weaponName: 'T-3 Rifle',
+    basicName: 'rifle',
+    weaponID: 3,
+    currentMag: 0,
+    weaponDamage: 4,
+    weaponMag: 5,
+    weaponAmmo: 60,
+    weaponFireSound: 34,
+    weaponFiringTime: 1.6,
+    weaponReloadSound: 35,
+    weaponReloadTime: 4.5,
+    weaponEmptySound: 36,
   },
 ];
 
@@ -170,8 +190,8 @@ const armoryUpgrades = [
   // Brass Knuckles are never to be used LOL
   { upgradeName: 'Brass Knuckles', upgradeCost: 150, upgradeTier: 1 },
   { upgradeName: 'G2+ Revolver', upgradeCost: 150, upgradeTier: 2 },
-  { upgradeName: 'ZR Shotgun', upgradeCost: 250, upgradeTier: 3 },
-  { upgradeName: 'T-4 Rifle', upgradeCost: 400, upgradeTier: 3 },
+  { upgradeName: 'ZR Shotgun', upgradeCost: 250, upgradeTier: 4 },
+  { upgradeName: 'T-4 Rifle', upgradeCost: 400, upgradeTier: 5 },
 ];
 
 const turkeyNames = {

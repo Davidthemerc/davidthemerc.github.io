@@ -8,6 +8,38 @@ const ammoEl = document.getElementById('ammo');
 const reloadButton = document.getElementById('reload');
 const woodsImage = document.getElementById('woods');
 
+// Load hunter data
+const hunter = loadHunter();
+
+// Reload the hunter's magazine if it's not full
+if (
+  hunter.weapons[hunter.currentWeapon].currentMag <
+  hunter.weapons[hunter.currentWeapon].weaponMag
+) {
+  // Check how much is in the mag vs max mag capacity
+  let reloadAmt =
+    hunter.weapons[hunter.currentWeapon].weaponMag -
+    hunter.weapons[hunter.currentWeapon].currentMag;
+
+  // Add ammo to the magazine
+  hunter.weapons[hunter.currentWeapon].currentMag += reloadAmt;
+
+  // Remove ammo from ammo count
+  hunter.weapons[hunter.currentWeapon].weaponAmmo -= reloadAmt;
+
+  saveJSON(hunter, 'TH-HunterData');
+
+  // Update mag and ammo displays
+
+  // If the weapon is fists, show the infinity symbol
+  if (hunter.currentWeapon === 0) {
+    magEl.innerHTML = '∞';
+  }
+
+  // Populate the weapon ammo display
+  ammoEl.innerHTML = hunter.weapons[hunter.currentWeapon].weaponAmmo;
+}
+
 // Turkey is alive!
 const turkey = document.createElement('img');
 let turkeyHealth = ranBetween(2, 4);
@@ -100,9 +132,6 @@ turkey.addEventListener('click', () => {
 // Pick a random woods image
 woodsImage.src = `assets/images/woods${ranBetween(1, 15)}.png`;
 
-// Load hunter data
-const hunter = loadHunter();
-
 // Set bullet time global variable (used to not allow firing while reloading, etc.)
 let bulletTime = 0;
 
@@ -174,7 +203,7 @@ let turkeyInterval = setInterval(function () {
   setTimeout(() => {
     turkey.style.display = 'none';
   }, timeDiff);
-}, timeDiff * 6);
+}, timeDiff * 7);
 
 // Function to eventually stop turkeys from spawning
 setTimeout(function () {
