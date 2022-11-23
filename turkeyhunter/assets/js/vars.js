@@ -12,15 +12,51 @@ const audio = [
   { id: 10, dir: 'assets/audio/man_wonderful.mp3', name: 'wonderful' },
   { id: 11, dir: 'assets/audio/man_marvelous.mp3', name: 'marvelous' },
   { id: 12, dir: 'assets/audio/man_excellent.mp3', name: 'excellent' },
-  { id: 13, dir: 'assets/audio/man_feast.mp3', name: 'feast' },
+  { id: 13, dir: 'assets/audio/man_goodjob.mp3', name: 'good job' },
   { id: 14, dir: 'assets/audio/man_wounded1.mp3', name: 'wounded1' },
   { id: 15, dir: 'assets/audio/man_wounded2.mp3', name: 'wounded2' },
   { id: 16, dir: 'assets/audio/man_wounded3.mp3', name: 'wounded3' },
   { id: 17, dir: 'assets/audio/man_wounded4.mp3', name: 'wounded4' },
   { id: 18, dir: 'assets/audio/man_unfortunately.mp3', name: 'unfortunately' },
-  { id: 19, dir: 'assets/audio/man_sniped.mp3', name: 'sniped' },
+  { id: 19, dir: 'assets/audio/man_unfortunately.mp3', name: 'NA' },
   { id: 20, dir: 'assets/audio/shotgun_shot.mp3', name: 'shotgunshot' },
   { id: 21, dir: 'assets/audio/shotgun_reload.mp3', name: 'shotgunreload' },
+  { id: 22, dir: 'assets/audio/man_sniped1.mp3', name: 'sniped1' },
+  { id: 23, dir: 'assets/audio/man_sniped2.mp3', name: 'sniped2' },
+  { id: 24, dir: 'assets/audio/man_sniped3.mp3', name: 'sniped3' },
+  { id: 25, dir: 'assets/audio/man_trophy1.mp3', name: 'trophy1' },
+  { id: 26, dir: 'assets/audio/man_trophy2.mp3', name: 'trophy2' },
+  { id: 27, dir: 'assets/audio/man_trophy3.mp3', name: 'trophy3' },
+  {
+    id: 28,
+    dir: 'assets/audio/shotgun_reload6.mp3',
+    name: 'shotgun reload 6 shell',
+  },
+  {
+    id: 29,
+    dir: 'assets/audio/shotgun_reload5.mp3',
+    name: 'shotgun reload 5 shells',
+  },
+  {
+    id: 30,
+    dir: 'assets/audio/shotgun_reload4.mp3',
+    name: 'shotgun reload 4 shells',
+  },
+  {
+    id: 31,
+    dir: 'assets/audio/shotgun_reload3.mp3',
+    name: 'shotgun reload 3 shells',
+  },
+  {
+    id: 32,
+    dir: 'assets/audio/shotgun_reload2.mp3',
+    name: 'shotgun reload 2 shells',
+  },
+  {
+    id: 33,
+    dir: 'assets/audio/shotgun_reload1.mp3',
+    name: 'shotgun reload 1 shells',
+  },
 ];
 
 const audioList = Array();
@@ -32,7 +68,7 @@ audio.forEach((sound, index) => {
 
 const defaultHunter = {
   name: 'Hunter',
-  money: 40,
+  money: 1000,
   turkeysBagged: [],
   turkeysBaggedCount: 0,
   currentWeapon: 0,
@@ -41,6 +77,7 @@ const defaultHunter = {
   weapons: [
     {
       weaponName: 'Fists',
+      basicName: 'fists',
       weaponID: 0,
       currentMag: 1,
       weaponDamage: 0,
@@ -54,6 +91,7 @@ const defaultHunter = {
     },
     {
       weaponName: 'G2 Revolver',
+      basicName: 'revolver',
       weaponID: 1,
       currentMag: 0,
       weaponDamage: 1,
@@ -70,10 +108,39 @@ const defaultHunter = {
 
 const armoryWeapons = [
   {
-    weaponName: 'Shotgun',
+    weaponName: 'Fists',
+    basicName: 'fists',
+    weaponID: 0,
+    currentMag: 1,
+    weaponDamage: 0,
+    weaponMag: 1,
+    weaponAmmo: 0,
+    weaponFireSound: 5,
+    weaponFiringTime: 1,
+    weaponReloadSound: 6,
+    weaponReloadTime: 5.5,
+    weaponEmptySound: 8,
+  },
+  {
+    weaponName: 'G2 Revolver',
+    basicName: 'revolver',
+    weaponID: 1,
+    currentMag: 0,
+    weaponDamage: 1,
+    weaponMag: 6,
+    weaponAmmo: 120,
+    weaponFireSound: 1,
+    weaponFiringTime: 1.9,
+    weaponReloadSound: 2,
+    weaponReloadTime: 3.5,
+    weaponEmptySound: 3,
+  },
+  {
+    weaponName: 'XR Shotgun',
+    basicName: 'shotgun',
     weaponID: 2,
     currentMag: 0,
-    weaponDamage: 2,
+    weaponDamage: 3,
     weaponMag: 7,
     weaponAmmo: 84,
     weaponFireSound: 20,
@@ -84,16 +151,27 @@ const armoryWeapons = [
   },
 ];
 
+const armoryWeaponCosts = [
+  { weaponName: 'Fists (Not Used Here)', weaponID: 2, weaponCost: 250 },
+  { weaponName: 'G2 Revolver (Not Used Here)', weaponID: 2, weaponCost: 250 },
+  { weaponName: 'XR Shotgun', weaponID: 2, weaponCost: 500 },
+  { weaponName: 'T-3 Rifle', weaponID: 3, weaponCost: 1000 },
+];
+
 const armoryAmmo = [
   // Fist Ammo. Lol. Not used
   { ammoName: 'Fist Ammo', cost: 20, amount: 120 },
   { ammoName: 'Revolver rounds', cost: 20, amount: 120 },
+  { ammoName: 'Shotgun shells', cost: 40, amount: 84 },
+  { ammoName: 'Rifle rounds', cost: 50, amount: 60 },
 ];
 
 const armoryUpgrades = [
   // Brass Knuckles are never to be used LOL
-  { upgradeName: 'Brass Knuckles', upgradeCost: 1000, upgradeTier: 1 },
-  { upgradeName: 'G2+ Revolver', upgradeCost: 1000, upgradeTier: 2 },
+  { upgradeName: 'Brass Knuckles', upgradeCost: 150, upgradeTier: 1 },
+  { upgradeName: 'G2+ Revolver', upgradeCost: 150, upgradeTier: 2 },
+  { upgradeName: 'ZR Shotgun', upgradeCost: 250, upgradeTier: 3 },
+  { upgradeName: 'T-4 Rifle', upgradeCost: 400, upgradeTier: 3 },
 ];
 
 const turkeyNames = {
@@ -150,3 +228,5 @@ const turkeyNames = {
     'Giblet',
   ],
 };
+
+const shotgunReloadTimes = [2.3, 2.6, 3.1, 3.4, 3.8, 4.2];

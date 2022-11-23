@@ -62,7 +62,9 @@ turkey.addEventListener('click', () => {
         }
 
         // The man will comment here
-        turkeyRandomizer === 5 ? playAudio(13) : playAudio(ranBetween(9, 12));
+        turkeyRandomizer === 5
+          ? playAudio(ranBetween(25, 27))
+          : playAudio(ranBetween(9, 13));
 
         turkeyRandomizer === 5
           ? alert(
@@ -109,6 +111,7 @@ weaponEl.innerHTML = hunter.weapons[hunter.currentWeapon].weaponName;
 
 // Populate the weapon mag field
 magEl.innerHTML = hunter.weapons[hunter.currentWeapon].currentMag;
+
 // If the weapon is fists, show the infinity symbol
 if (hunter.currentWeapon === 0) {
   magEl.innerHTML = '∞';
@@ -127,7 +130,9 @@ huntarea.addEventListener('click', () => {
 
 // Assign event listener to the reload button
 reloadButton.addEventListener('click', () => {
-  reloadWeapon();
+  if (hunter.currentWeapon !== 0) {
+    reloadWeapon();
+  }
 });
 
 // Assign event listener to keyboard. If R key is pressed, also reload.

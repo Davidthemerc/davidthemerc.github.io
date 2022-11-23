@@ -191,10 +191,11 @@ select {
 
 .armory-weapon-title {
   color: darkblue;
+  margin: 0.25rem;
 }
 
 .armory-options > button {
-  width: 90%;
+  width: 55vw;
 }
 
 .armory-lower {

@@ -82,6 +82,13 @@ const reloadWeapon = () => {
   // Check the current ammo in the magazine first
   let currentWeapon = hunter.currentWeapon;
 
+  // If the hunter reloads their fists, berate them
+  if (hunter.currentWeapon === 0) {
+    playAudio(6);
+  }
+
+  // If the hunter's magazine is the same size as the max capaacity,
+  // also known as "full", then stop the reload process.
   if (
     hunter.weapons[currentWeapon].currentMag ===
     hunter.weapons[currentWeapon].weaponMag
@@ -89,10 +96,12 @@ const reloadWeapon = () => {
     return;
   }
 
+  // If we're in the middle of a firing or reloading action, stop
   if (bulletTime === 1) {
     return;
   }
 
+  // Proceed
   try {
     ammoHandling(currentWeapon, 'reload');
   } catch (error) {}
@@ -111,11 +120,43 @@ const ammoHandling = (weapon, action) => {
     bulletTime = 1;
     statusArea.className += ' busy';
 
-    // Start pause timer (no other actions while it's running)
+    // Shotgun determine variable
+    let shotgunDetermine = hunter.weapons[weapon].basicName;
+
+    // Define reload sound variable
+    // Can be manipulated later (for shotguns, etc.)
+    let reloadSound = hunter.weapons[hunter.currentWeapon].weaponReloadSound;
+
+    // Initial calculation of reload time
+    let reloadTime = 1000 * hunter.weapons[weapon].weaponReloadTime;
+
+    // If this is a shotgun, determine the following:
+    // Appropriate reload time
+    // Appropriate reload sound frame
+    // If the mag is empty, don't use special shotgun reloading
+    if (shotgunDetermine.includes('shotgun') && currentMag > 0) {
+      // Determine how many shells need to actually be reloaded
+      let needToReload = fullMag - currentMag;
+
+      // Choose the reload sound based on how many shells need to be loaded
+      reloadSound = 34 - needToReload;
+
+      // Choose the reload time based on how many shells need to be loaded
+      reloadTime = 1000 * shotgunReloadTimes[needToReload - 1];
+    } else {
+      // Non-Shotgun reloading. Clear the mag counter
+      if (hunter.currentWeapon !== 0) {
+        magEl.innerHTML = 0;
+      }
+    }
+
+    // Start pause timer (bullet time - no other actions while it's running)
     setTimeout(() => {
       bulletTime = 0;
       statusArea.className = 'statusarea flextop row';
-    }, 1000 * hunter.weapons[weapon].weaponReloadTime);
+      // Populate the mag ammo display once reloading is done
+      magEl.innerHTML = hunter.weapons[hunter.currentWeapon].weaponMag;
+    }, reloadTime);
 
     // Don't allow reload if mag is full!
     if (currentMag === fullMag && weapon !== 0) {
@@ -140,8 +181,6 @@ const ammoHandling = (weapon, action) => {
     // Remove ammo from ammo count
     hunter.weapons[hunter.currentWeapon].weaponAmmo -= reloadAmt;
 
-    // Refresh the mag display
-    magEl.innerHTML = hunter.weapons[hunter.currentWeapon].currentMag;
     // If the weapon is fists, show the infinity symbol
     if (hunter.currentWeapon === 0) {
       magEl.innerHTML = '∞';
@@ -150,7 +189,8 @@ const ammoHandling = (weapon, action) => {
     // Populate the weapon ammo display
     ammoEl.innerHTML = hunter.weapons[hunter.currentWeapon].weaponAmmo;
 
-    playAudio(hunter.weapons[hunter.currentWeapon].weaponReloadSound);
+    // Play the appropriate reloading sound
+    playAudio(reloadSound);
   }
 
   // Buying Ammo
@@ -234,9 +274,15 @@ const weaponDamage = (weapon) => {
     damage = ranBetween(12, 20);
   }
 
+  // Tier 3 Weapons
+  // Upgraded Revolver, etc.
+  if (weaponTier === 3) {
+    damage = ranBetween(14, 20);
+  }
+
   if (damage === 20) {
     // Critical hit!
-    playAudio(19);
+    playAudio(ranBetween(22, 24));
     return turkeyHealth;
   } else if (damage >= 17) {
     // Successful greater hit! Return 2 damage
@@ -295,8 +341,8 @@ const trophyCase = () => {
     // Trophy Turkeys are worth 2x normal value
     let turkeySellValue = 0;
     turkey.trueTrophy
-      ? (turkeySellValue = turkey.weightInt * 0.5)
-      : (turkeySellValue = turkey.weightInt * 0.25);
+      ? (turkeySellValue = turkey.weightInt * 4)
+      : (turkeySellValue = turkey.weightInt * 1.5);
     turkeyTitle.className = 'turkeytitle bold larger';
     turkeyWeight.className = 'turkeyweight';
     turkeyHeight.className = 'turkeyheight';
@@ -308,11 +354,11 @@ const trophyCase = () => {
 
     sellButton.addEventListener('click', () => {
       // Sell the turkey for cold hard cash
-      moneyHandling(turkey.weightInt * 0.25, '+');
+      moneyHandling(turkeySellValue, '+');
       displayMessage(
-        `Sold ${turkey.firstName} ${turkey.lastName} for $${(
-          turkey.weightInt * 0.25
-        ).toFixed(2)}.`,
+        `Sold ${turkey.firstName} ${
+          turkey.lastName
+        } for $${turkeySellValue.toFixed(2)}.`,
         statusEl
       );
       // Find index of this turkey
@@ -358,27 +404,53 @@ const moneyHandling = (amount, action) => {
   saveJSON(hunter, 'TH-HunterData');
 };
 
-const weaponUpgrade = (ID) => {
-  // Check if the hunter has the required funds
-  if (
-    hunter.money >= armoryUpgrades[ID].upgradeCost &&
-    hunter.weapons[ID].weaponDamage !== 2
-  ) {
-    // Upgrade weapon tier
-    hunter.weapons[ID].weaponDamage = armoryUpgrades[ID].upgradeTier;
-    displayMessage(
-      `Upgraded ${hunter.weapons[ID].weaponName} to ${armoryUpgrades[ID].upgradeName}`,
-      statusEl
-    );
-    hunter.weapons[ID].weaponName = armoryUpgrades[ID].upgradeName;
-    moneyHandling(1000, '-');
-    moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;
-    saveJSON(hunter, 'TH-HunterData');
-  } else {
-    if (hunter.weapons[ID].weaponDamage === 2) {
-      displayMessage(`You already have that upgrade!`, statusEl);
-    } else if (hunter.money < 1000) {
-      displayMessage(`You don't have enough money!`, statusEl);
+const armoryHandling = (ID, action) => {
+  // Upgrading
+  if (action === 'upgrade') {
+    // Check if the hunter has the required funds
+    if (
+      hunter.money >= armoryUpgrades[ID].upgradeCost &&
+      hunter.weapons[ID].weaponDamage !== 2
+    ) {
+      // Upgrade weapon tier
+      hunter.weapons[ID].weaponDamage = armoryUpgrades[ID].upgradeTier;
+      displayMessage(
+        `Upgraded ${hunter.weapons[ID].weaponName} to ${armoryUpgrades[ID].upgradeName}`,
+        statusEl
+      );
+      hunter.weapons[ID].weaponName = armoryUpgrades[ID].upgradeName;
+      moneyHandling(armoryUpgrades[ID].upgradeCost, '-');
+      moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;
+      saveJSON(hunter, 'TH-HunterData');
+    } else {
+      if (hunter.weapons[ID].weaponDamage === 2) {
+        displayMessage(`You already have that upgrade!`, statusEl);
+      } else if (hunter.money < armoryUpgrades[ID].upgradeCost) {
+        displayMessage(`You don't have enough money!`, statusEl);
+      }
+    }
+  }
+  // Buying a Weapon
+  if (action === 'buying') {
+    if (
+      hunter.money >= armoryWeaponCosts[ID].weaponCost &&
+      hunter.weapons.find(({ basicName }) => basicName === 'shotgun') ===
+        undefined
+    ) {
+      // Add the shotgun to the hunter's weapons array
+      hunter.weapons.push(armoryWeapons[ID]);
+      // Take the hunter's money
+      moneyHandling(armoryWeaponCosts[ID].weaponCost, '-');
+    } else if (hunter.money < armoryWeaponCosts[ID].weaponCost) {
+      displayMessage(
+        `You can't afford the ${armoryWeaponCosts[ID].name}.`,
+        statusEl
+      );
+    } else {
+      displayMessage(
+        `You already have the ${armoryWeaponCosts[ID].name}.`,
+        statusEl
+      );
     }
   }
 };
