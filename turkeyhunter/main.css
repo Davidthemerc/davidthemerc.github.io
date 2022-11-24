@@ -282,3 +282,23 @@ footer > span {
 .busy {
   background-color: rgb(60, 60, 60);
 }
+
+/* Share Icon Hack CSS */
+.share {
+  font-weight: bold;
+  position: relative;
+}
+.share:before {
+  content: '.';
+  font-size: 2.2em;
+  position: absolute;
+  bottom: -2.5px;
+  left: -4px;
+}
+.share:after {
+  content: ':';
+  font-size: 2em;
+  position: absolute;
+  bottom: -6px;
+  right: -7px;
+}
