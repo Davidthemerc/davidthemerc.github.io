@@ -221,6 +221,9 @@ const ammoHandling = (weapon, action) => {
         statusEl
       );
     }
+
+    // Do a final money check for the price colors
+    armoryPriceColors();
   }
 
   // Firing
@@ -514,4 +517,17 @@ const armoryHandling = (ID, action) => {
       );
     }
   }
+
+  // Do a final money check for the price colors
+  armoryPriceColors();
+};
+
+const armoryPriceColors = () => {
+  armoryPrices.forEach((item) => {
+    if (hunter.money < item.price) {
+      item.elDef.classList.add('oos');
+    } else {
+      item.elDef.classList.remove('oos');
+    }
+  });
 };

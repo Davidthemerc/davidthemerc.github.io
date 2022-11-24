@@ -17,6 +17,9 @@ const hunter = loadHunter();
 // Assign the hunter's money to the money element
 moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;
 
+// Load armory price colors
+armoryPriceColors();
+
 // Assign event listener to the revolver upgrade button
 revolverUpgradeButton.addEventListener('click', () => {
   armoryHandling(1, 'upgrade');

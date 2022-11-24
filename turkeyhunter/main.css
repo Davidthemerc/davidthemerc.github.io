@@ -212,7 +212,7 @@ select {
   padding-bottom: 0.25rem;
 }
 
-.armory-options-labels > span {
+.pricetag {
   margin: 0.25rem;
   padding: 0.25rem;
   border: 2px black solid;
@@ -251,10 +251,6 @@ select {
   background-color: darkred;
 }
 
-.oos {
-  color: red;
-}
-
 /* Footer CSS */
 footer > span {
   color: white;
@@ -281,6 +277,10 @@ footer > span {
 
 .busy {
   background-color: rgb(60, 60, 60);
+}
+
+.oos {
+  color: red;
 }
 
 /* Share Icon Hack CSS */

@@ -194,6 +194,49 @@ const armoryUpgrades = [
   { upgradeName: 'T-4 Rifle', upgradeCost: 400, upgradeTier: 5 },
 ];
 
+const armoryPrices = [
+  {
+    elDef: document.getElementById('armprice0'),
+    itemName: '',
+    price: 150,
+  },
+  {
+    elDef: document.getElementById('armprice1'),
+    itemName: '',
+    price: 20,
+  },
+  {
+    elDef: document.getElementById('armprice2'),
+    itemName: '',
+    price: 500,
+  },
+  {
+    elDef: document.getElementById('armprice3'),
+    itemName: '',
+    price: 250,
+  },
+  {
+    elDef: document.getElementById('armprice4'),
+    itemName: '',
+    price: 40,
+  },
+  {
+    elDef: document.getElementById('armprice5'),
+    itemName: '',
+    price: 1000,
+  },
+  {
+    elDef: document.getElementById('armprice6'),
+    itemName: '',
+    price: 400,
+  },
+  {
+    elDef: document.getElementById('armprice7'),
+    itemName: '',
+    price: 50,
+  },
+];
+
 const turkeyNames = {
   first: [
     'Wild',
