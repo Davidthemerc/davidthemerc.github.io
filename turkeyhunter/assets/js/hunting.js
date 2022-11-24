@@ -1,5 +1,6 @@
 // Define page elements
 const huntarea = document.getElementById('huntarea');
+const moveArea = document.getElementById('movearea');
 const backToLodge = document.getElementById('backtolodge');
 const statusArea = document.getElementById('statusarea');
 const weaponEl = document.getElementById('weapon');
@@ -7,9 +8,18 @@ const magEl = document.getElementById('mag');
 const ammoEl = document.getElementById('ammo');
 const reloadButton = document.getElementById('reload');
 const woodsImage = document.getElementById('woods');
+const randomWoods = ranBetween(1, 15);
+const titleEl = document.getElementById('title');
 
 // Load hunter data
 const hunter = loadHunter();
+
+// Change the area name
+titleEl.innerHTML = `Dall Woods - Area ${randomWoods}`;
+
+// Roll to determine if there are even turkeys in this part of the woods
+// Turkeys will only appear on rolls of 4 & 5 (turkeyChance>3)
+const turkeyChance = ranBetween(1, 5);
 
 // Reload the hunter's magazine if it's not full
 if (
@@ -130,7 +140,7 @@ turkey.addEventListener('click', () => {
 });
 
 // Pick a random woods image
-woodsImage.src = `assets/images/woods${ranBetween(1, 15)}.png`;
+woodsImage.src = `assets/images/woods${randomWoods}.png`;
 
 // Set bullet time global variable (used to not allow firing while reloading, etc.)
 let bulletTime = 0;
@@ -171,8 +181,15 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
+// Assign event listener to move to new area button
+// So the hunter can resume the hunt
+// It's basically just a refresh button.
+moveArea.addEventListener('click', () => {
+  location.reload();
+});
+
 // Assign event listener to return to lodge button
-// So the user can return to the main page
+// So the hunter can return to the main page
 backToLodge.addEventListener('click', () => {
   location.assign('index.html');
 });
@@ -188,38 +205,46 @@ console.log(`Turkey Will Appear: ${randomFactor} times.`);
 console.log(`Time per Repeat: ${timeDiff * 7}`);
 console.log(`Turkey Total Time This Run: ${timeDiff * 7 * randomFactor}`);
 
-// Every 3 seconds, show turkey in a random spot inside the div
-let turkeyInterval = setInterval(function () {
-  // Show turkey once initial time has clocked
-  turkey.style.display = 'block';
+// Based on the turkey chance roll, there will be turkeys about 40% of the time
+if (turkeyChance > 3) {
+  // Every 3 seconds, show turkey in a random spot inside the div
+  let turkeyInterval = setInterval(function () {
+    // Show turkey once initial time has clocked
+    turkey.style.display = 'block';
 
-  // Define the dimensions of the hunting area div
-  let heightToHunt =
-    vh(8) + getAbsoluteHeight(title) + getAbsoluteHeight(huntarea) / 6;
-  let widthToHunt = vw(2.5) + getAbsoluteHeight(huntarea) / 7.5;
+    // Define the dimensions of the hunting area div
+    let heightToHunt =
+      vh(8) + getAbsoluteHeight(title) + getAbsoluteHeight(huntarea) / 6;
+    let widthToHunt = vw(2.5) + getAbsoluteHeight(huntarea) / 7.5;
 
-  // Calculate coordinates of the hunting area div relative to screen
-  turkey.style.top = `${ranBetween(
-    heightToHunt - 25,
-    heightToHunt + getAbsoluteHeight(huntarea) - getAbsoluteHeight(turkey) - 75
-  )}px`;
-  turkey.style.left = `${ranBetween(
-    widthToHunt - 5,
-    widthToHunt + getAbsoluteHeight(huntarea) - getAbsoluteHeight(turkey) - 100
-  )}px`;
+    // Calculate coordinates of the hunting area div relative to screen
+    turkey.style.top = `${ranBetween(
+      heightToHunt - 25,
+      heightToHunt +
+        getAbsoluteHeight(huntarea) -
+        getAbsoluteHeight(turkey) -
+        75
+    )}px`;
+    turkey.style.left = `${ranBetween(
+      widthToHunt - 5,
+      widthToHunt +
+        getAbsoluteHeight(huntarea) -
+        getAbsoluteHeight(turkey) -
+        100
+    )}px`;
 
-  // Timeout function to hide the turkey
-  // It will only show for approximately 600 to 900 milliseconds per apperance
-  setTimeout(() => {
-    turkey.style.display = 'none';
-  }, timeDiff);
-}, timeDiff * randomFactor2);
+    // Timeout function to hide the turkey
+    // It will only show for approximately 600 to 900 milliseconds per apperance
+    setTimeout(() => {
+      turkey.style.display = 'none';
+    }, timeDiff);
+  }, timeDiff * randomFactor2);
 
-// Function to eventually stop turkeys from spawning
-setTimeout(function () {
-  clearInterval(turkeyInterval);
-  if (winning === 0) {
-    alert('The turkey escaped!');
-    location.assign('index.html');
-  }
-}, timeDiff * 7 * randomFactor);
+  // Function to eventually stop turkeys from spawning
+  setTimeout(function () {
+    clearInterval(turkeyInterval);
+    if (winning === 0) {
+      alert('The turkey escaped! You should search elsewhere.');
+    }
+  }, timeDiff * 7 * randomFactor);
+}
