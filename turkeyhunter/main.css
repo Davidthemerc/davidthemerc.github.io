@@ -15,9 +15,10 @@ header {
   background-color: rgb(124, 93, 57);
   align-items: center;
   justify-content: center;
-  font-size: 5vh;
-  font-weight: bold;
-  font-family: 'Games', sans-serif;
+}
+
+.logo {
+  width: 90vw;
 }
 
 main {
@@ -262,6 +263,11 @@ footer > span {
   .ammodisplay,
   .magdisplay {
     font-size: 4vw;
+  }
+
+  .logo {
+    height: 8vh;
+    width: fit-content;
   }
 }
 
