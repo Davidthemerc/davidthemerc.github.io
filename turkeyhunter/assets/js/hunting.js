@@ -199,11 +199,11 @@ let timeDiff = ranBetween(600, 900);
 let randomFactor = ranBetween(4, 7);
 let randomFactor2 = ranBetween(6, 8);
 
-// Debugging
-console.log(`timeDiff: ${timeDiff}`);
-console.log(`Turkey Will Appear: ${randomFactor} times.`);
-console.log(`Time per Repeat: ${timeDiff * 7}`);
-console.log(`Turkey Total Time This Run: ${timeDiff * 7 * randomFactor}`);
+// // Debugging
+// console.log(`timeDiff: ${timeDiff}`);
+// console.log(`Turkey Will Appear: ${randomFactor} times.`);
+// console.log(`Time per Repeat: ${timeDiff * 7}`);
+// console.log(`Turkey Total Time This Run: ${timeDiff * 7 * randomFactor}`);
 
 // Based on the turkey chance roll, there will be turkeys about 40% of the time
 if (turkeyChance > 3) {

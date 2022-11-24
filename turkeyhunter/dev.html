@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turkey Hunter</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+
+<body>
+
+    <header class="flex"><img class="logo" src="assets/images/turkeyhunter.png" alt="The Turkey Hunter Logo"></header>
+
+    <main class="flexnoncenter">
+
+        <h2 class="underline centered">Hunter Management</h2>
+
+        <label class="statusinput"><span>Hunter's Name: </span><input id="huntername" type="text"></label>
+        <label class="statusinput"><span>Hunter's Weapon:
+                <select id="weaponselect">
+                </select></span></label>
+        <label class="statusinput"><span>Current Weapon Ammo: <span id="ammo" class="bold"></span></span></label>
+        <label class="statusinput"><span>Current Money: <span id="money" class="bold">$</span></span></label>
+
+        <button id="addmoney">(DEV ONLY) Add Money</button>
+
+        <button id="backtolodge">Back to Lodge</button>
+        <button id="reset">Reset Game</button>
+
+        <div id="statusEl" class="statusEl"></div>
+
+    </main>
+
+    <div class="marginbottomend"></div>
+
+    <footer class="flex">
+        <span>© 2022 Davidthemerc</span>
+    </footer>
+
+    <script src="assets/js/vars.js"></script>
+    <script src="assets/js/functions.js"></script>
+    <script src="assets/js/hunter.js"></script>
+    <script src="assets/js/dev.js"></script>
+</body>
+
+</html>
