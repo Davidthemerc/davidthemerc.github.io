@@ -69,7 +69,7 @@ let initialSetup = () => {
         backLink.style.color = 'red';
         backLink.style.display = 'flex';
         backLink.style.justifyContent = 'center';
-        backLink.style.fontSize = '3vw';
+        backLink.style.fontSize = '3rem';
         win.document.body.appendChild(backLink);
 
         // Run a for each for all the loteria card images
