@@ -56,8 +56,7 @@ let initialSetup = () => {
         title.style.marginTop = '0';
         title.style.marginBottom = '2rem';
         title.style.fontSize = '5rem';
-        title.style.display = 'flex';
-        title.style.justifyContent = 'center';
+        title.style.textAlign = 'center';
         title.style.fontWeight = 'bold';
         win.document.body.appendChild(title);
 
