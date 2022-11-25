@@ -56,6 +56,17 @@ a:active {
   font-weight: bold;
 }
 
+.selector {
+  width: 100%;
+  height: 100%;
+}
+
+.frame {
+  width: vw20;
+  height: vh20;
+  margin: 1rem;
+}
+
 @media (min-height: 1050px) {
   .tall {
     display: flex;
@@ -82,4 +93,8 @@ a:active {
   position: absolute;
   bottom: -6px;
   right: -7px;
+}
+
+#hide {
+  display: none;
 }

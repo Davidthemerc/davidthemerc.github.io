@@ -28,64 +28,6 @@ let initialSetup = () => {
   for (let i = 0; i < 16; i++) {
     lesserArranger(i);
 
-    // Arrange the input selectors to match the card
-    let currentInput = document.getElementById(`grid${i}`);
-    currentInput.selectedIndex = shuffled[i];
-
-    // Add event listener to each dropdown which will detect the current choice on click
-    // This is referenced later
-    currentInput.addEventListener('click', () => {
-      oldIndex = currentInput.selectedIndex;
-    });
-
-    // Add an event listener for each input selector
-    currentInput.addEventListener('change', () => {
-      // Local variable for quicker reference
-      let selectedCard = currentInput.selectedIndex;
-
-      // Define the card to be replaced and its position in the array so we can move it to the selected card's old position in the shuffled array
-      // If this doesn't happen, we'll have two of the selected card in the same array
-      let oldCard = shuffled[i];
-      let oldspot = shuffled.findIndex((shuffled) => shuffled === selectedCard);
-
-      // Check if card is locked
-      if (locked === 1) {
-        // Card is locked. Do nothing!
-        currentInput.selectedIndex = oldIndex;
-        return;
-      }
-
-      // Don't allow selecting the loteria tile already in use on this card
-      if (currentCard.includes(selectedCard)) {
-        alert(
-          `#${selectedCard + 1} ${
-            cardNames[selectedCard]
-          } is already in use! Pick a different card!`
-        );
-        currentInput.selectedIndex = oldIndex;
-        return;
-      }
-
-      // Position the ID of the new card in the appropriate position in the shuffled array
-      shuffled[i] = selectedCard;
-      // Position the ID of the replaced card in the selected card's former position in the shuffled array
-      shuffled[oldspot] = oldCard;
-      // Prime the correct image for appending
-      image = imageList[selectedCard];
-      // Clear the previous image
-      grid[i].innerHTML = '';
-      // Append the image to the grid square
-      grid[i].appendChild(image);
-      // Replace bean (currently invisible) due to element clear
-      beanSetup(i);
-      beans = document.getElementsByClassName('bean');
-      // Clear beans (changing your card's composition clears the board to deter cheating)
-      clearBeanTracking();
-
-      // Save the change to local storage
-      saveJSON(shuffled, 'newLoteriaCard');
-    });
-
     // Setup the event listener to click on the card
     grid[i].addEventListener('click', () => {
       // Assign each card an image and append it to the appropriate div
@@ -94,22 +36,112 @@ let initialSetup = () => {
       if (locked === 0) {
         // Card isn't locked. No adding beans while unlocked.
         // The card must be locked to be usable for play.
-        return;
-      }
+        // Use experimental card selector code.
+        let win = window.open();
+        win.document.body.style.display = 'flex';
+        win.document.body.style.flexDirection = 'column';
+        win.document.body.style.justifyContent = 'center';
+        win.document.body.style.alignContent = 'center';
+        win.document.body.style.padding = '2rem';
 
-      if (trackerArray[i] === 1) {
-        // If the bean isn't active, show it
-        trackerArray[i] = 0;
-        beans[i].style.display = 'none';
+        // Add page title
+        let title = document.createElement('p');
+        title.textContent = 'Select A Card';
+        title.style.marginTop = '0';
+        title.style.marginBottom = '2rem';
+        title.style.fontSize = '5rem';
+        title.style.display = 'flex';
+        title.style.justifyContent = 'center';
+        title.style.fontWeight = 'bold';
+        win.document.body.appendChild(title);
+
+        // Run a for each for all the loteria card images
+
+        // Outer Loop, this creates rows for the cards
+        for (let x = 0; x < 14; x++) {
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.justifyContent = 'center';
+          row.style.flexDirection = 'row';
+
+          // Inner loop, this creates the cards
+          for (let y = 0; y < 4; y++) {
+            if (y + x * 4 > 53) {
+              break;
+            }
+            const div = document.createElement('div');
+            div.style.margin = '1rem;';
+            const image = document.createElement('img');
+            image.src = imageList[y + x * 4].src;
+            image.style.width = '90%';
+            image.style.padding = '1rem';
+            image.id = y + x * 4;
+            div.appendChild(image);
+            row.appendChild(div);
+
+            // Create event listener for clicking on the card
+            image.addEventListener('click', (e) => {
+              win.close();
+
+              let selectedCard = parseInt(e.target.id);
+
+              // Define the card to be replaced and its position in the array so we can move it to the selected card's old position in the shuffled array
+              // If this doesn't happen, we'll have two of the selected card in the same array
+              let oldCard = shuffled[i];
+              let oldspot = shuffled.findIndex(
+                (shuffled) => shuffled === selectedCard
+              );
+
+              // Don't allow selecting the loteria tile already in use on this card
+              if (currentCard.includes(selectedCard)) {
+                setTimeout(() => {
+                  alert(
+                    `#${selectedCard + 1} ${
+                      cardNames[selectedCard]
+                    } is already in use! Pick a different card!`
+                  );
+                }, 50);
+                return;
+              }
+
+              // Position the ID of the new card in the appropriate position in the shuffled array
+              shuffled[i] = selectedCard;
+              // Position the ID of the replaced card in the selected card's former position in the shuffled array
+              shuffled[oldspot] = oldCard;
+              // Prime the correct image for appending
+              let cardImage = imageList[selectedCard];
+              // Clear the previous image
+              grid[i].innerHTML = '';
+              // Append the image to the grid square
+              grid[i].appendChild(cardImage);
+              // Replace bean (currently invisible) due to element clear
+              beanSetup(i);
+              beans = document.getElementsByClassName('bean');
+              // Clear beans (changing your card's composition clears the board to deter cheating)
+              clearBeanTracking();
+
+              // Save the change to local storage
+              saveJSON(shuffled, 'newLoteriaCard');
+            });
+          }
+          win.document.body.appendChild(row);
+        }
       } else {
-        // If the bean is active, hide it
-        trackerArray[i] = 1;
-        beans[i].style.display = 'flex';
+        // Card is locked. Run bean code.
+        if (trackerArray[i] === 1) {
+          // If the bean isn't active, show it
+          trackerArray[i] = 0;
+          beans[i].style.display = 'none';
+        } else {
+          // If the bean is active, hide it
+          trackerArray[i] = 1;
+          beans[i].style.display = 'flex';
+        }
+        // Save the change to local storage
+        saveJSON(trackerArray, 'newLoteriaTracker');
+        // Lastly, check if there was a winning combination
+        buenasCheck();
       }
-      // Save the change to local storage
-      saveJSON(trackerArray, 'newLoteriaTracker');
-      // Lastly, check if there was a winning combination
-      buenasCheck();
     });
 
     image = imageList[shuffled[i]];
@@ -396,12 +428,7 @@ let clearBeanTracking = () => {
 };
 
 let lesserArranger = (i) => {
-  // Arrange the input selectors to match the card
-  let currentInput = document.getElementById(`grid${i}`);
-  currentInput.selectedIndex = shuffled[i];
-
-  image = imageList[currentInput.selectedIndex];
-  shuffled[i] = currentInput.selectedIndex;
+  image = imageList[currentCard[i]];
   grid[i].innerHTML = '';
   grid[i].appendChild(image);
   beanSetup(i);
