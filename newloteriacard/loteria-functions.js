@@ -33,6 +33,9 @@ let initialSetup = () => {
       // Assign each card an image and append it to the appropriate div
       // We want to show a bean if the card has been clicked
 
+      // To be defined immediately below
+      let titleText = '';
+
       if (locked === 0) {
         // Card isn't locked. No adding beans while unlocked.
         // The card must be locked to be usable for play.
@@ -46,7 +49,7 @@ let initialSetup = () => {
 
         // Add page title
         let title = document.createElement('p');
-        title.textContent = 'Select A Card';
+        title.textContent = titleText;
         title.style.marginTop = '0';
         title.style.marginBottom = '2rem';
         title.style.fontSize = '5rem';
@@ -85,6 +88,18 @@ let initialSetup = () => {
 
               let selectedCard = parseInt(e.target.id);
 
+              let warnText = '';
+              location.href.includes('espanol.html')
+                ? (titleText = 'Seleccionas una tarjeta')
+                : (titleText = 'Select A Card');
+              location.href.includes('espanol.html')
+                ? (warnText = `¡El #${
+                    selectedCard + 1
+                  } ya está en uso! ¡Elige otra carta!`)
+                : (warnText = `#${
+                    selectedCard + 1
+                  } is already in use! Pick a different card!`);
+
               // Define the card to be replaced and its position in the array so we can move it to the selected card's old position in the shuffled array
               // If this doesn't happen, we'll have two of the selected card in the same array
               let oldCard = shuffled[i];
@@ -95,11 +110,7 @@ let initialSetup = () => {
               // Don't allow selecting the loteria tile already in use on this card
               if (currentCard.includes(selectedCard)) {
                 setTimeout(() => {
-                  alert(
-                    `#${selectedCard + 1} ${
-                      cardNames[selectedCard]
-                    } is already in use! Pick a different card!`
-                  );
+                  alert(warnText);
                 }, 50);
                 return;
               }
