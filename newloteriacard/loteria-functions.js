@@ -61,8 +61,18 @@ let initialSetup = () => {
         title.style.fontWeight = 'bold';
         win.document.body.appendChild(title);
 
-        // Run a for each for all the loteria card images
+        // Add back link
+        let backLink = document.createElement('a');
+        backLink.href = 'javascript:window.close();';
+        titleText.length > 16
+          ? (backLink.textContent = 'Cerrar')
+          : (backLink.textContent = 'Close');
+        backLink.style.color = 'red';
+        backLink.style.textAlign = 'center';
+        backLink.style.fontSize = '3vw';
+        win.document.body.appendChild(backLink);
 
+        // Run a for each for all the loteria card images
         // Outer Loop, this creates rows for the cards
         for (let x = 0; x < 14; x++) {
           const row = document.createElement('div');
