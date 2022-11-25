@@ -35,6 +35,9 @@ let initialSetup = () => {
 
       // To be defined immediately below
       let titleText = '';
+      location.href.includes('espanol.html')
+        ? (titleText = 'Seleccionas una tarjeta')
+        : (titleText = 'Select A Card');
 
       if (locked === 0) {
         // Card isn't locked. No adding beans while unlocked.
@@ -89,9 +92,6 @@ let initialSetup = () => {
               let selectedCard = parseInt(e.target.id);
 
               let warnText = '';
-              location.href.includes('espanol.html')
-                ? (titleText = 'Seleccionas una tarjeta')
-                : (titleText = 'Select A Card');
               location.href.includes('espanol.html')
                 ? (warnText = `¡El #${
                     selectedCard + 1
