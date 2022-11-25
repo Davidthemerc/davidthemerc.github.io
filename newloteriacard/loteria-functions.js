@@ -26,7 +26,65 @@ let shuffle = (array) => {
 // This function runs when the page is initialized
 let initialSetup = () => {
   for (let i = 0; i < 16; i++) {
-    selectorArranger(i);
+    lesserArranger(i);
+
+    // Arrange the input selectors to match the card
+    let currentInput = document.getElementById(`grid${i}`);
+    currentInput.selectedIndex = shuffled[i];
+
+    // Add event listener to each dropdown which will detect the current choice on click
+    // This is referenced later
+    currentInput.addEventListener('click', () => {
+      oldIndex = currentInput.selectedIndex;
+    });
+
+    // Add an event listener for each input selector
+    currentInput.addEventListener('change', () => {
+      // Local variable for quicker reference
+      let selectedCard = currentInput.selectedIndex;
+
+      // Define the card to be replaced and its position in the array so we can move it to the selected card's old position in the shuffled array
+      // If this doesn't happen, we'll have two of the selected card in the same array
+      let oldCard = shuffled[i];
+      let oldspot = shuffled.findIndex((shuffled) => shuffled === selectedCard);
+
+      // Check if card is locked
+      if (locked === 1) {
+        // Card is locked. Do nothing!
+        currentInput.selectedIndex = oldIndex;
+        return;
+      }
+
+      // Don't allow selecting the loteria tile already in use on this card
+      if (currentCard.includes(selectedCard)) {
+        alert(
+          `#${selectedCard + 1} ${
+            cardNames[selectedCard]
+          } is already in use! Pick a different card!`
+        );
+        currentInput.selectedIndex = oldIndex;
+        return;
+      }
+
+      // Position the ID of the new card in the appropriate position in the shuffled array
+      shuffled[i] = selectedCard;
+      // Position the ID of the replaced card in the selected card's former position in the shuffled array
+      shuffled[oldspot] = oldCard;
+      // Prime the correct image for appending
+      image = imageList[selectedCard];
+      // Clear the previous image
+      grid[i].innerHTML = '';
+      // Append the image to the grid square
+      grid[i].appendChild(image);
+      // Replace bean (currently invisible) due to element clear
+      beanSetup(i);
+      beans = document.getElementsByClassName('bean');
+      // Clear beans (changing your card's composition clears the board to deter cheating)
+      clearBeanTracking();
+
+      // Save the change to local storage
+      saveJSON(shuffled, 'newLoteriaCard');
+    });
 
     // Setup the event listener to click on the card
     grid[i].addEventListener('click', () => {
@@ -335,49 +393,6 @@ let clearBeanTracking = () => {
   trackerArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   saveJSON(trackerArray, 'newLoteriaTracker');
   reloadCard();
-};
-
-let selectorArranger = (i) => {
-  // Arrange the input selectors to match the card
-  let currentInput = document.getElementById(`grid${i}`);
-  currentInput.selectedIndex = shuffled[i];
-
-  currentInput.addEventListener('click', () => {
-    oldIndex = currentInput.selectedIndex;
-  });
-
-  // Add an event listener for each input selector
-  currentInput.addEventListener('change', () => {
-    if (locked === 1) {
-      // Card is locked. Do nothing!
-      currentInput.selectedIndex = oldIndex;
-      return;
-    }
-
-    if (currentCard.includes(currentInput.selectedIndex)) {
-      // Don't allow selecting the loteria tile already in use on this card
-      alert(
-        `#${
-          currentInput.selectedIndex + 1
-        } is already in use! Pick a different one!`
-      );
-      currentInput.selectedIndex = oldIndex;
-      return;
-    }
-
-    image = imageList[currentInput.selectedIndex];
-    shuffled[i] = currentInput.selectedIndex;
-    grid[i].innerHTML = '';
-    grid[i].appendChild(image);
-    beanSetup(i);
-
-    beans = document.getElementsByClassName('bean');
-
-    clearBeanTracking();
-
-    // Save the change to local storage
-    saveJSON(shuffled, 'newLoteriaCard');
-  });
 };
 
 let lesserArranger = (i) => {

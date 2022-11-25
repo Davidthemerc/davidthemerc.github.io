@@ -40,6 +40,64 @@ let loteriaArray = [
   41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
 ];
 
+// Define the loteria card names
+let cardNames = [
+  'El Gallo',
+  'El Diablito',
+  'La Dama',
+  'El Catrin',
+  'El Paraguas',
+  'La Sirena',
+  'La Escalera',
+  'La Botella',
+  'El Barril',
+  'El Arbol',
+  'El Melon',
+  'El Valiente',
+  'El Gorrito',
+  'La Muerte',
+  'La Pera',
+  'La Bandera',
+  'El Bandolon',
+  'El Violoncello',
+  'La Garza',
+  'El Pajaro',
+  'La Mano',
+  'La Bota',
+  'La Luna',
+  'El Cotorro',
+  'El Borracho',
+  'El Negrito',
+  'El Corazon',
+  'La Sandia',
+  'El Tambor',
+  'El Camaron',
+  'Las Jaras',
+  'El Musico',
+  'La Arana',
+  'El Soldado',
+  'La Estrella',
+  'El Cazo',
+  'El Mundo',
+  'El Apache',
+  'El Nopal',
+  'El Alacran',
+  'La Rosa',
+  'La Calavera',
+  'La Campana',
+  'El Cantarito',
+  'El Venado',
+  'El Sol',
+  'La Corona',
+  'La Chalupa',
+  'El Pino',
+  'El Pescado',
+  'La Palma',
+  'La Maceta',
+  'El Arpa',
+  'La Rana',
+];
+
 // This array keeps track of which cards have beans
 let trackerArray = getJSON('newLoteriaTracker');
 saveJSON(trackerArray, 'newLoteriaTracker');
@@ -47,6 +105,9 @@ saveJSON(trackerArray, 'newLoteriaTracker');
 // This array tracks if the card is locked
 let locked = getJSON('newLoteriaLock');
 saveJSON(locked, 'newLoteriaLock');
+
+// Define currentCard variable to track cards currently displayed
+let currentCard;
 
 // Define my preferred cards with arrays
 const defaultCard = [
@@ -82,7 +143,7 @@ let shuffled = getJSON('newLoteriaCard');
 saveJSON(shuffled, 'newLoteriaCard');
 
 // Assign part of the shuffled variable to a variable to track just the 16 displayed cards
-let currentCard = shuffled.slice(0, -38);
+currentCard = shuffled.slice(0, -38);
 
 // Call the function to assign individual cards randomly to the entire loteria card
 // Unless there's a card already, then we'll just load that
@@ -114,6 +175,8 @@ newButton.addEventListener('click', (e) => {
   // This array keeps track of which cards have beans
   shuffled = shuffle(loteriaArray);
   saveJSON(shuffled, 'newLoteriaCard');
+
+  // Arrange the card images
   for (let i = 0; i < 16; i++) {
     lesserArranger(i);
   }
