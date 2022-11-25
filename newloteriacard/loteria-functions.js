@@ -68,7 +68,8 @@ let initialSetup = () => {
           ? (backLink.textContent = 'Cerrar')
           : (backLink.textContent = 'Close');
         backLink.style.color = 'red';
-        backLink.style.textAlign = 'center';
+        backLink.style.display = 'flex';
+        backLink.style.justifyContent = 'center';
         backLink.style.fontSize = '3vw';
         win.document.body.appendChild(backLink);
 
