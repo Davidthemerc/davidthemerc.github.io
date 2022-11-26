@@ -135,11 +135,11 @@ let initialSetup = () => {
               grid[i].innerHTML = '';
               // Append the image to the grid square
               grid[i].appendChild(cardImage);
-              // Replace bean (currently invisible) due to element clear
+              // Reset beans setup
               beanSetup(i);
-              beans = document.getElementsByClassName('bean');
-              // Clear beans (changing your card's composition clears the board to deter cheating)
-              clearBeanTracking();
+
+              // Assign part of the shuffled variable to a variable to track just the 16 displayed cards
+              currentCard = shuffled.slice(0, -38);
 
               // Save the change to local storage
               saveJSON(shuffled, 'newLoteriaCard');
