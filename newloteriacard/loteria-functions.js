@@ -5,6 +5,10 @@
 const ranBetween = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 
+const playAudio = (list, id) => {
+  list[id].play();
+};
+
 // Shuffle the card array so that we'll get a random, non-repeating set
 let shuffle = (array) => {
   let i = array.length,
@@ -25,6 +29,9 @@ let shuffle = (array) => {
 
 // This function runs when the page is initialized
 let initialSetup = () => {
+  winCheck();
+  checkCallButton();
+
   for (let i = 0; i < 16; i++) {
     lesserArranger(i);
 
@@ -165,14 +172,16 @@ let initialSetup = () => {
       } else {
         // Card is locked. Run bean code.
         if (trackerArray[i] === 1) {
-          // If the bean isn't active, show it
+          // If the bean is active, hide it
           trackerArray[i] = 0;
           beans[i].style.display = 'none';
         } else {
-          // If the bean is active, hide it
+          // If the bean isn't active, show it
           trackerArray[i] = 1;
           beans[i].style.display = 'flex';
         }
+        // Update winning check variable
+        winCheck();
         // Save the change to local storage
         saveJSON(trackerArray, 'newLoteriaTracker');
         // Lastly, check if there was a winning combination
@@ -231,22 +240,10 @@ let buenasCheck = () => {
   // If any of the horizontal rows are complete, buenas!
   if (
     conditionsValue === '0' &&
-    ((trackerArray[0] &&
-      trackerArray[1] &&
-      trackerArray[2] &&
-      trackerArray[3]) ||
-      (trackerArray[4] &&
-        trackerArray[5] &&
-        trackerArray[6] &&
-        trackerArray[7]) ||
-      (trackerArray[8] &&
-        trackerArray[9] &&
-        trackerArray[10] &&
-        trackerArray[11]) ||
-      (trackerArray[12] &&
-        trackerArray[13] &&
-        trackerArray[14] &&
-        trackerArray[15]))
+    (winCond.row1 === 4 ||
+      winCond.row2 === 4 ||
+      winCond.row3 === 4 ||
+      winCond.row4 === 4)
   ) {
     buenasPues();
   }
@@ -254,126 +251,53 @@ let buenasCheck = () => {
   // If any of the Vertical rows are complete, buenas!
   if (
     conditionsValue === '0' &&
-    ((trackerArray[0] &&
-      trackerArray[4] &&
-      trackerArray[8] &&
-      trackerArray[12]) ||
-      (trackerArray[1] &&
-        trackerArray[5] &&
-        trackerArray[9] &&
-        trackerArray[13]) ||
-      (trackerArray[2] &&
-        trackerArray[6] &&
-        trackerArray[10] &&
-        trackerArray[14]) ||
-      (trackerArray[3] &&
-        trackerArray[7] &&
-        trackerArray[11] &&
-        trackerArray[15]))
+    (winCond.col1 === 4 ||
+      winCond.col2 === 4 ||
+      winCond.col3 === 4 ||
+      winCond.col4 === 4)
   ) {
     buenasPues();
   }
   // Diagonal checks
   // If any of the Diagonals are complete, buenas!
-  if (
-    conditionsValue === '0' &&
-    ((trackerArray[0] &&
-      trackerArray[5] &&
-      trackerArray[10] &&
-      trackerArray[15]) ||
-      (trackerArray[3] &&
-        trackerArray[6] &&
-        trackerArray[9] &&
-        trackerArray[12]))
-  ) {
+  if (conditionsValue === '0' && (winCond.diag1 === 4 || winCond.diag2 === 4)) {
     buenasPues();
   }
   // Corners checks
   // If any of the corners are complete, buenas!
   if (
     conditionsValue === '1' &&
-    ((trackerArray[0] &&
-      trackerArray[1] &&
-      trackerArray[4] &&
-      trackerArray[5]) ||
-      (trackerArray[2] &&
-        trackerArray[3] &&
-        trackerArray[6] &&
-        trackerArray[7]) ||
-      (trackerArray[8] &&
-        trackerArray[9] &&
-        trackerArray[12] &&
-        trackerArray[13]) ||
-      (trackerArray[10] &&
-        trackerArray[11] &&
-        trackerArray[14] &&
-        trackerArray[15]))
+    (winCond.corners1 === 4 ||
+      winCond.corners2 === 4 ||
+      winCond.corners3 === 4 ||
+      winCond.corners4 === 4)
   ) {
     buenasPues();
   }
   // Four card corners
   // If all four corners are filled, buenas!
-  if (
-    conditionsValue === '2' &&
-    trackerArray[0] &&
-    trackerArray[3] &&
-    trackerArray[12] &&
-    trackerArray[15]
-  ) {
+  if (conditionsValue === '2' && winCond.fourCorners === 4) {
     buenasPues();
   }
 
   // X Cross checks
   // If the X Cross is complete, buenas!
-  if (
-    conditionsValue === '3' &&
-    trackerArray[0] &&
-    trackerArray[3] &&
-    trackerArray[5] &&
-    trackerArray[6] &&
-    trackerArray[9] &&
-    trackerArray[10] &&
-    trackerArray[12] &&
-    trackerArray[15]
-  ) {
+  if (conditionsValue === '3' && winCond.xCross === 8) {
     buenasPues();
   }
   // Frame checks
   // If the Frame is complete, buenas!
-  if (
-    conditionsValue === '4' &&
-    trackerArray[0] &&
-    trackerArray[1] &&
-    trackerArray[2] &&
-    trackerArray[3] &&
-    trackerArray[4] &&
-    trackerArray[7] &&
-    trackerArray[8] &&
-    trackerArray[11] &&
-    trackerArray[12] &&
-    trackerArray[13] &&
-    trackerArray[14] &&
-    trackerArray[15]
-  ) {
+  if (conditionsValue === '4' && winCond.frame === 12) {
     buenasPues();
   }
   // Center checks
   // If the center is complete, buenas!
-  if (
-    conditionsValue === '5' &&
-    trackerArray[5] &&
-    trackerArray[6] &&
-    trackerArray[9] &&
-    trackerArray[10]
-  ) {
+  if (conditionsValue === '5' && winCond.center === 4) {
     buenasPues();
   }
   // Full card check
   // If all cards are complete, buenas!
-  if (
-    conditionsValue === '6' &&
-    trackerArray.every((val, i, arr) => val === arr[0])
-  ) {
+  if (conditionsValue === '6' && winCond.all === 16) {
     buenasPues();
   }
 };
@@ -382,15 +306,223 @@ let buenasPues = () => {
   // Buenas!
   // If the voice dropdown is set to Female/0, then play the female voice
   if (voiceValue === '0') {
-    audio.play();
+    playAudio(gameAudio, 0);
   } else {
     // Otherwise play the male voice
-    audio2.play();
+    playAudio(gameAudio, 1);
   }
+
+  trackerArray[16] = true;
+  saveJSON(trackerArray, 'newLoteriaTracker');
+
+  // If victory is achieved, create an extra button in the DOM
+  // This button will be used to call out the winning cards
+  checkCallButton();
 };
 
-let cambio = () => {
-  //voiceValue === '0' ? audio4.play() : audio3.play();
+let buenasCards = () => {
+  let winners = [];
+
+  // Check rows & columns
+  if (conditionsValue === '0') {
+    // Check the rows to identify the winning cards
+    if (winCond.row1 === 4) {
+      winners = [
+        currentCard[0],
+        currentCard[1],
+        currentCard[2],
+        currentCard[3],
+      ];
+    } else if (winCond.row2 === 4) {
+      winners = [
+        currentCard[4],
+        currentCard[5],
+        currentCard[6],
+        currentCard[7],
+      ];
+    } else if (winCond.row3 === 4) {
+      winners = [
+        currentCard[8],
+        currentCard[9],
+        currentCard[10],
+        currentCard[11],
+      ];
+    } else if (winCond.row4 === 4) {
+      winners = [
+        currentCard[12],
+        currentCard[13],
+        currentCard[14],
+        currentCard[15],
+      ];
+    }
+    // Check the columns to identify the winning cards
+    if (winCond.col1 === 4) {
+      winners = [
+        currentCard[0],
+        currentCard[4],
+        currentCard[8],
+        currentCard[12],
+      ];
+    } else if (winCond.col2 === 4) {
+      winners = [
+        currentCard[1],
+        currentCard[5],
+        currentCard[9],
+        currentCard[13],
+      ];
+    } else if (winCond.col3 === 4) {
+      winners = [
+        currentCard[2],
+        currentCard[6],
+        currentCard[10],
+        currentCard[14],
+      ];
+    } else if (winCond.col4 === 4) {
+      winners = [
+        currentCard[3],
+        currentCard[7],
+        currentCard[11],
+        currentCard[15],
+      ];
+    }
+  }
+
+  //Check the corners blocks to identify the winning cards
+  if (conditionsValue === '1') {
+    if (winCond.corners1 === 4) {
+      winners = [
+        currentCard[0],
+        currentCard[1],
+        currentCard[4],
+        currentCard[5],
+      ];
+    } else if (winCond.corners2 === 4) {
+      winners = [
+        currentCard[2],
+        currentCard[3],
+        currentCard[6],
+        currentCard[7],
+      ];
+    } else if (winCond.corners3 === 4) {
+      winners = [
+        currentCard[8],
+        currentCard[9],
+        currentCard[12],
+        currentCard[13],
+      ];
+    } else if (winCond.corners4 === 4) {
+      winners = [
+        currentCard[10],
+        currentCard[11],
+        currentCard[14],
+        currentCard[15],
+      ];
+    }
+  }
+
+  // Checking for the four corners
+  if (conditionsValue === '2') {
+    if (winCond.fourCorners === 4) {
+      winners = [
+        currentCard[0],
+        currentCard[3],
+        currentCard[12],
+        currentCard[15],
+      ];
+    }
+  }
+
+  // Checking for the x cross
+  if (conditionsValue === '3') {
+    if (winCond.xCross === 8) {
+      winners = [
+        currentCard[0],
+        currentCard[3],
+        currentCard[5],
+        currentCard[6],
+        currentCard[9],
+        currentCard[10],
+        currentCard[12],
+        currentCard[15],
+      ];
+    }
+  }
+
+  // Checking for the frame
+  if (conditionsValue === '4') {
+    if (winCond.xCross === 12) {
+      winners = [
+        currentCard[0],
+        currentCard[1],
+        currentCard[2],
+        currentCard[3],
+        currentCard[4],
+        currentCard[7],
+        currentCard[8],
+        currentCard[11],
+        currentCard[12],
+        currentCard[13],
+        currentCard[14],
+        currentCard[15],
+      ];
+    }
+  }
+
+  // Checking for the center
+  if (conditionsValue === '5') {
+    if (winCond.center === 4) {
+      winners = [
+        currentCard[5],
+        currentCard[6],
+        currentCard[9],
+        currentCard[10],
+      ];
+    }
+  }
+
+  // Checking for the full card
+  if (conditionsValue === '6') {
+    if (winCond.all === 16) {
+      winners = [
+        currentCard[0],
+        currentCard[1],
+        currentCard[2],
+        currentCard[3],
+        currentCard[4],
+        currentCard[5],
+        currentCard[6],
+        currentCard[7],
+        currentCard[8],
+        currentCard[9],
+        currentCard[10],
+        currentCard[11],
+        currentCard[12],
+        currentCard[13],
+        currentCard[14],
+        currentCard[15],
+      ];
+    }
+  }
+
+  // Create a loop using a promise to force it to resolve only after the duration
+  // of the audio being played, plus 200 milliseconds
+  let interval; // how much time should the delay between two iterations be (in milliseconds)?
+  let promise = Promise.resolve();
+  winners.forEach((card) => {
+    promise = promise.then(() => {
+      interval = femaleCardAudio[card].duration * 1000 + 200;
+      voiceValue === '0'
+        ? playAudio(femaleCardAudio, card + 1)
+        : playAudio(maleCardAudio, card + 1);
+      return new Promise((resolve) => {
+        setTimeout(resolve, interval);
+      });
+    });
+  });
+
+  promise.then(() => {
+    // Loop finished
+  });
 };
 
 let selectorDetector = () => {
@@ -422,9 +554,6 @@ let selectorDetector = () => {
 
   // Clear the tracker array and save to local storage, since we're changing cards
   clearBeanTracking();
-
-  // Announce 'cambio' to prevent cheating
-  cambio();
 };
 
 let customCardArranger = (set) => {
@@ -435,30 +564,8 @@ let customCardArranger = (set) => {
   }
 };
 
-let getJSON = (savedName) => {
-  const saveJSON = localStorage.getItem(savedName);
-
-  if (savedName === 'newLoteriaCard') {
-    if (saveJSON !== null) {
-      return JSON.parse(saveJSON);
-    } else return shuffle(loteriaArray);
-  } else if (savedName === 'newLoteriaTracker') {
-    if (saveJSON !== null) {
-      return JSON.parse(saveJSON);
-    } else return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  } else if (savedName === 'newLoteriaLock') {
-    if (saveJSON !== null) {
-      return JSON.parse(saveJSON);
-    } else return 0;
-  }
-};
-
-let saveJSON = (savedItem, savedName) => {
-  localStorage.setItem(savedName, JSON.stringify(savedItem));
-};
-
 let clearBeanTracking = () => {
-  trackerArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  trackerArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false];
   saveJSON(trackerArray, 'newLoteriaTracker');
   reloadCard();
 };
@@ -527,5 +634,24 @@ const lockDOM = (status) => {
       : (lockStatus.innerHTML = 'Unlocked');
     lockStatus.style.padding = '.1rem';
     lockStatus.style.border = '1px black solid';
+  }
+};
+
+const checkCallButton = () => {
+  const div = document.getElementById('last');
+  if (trackerArray[16] === true) {
+    const button = document.createElement('button');
+    location.href.includes('espanol.html')
+      ? (button.textContent = 'Llama las tarjetas')
+      : (button.textContent = 'Call out Cards');
+    button.style.margin = '1rem';
+    // Add event listener for calling out cards
+    button.addEventListener('click', () => {
+      buenasCards();
+    });
+    div.innerHTML = '';
+    div.appendChild(button);
+  } else {
+    div.innerHTML = '';
   }
 };
