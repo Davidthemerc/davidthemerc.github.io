@@ -385,6 +385,22 @@ let buenasCards = () => {
         currentCard[15],
       ];
     }
+    // Check the diagnoals to identify the winning cards
+    if (winCond.diag1 === 4) {
+      winners = [
+        currentCard[0],
+        currentCard[5],
+        currentCard[10],
+        currentCard[15],
+      ];
+    } else if (winCond.diag2 === 4) {
+      winners = [
+        currentCard[3],
+        currentCard[6],
+        currentCard[9],
+        currentCard[12],
+      ];
+    }
   }
 
   //Check the corners blocks to identify the winning cards
