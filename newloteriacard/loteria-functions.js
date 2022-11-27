@@ -73,79 +73,94 @@ let initialSetup = () => {
         win.document.body.appendChild(backLink);
 
         // Run a for each for all the loteria card images
+        // But first, pull an array of all non-selected cards (not currently active on the card)
+        let nonActiveCards = shuffled.slice(16, 54);
+        console.log(nonActiveCards);
+        nonActiveCards = nonActiveCards.sort(function (a, b) {
+          return a - b;
+        });
+        console.log(nonActiveCards);
+
         // Outer Loop, this creates rows for the cards
-        for (let x = 0; x < 14; x++) {
+        for (let x = 0; x < 10; x++) {
           const row = document.createElement('div');
           row.style.display = 'flex';
           row.style.justifyContent = 'center';
           row.style.flexDirection = 'row';
 
+          // Define blank image
+          let blank = new Image(264, 390);
+          blank.src = 'images/blank.png';
+
           // Inner loop, this creates the cards
           for (let y = 0; y < 4; y++) {
-            if (y + x * 4 > 53) {
-              break;
-            }
             const div = document.createElement('div');
             div.style.margin = '1rem;';
             const image = document.createElement('img');
-            image.src = imageList[y + x * 4].src;
+            y + x * 4 > 37
+              ? (image.src = blank.src)
+              : (image.src = imageList[nonActiveCards[y + x * 4]].src);
+
             image.style.width = '90%';
             image.style.padding = '1rem';
-            image.id = y + x * 4;
+            image.id = nonActiveCards[y + x * 4];
             div.appendChild(image);
             row.appendChild(div);
 
-            // Create event listener for clicking on the card
-            image.addEventListener('click', (e) => {
-              win.close();
+            // Don't create event listeners for the blank spaces
+            if (y + x * 4 <= 37) {
+              // Create event listener for clicking on the card
+              image.addEventListener('click', (e) => {
+                win.close();
 
-              let selectedCard = parseInt(e.target.id);
+                let selectedCard = parseInt(e.target.id);
 
-              let warnText = '';
-              location.href.includes('espanol.html')
-                ? (warnText = `¡El #${
-                    selectedCard + 1
-                  } ya está en uso! ¡Elige otra carta!`)
-                : (warnText = `#${
-                    selectedCard + 1
-                  } is already in use! Pick a different card!`);
+                let warnText = '';
+                location.href.includes('espanol.html')
+                  ? (warnText = `¡El #${
+                      selectedCard + 1
+                    } ya está en uso! ¡Elige otra carta!`)
+                  : (warnText = `#${
+                      selectedCard + 1
+                    } is already in use! Pick a different card!`);
 
-              // Define the card to be replaced and its position in the array so we can move it to the selected card's old position in the shuffled array
-              // If this doesn't happen, we'll have two of the selected card in the same array
-              let oldCard = shuffled[i];
-              let oldspot = shuffled.findIndex(
-                (shuffled) => shuffled === selectedCard
-              );
+                // Define the card to be replaced and its position in the array so we can move it to the selected card's old position in the shuffled array
+                // If this doesn't happen, we'll have two of the selected card in the same array
+                let oldCard = shuffled[i];
+                let oldspot = shuffled.findIndex(
+                  (shuffled) => shuffled === selectedCard
+                );
 
-              // Don't allow selecting the loteria tile already in use on this card
-              if (currentCard.includes(selectedCard)) {
-                setTimeout(() => {
-                  alert(warnText);
-                }, 50);
-                return;
-              }
+                // Don't allow selecting the loteria tile already in use on this card
+                if (currentCard.includes(selectedCard)) {
+                  setTimeout(() => {
+                    alert(warnText);
+                  }, 50);
+                  return;
+                }
 
-              // Position the ID of the new card in the appropriate position in the shuffled array
-              shuffled[i] = selectedCard;
-              // Position the ID of the replaced card in the selected card's former position in the shuffled array
-              shuffled[oldspot] = oldCard;
-              // Prime the correct image for appending
-              let cardImage = imageList[selectedCard];
-              // Clear the previous image
-              grid[i].innerHTML = '';
-              // Append the image to the grid square
-              grid[i].appendChild(cardImage);
-              // Reset beans setup
-              beanSetup(i);
+                // Position the ID of the new card in the appropriate position in the shuffled array
+                shuffled[i] = selectedCard;
+                // Position the ID of the replaced card in the selected card's former position in the shuffled array
+                shuffled[oldspot] = oldCard;
+                // Prime the correct image for appending
+                let cardImage = imageList[selectedCard];
+                // Clear the previous image
+                grid[i].innerHTML = '';
+                // Append the image to the grid square
+                grid[i].appendChild(cardImage);
+                // Reset beans setup
+                beanSetup(i);
 
-              // Assign part of the shuffled variable to a variable to track just the 16 displayed cards
-              currentCard = shuffled.slice(0, -38);
+                // Assign part of the shuffled variable to a variable to track just the 16 displayed cards
+                currentCard = shuffled.slice(0, -38);
 
-              // Save the change to local storage
-              saveJSON(shuffled, 'newLoteriaCard');
-            });
+                // Save the change to local storage
+                saveJSON(shuffled, 'newLoteriaCard');
+              });
+            }
+            win.document.body.appendChild(row);
           }
-          win.document.body.appendChild(row);
         }
       } else {
         // Card is locked. Run bean code.
