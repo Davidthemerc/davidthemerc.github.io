@@ -526,7 +526,7 @@ let buenasCards = () => {
   let promise = Promise.resolve();
   winners.forEach((card) => {
     promise = promise.then(() => {
-      interval = femaleCardAudio[card].duration * 1000 + 200;
+      interval = femaleCardAudio[card + 1].duration * 1000 + 200;
       voiceValue === '0'
         ? playAudio(femaleCardAudio, card + 1)
         : playAudio(maleCardAudio, card + 1);
