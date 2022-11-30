@@ -1,4 +1,5 @@
 // Define page elements
+const hunterMain = document.getElementById('huntermain');
 const resetButton = document.getElementById('reset');
 const backToLodge = document.getElementById('backtolodge');
 const hunterNameEl = document.getElementById('huntername');
@@ -11,6 +12,9 @@ let hunter = loadHunter();
 
 // Populate the hunter name field
 hunterNameEl.value = hunter.name;
+
+// Check for dev menu (if name is Developer)
+devMenu();
 
 // Populate the hunter weapons field
 hunter.weapons.forEach((weapon) => {
@@ -37,6 +41,11 @@ moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;
 hunterNameEl.addEventListener('change', (e) => {
   hunter.name = e.target.value;
   saveJSON(hunter, 'TH-HunterData');
+
+  // If the hunter changes their name to 'Developer' show the secret dev button
+  // It gives access to the unlisted dev page, nearly identical to the hunter page,
+  // but with extra dev functions such as adding money
+  devMenu();
 });
 
 // Assign event listener to weapon select menu

@@ -42,5 +42,7 @@ trophyRoomButton.addEventListener('click', () => {
 
 // Assign event listener to the hunter name/inventory button
 hunterButton.addEventListener('click', () => {
-  location.assign('hunter.html');
+  hunter.name === 'Developer'
+    ? location.assign('dev.html')
+    : location.assign('hunter.html');
 });

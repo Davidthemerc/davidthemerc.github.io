@@ -564,3 +564,19 @@ goHuntingReload = () => {
     ammoEl.innerHTML = hunter.weapons[hunter.currentWeapon].weaponAmmo;
   }
 };
+
+const devMenu = () => {
+  if (hunter.name === 'Developer' && location.href.includes('hunter.html')) {
+    const button = document.createElement('button');
+    button.textContent = 'Go to Dev Page';
+    button.id = 'devbutton';
+    button.addEventListener('click', () => {
+      location.assign('dev.html');
+    });
+    hunterMain.appendChild(button);
+  } else {
+    if (document.getElementById('devbutton')) {
+      document.getElementById('devbutton').remove();
+    }
+  }
+};

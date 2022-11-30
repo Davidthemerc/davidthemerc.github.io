@@ -6,6 +6,12 @@ const addMoneyButton = document.getElementById('addmoney');
 addMoneyButton.addEventListener('click', () => {
   let money = prompt('Enter Money Amount:');
   money = parseInt(money);
+
+  // If an invalid value is passed in, correct it to 0
+  if (isNaN(money)) {
+    money = 0;
+  }
+
   moneyHandling(money, '+');
 
   // Assign the hunter's money to the money element
