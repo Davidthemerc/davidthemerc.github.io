@@ -1,8 +1,9 @@
 // Define page elements
+const hunterNameEl = document.getElementById('huntername');
 const goHuntButton = document.getElementById('gohunt');
 const armoryButton = document.getElementById('armory');
 const trophyRoomButton = document.getElementById('trophies');
-const hunterNameEl = document.getElementById('huntername');
+const hunterButton = document.getElementById('hunterbutton');
 const statusWeaponEl = document.getElementById('statusweapon');
 const baggedEl = document.getElementById('bagged');
 const moneyEl = document.getElementById('money');
@@ -11,7 +12,7 @@ const moneyEl = document.getElementById('money');
 const hunter = loadHunter();
 
 // Assign the hunter's saved name to the link on the page
-hunterNameEl.innerHTML = `${hunter.name} (Inventory)`;
+hunterNameEl.innerHTML = `Welcome ${hunter.name}!`;
 
 // Assign the hunter's current weapon to the weapon status element
 statusWeaponEl.innerHTML = hunter.weapons[hunter.currentWeapon].weaponName;
@@ -25,6 +26,8 @@ moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;
 // Assign event listener to the go hunting button
 goHuntButton.addEventListener('click', () => {
   location.assign('hunting.html');
+  // Run function to reload hunter's ammo upon going hunting
+  goHuntingReload();
 });
 
 // Assign event listener to the armory button
@@ -35,4 +38,9 @@ armoryButton.addEventListener('click', () => {
 // Assign event listener to the trophy room button
 trophyRoomButton.addEventListener('click', () => {
   location.assign('trophyroom.html');
+});
+
+// Assign event listener to the hunter name/inventory button
+hunterButton.addEventListener('click', () => {
+  location.assign('hunter.html');
 });

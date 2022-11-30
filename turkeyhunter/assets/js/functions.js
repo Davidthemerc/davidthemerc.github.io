@@ -207,7 +207,7 @@ const ammoHandling = (weapon, action) => {
     if (hunter.money >= armoryAmmo[checkWeapon].cost) {
       // Handle money first
       moneyHandling(armoryAmmo[checkWeapon].cost, '-');
-      moneyEl.innerHTML = `$${hunter.money}`;
+      moneyEl.innerHTML = `$${hunter.money.toFixed(2)}`;
       // Add ammo
       hunter.weapons[checkWeapon].weaponAmmo += armoryAmmo[checkWeapon].amount;
       // Let user know they bought ammo succesfsully
@@ -309,7 +309,9 @@ const weaponDamage = (weapon) => {
 
   if (damage === 20) {
     // Critical hit!
-    playAudio(ranBetween(22, 24));
+    setTimeout(() => {
+      playAudio(ranBetween(22, 24));
+    }, 1000);
     return turkeyHealth;
   } else if (damage >= 17) {
     // Successful greater hit! Return 2 damage
@@ -530,4 +532,35 @@ const armoryPriceColors = () => {
       item.elDef.classList.remove('oos');
     }
   });
+};
+
+goHuntingReload = () => {
+  // Reload the hunter's magazine if it's not full
+  if (
+    hunter.weapons[hunter.currentWeapon].currentMag <
+    hunter.weapons[hunter.currentWeapon].weaponMag
+  ) {
+    // Check how much is in the mag vs max mag capacity
+    let reloadAmt =
+      hunter.weapons[hunter.currentWeapon].weaponMag -
+      hunter.weapons[hunter.currentWeapon].currentMag;
+
+    // Add ammo to the magazine
+    hunter.weapons[hunter.currentWeapon].currentMag += reloadAmt;
+
+    // Remove ammo from ammo count
+    hunter.weapons[hunter.currentWeapon].weaponAmmo -= reloadAmt;
+
+    saveJSON(hunter, 'TH-HunterData');
+
+    // Update mag and ammo displays
+
+    // If the weapon is fists, show the infinity symbol
+    if (hunter.currentWeapon === 0) {
+      magEl.innerHTML = '∞';
+    }
+
+    // Populate the weapon ammo display
+    ammoEl.innerHTML = hunter.weapons[hunter.currentWeapon].weaponAmmo;
+  }
 };

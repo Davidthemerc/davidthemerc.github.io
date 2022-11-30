@@ -12,7 +12,7 @@ body {
 header {
   height: 8vh;
   width: 100%;
-  background-color: rgb(124, 93, 57);
+  background-color: rgb(73, 42, 22);
   align-items: center;
   justify-content: center;
 }
@@ -124,6 +124,9 @@ button {
   margin: 1rem;
   padding: 0.5rem 1rem 0.5rem 1rem;
   border-radius: 0.5rem;
+  background-color: rgb(73, 42, 22);
+  color: white;
+  font-weight: bold;
 }
 
 h1 {
