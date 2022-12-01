@@ -142,6 +142,9 @@ huntarea.addEventListener('click', () => {
 reloadButton.addEventListener('click', () => {
   if (hunter.currentWeapon !== 0) {
     reloadWeapon();
+  } else {
+    // If the hunter reloads their fists, berate them
+    playAudio(6);
   }
 });
 

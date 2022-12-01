@@ -82,11 +82,6 @@ const reloadWeapon = () => {
   // Check the current ammo in the magazine first
   let currentWeapon = hunter.currentWeapon;
 
-  // If the hunter reloads their fists, berate them
-  if (hunter.currentWeapon === 0) {
-    playAudio(6);
-  }
-
   // If the hunter's magazine is the same size as the max capaacity,
   // also known as "full", then stop the reload process.
   if (
