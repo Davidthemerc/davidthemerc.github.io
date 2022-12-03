@@ -81,12 +81,10 @@ let initialSetup = () => {
 
         // Run a for each for all the loteria card images
         // But first, pull an array of all non-selected cards (not currently active on the card)
-        let nonActiveCards = shuffled.slice(16, 54);
-        console.log(nonActiveCards);
+        let nonActiveCards = shuffled.slice(16, 54); 
         nonActiveCards = nonActiveCards.sort(function (a, b) {
           return a - b;
         });
-        console.log(nonActiveCards);
 
         // Outer Loop, this creates rows for the cards
         for (let x = 0; x < 10; x++) {
