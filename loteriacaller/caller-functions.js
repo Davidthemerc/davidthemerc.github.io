@@ -32,9 +32,13 @@ let initialSetup = () => {
 
 // Function to start the game
 let startOff = () => {
+  let message = '';
+  location.href.includes('espanol.html')
+    ? (message = 'El juego ya empecé!')
+    : (message = 'The game has already started!');
   try {
     if (shuffledDeck.length < 54) {
-      throw new Error('The game has already started!');
+      throw new Error(message);
     }
     saveJSON(shuffledDeck, 'loteriaDeck');
     // Call the Calling function
@@ -48,10 +52,18 @@ let startOff = () => {
 let repeatCall = () => {
   try {
     if (shuffledDeck.length === 54) {
-      throw new Error(`You haven't started the game yet!`);
+      let message = '';
+      location.href.includes('espanol.html')
+        ? (message = '¡Todavía no has empezado el juego!')
+        : (message = `You haven't started the game yet!`);
+      throw new Error(message);
     }
     if (shuffledDeck.length === 0) {
-      throw new Error(`All cards have been called! Please reset the game!`);
+      let message = '';
+      location.href.includes('espanol.html')
+        ? (message = '¡Todas las cartas han sido pagadas! ¡Reinicia el juego!')
+        : (message = 'All cards have been called! Please reset the game!');
+      throw new Error(message);
     }
     let messages = [];
     errorDeclare(messages);
@@ -65,10 +77,18 @@ let repeatCall = () => {
 let callCard = () => {
   try {
     if (shuffledDeck.length === 0) {
-      throw new Error(`All cards have been called! Please reset the game!`);
+      let message = '';
+      location.href.includes('espanol.html')
+        ? (message = '¡Todas las cartas han sido pagadas! ¡Reinicia el juego!')
+        : (message = 'All cards have been called! Please reset the game!');
+      throw new Error(message);
     }
     if (shuffledDeck.length === 54) {
-      throw new Error(`You haven't started the game yet!`);
+      let message = '';
+      location.href.includes('espanol.html')
+        ? (message = '¡Todavía no has empezado el juego!')
+        : (message = `You haven't started the game yet!`);
+      throw new Error(message);
     }
     // Call the Calling function
     calling();
@@ -81,6 +101,9 @@ let errorDeclare = (message) => {
   let messages = [];
   messages.push(message);
   errorMessageDiv.innerHTML = messages.join(' ');
+  setTimeout(() => {
+    errorMessageDiv.innerHTML = '';
+  }, 3000);
 };
 
 // Contains code common to both the 'callCard' and 'startOff' functions
@@ -139,7 +162,15 @@ let saveJSON = (savedItem, savedName) => {
 };
 
 let resetGame = () => {
-  let confirmAction = confirm(`Are you sure you want to reset the game?`);
+  let message = '';
+  let message2 = '';
+  location.href.includes('espanol.html')
+    ? (message = '¿Estás seguro de que quieres reiniciar el juego?')
+    : (message = `Are you sure you want to reset the game?`);
+  location.href.includes('espanol.html')
+    ? (message2 = 'El juego no fue reiniciado.')
+    : (message2 = 'The game was not reset.');
+  let confirmAction = confirm(message);
   if (confirmAction) {
     localStorage.removeItem('loteriaDeck');
     localStorage.removeItem('savedCalls');
@@ -147,7 +178,7 @@ let resetGame = () => {
     localStorage.removeItem('currentCard');
     location.reload();
   } else {
-    alert(`The game was not reset.`);
+    alert(message2);
   }
 };
 
