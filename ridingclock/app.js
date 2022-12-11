@@ -91,6 +91,8 @@ adjustButton.addEventListener('click', () => {
     return;
   }
 
+  // Second the manual time variables to a integer (number vs. string) of the values entered
+  // We don't want to pass strings into the functions!
   manMinutes = parseInt(manMinutes);
   manSeconds = parseInt(manSeconds);
 
@@ -136,11 +138,13 @@ adjustButton.addEventListener('click', () => {
 });
 
 timeDownButton.addEventListener('click', () => {
-  // Don't allow clock up/down modifications due to 0 time
-  if (clock.innerHTML === '00:00') {
+  // Don't allow clock up/down modifications when clock is at 0 or 1 second
+  // Helps to avoid any issues
+  if (clock.innerHTML === '00:00' || clock.innerHTML === '00:01') {
     return;
   }
 
+  // Allow for time to cleanly adjust when it rolls down at a minute mark
   if (timeMaster.color === 'red' && timeMaster.redSeconds === 0) {
     timeMaster.redMinutes -= 1;
     timeMaster.redSeconds = 59;
@@ -163,6 +167,7 @@ timeUpButton.addEventListener('click', () => {
     return;
   }
 
+  // Allow for time to cleanly adjust when it rolls down at a minute mark
   if (timeMaster.color === 'red' && timeMaster.redSeconds === 59) {
     timeMaster.redMinutes += 1;
     timeMaster.redSeconds = 0;
@@ -188,6 +193,7 @@ timeDownFastButton.addEventListener('click', () => {
     return;
   }
 
+  // Allow for time to cleanly adjust when it rolls down at a minute mark
   if (timeMaster.color === 'red' && timeMaster.Seconds <= 4) {
     let diff = 5 - timeMaster.redSeconds;
     timeMaster.redMinutes -= 1;
@@ -212,6 +218,7 @@ timeUpFastButton.addEventListener('click', () => {
     return;
   }
 
+  // Allow for time to cleanly adjust when it rolls down at a minute mark
   if (timeMaster.color === 'red' && timeMaster.redSeconds >= 55) {
     let diff = 60 - timeMaster.redSeconds;
     timeMaster.redMinutes += 1;

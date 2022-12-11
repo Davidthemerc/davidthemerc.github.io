@@ -3,10 +3,12 @@ body {
   margin: 0;
   padding: 0;
   color: white;
+  width: 100%;
   height: 100%;
   box-sizing: border-box;
-  justify-content: center;
   display: flex;
+  justify-content: center;
+  align-items: center;
   background-color: black;
 }
 
@@ -15,24 +17,11 @@ body {
   src: url(digital-7.ttf);
 }
 
-.ridingclockmain {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-}
-
-/*
-#adjust {
-  display: none;
-}*/
-
 #reddot,
 #greendot {
-  width: 45px;
-  height: 45px;
-  margin: 1rem;
+  width: 6vw;
+  height: 6vw;
+  margin: 7vw;
   border-radius: 100%;
   /*Invisible until called upon*/
   display: none;
@@ -43,16 +32,14 @@ body {
 }
 
 #clock {
-  width: 45vw;
-  height: 45vh;
+  width: 55vw;
+  height: 40vh;
   display: flex;
-  font-size: 25vw;
+  font-size: 30vw;
   font-weight: bold;
   align-items: center;
   justify-content: center;
   font-family: Digital7;
-  margin-left: 4rem;
-  margin-right: 4rem;
 }
 
 #greendot {
@@ -60,11 +47,12 @@ body {
 }
 
 button {
-  margin: 0.5rem;
+  margin: 0.3rem;
   border: 3px rgb(65, 65, 65) solid;
   border-radius: 0.5rem;
-  padding: 0.5rem;
+  padding: 0.4rem;
   font-size: 24px;
+  font-weight: bold;
   text-align: center;
 }
 
@@ -84,9 +72,10 @@ span {
 }
 
 #control {
-  font-size: 24px;
+  font-size: 5vw;
+  font-weight: bold;
   margin: 0.5rem;
-  padding: 1rem;
+  padding: 0.25rem;
   color: white;
   display: flex;
   justify-content: center;
@@ -120,16 +109,13 @@ span {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 95%;
-  height: 95%;
+  width: 95vw;
+  height: 95vh;
   background-color: black;
-  border-radius: 1rem;
 }
 
 .toparea {
-  height: fit-content;
   width: 100%;
-  margin: 2rem;
   justify-content: center;
   align-items: center;
 }
@@ -139,103 +125,7 @@ span {
 .bottomarea {
   display: flex;
   flex-direction: row;
-}
-
-@media (max-width: 800px) {
-  .toparea {
-    display: flex;
-    height: fit-content;
-    margin: 1rem;
-    text-align: center;
-  }
-
-  #clock {
-    font-size: 30vw;
-  }
-
-  button {
-    margin: 0.25rem;
-  }
-
-  .background {
-    background-color: none;
-    justify-content: center;
-    align-items: center;
-  }
-
-  body {
-    background-color: black;
-  }
-
-  .middlearea,
-  .bottomarea {
-    display: flex;
-    width: 75%;
-    flex-direction: row;
-    height: fit-content;
-    margin: 1rem;
-    text-align: center;
-    justify-content: center;
-    align-items: center;
-  }
-
-  #reddot,
-  #greendot {
-    width: 45px;
-    height: 45px;
-    border-radius: 100%;
-    margin: 0.5rem;
-  }
-}
-
-@media (min-width: 1200px) {
-  #clock {
-    font-size: 30vw;
-    margin-left: 7rem;
-    margin-right: 7rem;
-  }
-
-  #control {
-    font-size: 60px;
-    font-weight: bold;
-    text-align: center;
-  }
-
-  .middlearea {
-    align-items: center;
-  }
-
-  #reddot,
-  #greendot {
-    width: 100px;
-    height: 100px;
-    margin: 1rem;
-    border-radius: 100%;
-  }
-}
-
-@media (max-width: 667px) {
-  #clock {
-    font-size: 30vw;
-    margin-left: 3rem;
-    margin-right: 3rem;
-  }
-  .middlearea,
-  .toparea,
-  .bottomarea {
-    margin: 0;
-  }
-}
-
-@media (max-height: 445px) {
-  #clock {
-    font-size: 50vh;
-  }
-  .toparea,
-  .middlearea,
-  .bottomarea {
-    margin: 0;
-  }
+  align-items: center;
 }
 
 #greentime:active,
@@ -251,38 +141,48 @@ button:active {
   border: 3px blue solid;
 }
 
-@media (max-width: 500px) {
-  button,
-  #redtime,
-  #greentime,
-  #neutraltime,
-  #control {
-    font-size: 5vw;
-    font-weight: bold;
-    width: 32vw;
-    height: 16vw;
+/* New Media Query: Portrait Mode*/
+
+@media (orientation: portrait) {
+  #clock {
+    font-size: 30vw;
+    margin-left: 3rem;
+    margin-right: 3rem;
   }
-  #adjust {
-    display: flex;
+
+  #reddot,
+  #greendot {
+    width: 6vh;
+    height: 6vh;
+    margin: 0;
+  }
+
+  .middlearea,
+  .toparea,
+  .bottomarea {
+    margin: 0;
+    width: 95vw;
     justify-content: center;
-    align-items: center;
   }
-  #timedown,
-  #timeup,
-  #timedownfast,
-  #timeupfast {
-    width: 15vw;
-    height: 15vw;
+
+  .middlearea {
+    display: flex;
+    flex-flow: column;
   }
   #control {
+    order: -1;
     font-size: 10vw;
   }
-  .middlearea {
-    flex-direction: column;
+}
+
+@media (orientation: landscape) and (max-height: 850px) {
+  #clock {
+    font-size: 25vw;
   }
-  .timer0 {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+}
+
+@media (orientation: landscape) and (max-height: 700px) {
+  #clock {
+    font-size: 20vw;
   }
 }

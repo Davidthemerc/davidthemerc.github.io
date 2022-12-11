@@ -5,45 +5,36 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Riding Clock</title>
+  <title>Wrestling Riding Clock</title>
   <link rel="stylesheet" href="main.css" />
 </head>
 
 <body>
-  <div class="ridingclockmain">
-    <div class="background">
-      <div class="toparea">
-        <div id="reddot"></div>
-        <div id="clock">00:00</div>
-        <div id="greendot"></div>
+  <div class="background">
+    <div class="toparea">
+      <div id="reddot"></div>
+      <div id="clock">00:00</div>
+      <div id="greendot"></div>
+    </div>
+    <div class="middlearea">
+      <div class="timer0">
+        <button id="reset">RESET</button>
+        <button id="adjust">SET TIME</button>
       </div>
-      <div class="middlearea">
-        <div class="timer0">
-          <button id="reset">RESET</button>
-          <button id="adjust">SET TIME</button>
-        </div>
-        <span id="control">CONTROL: NEUTRAL</span>
-        <div class="timer1">
-          <button id="timedown">-1</button>
-          <button id="timeup">+1</button>
-        </div>
-        <div class="timer2">
-          <button id="timedownfast">-5</button>
-          <button id="timeupfast">+5</button>
-        </div>
+      <span id="control">CONTROL: NEUTRAL</span>
+      <div class="timer1">
+        <button id="timedown">-1</button>
+        <button id="timeup">+1</button>
       </div>
-      <div class="bottomarea">
-        <button id="redtime">RED</button>
-        <button id="neutraltime">NEUTRAL</button>
-        <button id="greentime">GREEN</button>
+      <div class="timer2">
+        <button id="timedownfast">-5</button>
+        <button id="timeupfast">+5</button>
       </div>
-      <!-- Debugging Elements
-      <div>
-        <div id="redseconds"></div>
-        <div id="redminutes"></div>
-        <div id="greenseconds"></div>
-        <div id="greenminutes"></div>
-      </div>-->
+    </div>
+    <div class="bottomarea">
+      <button id="redtime">RED</button>
+      <button id="neutraltime">NEUTRAL</button>
+      <button id="greentime">GREEN</button>
     </div>
   </div>
 
