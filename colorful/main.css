@@ -109,7 +109,13 @@ body {
 
 .negative {
   color: red;
-  font-weight: red;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.red {
+  color: red;
+  font-weight: bold;
 }
 
 /* Budget Table CSS */

@@ -32,7 +32,16 @@ const cardDisplay = () => {
     cardBal.textContent = `Balance: $${card.expenseBalance}`;
 
     if (card.expenseBalance < 0) {
-      cardBal.className = 'Negative';
+      let balance = Math.abs(card.expenseBalance);
+      cardBal.textContent = `Balance -$${balance.toFixed(2)}`;
+      if (balance >= 50 && balance < 100) {
+        cardBal.textContent += ' (!!)';
+      } else if (balance >= 100) {
+        cardBal.textContent += ' (!!!)';
+      } else {
+        cardBal.textContent += ' (!)';
+      }
+      cardBal.className = 'negative';
     }
 
     cardBal.style.marginTop = '2rem';
