@@ -86,10 +86,9 @@ body {
 }
 
 .card {
-  margin-top: 1rem;
-  margin-left: 1rem;
+  margin: 0.5rem;
   display: flex;
-  width: 40%;
+  width: 44%;
   height: 160px;
   flex-direction: column;
   align-items: center;
