@@ -12,16 +12,18 @@
 <body>
 
     <div class="header">
-        <h2>Colorful Expense Tracker</h2>
+        <h2 class="cet"><a class="cet" href="index.html">Colorful Expense Tracker</a></h2>
     </div>
 
     <div class="main">
-        <h3>Main Page</h3>
-        <a href="expensecards.html">Expense Cards</a>
-        <a href="overview.html">Budget Overview</a>
-    </div>
+        <h3 class="bold underline">Main Section</h3>
+        <button id="expenseCardsButton">Expense Cards</button>
+        <h3 class="bold underline">Management</h3>
+        <button id="manageExpenseCategoriesButton">Manage Expense Categories</button>
+        <div class="messages"></div>
 
-    <script src="app.js"></script>
+        <script src="main.js"></script>
+        <script src="vars.js"></script>
 </body>
 
 </html>

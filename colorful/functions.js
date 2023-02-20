@@ -1,0 +1,256 @@
+// Function to load saved localstorage data
+const getJSON = (savedName) => {
+  const saveJSON = localStorage.getItem(savedName);
+
+  if (saveJSON !== null) {
+    return JSON.parse(saveJSON);
+  } else return [];
+};
+
+// Function to save localstorage data
+const saveJSON = (savedArray, savedName) => {
+  localStorage.setItem(savedName, JSON.stringify(savedArray));
+};
+
+// Card Display function for the Expense Cards page
+
+const cardDisplay = () => {
+  // Define card element/attributes
+  // Run a forEach loop for each card defined in the masterExpenses array
+  masterExpenses.forEach((card, index) => {
+    // Card main div
+    const cardDiv = document.createElement('div');
+    cardDiv.id = card.expenseName;
+    cardDiv.className = 'card';
+    cardDiv.style.backgroundColor = card.expenseColor;
+    // Card title
+    const cardTitle = document.createElement('h3');
+    cardTitle.textContent = card.expenseName;
+    cardTitle.className = 'cardinfo';
+    // Card Balance info
+    const cardBal = document.createElement('p');
+    cardBal.textContent = `Balance: $${card.expenseBalance}`;
+
+    if (card.expenseBalance < 0) {
+      cardBal.className = 'Negative';
+    }
+
+    cardBal.style.marginTop = '2rem';
+    // Tap info
+    const tapInfo = document.createElement('p');
+    tapInfo.textContent = 'Tap to Open';
+    tapInfo.style.marginTop = '2rem';
+    tapInfo.style.fontWeight = 'bold';
+
+    // Append the card title, balance, and tap info to the card div
+    cardDiv.appendChild(cardTitle);
+    cardDiv.appendChild(cardBal);
+    cardDiv.appendChild(tapInfo);
+
+    // Append the tap listener to the card
+    cardDiv.addEventListener('click', (e) => {
+      //console.log(card.expenseName);
+      location.assign(`card.html#${index}`);
+    });
+
+    // Append the card to the main cards [page] element
+    cardsMainEl.appendChild(cardDiv);
+  });
+};
+
+const cardBudgetDisplay = () => {
+  // Create the actual element that displays which Category budget this is
+  // Reads the hash substring to determine which budget to refer
+  // to (by array position passed through from the forEach index)
+  const budgetTitleEl = document.getElementById('budgetTitle');
+  const category = masterExpenses[categoryID].expenseName;
+  const budgetTitle = document.createElement('h3');
+  budgetTitle.textContent = `${category} Budget`;
+  budgetTitleEl.appendChild(budgetTitle);
+
+  showExistingBudgetRows();
+};
+
+const showExistingBudgetRows = () => {
+  // Get a count of the expenseExpenses array for this category
+  const expenseRows = masterExpenses[categoryID].expenseExpenses;
+
+  // Run a forEach to display all of the saved expenses
+  expenseRows.forEach((expense, index) => {
+    // Add a new budget row
+    const row = document.createElement('tr');
+
+    // Assign this row a number based on its position in the table
+    row.id = `${budgetTableEl.rows.length - 1}`;
+
+    // Add one table "cell" for each budget category defined (currently 4)
+    budgetCategories.forEach((category, index) => {
+      const cell = document.createElement('td');
+      cell.className = 'budgetcell';
+      // Create an input to fit in this cell
+      const input = document.createElement('input');
+      input.id = `${row.id}-${index}`;
+
+      if (category === 'Amount' || category == 'Balance') {
+        input.setAttribute('type', 'number');
+        input.className = 'budgetinput';
+        // If this is the balance cell
+        if (category === 'Balance') {
+          input.setAttribute('readonly', 'true');
+          input.className = 'budgetBalance';
+        }
+      } else if (category === 'Description') {
+        input.setAttribute('type', 'text');
+        input.className = 'budgetdesc';
+      } else {
+        input.setAttribute('type', 'date');
+      }
+      cell.appendChild(input);
+
+      if (index === 0) {
+        input.value =
+          masterExpenses[categoryID].expenseExpenses[row.id].itemDate;
+      } else if (index === 1) {
+        input.value =
+          masterExpenses[categoryID].expenseExpenses[row.id].itemDescription;
+      } else if (index === 2) {
+        input.value =
+          masterExpenses[categoryID].expenseExpenses[row.id].itemCost;
+        input.value = parseFloat(input.value).toFixed(2);
+      } else if (index === 3) {
+        // Code to resolve the balance in cell 4
+        resolveLineBalance(index, row, input);
+      }
+
+      // Create event listener to listen for expense changes
+      input.addEventListener('change', (e) => {
+        // Modify the expense data
+
+        if (index === 0) {
+          masterExpenses[categoryID].expenseExpenses[row.id].itemDate =
+            e.target.value;
+        } else if (index === 1) {
+          masterExpenses[categoryID].expenseExpenses[row.id].itemDescription =
+            e.target.value;
+        } else if (index === 2) {
+          masterExpenses[categoryID].expenseExpenses[row.id].itemCost =
+            parseFloat(e.target.value);
+          input.value = parseFloat(input.value).toFixed(2);
+          // Resolve the line balance again if there's a change
+          let inlineInput = document.getElementById(`${row.id}-${3}`);
+          resolveLineBalance(index, row, inlineInput);
+        }
+        saveJSON(masterExpenses, 'CET-masterExpenses');
+      });
+
+      row.appendChild(cell);
+      budgetTableEl.appendChild(row);
+    });
+  });
+};
+
+const addNewBudgetRow = () => {
+  // Add a new budget row
+  const row = document.createElement('tr');
+
+  // Assign this row a number based on its position in the table
+  row.id = `${budgetTableEl.rows.length - 1}`;
+
+  // Add one table "cell" for each budget category defined (currently 4)
+  budgetCategories.forEach((category, index) => {
+    const cell = document.createElement('td');
+    cell.className = 'budgetcell';
+    // Create an input to fit in this cell
+    const input = document.createElement('input');
+    input.id = `${row.id}-${index}`;
+
+    if (row.id == '0' && category === 'Description') {
+      input.value = 'Budgeted';
+    }
+
+    if (category === 'Date') {
+      input.setAttribute('type', 'date');
+    }
+
+    if (category === 'Amount' || category == 'Balance') {
+      input.setAttribute('type', 'number');
+      input.className = 'budgetinput';
+      // If this is the balance cell
+      if (category === 'Balance') {
+        input.setAttribute('readonly', 'true');
+        input.className = 'budgetBalance';
+      }
+    } else if (category === 'Description') {
+      input.setAttribute('type', 'text');
+      input.className = 'budgetdesc';
+    } else {
+      input.setAttribute('type', 'date');
+    }
+    cell.appendChild(input);
+
+    // Create event listener to listen for expense changes
+    input.addEventListener('change', (e) => {
+      // Modify the expense data
+
+      if (index === 0) {
+        masterExpenses[categoryID].expenseExpenses[row.id].itemDate =
+          e.target.value;
+      } else if (index === 1) {
+        masterExpenses[categoryID].expenseExpenses[row.id].itemDescription =
+          e.target.value;
+      } else if (index === 2) {
+        masterExpenses[categoryID].expenseExpenses[row.id].itemCost =
+          parseFloat(e.target.value);
+        input.value = parseFloat(input.value).toFixed(2);
+        // Resolve the line balance again if there's a change
+        let inlineInput = document.getElementById(`${row.id}-${3}`);
+        resolveLineBalance(index, row, inlineInput);
+      }
+      saveJSON(masterExpenses, 'CET-masterExpenses');
+    });
+
+    row.appendChild(cell);
+    budgetTableEl.appendChild(row);
+  });
+
+  // Add this new expense row to the Master Expenses array
+  masterExpenses[categoryID].expenseExpenses.push({
+    itemDate: '',
+    itemDescription: '',
+    itemCost: 0,
+  });
+  saveJSON(masterExpenses, 'CET-masterExpenses');
+};
+
+const resolveLineBalance = (index, row, input) => {
+  const allItems = document.getElementsByClassName('budgetBalance');
+
+  let cost = masterExpenses[categoryID].expenseExpenses[row.id].itemCost;
+  let desc = masterExpenses[categoryID].expenseExpenses[row.id].itemDescription;
+  // If this is a budgeted amount, account for that
+  if (
+    (desc === 'Budget' && row.id === 0) ||
+    (desc === 'budget' && row.id === 0)
+  ) {
+    input.value = parseFloat(cost).toFixed(2);
+  } else {
+    if (row.id == 0) {
+      input.value = parseFloat(cost).toFixed(2);
+    } else if (
+      (row.id > 0 && desc === 'Budget') ||
+      (row.id > 0 && desc === 'budget')
+    ) {
+      let carryOver = allItems[row.id - 1].value;
+      let difference = parseFloat(carryOver) + parseFloat(cost);
+      input.value = difference.toFixed(2);
+    } else {
+      let carryOver = allItems[row.id - 1].value;
+      let difference = carryOver - cost;
+      input.value = difference.toFixed(2);
+    }
+    masterExpenses[categoryID].expenseBalance = parseFloat(input.value).toFixed(
+      2
+    );
+    saveJSON(masterExpenses, 'CET-masterExpenses');
+  }
+};
