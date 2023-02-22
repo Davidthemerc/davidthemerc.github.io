@@ -141,6 +141,9 @@ const showExistingBudgetRows = () => {
         } else if (index === 1) {
           masterExpenses[categoryID].expenseExpenses[row.id].itemDescription =
             e.target.value;
+          // Resolve the line balance again if there's a change
+          let inlineInput = document.getElementById(`${row.id}-${3}`);
+          resolveLineBalance(index, row, inlineInput);
         } else if (index === 2) {
           masterExpenses[categoryID].expenseExpenses[row.id].itemCost =
             parseFloat(e.target.value);
@@ -148,6 +151,8 @@ const showExistingBudgetRows = () => {
           // Resolve the line balance again if there's a change
           let inlineInput = document.getElementById(`${row.id}-${3}`);
           resolveLineBalance(index, row, inlineInput);
+          // Resolve all the other line balances (below this line)
+          resolveMultiLineBalance(row.id);
         }
         saveJSON(masterExpenses, 'CET-masterExpenses');
       });
@@ -174,7 +179,9 @@ const addNewBudgetRow = () => {
     input.id = `${row.id}-${index}`;
 
     if (row.id == '0' && category === 'Description') {
-      input.value = 'Budgeted';
+      input.value = 'Budget';
+      masterExpenses[categoryID].expenseExpenses[row.id].itemDescription =
+        'Budget';
     }
 
     if (category === 'Date') {
@@ -207,6 +214,9 @@ const addNewBudgetRow = () => {
       } else if (index === 1) {
         masterExpenses[categoryID].expenseExpenses[row.id].itemDescription =
           e.target.value;
+        // Resolve the line balance again if there's a change
+        let inlineInput = document.getElementById(`${row.id}-${3}`);
+        resolveLineBalance(index, row, inlineInput);
       } else if (index === 2) {
         masterExpenses[categoryID].expenseExpenses[row.id].itemCost =
           parseFloat(e.target.value);
@@ -261,5 +271,21 @@ const resolveLineBalance = (index, row, input) => {
       2
     );
     saveJSON(masterExpenses, 'CET-masterExpenses');
+  }
+};
+
+const resolveMultiLineBalance = (start) => {
+  // Get all the budget cells we'll need
+  const allBals = document.getElementsByClassName('budgetBalance');
+  const allCosts = document.getElementsByClassName('budgetinput');
+  console.log(allBals);
+  // Resolve all the line balances displayed on the current page any time
+  // there's a change to an amount, but first, change start to an integer
+  start = parseInt(start);
+  // We'll want to start from the very next budget cell, so it will be start+1
+  for (let i = start + 1; i < allBals.length; i++) {
+    allBals[i].value = (
+      parseFloat(allBals[i - 1].value) - parseFloat(allCosts[i].value)
+    ).toFixed(2);
   }
 };
