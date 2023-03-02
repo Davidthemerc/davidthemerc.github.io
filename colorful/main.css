@@ -59,7 +59,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100vw;
+  width: 100%;
   position: sticky;
   height: fit-content;
   top: 0;
@@ -138,7 +138,7 @@ td {
   background-color: white;
   border-radius: 0.5rem;
   padding: 0.1rem;
-  width: 18vw;
+  width: 17vw;
   text-align: center;
 }
 
@@ -151,19 +151,25 @@ td {
 }
 
 .desc {
-  width: 100%;
+  width: fit-content;
+}
+.budgetinput,
+.budgetBalance {
+  font-size: 80%;
+  text-align: center;
 }
 
 .budgetdesc {
-  font-size: 75%;
+  font-size: 70%;
 }
 
-.money {
-  font-size: 85%;
+input {
+  font-size: 95%;
 }
 
-.budgetinput:focus,
-.budgetinput:active {
+input:focus,
+input:active,
+input {
   border: 0;
   outline: 0;
 }

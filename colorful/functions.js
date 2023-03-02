@@ -240,6 +240,7 @@ const addNewBudgetRow = () => {
     row.appendChild(cell);
     budgetTableEl.appendChild(row);
   });
+  saveJSON(masterExpenses, 'CET-masterExpenses');
 };
 
 const resolveLineBalance = (index, row, input) => {
@@ -250,9 +251,7 @@ const resolveLineBalance = (index, row, input) => {
   // If this is a budgeted amount, account for that
   if (
     (desc === 'Budget' && row.id === 0) ||
-    (desc === 'budget' && row.id === 0) ||
-    desc.includes('TRF-') ||
-    desc.includes('trf-')
+    (desc === 'budget' && row.id === 0)
   ) {
     input.value = parseFloat(cost).toFixed(2);
   } else {
@@ -260,7 +259,9 @@ const resolveLineBalance = (index, row, input) => {
       input.value = parseFloat(cost).toFixed(2);
     } else if (
       (row.id > 0 && desc === 'Budget') ||
-      (row.id > 0 && desc === 'budget')
+      (row.id > 0 && desc === 'budget') ||
+      (row.id > 0 && desc.includes('TRF-')) ||
+      (row.id > 0 && desc.includes('trf-'))
     ) {
       let carryOver = allItems[row.id - 1].value;
       let difference = parseFloat(carryOver) + parseFloat(cost);
