@@ -90,7 +90,7 @@ const showExistingBudgetRows = () => {
     const row = document.createElement('tr');
 
     // Assign this row a number based on its position in the table
-    row.id = `${budgetTableEl.rows.length - 1}`;
+    row.id = budgetTableEl.rows.length - 1;
 
     // Add one table "cell" for each budget category defined (currently 4)
     budgetCategories.forEach((category, index) => {
@@ -164,11 +164,19 @@ const showExistingBudgetRows = () => {
 };
 
 const addNewBudgetRow = () => {
+  // Add this new expense row to the Master Expenses array
+  masterExpenses[categoryID].expenseExpenses.push({
+    itemDate: '',
+    itemDescription: '',
+    itemCost: 0,
+  });
+  saveJSON(masterExpenses, 'CET-masterExpenses');
+
   // Add a new budget row
   const row = document.createElement('tr');
 
   // Assign this row a number based on its position in the table
-  row.id = `${budgetTableEl.rows.length - 1}`;
+  row.id = budgetTableEl.rows.length - 1;
 
   // Add one table "cell" for each budget category defined (currently 4)
   budgetCategories.forEach((category, index) => {
@@ -180,8 +188,9 @@ const addNewBudgetRow = () => {
 
     if (row.id == '0' && category === 'Description') {
       input.value = 'Budget';
-      masterExpenses[categoryID].expenseExpenses[row.id].itemDescription =
-        'Budget';
+      masterExpenses[categoryID].expenseExpenses[
+        parseInt(row.id)
+      ].itemDescription = 'Budget';
     }
 
     if (category === 'Date') {
@@ -231,14 +240,6 @@ const addNewBudgetRow = () => {
     row.appendChild(cell);
     budgetTableEl.appendChild(row);
   });
-
-  // Add this new expense row to the Master Expenses array
-  masterExpenses[categoryID].expenseExpenses.push({
-    itemDate: '',
-    itemDescription: '',
-    itemCost: 0,
-  });
-  saveJSON(masterExpenses, 'CET-masterExpenses');
 };
 
 const resolveLineBalance = (index, row, input) => {
@@ -249,7 +250,9 @@ const resolveLineBalance = (index, row, input) => {
   // If this is a budgeted amount, account for that
   if (
     (desc === 'Budget' && row.id === 0) ||
-    (desc === 'budget' && row.id === 0)
+    (desc === 'budget' && row.id === 0) ||
+    desc.includes('TRF-') ||
+    desc.includes('trf-')
   ) {
     input.value = parseFloat(cost).toFixed(2);
   } else {
