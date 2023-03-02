@@ -59,7 +59,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%;
+  width: 100vw;
   position: sticky;
   height: fit-content;
   top: 0;
@@ -74,6 +74,7 @@ body {
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
+  width: 99%;
 }
 
 /* Card Page CSS */
@@ -83,6 +84,7 @@ body {
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
+  width: 95%;
 }
 
 .card {
