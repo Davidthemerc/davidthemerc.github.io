@@ -132,7 +132,7 @@ body {
 .top {
   font-weight: bold;
   background-color: rgb(255, 200, 0);
-  padding: 0.5rem;
+  padding: 0.25rem;
 }
 
 td {
@@ -146,7 +146,7 @@ td {
 .budgetinput,
 .budgetBalance,
 .budgetdesc {
-  width: 87%;
+  width: 80%;
   border: 0;
   outline: 0;
 }
@@ -154,10 +154,16 @@ td {
 .desc {
   width: fit-content;
 }
+
 .budgetinput,
 .budgetBalance {
   font-size: 80%;
   text-align: center;
+}
+
+td:nth-child(3),
+td:nth-child(4) {
+  width: 14vw;
 }
 
 .budgetdesc {
@@ -165,7 +171,7 @@ td {
 }
 
 .budgetDate {
-  width: 85%;
+  width: 88%;
   font-size: 75%;
 }
 
