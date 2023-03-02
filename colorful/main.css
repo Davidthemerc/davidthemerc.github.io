@@ -165,6 +165,10 @@ td {
   font-size: 70%;
 }
 
+.budgetDate {
+  width: 85%;
+}
+
 input {
   font-size: 95%;
 }

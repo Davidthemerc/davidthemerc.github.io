@@ -113,6 +113,7 @@ const showExistingBudgetRows = () => {
         input.className = 'budgetdesc';
       } else {
         input.setAttribute('type', 'date');
+        input.className = 'budgetDate';
       }
       cell.appendChild(input);
 
