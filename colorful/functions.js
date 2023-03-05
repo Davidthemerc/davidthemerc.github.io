@@ -294,3 +294,50 @@ const resolveMultiLineBalance = (start) => {
     ).toFixed(2);
   }
 };
+
+// Function to populate the select menu in Category Management with the existing budget categories
+const loadSelectCategories = () => {
+  // Define the select menu
+  const selectMenu = document.getElementById('categorySelect');
+
+  // Clear any existing options
+  selectMenu.innerHTML = '';
+  categoryName.value = '';
+  categoryColor.value = '';
+
+  // Add the Select a category option
+  const defaultOption = document.createElement('option');
+  defaultOption.innerHTML = 'Select a Category';
+  defaultOption.value = '-1';
+  selectMenu.appendChild(defaultOption);
+
+  // Run a forEach loop to populate each existing option
+  masterExpenses.forEach((expense, index) => {
+    // Get the expense name
+    const expenseName = expense.expenseName;
+    // Create a select option for this expense
+    const option = document.createElement('option');
+    option.innerHTML = expenseName;
+    option.value = index;
+
+    // Add this option to the select menu
+    selectMenu.appendChild(option);
+  });
+};
+
+// Function to populate the name and color fields when a category is selected
+const populateSelectedCategory = (cata) => {
+  categoryName.value = masterExpenses[cata].expenseName;
+  categoryColor.value = masterExpenses[cata].expenseColor;
+};
+
+// Function to display messages in an area of the page
+const displayMessage = (message, messageEl, length) => {
+  messageEl.innerHTML = message;
+
+  if (length > 0) {
+    setTimeout(() => {
+      messageEl.innerHTML = '';
+    }, length * 1000);
+  }
+};

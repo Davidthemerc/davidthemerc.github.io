@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CET - Category Management</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+
+<body>
+
+    <div class="header">
+        <h2><a href="index.html">Colorful Expense Tracker</a></h2>
+    </div>
+
+    <div class="main">
+        <h2>Category Management</h2>
+
+        <p class="bold">Here, you can add/modify/delete budget categories.</p>
+
+        <div class="leftalign">
+            <label>Category Name:
+                <select id="categorySelect">
+                    <option value="-1">Select a Category</option>
+                </select>
+            </label>
+            <label>Category Name: <input type="text" id="categoryName"></label>
+            <label>Category Color: <input type="color" id="categoryColor"></label>
+        </div>
+        <button id="saveCategory" class="addbutton">Save Changes to Category</button>
+        <button id="addCategory" class="addbutton">Add New Category</button>
+        <button id="deleteCategory" class="deletebutton">Delete this Category</button>
+        <button id="backtomain" class="deletebutton">Back to Main Menu</button>
+
+    </div>
+    <div id="messages"></div>
+
+    <script src="vars.js"></script>
+    <script src="functions.js"></script>
+    <script src="categories.js"></script>
+</body>
+
+</html>

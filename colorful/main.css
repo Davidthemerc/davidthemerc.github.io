@@ -10,7 +10,7 @@ html {
   background: rgb(239, 236, 248);
 }
 
-button {
+.menubutton {
   width: fit-content;
   margin: 0.5rem;
   padding: 0.5rem;
@@ -175,13 +175,39 @@ td:nth-child(4) {
   font-size: 75%;
 }
 
-input {
+.budgetDate,
+.budgetBalance,
+.budgetdesc,
+.budgetinput {
   font-size: 95%;
 }
 
-input:focus,
-input:active,
-input {
+.budgetDate,
+.budgetBalance,
+.budgetdesc,
+.budgetinput {
   border: 0;
   outline: 0;
+}
+
+label {
+  margin: 0.5rem;
+}
+
+.deletebutton,
+.addbutton {
+  margin: 0.5rem;
+}
+
+.leftalign {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: baseline;
+}
+
+#messages {
+  color: red;
+  font-weight: bold;
+  text-align: center;
 }
