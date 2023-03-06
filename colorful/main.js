@@ -1,12 +1,19 @@
 const expenseCardsButton = document.getElementById('expenseCardsButton');
-const ExpenseCategoriesButton = document.getElementById(
+const expenseCategoriesButton = document.getElementById(
   'manageExpenseCategoriesButton'
+);
+const rearrangeExpenseCategoriesButton = document.getElementById(
+  'rearrangeExpenseCategoriesButton'
 );
 
 expenseCardsButton.addEventListener('click', () => {
   location.assign('expensecards.html');
 });
 
-ExpenseCategoriesButton.addEventListener('click', () => {
+expenseCategoriesButton.addEventListener('click', () => {
   location.assign('categories.html');
+});
+
+rearrangeExpenseCategoriesButton.addEventListener('click', () => {
+  location.assign('rearrange.html');
 });

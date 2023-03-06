@@ -68,7 +68,8 @@ body {
 }
 
 /* Main CSS */
-.main {
+.main,
+.list {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -210,4 +211,17 @@ label {
   color: red;
   font-weight: bold;
   text-align: center;
+}
+
+.categoryCell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.nudge {
+  display: flex;
+  height: 2rem;
+  margin: 0.25rem;
+  align-items: center;
 }

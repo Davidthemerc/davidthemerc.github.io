@@ -341,3 +341,57 @@ const displayMessage = (message, messageEl, length) => {
     }, length * 1000);
   }
 };
+
+const displayArrangedCategories = () => {
+  // Clear the list div
+  listDiv.innerHTML = '';
+  // Run a forEach loop using the masterExpenses array
+  masterExpenses.forEach((expense, index) => {
+    const div = document.createElement('div');
+    div.className = 'categoryCell';
+    const paragraph = document.createElement('p');
+    paragraph.textContent = expense.expenseName;
+    paragraph.className = 'nudge bold';
+    const upButton = document.createElement('button');
+    const downButton = document.createElement('button');
+    upButton.className = 'nudge';
+    downButton.className = 'nudge';
+    upButton.textContent = 'Up';
+    downButton.textContent = 'Down';
+
+    upButton.addEventListener('click', () => {
+      moveUp(index);
+    });
+
+    downButton.addEventListener('click', () => {
+      moveDown(index);
+    });
+
+    div.appendChild(paragraph);
+    div.appendChild(upButton);
+    div.appendChild(downButton);
+    listDiv.appendChild(div);
+  });
+};
+
+const moveUp = (item) => {
+  const index = masterExpenses.indexOf(masterExpenses[item]);
+  if (index > 0) {
+    masterExpenses.splice(index - 1, 0, masterExpenses[item]);
+    masterExpenses.splice(index + 1, 1);
+    saveJSON(masterExpenses, 'CET-masterExpenses');
+  }
+
+  displayArrangedCategories();
+};
+
+const moveDown = (item) => {
+  const index = masterExpenses.indexOf(masterExpenses[item]);
+  if (index < masterExpenses.length - 1) {
+    masterExpenses.splice(index + 2, 0, masterExpenses[item]);
+    masterExpenses.splice(index, 1);
+    saveJSON(masterExpenses, 'CET-masterExpenses');
+  }
+
+  displayArrangedCategories();
+};
