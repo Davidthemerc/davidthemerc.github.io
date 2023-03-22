@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>David's Trip Calculator</title>
+</head>
+
+<body>
+    <h2>David's Trip Calculator</h2>
+
+    <label for="trip-name">Trip Name:</label>
+    <input type="text" id="trip-name" name="trip-name"><br><br>
+
+    <label for="trip-distance">Trip Distance (in miles):</label>
+    <input type="number" id="trip-distance" name="trip-distance"><br><br>
+
+    <label for="car-gal">Car Full Tank (Gallons):</label>
+    <input type="number" id="car-gal" name="car-gal"><br><br>
+
+    <label for="car-mpg">Car MPG:</label>
+    <input type="number" id="car-mpg" name="car-mpg"><br><br>
+
+    <label for="arrival-time">Desired Arrival Time:</label>
+    <select id="arrival-time" name="arrival-time">
+        <option value="6:00 AM">6:00 AM</option>
+        <option value="7:00 AM">7:00 AM</option>
+        <option value="8:00 AM">8:00 AM</option>
+        <option value="9:00 AM">9:00 AM</option>
+        <option value="10:00 AM">10:00 AM</option>
+        <option value="11:00 AM">11:00 AM</option>
+        <option value="12:00 PM">12:00 PM</option>
+        <option value="1:00 PM">1:00 PM</option>
+        <option value="2:00 PM">2:00 PM</option>
+        <option value="3:00 PM">3:00 PM</option>
+        <option value="4:00 PM">4:00 PM</option>
+        <option value="5:00 PM">5:00 PM</option>
+        <option value="6:00 PM">6:00 PM</option>
+        <option value="7:00 PM">7:00 PM</option>
+        <option value="8:00 PM">8:00 PM</option>
+        <option value="9:00 PM">9:00 PM</option>
+        <option value="10:00 PM">10:00 PM</option>
+        <option value="11:00 PM">11:00 PM</option>
+    </select><br><br>
+
+    <label for="meal-stop">Stopping for a meal:</label>
+    <input type="checkbox" id="meal-stop" name="meal-stop"><br><br>
+
+    <button id="calculate">Calculate</button>
+
+    <div id="output"></div>
+
+    <script src="vars.js"></script>
+    <script src="functions.js"></script>
+    <script src="app.js"></script>
+
+</body>
+
+</html>
