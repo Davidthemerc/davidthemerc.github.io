@@ -131,3 +131,42 @@ const swipeCard = () => {
     display.innerHTML = '';
   }, 1500);
 };
+
+// Function to save localstorage data
+const saveJSON = (savedArray, savedName) => {
+  localStorage.setItem(savedName, JSON.stringify(savedArray));
+};
+
+const updateCSS = () => {
+  // Set the title color, font colors, and register top color to color 1
+  title.style.color = cashierData.colorOne;
+
+  // Set the cash top display color to color one
+  const cashDisplay = document.getElementById('cashdisplay');
+  cashDisplay.style.background = cashierData.colorOne;
+
+  // Grab an array of numeric and larger buttons to quickly modify them
+  let numerButtons = document.getElementsByClassName('numeric-button');
+  let largeButtons = document.getElementsByClassName('larger-button');
+
+  numerButtons = Array.from(numerButtons);
+  largeButtons = Array.from(largeButtons);
+
+  numerButtons.forEach((button) => {
+    button.style.color = cashierData.colorOne;
+  });
+
+  largeButtons.forEach((button) => {
+    button.style.color = cashierData.colorOne;
+    // Set the larger buttons background color to color three
+    button.style.background = cashierData.colorThree;
+  });
+
+  // Set the register main body to color two
+  const register = document.getElementById('register');
+  register.style.background = cashierData.colorTwo;
+
+  // Set the background color to color four
+  const body = document.getElementById('body');
+  body.style.background = cashierData.colorFour;
+};

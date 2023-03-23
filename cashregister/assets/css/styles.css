@@ -29,7 +29,7 @@ span {
   color: rgb(0, 0, 0);
   font-weight: bold;
   font-family: Adamina, serif;
-  font-size: 36px;
+  font-size: 6vh;
 }
 .numeric-display {
   width: 80%;
@@ -42,7 +42,7 @@ span {
   border-radius: 0.5rem;
   width: 80%;
   height: 45vh;
-  background-color: rgb(243, 87, 165);
+  background-color: #f357a5;
   padding: 1rem;
 }
 .cash-display {
@@ -58,7 +58,7 @@ span {
   width: 80px;
   color: hotpink;
   font-weight: bold;
-  font-size: 3rem;
+  font-size: 4vh;
   margin: 0.25rem;
 }
 .numeric-button {
@@ -68,11 +68,8 @@ span {
   width: 40px;
   color: hotpink;
   font-weight: bold;
-  font-size: 2.5rem;
+  font-size: 4vh;
   margin: 0.25rem;
-}
-button:active {
-  background-color: lightgray;
 }
 .cashpart {
   display: none;
@@ -80,7 +77,9 @@ button:active {
 img {
   height: 35%;
 }
-
+label {
+  margin: 0.5rem;
+}
 .d-flex {
   display: flex;
 }
@@ -113,11 +112,15 @@ img {
   font-size: 3rem;
 }
 
+button:active {
+  background-color: lightgray !important;
+}
+
 @media (orientation: portrait) {
   .larger-button {
     border-radius: 2rem;
     height: 10vh;
-    width: 15vh;
+    width: 12vh;
   }
   .numeric-button {
     border-radius: 100%;
@@ -131,7 +134,7 @@ img {
   .larger-button {
     border-radius: 2rem;
     height: 10vh;
-    width: 15vh;
+    width: 12vh;
   }
   .numeric-button {
     border-radius: 100%;

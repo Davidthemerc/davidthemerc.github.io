@@ -19,11 +19,23 @@ const buttonScan = document.getElementById('scan');
 const buttonOpen = document.getElementById('open');
 const display = document.getElementById('display');
 const cashDrawer = document.getElementById('cashdrawer');
+const title = document.getElementById('title');
+
+// Update CSS colors based on saved values
+updateCSS();
+
+// Set cashier's name based on saved value
+title.innerHTML = `${cashierData.cashierName}'s Cash Register`;
 
 // Define running checkout total
 let checkoutTotal = 0;
 
 // Event listeners
+
+title.addEventListener('click', (e) => {
+  location.assign('customize.html');
+});
+
 button1.addEventListener('click', (e) => {
   addNumToDisplay(e.target.value);
 });

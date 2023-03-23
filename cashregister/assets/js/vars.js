@@ -53,3 +53,21 @@ audio.forEach((sound, index) => {
   audioList[index] = new Audio();
   audioList[index].src = sound.dir;
 });
+
+const getCashierData = () => {
+  const saveJSON = localStorage.getItem('ACR-data');
+
+  if (saveJSON !== null) {
+    return JSON.parse(saveJSON);
+  } else {
+    return {
+      cashierName: 'Alexa',
+      colorOne: '#f357a5',
+      colorTwo: '#ff69b4',
+      colorThree: '#ffd7ff',
+      colorFour: '#ebd6ff',
+    };
+  }
+};
+
+const cashierData = getCashierData();

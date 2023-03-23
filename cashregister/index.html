@@ -10,18 +10,19 @@
     <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 
-<body>
+<body id='body'>
     <div>
-        <h1 class="bold text-center text-white">Alexa's Cash Register</h1>
+        <h1 id="title" class="bold text-center text-white">Alexa's Cash Register</h1>
     </div>
     <div class="d-flex flex-column align-items-center main">
-        <div class="d-flex justify-content-center align-items-center justify-content-center cash-display"
+        <div id="cashdisplay"
+            class="d-flex justify-content-center align-items-center justify-content-center cash-display"
             style="border-radius: 0.5rem 0.5rem 0rem 0rem;">
             <div class="d-flex d-sm-flex justify-content-center align-items-center numeric-display">
                 <span id="display"></span>
             </div>
         </div>
-        <div
+        <div id="register"
             class="d-flex flex-column justify-content-center align-items-center justify-content-center align-items-sm-center register">
             <div class="d-flex flex-row">
                 <button id="one" class="d-flex justify-content-center align-items-center numeric-button" type="button"
