@@ -1,5 +1,5 @@
 body {
-  background-color: #e0d7ff;
+  background-color: #ffd7ff;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -8,6 +8,7 @@ body {
 h1 {
   margin: 1rem;
   color: rgb(243, 87, 165);
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
 
 .box {
@@ -34,6 +35,7 @@ span {
   width: 80%;
   height: 60%;
   border-radius: 0.75rem;
+  border: 2px black solid;
   background: #b3b1b2;
 }
 .register {
@@ -50,23 +52,27 @@ span {
 }
 .larger-button {
   border-radius: 2rem;
-  background-color: #fff;
+  border: 3px black solid;
+  background-color: #ebd6ff;
   height: 40px;
   width: 80px;
   color: hotpink;
   font-weight: bold;
-  font-size: 2rem;
+  font-size: 3rem;
   margin: 0.25rem;
 }
 .numeric-button {
   border-radius: 100%;
-  background-color: #fff;
+  border: 2px black solid;
   height: 40px;
   width: 40px;
   color: hotpink;
   font-weight: bold;
-  font-size: 2rem;
+  font-size: 2.5rem;
   margin: 0.25rem;
+}
+button:active {
+  background-color: lightgray;
 }
 .cashpart {
   display: none;
@@ -110,7 +116,6 @@ img {
 @media (orientation: portrait) {
   .larger-button {
     border-radius: 2rem;
-    background-color: #fff;
     height: 10vh;
     width: 15vh;
   }
@@ -125,13 +130,11 @@ img {
 @media (orientation: landscape) {
   .larger-button {
     border-radius: 2rem;
-    background-color: #fff;
     height: 10vh;
     width: 15vh;
   }
   .numeric-button {
     border-radius: 100%;
-    background-color: #fff;
     height: 7vh;
     width: 7vh;
   }

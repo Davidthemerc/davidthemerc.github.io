@@ -40,14 +40,16 @@ const playAudio = (id) => {
 
 const openRegister = () => {
   if (cashDrawer.style.display === '') {
-    cashDrawer.style.display = 'block';
     playAudio(0);
+    cashDrawer.style.display = 'block';
+    buttonOpen.innerHTML = 'Close';
   } else {
     playAudio(7);
     setTimeout(() => {
       cashDrawer.style.display = '';
       display.innerHTML = '';
       checkoutTotal = 0;
+      buttonOpen.innerHTML = 'Open';
     }, 2400);
   }
 };
