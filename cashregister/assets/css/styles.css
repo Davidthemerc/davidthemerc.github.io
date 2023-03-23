@@ -1,0 +1,150 @@
+body {
+  background-color: #e0d7ff;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+h1 {
+  margin: 1rem;
+  color: rgb(243, 87, 165);
+}
+
+.box {
+  background: #fff;
+  border-radius: 4px;
+  padding-bottom: 100%;
+}
+nav {
+  background-color: #a770de;
+}
+.main {
+  width: 100vw;
+  height: 90vh;
+  padding: 0;
+  margin: 0;
+}
+span {
+  color: rgb(0, 0, 0);
+  font-weight: bold;
+  font-family: Adamina, serif;
+  font-size: 36px;
+}
+.numeric-display {
+  width: 80%;
+  height: 60%;
+  border-radius: 0.75rem;
+  background: #b3b1b2;
+}
+.register {
+  border-radius: 0.5rem;
+  width: 80%;
+  height: 45vh;
+  background-color: rgb(243, 87, 165);
+  padding: 1rem;
+}
+.cash-display {
+  width: 70%;
+  height: 10vh;
+  background: #ff69b4;
+}
+.larger-button {
+  border-radius: 2rem;
+  background-color: #fff;
+  height: 40px;
+  width: 80px;
+  color: hotpink;
+  font-weight: bold;
+  font-size: 2rem;
+  margin: 0.25rem;
+}
+.numeric-button {
+  border-radius: 100%;
+  background-color: #fff;
+  height: 40px;
+  width: 40px;
+  color: hotpink;
+  font-weight: bold;
+  font-size: 2rem;
+  margin: 0.25rem;
+}
+.cashpart {
+  display: none;
+}
+img {
+  height: 35%;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
+.justify-content-center {
+  justify-content: center;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+.fs-4 {
+  font-size: 2rem;
+}
+
+.fa-barcode {
+  font-size: 3rem;
+}
+
+@media (orientation: portrait) {
+  .larger-button {
+    border-radius: 2rem;
+    background-color: #fff;
+    height: 10vh;
+    width: 15vh;
+  }
+  .numeric-button {
+    border-radius: 100%;
+    background-color: #fff;
+    height: 7vh;
+    width: 7vh;
+  }
+}
+
+@media (orientation: landscape) {
+  .larger-button {
+    border-radius: 2rem;
+    background-color: #fff;
+    height: 10vh;
+    width: 15vh;
+  }
+  .numeric-button {
+    border-radius: 100%;
+    background-color: #fff;
+    height: 7vh;
+    width: 7vh;
+  }
+}
+.red-flash {
+  animation: red-flash 0.1s linear;
+}
+
+@keyframes red-flash {
+  0% {
+    background-color: rgba(255, 0, 0, 0);
+  }
+  100% {
+    background-color: rgba(255, 0, 0, 1);
+  }
+}
