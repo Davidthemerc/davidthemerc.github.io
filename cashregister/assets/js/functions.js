@@ -143,7 +143,10 @@ const updateCSS = () => {
 
   // Set the cash top display color to color one
   const cashDisplay = document.getElementById('cashdisplay');
-  cashDisplay.style.background = cashierData.colorOne;
+
+  if (cashDisplay) {
+    cashDisplay.style.background = cashierData.colorOne;
+  }
 
   // Grab an array of numeric and larger buttons to quickly modify them
   let numerButtons = document.getElementsByClassName('numeric-button');
@@ -164,7 +167,9 @@ const updateCSS = () => {
 
   // Set the register main body to color two
   const register = document.getElementById('register');
-  register.style.background = cashierData.colorTwo;
+  if (register) {
+    register.style.background = cashierData.colorTwo;
+  }
 
   // Set the background color to color four
   const body = document.getElementById('body');

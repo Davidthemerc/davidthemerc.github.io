@@ -9,6 +9,9 @@ const resetColorsButton = document.getElementById('resetcolors');
 // Set cashier's name based on saved value
 title.innerHTML = `${cashierData.cashierName}'s Cash Register`;
 
+// Update CSS
+updateCSS();
+
 // Default values
 nameInput.value = cashierData.cashierName;
 colorOneInput.value = cashierData.colorOne;
@@ -27,6 +30,7 @@ nameInput.addEventListener('change', (e) => {
 colorOneInput.addEventListener('change', (e) => {
   cashierData.colorOne = e.target.value;
   saveJSON(cashierData, 'ACR-data');
+  updateCSS();
 });
 
 colorTwoInput.addEventListener('change', (e) => {
@@ -42,6 +46,7 @@ colorThreeInput.addEventListener('change', (e) => {
 colorFourInput.addEventListener('change', (e) => {
   cashierData.colorFour = e.target.value;
   saveJSON(cashierData, 'ACR-data');
+  updateCSS();
 });
 
 resetColorsButton.addEventListener('click', (e) => {
@@ -59,4 +64,7 @@ resetColorsButton.addEventListener('click', (e) => {
 
   // Save to local storage
   saveJSON(cashierData, 'ACR-data');
+
+  // Update CSS
+  updateCSS();
 });

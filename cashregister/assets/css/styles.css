@@ -1,5 +1,4 @@
 body {
-  background-color: #ffd7ff;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -9,6 +8,16 @@ h1 {
   margin: 1rem;
   color: rgb(243, 87, 165);
   font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+#nameinput {
+  margin-left: 0.25rem;
+}
+
+.colorinput {
+  width: 25%;
+  height: 50px;
+  margin-left: 0.5rem;
 }
 
 .box {
@@ -79,7 +88,19 @@ img {
 }
 label {
   margin: 0.5rem;
+  display: flex;
+  align-items: center;
 }
+
+#resetcolors {
+  margin: 1rem;
+  padding: 0.5rem;
+}
+
+.center {
+  justify-content: center;
+}
+
 .d-flex {
   display: flex;
 }
