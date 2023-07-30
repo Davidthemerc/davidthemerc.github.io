@@ -260,7 +260,9 @@ const resolveLineBalance = (index, row, input) => {
       input.value = parseFloat(cost).toFixed(2);
     } else if (
       (row.id > 0 && desc === 'Budget') ||
+      (row.id > 0 && desc === 'Budget ') ||
       (row.id > 0 && desc === 'budget') ||
+      (row.id > 0 && desc === 'budget ') ||
       (row.id > 0 && desc.includes('TRF-')) ||
       (row.id > 0 && desc.includes('trf-'))
     ) {

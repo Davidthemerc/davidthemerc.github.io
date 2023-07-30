@@ -61,7 +61,7 @@ const getCashierData = () => {
     return JSON.parse(saveJSON);
   } else {
     return {
-      cashierName: 'Alexa',
+      cashierName: 'Cashier',
       colorOne: '#f357a5',
       colorTwo: '#ff69b4',
       colorThree: '#ffd7ff',
