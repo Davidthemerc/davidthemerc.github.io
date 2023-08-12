@@ -1,0 +1,71 @@
+body,
+html {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+h1 {
+  font-size: 2.7rem;
+}
+
+.pgb {
+  margin: 0;
+  margin-bottom: 0.25rem;
+}
+.header {
+  top: 0;
+  height: 8vh;
+  text-align: center;
+  background-color: #c0a3e6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main {
+  height: 92vh;
+  background-color: rgb(156, 156, 252);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.mainbuzzer {
+  border-radius: 25rem;
+  width: 20rem;
+  height: 20rem;
+  background-color: rgb(177, 34, 34);
+  color: white;
+  font-size: 18rem;
+  margin: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.warnbuzzer {
+  border-radius: 25rem;
+  width: 12rem;
+  height: 12rem;
+  background-color: rgb(177, 34, 34);
+  color: white;
+  font-size: 10rem;
+  margin: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button:active {
+  background-color: yellow;
+  color: red;
+}
+
+.btntext {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0;
+}
