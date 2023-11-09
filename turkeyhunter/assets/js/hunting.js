@@ -1,6 +1,7 @@
 // Define page elements
 const huntarea = document.getElementById('huntarea');
 const moveArea = document.getElementById('movearea');
+const talkToHunter = document.getElementById('talktohunter');
 const backToLodge = document.getElementById('backtolodge');
 const statusArea = document.getElementById('statusarea');
 const weaponEl = document.getElementById('weapon');
@@ -160,6 +161,12 @@ document.addEventListener('keydown', (event) => {
 // It's basically just a refresh button.
 moveArea.addEventListener('click', () => {
   location.reload();
+});
+
+// Assign event listener to return to lodge button
+// So the hunter can return to the main page
+talkToHunter.addEventListener('click', () => {
+  location.assign('talk.html');
 });
 
 // Assign event listener to return to lodge button

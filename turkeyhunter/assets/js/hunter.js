@@ -17,10 +17,10 @@ hunterNameEl.value = hunter.name;
 devMenu();
 
 // Populate the hunter weapons field
-hunter.weapons.forEach((weapon) => {
+hunter.weapons.forEach((weapon, index) => {
   let opt = document.createElement('option');
   opt.innerHTML = weapon.weaponName;
-  opt.value = weapon.weaponID;
+  opt.value = index;
   weaponSelectEl.appendChild(opt);
 });
 // But let's pick the previously selected weapon

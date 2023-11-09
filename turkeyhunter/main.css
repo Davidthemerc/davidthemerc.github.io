@@ -27,6 +27,10 @@ main {
 
 footer {
   position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
   bottom: 0;
   height: 3vh;
   width: 100%;
@@ -76,6 +80,10 @@ footer {
 
 .larger {
   font-size: 20px;
+}
+
+.img {
+  width: 100%;
 }
 
 .img75 {
@@ -138,6 +146,12 @@ h1 {
   font-family: 'Hunting', sans-serif;
   background-color: bisque;
   color: brown;
+}
+
+.ahunter {
+  height: 200px;
+  width: 200px;
+  margin-bottom: 1rem;
 }
 
 input,

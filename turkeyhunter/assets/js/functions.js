@@ -106,22 +106,14 @@ const reloadWeapon = () => {
 const ammoHandling = (weapon, action) => {
   checkWeapon = hunter.weapons.findIndex(({ weaponID }) => weaponID === weapon);
 
-  if (checkWeapon === -1) {
-    displayMessage(
-      `You don't have the ${armoryWeapons[weapon].weaponName}!`,
-      statusEl
-    );
-    return;
-  }
-
-  let currentMag = hunter.weapons[weapon].currentMag;
-  let currentAmmo = hunter.weapons[weapon].weaponAmmo;
-  let fullMag = hunter.weapons[weapon].weaponMag;
-
   // Reloading
   if (action === 'reload') {
     bulletTime = 1;
     statusArea.className += ' busy';
+
+    let currentMag = hunter.weapons[weapon].currentMag;
+    let currentAmmo = hunter.weapons[weapon].weaponAmmo;
+    let fullMag = hunter.weapons[weapon].weaponMag;
 
     // Shotgun determine variable
     let shotgunDetermine = hunter.weapons[weapon].basicName;
@@ -198,6 +190,14 @@ const ammoHandling = (weapon, action) => {
 
   // Buying Ammo
   if (action === 'buying') {
+    if (checkWeapon === -1) {
+      displayMessage(
+        `You don't have the ${armoryWeapons[weapon].weaponName}!`,
+        statusEl
+      );
+      return;
+    }
+
     // Check the armory ammo array for ammo costs
     if (hunter.money >= armoryAmmo[checkWeapon].cost) {
       // Handle money first
@@ -207,7 +207,7 @@ const ammoHandling = (weapon, action) => {
       hunter.weapons[checkWeapon].weaponAmmo += armoryAmmo[checkWeapon].amount;
       // Let user know they bought ammo succesfsully
       displayMessage(
-        `Bought ${armoryAmmo[checkWeapon].amount} ${armoryAmmo[checkWeapon].ammoName}.`,
+        `Bought ${armoryAmmo[weapon].amount} ${armoryAmmo[weapon].ammoName}.`,
         statusEl
       );
     } else {
@@ -225,6 +225,8 @@ const ammoHandling = (weapon, action) => {
   if (action === 'firing') {
     bulletTime = 1;
     statusArea.className += ' busy';
+
+    let currentMag = hunter.weapons[weapon].currentMag;
 
     // Start pause timer (no other actions while it's running)
     setTimeout(() => {
@@ -296,6 +298,12 @@ const weaponDamage = (weapon) => {
   // Upgraded Rifle, etc.
   if (weaponTier === 5) {
     damage = ranBetween(17, 20);
+  }
+
+  // Tier 5 Weapons
+  // Upgraded Rifle, etc.
+  if (weaponTier === 6) {
+    damage = ranBetween(20, 25);
   }
 
   if (damage >= 15) {
@@ -529,7 +537,7 @@ const armoryPriceColors = () => {
   });
 };
 
-goHuntingReload = () => {
+const goHuntingReload = () => {
   // Reload the hunter's magazine if it's not full
   if (
     hunter.weapons[hunter.currentWeapon].currentMag <
