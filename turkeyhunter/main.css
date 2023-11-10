@@ -325,3 +325,7 @@ footer > span {
   bottom: -6px;
   right: -7px;
 }
+
+.hidden {
+  display: none;
+}

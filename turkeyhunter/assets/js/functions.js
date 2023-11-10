@@ -583,3 +583,152 @@ const devMenu = () => {
     }
   }
 };
+
+const talkToHunterFunc = () => {
+  let convo = hunterLines[ranBetween(0, 182)];
+  alert(convo);
+  robHunter.classList = '';
+};
+
+const robThisHunter = (hunterFullName) => {
+  // First, figure out what weapon the player hunter currently has equipped
+  const playerHunterWeapon = hunter.weapons[hunter.currentWeapon].weaponID;
+  const playerHunterAmmo = hunter.weapons[hunter.currentWeapon].currentMag;
+
+  // Next, check if the other hunter has a weapon and where their weapon ranks on the list
+  const otherHunterWeaponName = otherHunterWeapon;
+  let otherHunterWeaponRank;
+
+  // Determine other hunter weapon rank, rank 1 is armed, rank 2 is unarmed
+  if (
+    otherHunterWeaponName === 'Shotgun' ||
+    otherHunterWeaponName === 'Rifle' ||
+    otherHunterWeaponName === 'Laser Rifle'
+  ) {
+    otherHunterWeaponRank = 1;
+  } else {
+    otherHunterWeaponRank = 2;
+  }
+
+  let chance = ranBetween(0, 1);
+  let change = ranBetween(3, 27);
+
+  // If the player has no ammo (what an idiot!), there's separate odds/outcomes for that!
+  if (playerHunterAmmo === 0) {
+    if (otherHunterWeaponRank === 2) {
+      if (chance == 0) {
+        alert(
+          `You aim your weapon at ${hunterFullName} and demand that they hand over all of their ammo and everything else they have on hand. They refuse. You aim at their chest and pull the trigger, BUT YOUR WEAPON IS EMPTY! They laugh, tackle you to the ground and quickly draw a gun on you. Busted.`
+        );
+
+        alert(
+          `You dropped $${change} on the ground during the kerfuffle. Embarassing.`
+        );
+        moneyHandling(change, '-');
+        location.assign('index.html');
+      } else {
+        alert(
+          `You aim your weapon at ${hunterFullName} and demand that they hand over all of their ammo and everything else they have on hand. They grudgingly comply. You steal $${change} from them.`
+        );
+
+        if (otherHunterWeaponName === 'Turkey') {
+          alert(
+            `To add insult to injury, you also steal the turkey they were carrying...`
+          );
+          getTurkey();
+        }
+        moneyHandling(change, '+');
+        saveJSON(hunter, 'TH-HunterData');
+        location.assign('index.html');
+      }
+    } else {
+      playAudio(hunter.weapons[hunter.currentWeapon].weaponFireSound);
+      alert(
+        `You aim your weapon at ${hunterFullName} and demand that they hand over all of their ammo and everything else they have on hand. They refuse, firing their weapon at you! Fortunately, they miss! You return fire, wounding them. You disarm them and take the $${change} they have on hand.`
+      );
+      hunter.money += change;
+      saveJSON(hunter, 'TH-HunterData');
+      location.assign('index.html');
+    }
+
+    return;
+  } else {
+    if (otherHunterWeaponRank === 1) {
+      if (chance == 1) {
+        playAudio(hunter.weapons[hunter.currentWeapon].weaponFireSound);
+        alert(
+          `You aim your weapon at ${hunterFullName} and demand that they hand over all of their ammo and everything else they have on hand. They refuse, firing their weapon at you! Fortunately, they miss! You return fire, wounding them. You disarm them and take the $${change} they have on hand.`
+        );
+        moneyHandling(change, '+');
+        saveJSON(hunter, 'TH-HunterData');
+        location.assign('index.html');
+      } else {
+        alert(
+          `You aim your weapon at ${hunterFullName} and demand that they hand over all of their ammo and everything else they have on hand. They refuse, firing their weapon at you! Unfortunately, you have been shot! You run like hell, dropping $${change} on the ground during your cowardly retreat!`
+        );
+        moneyHandling(change, '-');
+        location.assign('index.html');
+      }
+    } else {
+      if (chance == 0) {
+        alert(
+          `You aim your weapon at ${hunterFullName} and demand that they hand over all of their ammo and everything else they have on hand. They grudgingly comply. You steal $${change} from them.`
+        );
+
+        if (otherHunterWeaponName === 'Turkey') {
+          alert(
+            `To add insult to injury, you also steal the turkey they were carrying...`
+          );
+          getTurkey();
+        }
+        moneyHandling(change, '+');
+        location.assign('index.html');
+      } else {
+        playAudio(hunter.weapons[hunter.currentWeapon].weaponFireSound);
+        alert(
+          `You aim your weapon at ${hunterFullName} and demand that they hand over all of their ammo and everything else they have on hand. They resist, swinging wildly at you! In a panic, you fire at them, wounding them! You manage to steal $${change} from them.`
+        );
+
+        if (otherHunterWeaponName === 'Turkey') {
+          alert(
+            `To add insult to injury, you also steal the turkey they were carrying...`
+          );
+          getTurkey();
+        }
+        moneyHandling(change, '+');
+        location.assign('index.html');
+      }
+    }
+  }
+};
+
+const getTurkey = () => {
+  let turkeyStats = {
+    weight: ranBetween(18, 26),
+    height: ranBetween(38, 48),
+  };
+
+  let turkeyRandomizer = ranBetween(1, 5);
+
+  // 1 in 5 chance that the turkey is a prize turkey with a larger size range
+  if (turkeyRandomizer === 5) {
+    turkeyStats.weight = ranBetween(26, 49);
+    turkeyStats.height = ranBetween(49, 60);
+  }
+
+  // Add strings to object for storage
+  turkeyStats = {
+    firstName: turkeyName('first'),
+    lastName: turkeyName('last'),
+    weightInt: turkeyStats.weight,
+    weight: `${turkeyStats.weight} Lbs.`,
+    height: `${turkeyStats.height} Inches Tall`,
+    uuid: uuidv4(),
+    trueTrophy: turkeyRandomizer === 5 ? true : false,
+  };
+
+  // Allows for a small chance of monster turkey sizes
+  hunter.turkeysBagged.push(turkeyStats);
+  hunter.turkeysBaggedCount += 1;
+  saveJSON(hunter, 'TH-HunterData');
+};

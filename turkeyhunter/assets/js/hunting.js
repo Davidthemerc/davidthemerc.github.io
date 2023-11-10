@@ -69,7 +69,7 @@ turkey.addEventListener('click', () => {
 
         let turkeyRandomizer = ranBetween(1, 5);
 
-        // If the weight lands on 36 pounds, assign a larger possible range
+        // 1 in 5 chance that the turkey is a prize turkey with a larger size range
         if (turkeyRandomizer === 5) {
           turkeyStats.weight = ranBetween(26, 49);
           turkeyStats.height = ranBetween(49, 60);
@@ -166,7 +166,14 @@ moveArea.addEventListener('click', () => {
 // Assign event listener to return to lodge button
 // So the hunter can return to the main page
 talkToHunter.addEventListener('click', () => {
-  location.assign('talk.html');
+  let chance = ranBetween(0, 7);
+
+  if (chance > 4) {
+    location.assign('talk.html');
+  } else {
+    alert("You couldn't find a hunter!");
+    location.assign('hunting.html');
+  }
 });
 
 // Assign event listener to return to lodge button
