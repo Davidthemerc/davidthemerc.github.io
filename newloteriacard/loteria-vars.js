@@ -57,6 +57,7 @@ for (let i = 1; i <= 54; i++) {
   femaleCardAudio[i] = new Audio();
   femaleCardAudio[i].src = `../loteriacaller/audio/female/Sound ${i}.mp3`;
 }
+
 for (let i = 1; i <= 54; i++) {
   maleCardAudio[i] = new Audio();
   maleCardAudio[i].src = `../loteriacaller/audio/male/Sound ${i}.mp3`;

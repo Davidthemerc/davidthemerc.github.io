@@ -194,7 +194,11 @@ let showCalledCards = () => {
 const audioPlay = (ID) => {
   if (voiceValue === '0') {
     femaleAudioList[ID].play();
-  } else {
+  } else if (voiceValue === '1') {
     maleAudioList[ID].play();
+  } else if (voiceValue === '2') {
+    cesarAudioList[ID].play();
+  } else if (voiceValue === '3') {
+    marcelaAudioList[ID].play();
   }
 };

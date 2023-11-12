@@ -21,6 +21,20 @@ for (let i = 1; i <= 54; i++) {
   maleAudioList[i].src = `audio/male/Sound ${i}.mp3`;
 }
 
+// This is the code to preload the male audio files
+let cesarAudioList = Array();
+for (let i = 1; i <= 54; i++) {
+  cesarAudioList[i] = new Audio();
+  cesarAudioList[i].src = `audio/cesar/Sound ${i}.mp3`;
+}
+
+// This is the code to preload the male audio files
+let marcelaAudioList = Array();
+for (let i = 1; i <= 54; i++) {
+  marcelaAudioList[i] = new Audio();
+  marcelaAudioList[i].src = `audio/marcela/Sound ${i}.mp3`;
+}
+
 let loteriaDeckArray = [
   { ID: 0, Name: 'El Gallo' },
   { ID: 1, Name: 'El Diablito' },
