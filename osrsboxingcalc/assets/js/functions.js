@@ -58,7 +58,7 @@ const resetStats = (player) => {
     p2mdef.value = p2def.value;
     p2mstr.value = p2str.value;
     calcStatDif(2);
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 7; i++) {
       clearGroup(i);
     }
   }
@@ -149,16 +149,19 @@ const applyBoost = (num, player) => {
 
       clearGroup(1);
       clearGroup(4);
+      clearGroup(7);
     }
     if (boostElements[num].group === 2 || boostElements[num].group === 5) {
       p1mstr.value = p1str.value;
       clearGroup(2);
       clearGroup(5);
+      clearGroup(7);
     }
     if (boostElements[num].group === 3 || boostElements[num].group === 6) {
       p1mdef.value = p1def.value;
       clearGroup(3);
       clearGroup(6);
+      clearGroup(7);
     }
 
     if (boostElements[num].group === 7) {
@@ -187,16 +190,19 @@ const applyBoost = (num, player) => {
       p2matk.value = p2atk.value;
       clearGroup(1);
       clearGroup(4);
+      clearGroup(7);
     }
     if (boostElements[num].group === 2 || boostElements[num].group === 5) {
       p2mstr.value = p2str.value;
       clearGroup(2);
       clearGroup(5);
+      clearGroup(7);
     }
     if (boostElements[num].group === 3 || boostElements[num].group === 6) {
       p2mdef.value = p2def.value;
       clearGroup(3);
       clearGroup(6);
+      clearGroup(7);
     }
 
     if (boostElements[num].group === 7) {
