@@ -168,6 +168,9 @@ const applyBoost = (num, player) => {
       p1matk.value = p1atk.value;
       p1mstr.value = p1str.value;
       p1mdef.value = p1def.value;
+      for (let i = 1; i <= 6; i++) {
+        clearGroup(i);
+      }
     }
 
     const newAttack =
