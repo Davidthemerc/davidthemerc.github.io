@@ -50,8 +50,8 @@ const resetStats = (player) => {
     p1mdef.value = p1def.value;
     p1mstr.value = p1str.value;
     calcStatDif(1);
-    for (let i = 1; i <= 6; i++) {
-      clearGroup(i);
+    for (let i = 1; i <= 7; i++) {
+      clearGroup(i, 1);
     }
   } else {
     p2matk.value = p2atk.value;
@@ -59,7 +59,7 @@ const resetStats = (player) => {
     p2mstr.value = p2str.value;
     calcStatDif(2);
     for (let i = 1; i <= 7; i++) {
-      clearGroup(i);
+      clearGroup(i, 2);
     }
   }
 };
@@ -147,21 +147,21 @@ const applyBoost = (num, player) => {
     if (boostElements[num].group === 1 || boostElements[num].group === 4) {
       p1matk.value = p1atk.value;
 
-      clearGroup(1);
-      clearGroup(4);
-      clearGroup(7);
+      clearGroup(1, 1);
+      clearGroup(4, 1);
+      clearGroup(7, 1);
     }
     if (boostElements[num].group === 2 || boostElements[num].group === 5) {
       p1mstr.value = p1str.value;
-      clearGroup(2);
-      clearGroup(5);
-      clearGroup(7);
+      clearGroup(2, 1);
+      clearGroup(5, 1);
+      clearGroup(7, 1);
     }
     if (boostElements[num].group === 3 || boostElements[num].group === 6) {
       p1mdef.value = p1def.value;
-      clearGroup(3);
-      clearGroup(6);
-      clearGroup(7);
+      clearGroup(3, 1);
+      clearGroup(6, 1);
+      clearGroup(7, 1);
     }
 
     if (boostElements[num].group === 7) {
@@ -169,8 +169,9 @@ const applyBoost = (num, player) => {
       p1mstr.value = p1str.value;
       p1mdef.value = p1def.value;
       for (let i = 1; i <= 6; i++) {
-        clearGroup(i);
+        clearGroup(i, 1);
       }
+      clearGroup(7, 1);
     }
 
     const newAttack =
@@ -191,27 +192,31 @@ const applyBoost = (num, player) => {
   } else {
     if (boostElements[num].group === 1 || boostElements[num].group === 4) {
       p2matk.value = p2atk.value;
-      clearGroup(1);
-      clearGroup(4);
-      clearGroup(7);
+      clearGroup(1, 2);
+      clearGroup(4, 2);
+      clearGroup(7, 2);
     }
     if (boostElements[num].group === 2 || boostElements[num].group === 5) {
       p2mstr.value = p2str.value;
-      clearGroup(2);
-      clearGroup(5);
-      clearGroup(7);
+      clearGroup(2, 2);
+      clearGroup(5, 2);
+      clearGroup(7, 2);
     }
     if (boostElements[num].group === 3 || boostElements[num].group === 6) {
       p2mdef.value = p2def.value;
-      clearGroup(3);
-      clearGroup(6);
-      clearGroup(7);
+      clearGroup(3, 2);
+      clearGroup(6, 2);
+      clearGroup(7, 2);
     }
 
     if (boostElements[num].group === 7) {
       p2matk.value = p2atk.value;
       p2mstr.value = p2str.value;
       p2mdef.value = p2def.value;
+      for (let i = 1; i <= 6; i++) {
+        clearGroup(i, 2);
+      }
+      clearGroup(7, 2);
     }
 
     const newAttack =
@@ -245,13 +250,15 @@ const assignEventListeners = () => {
   //});
 };
 
-const clearGroup = (num) => {
+const clearGroup = (num, player) => {
   const groupElements = boostElements.filter(
     (element) => element.group === num
   );
 
   groupElements.forEach((elem) => {
-    const element = document.getElementById(elem.name);
-    element.style.border = '0px transparent';
+    if (elem.player === player) {
+      const element = document.getElementById(elem.name);
+      element.style.border = '0px transparent';
+    }
   });
 };
