@@ -52,6 +52,7 @@ const resetStats = (player) => {
     p1mdef.value = p1def.value;
     p1mstr.value = p1str.value;
     calcStatDif(1);
+    calcStatDif(2);
     for (let i = 1; i <= 7; i++) {
       clearGroup(i, 1);
     }
@@ -59,6 +60,7 @@ const resetStats = (player) => {
     p2matk.value = p2atk.value;
     p2mdef.value = p2def.value;
     p2mstr.value = p2str.value;
+    calcStatDif(1);
     calcStatDif(2);
     for (let i = 1; i <= 7; i++) {
       clearGroup(i, 2);
