@@ -20,3 +20,15 @@
 .forcecenter {
   justify-content: center;
 }
+
+@media (orientation: landscape) {
+  .apple {
+    width: 15vw;
+  }
+}
+
+@media (orientation: portrait) {
+  .apple {
+    width: 15vh;
+  }
+}
