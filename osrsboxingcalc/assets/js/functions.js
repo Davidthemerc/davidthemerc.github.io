@@ -1,4 +1,6 @@
 async function hiscores(playerName, player) {
+  // Do nothing if both names aren't filled out
+
   // Using a CORS proxy
   const proxyUrl = 'https://corsproxy.io/?';
 
@@ -138,6 +140,11 @@ const colorize = (element) => {
 };
 
 const applyBoost = (num, player) => {
+  // Do nothing if the hiscores names aren't looked up
+  if (p1atk.value === '' || p2atk.value === '') {
+    return;
+  }
+
   // Apply the boost from the array based on the passed-in value
   const localBoost = boosts[num];
 
@@ -241,6 +248,10 @@ const assignEventListeners = () => {
   boostElements.forEach((elem) => {
     const element = document.getElementById(elem.name);
     element.addEventListener('click', () => {
+      // Do nothing if the hiscores names aren't looked up
+      if (p1atk.value === '' || p2atk.value === '') {
+        return;
+      }
       //console.log(elem.boostID);
       //console.log(`Player ${elem.player}`);
       applyBoost(elem.boostID, elem.player);

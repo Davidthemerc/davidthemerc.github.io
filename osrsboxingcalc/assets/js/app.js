@@ -62,12 +62,22 @@ const statusEl = document.getElementById('status');
 
 // Competitor One RSN lookup code - when the user clicks lookup, look up the RSN on the OSRS hiscores
 p1lookup.addEventListener('click', () => {
+  // Do not execute if both names are not filled out
+  if (p1rsn.value === '' || p2rsn.value === '') {
+    return;
+  }
+
   hiscores(p1rsn.value, 1);
   hiscores(p2rsn.value, 2);
 });
 
 // Competitor Two RSN lookup code - when the user clicks lookup, look up the RSN on the OSRS hiscores
-p1lookup.addEventListener('click', () => {
+p2lookup.addEventListener('click', () => {
+  // Do not execute if both names are not filled out
+  if (p1rsn.value === '' || p2rsn.value === '') {
+    return;
+  }
+
   hiscores(p1rsn.value, 1);
   hiscores(p2rsn.value, 2);
 });
