@@ -1,0 +1,50 @@
+.boost:hover {
+  cursor: pointer;
+}
+
+.boost:active {
+  background-color: yellow;
+}
+
+.boost {
+  margin: 1rem;
+  padding: 0.5rem;
+}
+
+#p1reset,
+#p2reset {
+  width: 75%;
+  margin: 1rem;
+}
+
+.forcecenter {
+  justify-content: center;
+}
+
+@media (orientation: landscape) {
+  .apple {
+    width: 15vw;
+  }
+}
+
+@media (orientation: portrait) {
+  .apple {
+    width: 15vh;
+  }
+}
+
+.bold {
+  font-weight: bold;
+}
+
+.dpsbox {
+  border: 2px black solid;
+}
+
+.extraspace {
+  margin: 1.5rem;
+}
+
+.dpsborder {
+  border: 1px black dashed;
+}

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <title>OSRS Boxing Calculator</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+</head>
+
+<body>
+    <h1 style="text-align: center">Apple Slices Boxing Calculator v.2</h1>
+    <div class="container d-flex flex-column justify-content-xxl-center">
+        <div class="row">
+            <div class="col d-flex flex-column justify-content-xxl-center"
+                style="text-align: center; border-width: 1px; border-style: solid">
+                <p class="text-center" style="margin: 0px">
+                    <strong>Competitor One</strong>
+                </p>
+                <label class="form-label d-xxl-flex justify-content-xxl-center align-items-xxl-center"
+                    style="text-align: center; margin: 4px"><strong>Player Display Name</strong><input tabindex="1"
+                        onkeypress="handleKeyPress(event)" id="p1rsn" type="text"
+                        style="width: 140px; margin: 5px" /><button tabindex="3" id="p1lookup" class="btn btn-primary"
+                        type="button" style="padding: 4px 4px; margin: 2px">
+                        Lookup
+                    </button></label>
+                <div class="row">
+                    <div class="col">
+                        <label class="form-label" style="width: 20%; margin: 0px 0px 0px; text-align: center">Attack
+                            Level<input id="p1atk" type="text"
+                                style="width: 42px; text-align: center; margin: 5px" /></label><label class="form-label"
+                            style="width: 20%; margin: 0px 0px 0px; text-align: center">Strength
+                            Level<input id="p1str" type="text"
+                                style="width: 42px; text-align: center; margin: 5px" /></label><label class="form-label"
+                            style="width: 20%; margin: 0px 0px 0px; text-align: center">Defence
+                            Level<input id="p1def" type="text"
+                                style="width: 42px; text-align: center; margin: 5px" /></label><label class="form-label"
+                            style="width: 20%; margin: 0px 0px 0px; text-align: center;;">Hitpoints
+                            <input id="p1hp" type="text" style="width: 42px; text-align: center; margin: 5px" /></label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col"><label class="form-label bold extraspace dpsborder"
+                            style="width: 50%; text-align: center">Competitor One AVG DPS<input id="p1dps" type="text"
+                                style="width: 63px; text-align: center; margin: 5px" class="dpsbox" /></label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col d-flex flex-column" style="text-align: center">
+                        <p class="text-center" style="height: 5px">
+                            <strong>Modifiers</strong>
+                        </p>
+                        <p class="text-center" style="font-size: 10px; margin: 0px">
+                            <strong>(Prayers and Potions)</strong>
+                        </p>
+                        <div class="row forcecenter">
+                            <div class="col">
+                                <img id="p1defpray1" src="assets/img/Thick_Skin.webp" title="Thick Skin" class="boost"
+                                    style="margin: 3px" title="Thick Skin" /><img id="p1strpray1"
+                                    src="assets/img/Burst_of_Strength.webp" class="boost" style="margin: 3px"
+                                    title="Burst of Strength" /><img id="p1atkpray1"
+                                    src="assets/img/Clarity_of_Thought.webp" class="boost" style="margin: 3px"
+                                    title="Clarity of Thought" /><img id="p1defpray2" src="assets/img/Rock_Skin.webp"
+                                    class="boost" style="margin: 3px" title="Rock Skin" /><img id="p1strpray2"
+                                    src="assets/img/Superhuman_Strength.webp" class="boost" style="margin: 3px"
+                                    title="Superhuman Strength" /><img id="p1atkpray2"
+                                    src="assets/img/Improved_Reflexes.webp" class="boost" style="margin: 3px"
+                                    title="Improved Reflexes" /><img id="p1defpray3" src="assets/img/Steel_Skin.webp"
+                                    class="boost" style="margin: 3px" title="Steel Skin" /><img id="p1strpray3"
+                                    src="assets/img/Ultimate_Strength.webp" class="boost" style="margin: 3px"
+                                    title="Ultimate Strength" /><img id="p1atkpray3"
+                                    src="assets/img/Incredible_Reflexes.webp" class="boost" style="margin: 3px"
+                                    title="Incredible Reflexes" /><img id="p1melpray1" src="assets/img/Chivalry.webp"
+                                    class="boost" style="margin: 3px" title="Chivalry" /><img id="p1melpray2"
+                                    src="assets/img/Piety.webp" class="boost" style="margin: 3px" title="Piety" />
+                            </div>
+                            <div class="col">
+                                <img id="p1atkpot1" src="assets/img/Attack_potion(4).webp" class="boost"
+                                    style="margin: 5px" title="Attack Potion" /><img id="p1strpot1"
+                                    src="assets/img/Strength_potion(4).webp" class="boost" style="margin: 5px"
+                                    title="Strength Potion" /><img id="p1defpot1"
+                                    src="assets/img/Defence_potion(4).webp" class="boost" style="margin: 5px"
+                                    title="Defence Potion" /><img id="p1atkpot2" src="assets/img/Super_attack(4).webp"
+                                    class="boost" style="margin: 5px" title="Super Attack Potion" /><img id="p1strpot2"
+                                    src="assets/img/Super_strength(4).webp" class="boost" style="margin: 5px"
+                                    title="Super Strength Potion" /><img id="p1defpot2"
+                                    src="assets/img/Super_defence(4).webp" class="boost" style="margin: 5px"
+                                    title="Super Defence Potion" /><img id="p1zampot"
+                                    src="assets/img/Zamorak_brew(4).webp" class="boost" style="margin: 5px"
+                                    title="Zamorak Brew" />
+                            </div>
+                            <button id="p1reset" class="btn btn-primary" type="button">Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col d-flex flex-column justify-content-xxl-center"
+                style="text-align: center; border-width: 1px; border-style: solid">
+                <p class="text-center" style="margin: 0px">
+                    <strong>Competitor Two</strong>
+                </p>
+                <label class="form-label d-xxl-flex justify-content-xxl-center align-items-xxl-center"
+                    style="text-align: center; margin: 4px"><strong>Player Display Name</strong><input tabindex="2"
+                        onkeypress="handleKeyPress(event)" id="p2rsn" type="text"
+                        style="width:140px; margin: 5px" /><button tabindex="4" id="p2lookup" class="btn btn-primary"
+                        type="button" style="padding: 4px 4px; margin: 2px">
+                        Lookup
+                    </button></label>
+                <div class="row">
+                    <div class="col">
+                        <label class="form-label" style="width: 25%; margin: 0px 0px 0px; text-align: center">Attack
+                            Level<input id="p2atk" type="text"
+                                style="width: 42px; text-align: center; margin: 5px" /></label><label class="form-label"
+                            style="width: 25%; margin: 0px 0px 0px; text-align: center">Strength
+                            Level<input id="p2str" type="text"
+                                style="width: 42px; text-align: center; margin: 5px" /></label><label class="form-label"
+                            style="width: 25%; margin: 0px 0px 0px; text-align: center">Defence
+                            Level<input id="p2def" type="text"
+                                style="width: 42px; text-align: center; margin: 5px" /></label><label class="form-label"
+                            style="width: 20%; margin: 0px 0px 0px; text-align: center">Hitpoints
+                            <input id="p2hp" type="text" style="width: 42px; text-align: center; margin: 5px" /></label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col"><label class="form-label bold extraspace dpsborder"
+                            style="width: 50%; text-align: center">Competitor Two AVG DPS<input id="p2dps" type="text"
+                                style="width: 63px; text-align: center; margin: 5px" class="dpsbox" /></label>
+                    </div>
+                    <div class="row">
+                        <div class="col d-flex flex-column" style="text-align: center">
+                            <p class="text-center" style="height: 5px">
+                                <strong>Modifiers</strong>
+                            </p>
+                            <p class="text-center" style="font-size: 10px; margin: 0px">
+                                <strong>(Prayers and Potions)</strong>
+                            </p>
+                            <div class="row forcecenter">
+                                <div class="col">
+                                    <img id="p2defpray1" src="assets/img/Thick_Skin.webp" class="boost"
+                                        style="margin: 3px" title="Thick Skin" /><img id="p2strpray1"
+                                        src="assets/img/Burst_of_Strength.webp" class="boost" style="margin: 3px"
+                                        title="Burst of Strength" /><img id="p2atkpray1"
+                                        src="assets/img/Clarity_of_Thought.webp" class="boost" style="margin: 3px"
+                                        title="Clarity of Thought" /><img id="p2defpray2"
+                                        src="assets/img/Rock_Skin.webp" class="boost" style="margin: 3px"
+                                        title="Rock Skin" /><img id="p2strpray2"
+                                        src="assets/img/Superhuman_Strength.webp" class="boost" style="margin: 3px"
+                                        title="Superhuman Strength" /><img id="p2atkpray2"
+                                        src="assets/img/Improved_Reflexes.webp" class="boost" style="margin: 3px"
+                                        title="Improved Reflexes" /><img id="p2defpray3"
+                                        src="assets/img/Steel_Skin.webp" class="boost" style="margin: 3px"
+                                        title="Steel Skin" /><img id="p2strpray3"
+                                        src="assets/img/Ultimate_Strength.webp" class="boost" style="margin: 3px"
+                                        title="Ultimate Strength" /><img id="p2atkpray3"
+                                        src="assets/img/Incredible_Reflexes.webp" class="boost" style="margin: 3px"
+                                        title="Incredible Reflexes" /><img id="p2melpray1"
+                                        src="assets/img/Chivalry.webp" class="boost" style="margin: 3px"
+                                        title="Chivalry" /><img id="p2melpray2" src="assets/img/Piety.webp"
+                                        class="boost" style="margin: 3px" title="Piety" />
+                                </div>
+                                <div class="col">
+                                    <img id="p2atkpot1" src="assets/img/Attack_potion(4).webp" class="boost"
+                                        style="margin: 5px" title="Attack Potion" /><img id="p2strpot1"
+                                        src="assets/img/Strength_potion(4).webp" class="boost" style="margin: 5px"
+                                        title="Strength Potion" /><img id="p2defpot1"
+                                        src="assets/img/Defence_potion(4).webp" class="boost" style="margin: 5px"
+                                        title="Defence Potion" /><img id="p2atkpot2"
+                                        src="assets/img/Super_attack(4).webp" class="boost" style="margin: 5px"
+                                        title="Super Attack Potion" /><img id="p2strpot2"
+                                        src="assets/img/Super_strength(4).webp" class="boost" style="margin: 5px"
+                                        title="Super Strength Potion" /><img id="p2defpot2"
+                                        src="assets/img/Super_defence(4).webp" class="boost" style="margin: 5px"
+                                        title="Super Defence Potion" /><img id="p2zampot"
+                                        src="assets/img/Zamorak_brew(4).webp" class="boost" style="margin: 5px"
+                                        title="Zamorak Brew" />
+                                </div>
+                                <button id="p2reset" class="btn btn-primary" type="button">Reset</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col" style="text-align: center">
+                    <p id="status" style="text-align: center; margin: 5px">
+
+                    </p>
+                    <img src="assets/img/clipboard-image-6.png" class="apple" />
+                </div>
+            </div>
+        </div>
+        <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+        <script src="assets/js/vars.js"></script>
+        <script src="assets/js/functions.js"></script>
+        <script src="assets/js/app.js"></script>
+</body>
+
+</html>
