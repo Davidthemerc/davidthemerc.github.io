@@ -396,7 +396,6 @@ const resetStats = (player) => {
 
 const colorize = (element, set) => {
   value = Math.abs(element.value);
-  console.log(value);
 
   // If less than or equal to lower bound
   if (value <= differentialValues[set][0]) {
@@ -428,7 +427,7 @@ const colorize = (element, set) => {
 };
 
 const assignEventListeners = () => {
-  boostElements.forEach((elem) => {
+  boostElements.forEach((elem, index) => {
     const element = document.getElementById(elem.name);
     element.addEventListener('click', () => {
       // Do nothing if the hiscores names aren't looked up (specifically, if the attack values aren't filled in yet)
@@ -441,10 +440,18 @@ const assignEventListeners = () => {
         elem.status = 1;
         element.style.border = '1px red solid';
         applyBoost(elem.boostID, elem.player);
+
+        // Play the appropriate sound
+        playAudio(elem.audioID);
       } else {
         elem.status = 0;
         clearGroup(elem.group, elem.player);
         resetBoost(elem.group, elem.player);
+
+        // If this is a prayer, play the prayer off sound
+        if (elem.type === 'prayer') {
+          playAudio(11);
+        }
       }
     });
   });
@@ -530,15 +537,15 @@ const assignNewEventListeners = () => {
 
   allBoostElementsArray.forEach((allBoostEl, index) => {
     allBoostEl.addEventListener('click', () => {
-      if (index > 18) {
-        index -= 18;
-      }
-      console.log(index);
+      // if (index > 18) {
+      //   index -= 19;
+      // }
     });
   });
 };
 
 const applyHitpointBoost = (hpBoost, player) => {
+  playAudio(hpBoost.audioID);
   activeBoosts[player][6] = playerLevels[player][3] + hpBoost.boost;
   if (player === 0) {
     p1hp.value = activeBoosts[player][6];
@@ -592,5 +599,12 @@ const dpsDifferentials = () => {
 
   if (p2dpsdiff.value > 0) {
     p2dpsdiff.value = `+${p2dpsdiff.value}`;
+  }
+};
+
+const playAudio = (audioIndex) => {
+  if (p1atk.value !== '' && p2atk.value !== '') {
+    // Now that we have both players' initial stats, calculate their initial DPS values
+    audioList[audioIndex].play();
   }
 };
