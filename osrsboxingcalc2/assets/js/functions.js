@@ -523,7 +523,7 @@ const assignNewEventListeners = () => {
       applyHitpointBoost(hpBoosts[0], 1);
     } else {
       hpBoosts[0].p2status = 0;
-      allBoostElementsArray[37].style.border = '0x transparent';
+      allBoostElementsArray[37].style.border = '0px transparent';
       resetHitpoints(1);
     }
   });
