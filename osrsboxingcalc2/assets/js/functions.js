@@ -30,6 +30,7 @@ async function hiscores(playerName, player) {
       playerLevels[0][0] = parseInt(attack);
       playerLevels[0][1] = parseInt(strength);
       playerLevels[0][2] = parseInt(defence);
+      playerLevels[0][3] = parseInt(hitpoints);
       activeBoosts[0][3].bonus = parseInt(attack);
       activeBoosts[0][4].bonus = parseInt(strength);
       activeBoosts[0][5].bonus = parseInt(defence);
@@ -41,6 +42,7 @@ async function hiscores(playerName, player) {
       playerLevels[1][0] = parseInt(attack);
       playerLevels[1][1] = parseInt(strength);
       playerLevels[1][2] = parseInt(defence);
+      playerLevels[1][3] = parseInt(hitpoints);
       activeBoosts[1][3].bonus = parseInt(attack);
       activeBoosts[1][4].bonus = parseInt(strength);
       activeBoosts[1][5].bonus = parseInt(defence);
@@ -49,6 +51,9 @@ async function hiscores(playerName, player) {
     if (p1atk.value !== '' && p2atk.value !== '') {
       // Now that we have both players' initial stats, calculate their initial DPS values
       calcPlayerDPS();
+
+      // Display HP differentials
+      hpDifferentials();
     }
 
     return { attack, defence, strength };
@@ -216,6 +221,9 @@ const calcPlayerDPS = () => {
   console.log(`P2 Calculated DPS = ${p2calculatedDPS}`);
 
   p2dps.value = p2calculatedDPS;
+
+  // Display DPS differentials
+  dpsDifferentials();
 };
 
 const applyBoost = (id, player) => {
@@ -370,20 +378,49 @@ const boostHighlight = (num, player) => {
 };
 
 const resetStats = (player) => {
-  calcPlayerDPS();
   for (let i = 1; i <= 8; i++) {
     clearGroup(i, player);
     resetBoost(i, player);
   }
+  if (player === 1) {
+    p1hp.value = playerLevels[0][3];
+    activeBoosts[0][6] = playerLevels[0][3];
+  } else {
+    p2hp.value = playerLevels[1][3];
+    activeBoosts[1][6] = playerLevels[1][3];
+  }
+
+  calcPlayerDPS();
+  hpDifferentials();
 };
 
-const colorize = (element) => {
+const colorize = (element, set) => {
   value = Math.abs(element.value);
-  if (value <= 3 || value == 0) {
+  console.log(value);
+
+  // If less than or equal to lower bound
+  if (value <= differentialValues[set][0]) {
     // Green
     element.style.color = '#00994C';
     element.style.fontWeight = 'bold';
-  } else if (value > 3) {
+    // If greater than lower bound but less than or equal to middle bound
+  } else if (
+    value > differentialValues[set][0] &&
+    value <= differentialValues[set][1]
+  ) {
+    // Yellow
+    element.style.color = '#FFFF33';
+    element.style.fontWeight = 'bold';
+    // If greater than middle bound but less than upper bound
+  } else if (
+    value > differentialValues[set][1] &&
+    value < differentialValues[set][2]
+  ) {
+    // Orange
+    element.style.color = '#FFC300';
+    element.style.fontWeight = 'bold';
+    // If greater than or equal to upper bound
+  } else if (value >= differentialValues[set][2]) {
     // Red
     element.style.color = '#FF0000';
     element.style.fontWeight = 'bold';
@@ -464,4 +501,96 @@ const clearGroup = (num, player) => {
       element.style.border = '0px transparent';
     }
   });
+};
+
+const assignNewEventListeners = () => {
+  // In HP Boosts, the Guthix Rest is # 0. Newer boosts will have higher numbers.
+  p1guthixrest.addEventListener('click', () => {
+    if (hpBoosts[0].p1status === 0) {
+      hpBoosts[0].p1status = 1;
+      allBoostElementsArray[18].style.border = '1px red solid';
+      applyHitpointBoost(hpBoosts[0], 0);
+    } else {
+      hpBoosts[0].p1status = 0;
+      allBoostElementsArray[18].style.border = '0px transparent';
+      resetHitpoints(0);
+    }
+  });
+  p2guthixrest.addEventListener('click', () => {
+    if (hpBoosts[0].p2status === 0) {
+      hpBoosts[0].p2status = 1;
+      allBoostElementsArray[37].style.border = '1px red solid';
+      applyHitpointBoost(hpBoosts[0], 1);
+    } else {
+      hpBoosts[0].p2status = 0;
+      allBoostElementsArray[37].style.border = '0x transparent';
+      resetHitpoints(1);
+    }
+  });
+
+  allBoostElementsArray.forEach((allBoostEl, index) => {
+    allBoostEl.addEventListener('click', () => {
+      if (index > 18) {
+        index -= 18;
+      }
+      console.log(index);
+    });
+  });
+};
+
+const applyHitpointBoost = (hpBoost, player) => {
+  activeBoosts[player][6] = playerLevels[player][3] + hpBoost.boost;
+  if (player === 0) {
+    p1hp.value = activeBoosts[player][6];
+    hpDifferentials();
+  } else {
+    p2hp.value = activeBoosts[player][6];
+    hpDifferentials();
+  }
+};
+
+const resetHitpoints = (player) => {
+  activeBoosts[player][6] = playerLevels[player][3];
+  if (player === 0) {
+    p1hp.value = activeBoosts[player][6];
+    hpDifferentials();
+  } else {
+    p2hp.value = activeBoosts[player][6];
+    hpDifferentials();
+  }
+};
+
+const hpDifferentials = () => {
+  p1hpdiff.value = parseInt(p1hp.value) - parseInt(p2hp.value);
+  p2hpdiff.value = parseInt(p2hp.value) - parseInt(p1hp.value);
+
+  colorize(p1hpdiff, 1);
+  colorize(p2hpdiff, 1);
+
+  if (p1hpdiff.value > 0) {
+    p1hpdiff.value = `+${p1hpdiff.value}`;
+  }
+
+  if (p2hpdiff.value > 0) {
+    p2hpdiff.value = `+${p2hpdiff.value}`;
+  }
+};
+
+const dpsDifferentials = () => {
+  p1dpsdiff.value =
+    Math.round((p1calculatedDPS - p2calculatedDPS) * 1000) / 1000;
+
+  p2dpsdiff.value =
+    Math.round((p2calculatedDPS - p1calculatedDPS) * 1000) / 1000;
+
+  colorize(p1dpsdiff, 0);
+  colorize(p2dpsdiff, 0);
+
+  if (p1dpsdiff.value > 0) {
+    p1dpsdiff.value = `+${p1dpsdiff.value}`;
+  }
+
+  if (p2dpsdiff.value > 0) {
+    p2dpsdiff.value = `+${p2dpsdiff.value}`;
+  }
 };

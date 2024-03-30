@@ -45,6 +45,7 @@ const activeBoosts = [
     { name: 'p1atkpot', bonus: 1 },
     { name: 'p1strpot', bonus: 1 },
     { name: 'p1defpot', bonus: 1 },
+    { name: 'p1hpBoosted', bonus: 1 },
   ],
   [
     { name: 'p2atkpray', bonus: 1 },
@@ -53,12 +54,13 @@ const activeBoosts = [
     { name: 'p2atkpot', bonus: 1 },
     { name: 'p2strpot', bonus: 1 },
     { name: 'p2defpot', bonus: 1 },
+    { name: 'p2hpBoosted', bonus: 1 },
   ],
 ];
 
 let playerLevels = [
-  [0, 0, 0],
-  [0, 0, 0],
+  [0, 0, 0, 0],
+  [0, 0, 0, 0],
 ];
 
 let definedBoosts = [
@@ -150,3 +152,24 @@ let definedBoosts = [
     strInc: 0.12,
   },
 ];
+
+const differentialValues = [
+  // DPS - Lower Bound, Middle Bound, Upper Bound
+  [0.2, 0.5, 1],
+  // HP - Lower, Middle, Upper
+  [0, 2, 6],
+];
+
+const hpBoosts = [{ name: 'Guthix Rest', boost: 5, p1status: 0, p2status: 0 }];
+
+const allBoostElements = document.getElementsByClassName('boost');
+const allBoostElementsArray = Array.from(allBoostElements);
+
+const audio = [{ id: 0, dir: 'assets/audio/sword_hit.mp3' }];
+
+const audioList = Array();
+
+audio.forEach((sound, index) => {
+  audioList[index] = new Audio();
+  audioList[index].src = sound.dir;
+});

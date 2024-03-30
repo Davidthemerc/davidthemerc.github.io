@@ -40,12 +40,16 @@
                             <input id="p1hp" type="text" style="width: 42px; text-align: center; margin: 5px" /></label>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col"><label class="form-label bold extraspace dpsborder"
-                            style="width: 50%; text-align: center">Competitor One Average DPS<input id="p1dps"
-                                type="text" style="width: 128px; text-align: center; margin: 5px"
-                                class="dpsbox" /></label>
-                    </div>+
+                <div class="row dpsborder extraspace">
+                    <div class="col"><label class="form-label bold" style="width: 100%; text-align: center">Competitor
+                            One Average DPS<input id="p1dps" type="text"
+                                style="width: 128px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                            class="form-label bold" style="width: 100%; text-align: center">DPS Differential<input
+                                id="p1dpsdiff" type="text" style="width: 64px; text-align: center; margin: 5px"
+                                class="dpsbox" /></label><label class="form-label bold"
+                            style="width: 100%; text-align: center">HP Differential<input id="p1hpdiff" type="text"
+                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label>
+                    </div>
                 </div>
                 <div class="row">
                     <div class="col d-flex flex-column" style="text-align: center">
@@ -53,7 +57,7 @@
                             <strong>Modifiers</strong>
                         </p>
                         <p class="text-center" style="font-size: 10px; margin: 0px">
-                            <strong>(Prayers and Potions)</strong>
+                            <strong>(Prayers, Potions, and More!)</strong>
                         </p>
                         <div class="row forcecenter">
                             <div class="col">
@@ -89,7 +93,8 @@
                                     src="assets/img/Super_defence(4).webp" class="boost" style="margin: 5px"
                                     title="Super Defence Potion" /><img id="p1zampot"
                                     src="assets/img/Zamorak_brew(4).webp" class="boost" style="margin: 5px"
-                                    title="Zamorak Brew" />
+                                    title="Zamorak Brew" /><img id="p1guthixrest" src="assets/img/guthix_rest.png"
+                                    class="boost" style="margin: 5px" title="Guthix Reset" />
                             </div>
                             <button id="p1reset" class="btn btn-primary" type="button">Reset</button>
                         </div>
@@ -123,79 +128,80 @@
                             <input id="p2hp" type="text" style="width: 42px; text-align: center; margin: 5px" /></label>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col"><label class="form-label bold extraspace dpsborder"
-                            style="width: 50%; text-align: center">Competitor Two Average DPS<input id="p2dps"
-                                type="text" style="width: 128px; text-align: center; margin: 5px"
-                                class="dpsbox" /></label>
+                <div class="row dpsborder extraspace">
+                    <div class="col"><label class="form-label bold" style="width: 100%; text-align: center">Competitor
+                            Two Average DPS<input id="p2dps" type="text"
+                                style="width: 128px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                            class="form-label bold" style="width: 100%; text-align: center">DPS Differential<input
+                                id="p2dpsdiff" type="text" style="width: 64px; text-align: center; margin: 5px"
+                                class="dpsbox" /></label><label class="form-label bold"
+                            style="width: 100%; text-align: center">HP Differential<input id="p2hpdiff" type="text"
+                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label>
                     </div>
-                    <div class="row">
-                        <div class="col d-flex flex-column" style="text-align: center">
-                            <p class="text-center" style="height: 5px">
-                                <strong>Modifiers</strong>
-                            </p>
-                            <p class="text-center" style="font-size: 10px; margin: 0px">
-                                <strong>(Prayers and Potions)</strong>
-                            </p>
-                            <div class="row forcecenter">
-                                <div class="col">
-                                    <img id="p2defpray1" src="assets/img/Thick_Skin.webp" class="boost"
-                                        style="margin: 3px" title="Thick Skin" /><img id="p2strpray1"
-                                        src="assets/img/Burst_of_Strength.webp" class="boost" style="margin: 3px"
-                                        title="Burst of Strength" /><img id="p2atkpray1"
-                                        src="assets/img/Clarity_of_Thought.webp" class="boost" style="margin: 3px"
-                                        title="Clarity of Thought" /><img id="p2defpray2"
-                                        src="assets/img/Rock_Skin.webp" class="boost" style="margin: 3px"
-                                        title="Rock Skin" /><img id="p2strpray2"
-                                        src="assets/img/Superhuman_Strength.webp" class="boost" style="margin: 3px"
-                                        title="Superhuman Strength" /><img id="p2atkpray2"
-                                        src="assets/img/Improved_Reflexes.webp" class="boost" style="margin: 3px"
-                                        title="Improved Reflexes" /><img id="p2defpray3"
-                                        src="assets/img/Steel_Skin.webp" class="boost" style="margin: 3px"
-                                        title="Steel Skin" /><img id="p2strpray3"
-                                        src="assets/img/Ultimate_Strength.webp" class="boost" style="margin: 3px"
-                                        title="Ultimate Strength" /><img id="p2atkpray3"
-                                        src="assets/img/Incredible_Reflexes.webp" class="boost" style="margin: 3px"
-                                        title="Incredible Reflexes" /><img id="p2melpray1"
-                                        src="assets/img/Chivalry.webp" class="boost" style="margin: 3px"
-                                        title="Chivalry" /><img id="p2melpray2" src="assets/img/Piety.webp"
-                                        class="boost" style="margin: 3px" title="Piety" />
-                                </div>
-                                <div class="col">
-                                    <img id="p2atkpot1" src="assets/img/Attack_potion(4).webp" class="boost"
-                                        style="margin: 5px" title="Attack Potion" /><img id="p2strpot1"
-                                        src="assets/img/Strength_potion(4).webp" class="boost" style="margin: 5px"
-                                        title="Strength Potion" /><img id="p2defpot1"
-                                        src="assets/img/Defence_potion(4).webp" class="boost" style="margin: 5px"
-                                        title="Defence Potion" /><img id="p2atkpot2"
-                                        src="assets/img/Super_attack(4).webp" class="boost" style="margin: 5px"
-                                        title="Super Attack Potion" /><img id="p2strpot2"
-                                        src="assets/img/Super_strength(4).webp" class="boost" style="margin: 5px"
-                                        title="Super Strength Potion" /><img id="p2defpot2"
-                                        src="assets/img/Super_defence(4).webp" class="boost" style="margin: 5px"
-                                        title="Super Defence Potion" /><img id="p2zampot"
-                                        src="assets/img/Zamorak_brew(4).webp" class="boost" style="margin: 5px"
-                                        title="Zamorak Brew" />
-                                </div>
-                                <button id="p2reset" class="btn btn-primary" type="button">Reset</button>
+                </div>
+                <div class="row">
+                    <div class="col d-flex flex-column" style="text-align: center">
+                        <p class="text-center" style="height: 5px">
+                            <strong>Modifiers</strong>
+                        </p>
+                        <p class="text-center" style="font-size: 10px; margin: 0px">
+                            <strong>(Prayers, Potions, and More!)</strong>
+                        </p>
+                        <div class="row forcecenter">
+                            <div class="col">
+                                <img id="p2defpray1" src="assets/img/Thick_Skin.webp" class="boost" style="margin: 3px"
+                                    title="Thick Skin" /><img id="p2strpray1" src="assets/img/Burst_of_Strength.webp"
+                                    class="boost" style="margin: 3px" title="Burst of Strength" /><img id="p2atkpray1"
+                                    src="assets/img/Clarity_of_Thought.webp" class="boost" style="margin: 3px"
+                                    title="Clarity of Thought" /><img id="p2defpray2" src="assets/img/Rock_Skin.webp"
+                                    class="boost" style="margin: 3px" title="Rock Skin" /><img id="p2strpray2"
+                                    src="assets/img/Superhuman_Strength.webp" class="boost" style="margin: 3px"
+                                    title="Superhuman Strength" /><img id="p2atkpray2"
+                                    src="assets/img/Improved_Reflexes.webp" class="boost" style="margin: 3px"
+                                    title="Improved Reflexes" /><img id="p2defpray3" src="assets/img/Steel_Skin.webp"
+                                    class="boost" style="margin: 3px" title="Steel Skin" /><img id="p2strpray3"
+                                    src="assets/img/Ultimate_Strength.webp" class="boost" style="margin: 3px"
+                                    title="Ultimate Strength" /><img id="p2atkpray3"
+                                    src="assets/img/Incredible_Reflexes.webp" class="boost" style="margin: 3px"
+                                    title="Incredible Reflexes" /><img id="p2melpray1" src="assets/img/Chivalry.webp"
+                                    class="boost" style="margin: 3px" title="Chivalry" /><img id="p2melpray2"
+                                    src="assets/img/Piety.webp" class="boost" style="margin: 3px" title="Piety" />
                             </div>
+                            <div class="col">
+                                <img id="p2atkpot1" src="assets/img/Attack_potion(4).webp" class="boost"
+                                    style="margin: 5px" title="Attack Potion" /><img id="p2strpot1"
+                                    src="assets/img/Strength_potion(4).webp" class="boost" style="margin: 5px"
+                                    title="Strength Potion" /><img id="p2defpot1"
+                                    src="assets/img/Defence_potion(4).webp" class="boost" style="margin: 5px"
+                                    title="Defence Potion" /><img id="p2atkpot2" src="assets/img/Super_attack(4).webp"
+                                    class="boost" style="margin: 5px" title="Super Attack Potion" /><img id="p2strpot2"
+                                    src="assets/img/Super_strength(4).webp" class="boost" style="margin: 5px"
+                                    title="Super Strength Potion" /><img id="p2defpot2"
+                                    src="assets/img/Super_defence(4).webp" class="boost" style="margin: 5px"
+                                    title="Super Defence Potion" /><img id="p2zampot"
+                                    src="assets/img/Zamorak_brew(4).webp" class="boost" style="margin: 5px"
+                                    title="Zamorak Brew" /><img id="p2guthixrest" src="assets/img/guthix_rest.png"
+                                    class="boost" style="margin: 5px" title="Guthix Reset" />
+                            </div>
+                            <button id="p2reset" class="btn btn-primary" type="button">Reset</button>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col" style="text-align: center">
-                    <p id="status" style="text-align: center; margin: 5px">
+        </div>
+        <div class="row">
+            <div class="col" style="text-align: center">
+                <p id="status" style="text-align: center; margin: 5px">
 
-                    </p>
-                    <img src="assets/img/clipboard-image-6.png" class="apple" />
-                </div>
+                </p>
+                <img src="assets/img/clipboard-image-6.png" class="apple" />
             </div>
         </div>
-        <script src="assets/bootstrap/js/bootstrap.min.js"></script>
-        <script src="assets/js/vars.js"></script>
-        <script src="assets/js/functions.js"></script>
-        <script src="assets/js/app.js"></script>
+    </div>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/vars.js"></script>
+    <script src="assets/js/functions.js"></script>
+    <script src="assets/js/app.js"></script>
 </body>
 
 </html>

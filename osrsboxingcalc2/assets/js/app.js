@@ -5,6 +5,8 @@ const p1str = document.getElementById('p1str');
 const p1def = document.getElementById('p1def');
 const p1hp = document.getElementById('p1hp');
 const p1dps = document.getElementById('p1dps');
+const p1dpsdiff = document.getElementById('p1dpsdiff');
+const p1hpdiff = document.getElementById('p1hpdiff');
 const p1defpray1 = document.getElementById('p1defpray1');
 const p1strpray1 = document.getElementById('p1strpray1');
 const p1atkpray1 = document.getElementById('p1atkpray1');
@@ -23,6 +25,7 @@ const p1atkpot2 = document.getElementById('p1atkpot2');
 const p1strpot2 = document.getElementById('p1strpot2');
 const p1defpot2 = document.getElementById('p1defpot2');
 const p1zampot = document.getElementById('p1zampot');
+const p1guthixrest = document.getElementById('p1guthixrest');
 const p2rsn = document.getElementById('p2rsn');
 const p2lookup = document.getElementById('p2lookup');
 const p2atk = document.getElementById('p2atk');
@@ -30,6 +33,8 @@ const p2str = document.getElementById('p2str');
 const p2def = document.getElementById('p2def');
 const p2hp = document.getElementById('p2hp');
 const p2dps = document.getElementById('p2dps');
+const p2dpsdiff = document.getElementById('p2dpsdiff');
+const p2hpdiff = document.getElementById('p2hpdiff');
 const p2defpray1 = document.getElementById('p2defpray1');
 const p2strpray1 = document.getElementById('p2strpray1');
 const p2atkpray1 = document.getElementById('p2atkpray1');
@@ -48,6 +53,7 @@ const p2atkpot2 = document.getElementById('p2atkpot2');
 const p2strpot2 = document.getElementById('p2strpot2');
 const p2defpot2 = document.getElementById('p2defpot2');
 const p2zampot = document.getElementById('p2zampot');
+const p2guthixrest = document.getElementById('p2guthixrest');
 const p1reset = document.getElementById('p1reset');
 const p2reset = document.getElementById('p2reset');
 const statusEl = document.getElementById('status');
@@ -95,3 +101,6 @@ p2reset.addEventListener('click', () => {
 
 // Assign event listeners to the prayers and potions
 assignEventListeners();
+
+// Assign event listeners to the Guthix rest and more (new stuff)
+assignNewEventListeners();

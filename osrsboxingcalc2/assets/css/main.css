@@ -48,3 +48,10 @@
 .dpsborder {
   border: 1px black dashed;
 }
+
+#p1dpsdiff,
+#p2dpsdiff,
+#p1hpdiff,
+#p2hpdiff {
+  background-color: black;
+}
