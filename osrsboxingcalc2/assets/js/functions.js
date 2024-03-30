@@ -103,14 +103,119 @@ const calcPlayerDPS = () => {
   // If the target is a player, use the formula
   // Def roll = Effective Defence * (Target Style Defence Bonus + 64)
   //
-  // Wheras Effective Defence = (Defense Level + Defense Level Boost) * Prayer Bonus
+  // Wheras Effective Defence = (Defence Level + Defence Level Boost) * Prayer Bonus
   // Round down to nearest integer
   // +8 (Constant)
   // Round Down
 
-  let p2effectiveDefence = activeBoosts[1][2];
+  let p2effectiveDefence = Math.floor(
+    Math.floor(activeBoosts[1][5].bonus * activeBoosts[1][2].bonus + 8)
+  );
 
-  let p2DefenseRoll = p2effectiveDefence * (1 + 64);
+  console.log(`P2 Effective Defence: ${p2effectiveDefence}`);
+
+  let p2DefenceRoll = p2effectiveDefence * (1 + 64);
+
+  console.log(`P2 Defence Roll: ${p2DefenceRoll}`);
+
+  // Step Six: Calculate the Hit Chance
+  // If Attack Roll > Defence Roll
+  let p1HitChance;
+
+  if (p1AttackRoll > p2DefenceRoll) {
+    p1HitChance = 1 - (p2DefenceRoll + 2) / (2 * (p1AttackRoll + 1));
+  } else {
+    p1HitChance = p1AttackRoll / (2 * (p2DefenceRoll + 1));
+  }
+  console.log(`P1 Hit Chance: ${p1HitChance}`);
+
+  // Step Seven: Calculate the melee damage output
+  // Average damage per attack = Maximum Hit Chance * Hit Chance / 2
+  p1calculatedDPS = (p1MaximumHit * p1HitChance) / 2 / 2.4;
+
+  p1calculatedDPS = Math.round(p1calculatedDPS * 1000000) / 1000000;
+
+  console.log(`P1 Calculated DPS = ${p1calculatedDPS}`);
+
+  p1dps.value = p1calculatedDPS;
+
+  // Now on to Player Two...or Competitor Two...or whatever we're calling them now
+
+  // Step One: Calculate the effective strength level. Easy
+  let p2EffectiveStrength = Math.floor(
+    // Formula = (p1str + p1strlvlboost) * p1strprayboost
+    activeBoosts[1][4].bonus * activeBoosts[1][1].bonus
+  );
+  console.log(`P2 Effective Strength:${p2EffectiveStrength}`);
+
+  // Step Two: Calculate the maximum hit.
+  // Effective Strength * (0 + 64, Boxing Gloves have 0 Str Bonus) + 320 / 640 , Round Down,
+  // * Target Specific Gear Bonus (Should be 1, Boxing Gloves have 1 Slash Defence)
+  // Round Down to nearest integer
+
+  let p2MaximumHit = Math.floor(
+    Math.floor((p2EffectiveStrength * (0 + 64) + 320) / 640) * 1
+  );
+  console.log(`P2 Max Hit:${p2MaximumHit}`);
+
+  // Step Three: Calculate the effective attack level
+  // (Attack level + Attack Level boost) * prayer bonus
+  // Round down to nearest integer
+  // +3 if using accurate attack style - should be mandated
+  // +8 (Constant)
+  // Round Down
+
+  let p2EffectiveAttack = Math.floor(
+    Math.floor(activeBoosts[1][3].bonus * activeBoosts[1][0].bonus) + 3 + 8
+  );
+
+  console.log(`Effective Attack Level: ${p2EffectiveAttack}`);
+
+  // Step Four: Calculate the Attack roll
+  // Effective Attak Level * (Equipment Attack Bonus + 64)
+  // Round down to [the] nearest integer
+
+  let p2AttackRoll = Math.floor(p2EffectiveAttack * (0 + 64));
+
+  // Step Five: Calculate the other player's Defence roll
+  // If the target is a player, use the formula
+  // Def roll = Effective Defence * (Target Style Defence Bonus + 64)
+  //
+  // Wheras Effective Defence = (Defence Level + Defence Level Boost) * Prayer Bonus
+  // Round down to nearest integer
+  // +8 (Constant)
+  // Round Down
+
+  let p1effectiveDefence = Math.floor(
+    Math.floor(activeBoosts[0][5].bonus * activeBoosts[0][2].bonus + 8)
+  );
+
+  console.log(`P1 Effective Defence: ${p1effectiveDefence}`);
+
+  let p1DefenceRoll = p1effectiveDefence * (1 + 64);
+
+  console.log(`P1 Defence Roll: ${p1DefenceRoll}`);
+
+  // Step Six: Calculate the Hit Chance
+  // If Attack Roll > Defence Roll
+  let p2HitChance;
+
+  if (p2AttackRoll > p1DefenceRoll) {
+    p2HitChance = 1 - (p1DefenceRoll + 2) / (2 * (p2AttackRoll + 1));
+  } else {
+    p2HitChance = p2AttackRoll / (2 * (p1DefenceRoll + 1));
+  }
+  console.log(`P2 Hit Chance: ${p2HitChance}`);
+
+  // Step Seven: Calculate the melee damage output
+  // Average damage per attack = Maximum Hit Chance * Hit Chance / 2
+  p2calculatedDPS = (p2MaximumHit * p2HitChance) / 2 / 2.4;
+
+  p2calculatedDPS = Math.round(p2calculatedDPS * 1000000) / 1000000;
+
+  console.log(`P2 Calculated DPS = ${p2calculatedDPS}`);
+
+  p2dps.value = p2calculatedDPS;
 };
 
 const applyBoost = (id, player) => {
@@ -295,7 +400,7 @@ const assignEventListeners = () => {
       }
 
       if (elem.status === 0) {
-        //boostHighlight(elem.boostID, elem.player);
+        boostHighlight(elem.boostID, elem.player);
         elem.status = 1;
         element.style.border = '1px red solid';
         applyBoost(elem.boostID, elem.player);
