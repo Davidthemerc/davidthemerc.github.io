@@ -45,13 +45,41 @@
   margin: 1.5rem;
 }
 
+.slightspace {
+  margin: 0.5rem;
+}
+
+.fiddy {
+  width: 33%;
+}
+
 .dpsborder {
   border: 1px black dashed;
 }
 
 #p1dpsdiff,
-#p2dpsdiff,
 #p1hpdiff,
-#p2hpdiff {
+#p1activestyle,
+#p1activeskillstyle,
+#p1melstr,
+#p1stab,
+#p1slash,
+#p1crush,
+#p2dpsdiff,
+#p2hpdiff,
+#p2activestyle,
+#p2activeskillstyle,
+#p2melstr,
+#p2stab,
+#p2slash,
+#p2crush {
   background-color: black;
+  color: white;
+  font-weight: bold;
+}
+
+.equip {
+  width: 160px;
+  margin: 0.25rem;
+  text-align: center;
 }

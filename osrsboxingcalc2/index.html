@@ -27,16 +27,16 @@
                     </button></label>
                 <div class="row">
                     <div class="col">
-                        <label class="form-label" style="width: 20%; margin: 0px 0px 0px; text-align: center">Attack
+                        <label class="form-label" style="width: 25%; margin: 0px 0px 0px; text-align: center">Attack
                             Level<input id="p1atk" type="text"
                                 style="width: 42px; text-align: center; margin: 5px" /></label><label class="form-label"
-                            style="width: 20%; margin: 0px 0px 0px; text-align: center">Strength
+                            style="width: 25%; margin: 0px 0px 0px; text-align: center">Strength
                             Level<input id="p1str" type="text"
                                 style="width: 42px; text-align: center; margin: 5px" /></label><label class="form-label"
-                            style="width: 20%; margin: 0px 0px 0px; text-align: center">Defence
+                            style="width: 25%; margin: 0px 0px 0px; text-align: center">Defence
                             Level<input id="p1def" type="text"
                                 style="width: 42px; text-align: center; margin: 5px" /></label><label class="form-label"
-                            style="width: 20%; margin: 0px 0px 0px; text-align: center;;">Hitpoints
+                            style="width: 25%; margin: 0px 0px 0px; text-align: center;;">Hitpoints
                             <input id="p1hp" type="text" style="width: 42px; text-align: center; margin: 5px" /></label>
                     </div>
                 </div>
@@ -48,7 +48,23 @@
                                 id="p1dpsdiff" type="text" style="width: 64px; text-align: center; margin: 5px"
                                 class="dpsbox" /></label><label class="form-label bold"
                             style="width: 100%; text-align: center">HP Differential<input id="p1hpdiff" type="text"
-                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label>
+                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                            class="form-label bold" style="width: 100%; text-align: center">Style<input
+                                id="p1activestyle" type="text" style="width: 64px; text-align: center; margin: 5px"
+                                class="dpsbox" /></label><label class="form-label bold"
+                            style="width: 100%; text-align: center">Skill Style<input id="p1activeskillstyle"
+                                type="text" style="width: 112px; text-align: center; margin: 5px"
+                                class="dpsbox" /></label><label class="form-label bold"
+                            style="width: 100%; text-align: center">Melee Strength<input id="p1melstr" type="text"
+                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                            class="form-label bold" style="width: 100%; text-align: center">Stab Bonus<input id="p1stab"
+                                type="text" style="width: 64px; text-align: center; margin: 5px"
+                                class="dpsbox" /></label><label class="form-label bold"
+                            style="width: 100%; text-align: center">Slash Bonus<input id="p1slash" type="text"
+                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                            class="form-label bold" style="width: 100%; text-align: center">Crush Bonus<input
+                                id="p1crush" type="text" style="width: 64px; text-align: center; margin: 5px"
+                                class="dpsbox" /></label>
                     </div>
                 </div>
                 <div class="row">
@@ -94,7 +110,51 @@
                                     title="Super Defence Potion" /><img id="p1zampot"
                                     src="assets/img/Zamorak_brew(4).webp" class="boost" style="margin: 5px"
                                     title="Zamorak Brew" /><img id="p1guthixrest" src="assets/img/guthix_rest.png"
-                                    class="boost" style="margin: 5px" title="Guthix Reset" />
+                                    class="boost" style="margin: 5px" title="Guthix Reset" /><img id="p1bloodybracer"
+                                    src="assets/img/bloody_bracer.png" class="boost" style="margin: 5px"
+                                    title="Bloody Bracer" />
+                            </div>
+                            <div class="row forcecenter slightspace">
+                                <p class="text-center" style="height: 5px">
+                                    <strong>Equipment</strong>
+                                </p>
+                                <p class="text-center" style="font-size: 10px; margin: 0px">
+                                    <strong>(When fists just aren't enough!)</strong>
+                                </p>
+                            </div>
+                            <div class="row forcecenter">
+                                <div class="col">
+                                    <p class="text-center" style="height: 5px">
+                                        <strong>Weapon</strong>
+                                    </p>
+                                    <select class="equip" id="p1weapon">
+                                        <option value="0">Boxing Gloves</option>
+                                        <option value="1">Dragon Dagger</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <p class="text-center" style="height: 5px">
+                                        <strong>Style</strong>
+                                    </p>
+                                    <select class="equip" id="p1cbstyle">
+                                        <option value="N/A">Select...</option>
+                                        <option value="0">Stab</option>
+                                        <option value="1">Slash</option>
+                                        <option value="2">Crush</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <p class="text-center" style="height: 5px">
+                                        <strong>Skill Style</strong>
+                                    </p>
+                                    <select class="equip" id="p1skillstyle">
+                                        <option value="N/A">Select...</option>
+                                        <option value="0">Accurate</option>
+                                        <option value="1">Controlled</option>
+                                        <option value="2">Aggressive</option>
+                                        <option value="3">Defensive</option>
+                                    </select>
+                                </div>
                             </div>
                             <button id="p1reset" class="btn btn-primary" type="button">Reset</button>
                         </div>
@@ -124,7 +184,7 @@
                             style="width: 25%; margin: 0px 0px 0px; text-align: center">Defence
                             Level<input id="p2def" type="text"
                                 style="width: 42px; text-align: center; margin: 5px" /></label><label class="form-label"
-                            style="width: 20%; margin: 0px 0px 0px; text-align: center">Hitpoints
+                            style="width: 25%; margin: 0px 0px 0px; text-align: center">Hitpoints
                             <input id="p2hp" type="text" style="width: 42px; text-align: center; margin: 5px" /></label>
                     </div>
                 </div>
@@ -136,7 +196,23 @@
                                 id="p2dpsdiff" type="text" style="width: 64px; text-align: center; margin: 5px"
                                 class="dpsbox" /></label><label class="form-label bold"
                             style="width: 100%; text-align: center">HP Differential<input id="p2hpdiff" type="text"
-                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label>
+                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                            class="form-label bold" style="width: 100%; text-align: center">Style<input
+                                id="p2activestyle" type="text" style="width: 64px; text-align: center; margin: 5px"
+                                class="dpsbox" /></label><label class="form-label bold"
+                            style="width: 100%; text-align: center">Skill Style<input id="p2activeskillstyle"
+                                type="text" style="width: 112px; text-align: center; margin: 5px"
+                                class="dpsbox" /></label><label class="form-label bold"
+                            style="width: 100%; text-align: center">Melee Strength<input id="p2melstr" type="text"
+                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                            class="form-label bold" style="width: 100%; text-align: center">Stab Bonus<input id="p2stab"
+                                type="text" style="width: 64px; text-align: center; margin: 5px"
+                                class="dpsbox" /></label><label class="form-label bold"
+                            style="width: 100%; text-align: center">Slash Bonus<input id="p2slash" type="text"
+                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                            class="form-label bold" style="width: 100%; text-align: center">Crush Bonus<input
+                                id="p2crush" type="text" style="width: 64px; text-align: center; margin: 5px"
+                                class="dpsbox" /></label>
                     </div>
                 </div>
                 <div class="row">
@@ -181,7 +257,51 @@
                                     title="Super Defence Potion" /><img id="p2zampot"
                                     src="assets/img/Zamorak_brew(4).webp" class="boost" style="margin: 5px"
                                     title="Zamorak Brew" /><img id="p2guthixrest" src="assets/img/guthix_rest.png"
-                                    class="boost" style="margin: 5px" title="Guthix Reset" />
+                                    class="boost" style="margin: 5px" title="Guthix Reset" /><img id="p2bloodybracer"
+                                    src="assets/img/bloody_bracer.png" class="boost" style="margin: 5px"
+                                    title="Bloody Bracer" />
+                            </div>
+                            <div class="row forcecenter slightspace">
+                                <p class="text-center" style="height: 5px">
+                                    <strong>Equipment</strong>
+                                </p>
+                                <p class="text-center" style="font-size: 10px; margin: 0px">
+                                    <strong>(When fists just aren't enough!)</strong>
+                                </p>
+                            </div>
+                            <div class="row forcecenter">
+                                <div class="col ">
+                                    <p class="text-center" style="height: 5px">
+                                        <strong>Weapon</strong>
+                                    </p>
+                                    <select class="equip" id="p2weapon">
+                                        <option value="0">Boxing Gloves</option>
+                                        <option value="1">Dragon Dagger</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <p class="text-center" style="height: 5px">
+                                        <strong>Style</strong>
+                                    </p>
+                                    <select class="equip" id="p2cbstyle">
+                                        <option value="N/A">Select...</option>
+                                        <option value="0">Stab</option>
+                                        <option value="1">Slash</option>
+                                        <option value="2">Crush</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <p class="text-center" style="height: 5px">
+                                        <strong>Skill Style</strong>
+                                    </p>
+                                    <select class="equip" id="p2skillstyle">
+                                        <option value="N/A">Select...</option>
+                                        <option value="0">Accurate</option>
+                                        <option value="1">Controlled</option>
+                                        <option value="2">Aggressive</option>
+                                        <option value="3">Defensive</option>
+                                    </select>
+                                </div>
                             </div>
                             <button id="p2reset" class="btn btn-primary" type="button">Reset</button>
                         </div>

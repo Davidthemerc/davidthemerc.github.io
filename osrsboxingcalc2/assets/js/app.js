@@ -26,6 +26,16 @@ const p1strpot2 = document.getElementById('p1strpot2');
 const p1defpot2 = document.getElementById('p1defpot2');
 const p1zampot = document.getElementById('p1zampot');
 const p1guthixrest = document.getElementById('p1guthixrest');
+const p1bloodybracer = document.getElementById('p1bloodybracer');
+const p1weapon = document.getElementById('p1weapon');
+const p1cbstyle = document.getElementById('p1cbstyle');
+const p1skillstyle = document.getElementById('p1skillstyle');
+const p1activestyle = document.getElementById('p1activestyle');
+const p1activeskillstyle = document.getElementById('p1activeskillstyle');
+const p1melstr = document.getElementById('p1melstr');
+const p1stab = document.getElementById('p1stab');
+const p1slash = document.getElementById('p1slash');
+const p1crush = document.getElementById('p1crush');
 const p2rsn = document.getElementById('p2rsn');
 const p2lookup = document.getElementById('p2lookup');
 const p2atk = document.getElementById('p2atk');
@@ -54,6 +64,16 @@ const p2strpot2 = document.getElementById('p2strpot2');
 const p2defpot2 = document.getElementById('p2defpot2');
 const p2zampot = document.getElementById('p2zampot');
 const p2guthixrest = document.getElementById('p2guthixrest');
+const p2bloodybracer = document.getElementById('p2bloodybracer');
+const p2weapon = document.getElementById('p2weapon');
+const p2cbstyle = document.getElementById('p2cbstyle');
+const p2skillstyle = document.getElementById('p2skillstyle');
+const p2activestyle = document.getElementById('p2activestyle');
+const p2activeskillstyle = document.getElementById('p2activeskillstyle');
+const p2melstr = document.getElementById('p2melstr');
+const p2stab = document.getElementById('p2stab');
+const p2slash = document.getElementById('p2slash');
+const p2crush = document.getElementById('p2crush');
 const p1reset = document.getElementById('p1reset');
 const p2reset = document.getElementById('p2reset');
 const statusEl = document.getElementById('status');
@@ -104,3 +124,69 @@ assignEventListeners();
 
 // Assign event listeners to the Guthix rest and more (new stuff)
 assignNewEventListeners();
+
+// Assign event listeners to the player one weapon selection menu
+p1weapon.addEventListener('change', (sel) => {
+  // Do not execute if both names are not filled out
+  if (p1rsn.value === '' || p2rsn.value === '') {
+    return;
+  }
+
+  console.log(sel.target.value);
+  // Run the equip weapon function, 0 = Player 1, sel = selected weapon
+  equipWeapon(0, parseInt(sel.target.value));
+});
+
+// Assign event listeners to the player one combat style selection menu
+p1cbstyle.addEventListener('change', (sel) => {
+  // Do not execute if both names are not filled out
+  if (p1rsn.value === '' || p2rsn.value === '') {
+    return;
+  }
+  // Run the equip weapon function, 0 = Player 1, sel = selected weapon
+  changeCombatStyle(0, sel.target.value);
+});
+
+// Assign event listeners to the player one combat skill style selection menu
+p1skillstyle.addEventListener('change', (sel) => {
+  // Do not execute if both names are not filled out
+  if (p1rsn.value === '' || p2rsn.value === '') {
+    return;
+  }
+  // Run the equip weapon function, 0 = Player 1, sel = selected weapon
+  changeCombatSkillStyle(0, sel.target.value);
+});
+
+// DIVIDER - Player Two New Event Listeners past this point
+
+// Assign event listeners to the player two weapon selection menu
+p2weapon.addEventListener('change', (sel) => {
+  // Do not execute if both names are not filled out
+  if (p1rsn.value === '' || p2rsn.value === '') {
+    return;
+  }
+
+  console.log(sel.target.value);
+  // Run the equip weapon function, 0 = Player 1, sel = selected weapon
+  equipWeapon(1, sel.target.value);
+});
+
+// Assign event listeners to the player two combat style selection menu
+p2cbstyle.addEventListener('change', (sel) => {
+  // Do not execute if both names are not filled out
+  if (p1rsn.value === '' || p2rsn.value === '') {
+    return;
+  }
+  // Run the equip weapon function, 0 = Player 1, sel = selected weapon
+  changeCombatStyle(1, sel.target.value);
+});
+
+// Assign event listeners to the player two combat skill style selection menu
+p2skillstyle.addEventListener('change', (sel) => {
+  // Do not execute if both names are not filled out
+  if (p1rsn.value === '' || p2rsn.value === '') {
+    return;
+  }
+  // Run the equip weapon function, 0 = Player 1, sel = selected weapon
+  changeCombatSkillStyle(1, sel.target.value);
+});

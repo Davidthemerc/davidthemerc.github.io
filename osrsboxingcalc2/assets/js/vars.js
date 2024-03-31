@@ -356,6 +356,9 @@ const activeBoosts = [
     { name: 'p1strpot', bonus: 1 },
     { name: 'p1defpot', bonus: 1 },
     { name: 'p1hpBoosted', bonus: 1 },
+    { name: 'p1stylebonus', bonus: 0, style: '' },
+    { name: 'p1skillstylebonus', bonus: 0, style: '' },
+    { name: 'p1defensivebonus', bonus: 0, style: '' },
   ],
   [
     { name: 'p2atkpray', bonus: 1 },
@@ -365,12 +368,65 @@ const activeBoosts = [
     { name: 'p2strpot', bonus: 1 },
     { name: 'p2defpot', bonus: 1 },
     { name: 'p2hpBoosted', bonus: 1 },
+    { name: 'p2stylebonus', bonus: 0, style: '' },
+    { name: 'p2skillstylebonus', bonus: 0, style: '' },
+    { name: 'p2defensivebonus', bonus: 0, style: '' },
   ],
 ];
 
 let playerLevels = [
   [0, 0, 0, 0],
   [0, 0, 0, 0],
+];
+
+let defaultPlayerEquipment = [
+  // In case needed for resets
+  // Arrangement of Values shall be: Melee Str, Stab, Slash, Crush, Speed (Seconds)
+  //
+  // Player One Stats
+  [0, 0, 0, 0, 2.4],
+  // Player Two Stats
+  [0, 0, 0, 0, 2.4],
+];
+
+let playerEquipment = [
+  // Arrangement of Values shall be: Melee Str, Stab, Slash, Crush, Speed (Seconds)
+  //
+  // Player One Stats
+  [0, 0, 0, 0, 2.4],
+  // Player Two Stats
+  [0, 0, 0, 0, 2.4],
+];
+
+let definedStyles = ['Stab', 'Slash', 'Crush'];
+
+let definedSkillStyles = ['Accurate', 'Controlled', 'Aggressive', 'Defensive'];
+
+let definedSkillStyleValues = [1, 1, 3, 0];
+
+let definedWeapons = [
+  {
+    name: 'Boxing Gloves',
+    id: 0,
+    meleeStr: 0,
+    stab: 0,
+    slash: 0,
+    crush: 0,
+    speed: 2.4,
+    defaultCBStyle: 1,
+    defaultSkillStyle: 1,
+  },
+  {
+    name: 'Dragon Dagger',
+    id: 1,
+    meleeStr: 40,
+    stab: 40,
+    slash: 25,
+    crush: 0,
+    speed: 2.4,
+    defaultCBStyle: 0,
+    defaultSkillStyle: 1,
+  },
 ];
 
 let definedBoosts = [
@@ -472,6 +528,7 @@ const differentialValues = [
 
 const hpBoosts = [
   { name: 'Guthix Rest', boost: 5, p1status: 0, p2status: 0, audioID: 12 },
+  { name: 'Bloody Bracer', boost: 2, p1status: 0, p2status: 0, audioID: 12 },
 ];
 
 const allBoostElements = document.getElementsByClassName('boost');

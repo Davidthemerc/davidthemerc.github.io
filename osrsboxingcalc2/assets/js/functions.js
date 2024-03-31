@@ -54,6 +54,14 @@ async function hiscores(playerName, player) {
 
       // Display HP differentials
       hpDifferentials();
+
+      // By default, pick the first item in the list for equipment and combat style for both players. This will populate the data values in the UI.
+      equipWeapon(0, 0);
+      changeCombatStyle(0, 1);
+      changeCombatSkillStyle(0, 0);
+      equipWeapon(1, 0);
+      changeCombatStyle(1, 1);
+      changeCombatSkillStyle(1, 0);
     }
 
     return { attack, defence, strength };
@@ -70,39 +78,61 @@ const calcPlayerDPS = () => {
 
   // Step One: Calculate the effective strength level. Easy
   let p1EffectiveStrength = Math.floor(
-    // Formula = (p1str + p1strlvlboost) * p1strprayboost
-    activeBoosts[0][4].bonus * activeBoosts[0][1].bonus
+    Math.floor(
+      // Formula = (p1str + p1strlvlboost) * p1strprayboost
+      activeBoosts[0][4].bonus * activeBoosts[0][1].bonus
+    ) +
+      // The 3 can be 1 if using controlled instead of aggressive. I think anything other than aggressive would be 1 instead of 3.
+      activeBoosts[0][8].bonus +
+      8
   );
   console.log(`P1 Effective Strength:${p1EffectiveStrength}`);
 
   // Step Two: Calculate the maximum hit.
-  // Effective Strength * (0 + 64, Boxing Gloves have 0 Str Bonus) + 320 / 640 , Round Down,
-  // * Target Specific Gear Bonus (Should be 1, Boxing Gloves have 1 Slash Defence)
+  // Effective Strength * (0 + 64, Boxing Gloves have 0 Str Bonus, other equipment will have more) + 320 / 640 , Round Down,
+  // * Target Specific Gear Bonus (Should always be 1 in pvp or boxing fights)
   // Round Down to nearest integer
+  // Player 1's equipment is represented in: playerEquipment[0][0] The first [0] targets the first array inside the playerEquipment array, which is player 1's equipment.
+  // The second [0] targets the first value in that array, which per vars.js is Melee Strength
+  // Player 2 would be playerEquipment[1][0]
 
   let p1MaximumHit = Math.floor(
-    Math.floor((p1EffectiveStrength * (0 + 64) + 320) / 640) * 1
+    Math.floor(
+      (p1EffectiveStrength * (playerEquipment[0][0] + 64) + 320) / 640
+      // The Multiplied Value following here is the Target's Specific Gear Bonus, which for these fights is always 1
+    ) * 1
   );
   console.log(`Max Hit:${p1MaximumHit}`);
 
   // Step Three: Calculate the effective attack level
   // (Attack level + Attack Level boost) * prayer bonus
   // Round down to nearest integer
-  // +3 if using accurate attack style - should be mandated
+  // +3 if using accurate attack style - should be mandated/mandatory for matches
+  // I guess we could say that accuracy should be favored in these matches?
+  // More constant hits do make for more entertaining fights
   // +8 (Constant)
   // Round Down
 
   let p1EffectiveAttack = Math.floor(
-    Math.floor(activeBoosts[0][3].bonus * activeBoosts[0][0].bonus) + 3 + 8
+    Math.floor(activeBoosts[0][3].bonus * activeBoosts[0][0].bonus) +
+      activeBoosts[0][8].bonus +
+      8
   );
 
   console.log(`Effective Attack Level: ${p1EffectiveAttack}`);
 
   // Step Four: Calculate the Attack roll
-  // Effective Attak Level * (Equipment Attack Bonus + 64)
+  // Effective Attack Level * (Equipment Attack Bonus + 64)
+  // Equipment Attack Bonus will be selected by menus on the GUI
   // Round down to [the] nearest integer
+  // The equipment values themselves are stored in an array, which are selected as above
+  // When the calculator operator selects a weapon and a style, the correct bonus
+  // is transmitted to the variable here, specifically, activeBoost[0][7].bonus
+  // By default, for boxing gloves, activeBoost[0][7].bonus will be 0.
 
-  let p1AttackRoll = Math.floor(p1EffectiveAttack * (0 + 64));
+  let p1AttackRoll = Math.floor(
+    p1EffectiveAttack * (activeBoosts[0][7].bonus + 64)
+  );
 
   // Step Five: Calculate the other player's Defence roll
   // If the target is a player, use the formula
@@ -114,7 +144,11 @@ const calcPlayerDPS = () => {
   // Round Down
 
   let p2effectiveDefence = Math.floor(
-    Math.floor(activeBoosts[1][5].bonus * activeBoosts[1][2].bonus + 8)
+    Math.floor(
+      activeBoosts[1][5].bonus * activeBoosts[1][2].bonus +
+        activeBoosts[1][9].bonus +
+        +8
+    )
   );
 
   console.log(`P2 Effective Defence: ${p2effectiveDefence}`);
@@ -136,7 +170,10 @@ const calcPlayerDPS = () => {
 
   // Step Seven: Calculate the melee damage output
   // Average damage per attack = Maximum Hit Chance * Hit Chance / 2
-  p1calculatedDPS = (p1MaximumHit * p1HitChance) / 2 / 2.4;
+  // The Last Value in the Formula (Originally 2.4) is the weapon speed
+  // That will need to be changed to account for different weapons
+  // For player one, the weapon speed value is stored in playerEquipment[0][4]
+  p1calculatedDPS = (p1MaximumHit * p1HitChance) / 2 / playerEquipment[0][4];
 
   p1calculatedDPS = Math.round(p1calculatedDPS * 1000000) / 1000000;
 
@@ -148,8 +185,13 @@ const calcPlayerDPS = () => {
 
   // Step One: Calculate the effective strength level. Easy
   let p2EffectiveStrength = Math.floor(
-    // Formula = (p1str + p1strlvlboost) * p1strprayboost
-    activeBoosts[1][4].bonus * activeBoosts[1][1].bonus
+    Math.floor(
+      // Formula = (p1str + p1strlvlboost) * p1strprayboost
+      activeBoosts[1][4].bonus * activeBoosts[1][1].bonus
+    ) +
+      // The 3 can be 1 if using controlled instead of aggressive. I think anything other than aggressive would be 1 instead of 3.
+      activeBoosts[1][8].bonus +
+      8
   );
   console.log(`P2 Effective Strength:${p2EffectiveStrength}`);
 
@@ -159,7 +201,9 @@ const calcPlayerDPS = () => {
   // Round Down to nearest integer
 
   let p2MaximumHit = Math.floor(
-    Math.floor((p2EffectiveStrength * (0 + 64) + 320) / 640) * 1
+    Math.floor(
+      (p2EffectiveStrength * (playerEquipment[1][0] + 64) + 320) / 640
+    ) * 1
   );
   console.log(`P2 Max Hit:${p2MaximumHit}`);
 
@@ -171,7 +215,9 @@ const calcPlayerDPS = () => {
   // Round Down
 
   let p2EffectiveAttack = Math.floor(
-    Math.floor(activeBoosts[1][3].bonus * activeBoosts[1][0].bonus) + 3 + 8
+    Math.floor(activeBoosts[1][3].bonus * activeBoosts[1][0].bonus) +
+      activeBoosts[1][8].bonus +
+      8
   );
 
   console.log(`Effective Attack Level: ${p2EffectiveAttack}`);
@@ -180,7 +226,9 @@ const calcPlayerDPS = () => {
   // Effective Attak Level * (Equipment Attack Bonus + 64)
   // Round down to [the] nearest integer
 
-  let p2AttackRoll = Math.floor(p2EffectiveAttack * (0 + 64));
+  let p2AttackRoll = Math.floor(
+    p2EffectiveAttack * (activeBoosts[1][7].bonus + 64)
+  );
 
   // Step Five: Calculate the other player's Defence roll
   // If the target is a player, use the formula
@@ -192,7 +240,11 @@ const calcPlayerDPS = () => {
   // Round Down
 
   let p1effectiveDefence = Math.floor(
-    Math.floor(activeBoosts[0][5].bonus * activeBoosts[0][2].bonus + 8)
+    Math.floor(
+      activeBoosts[0][5].bonus * activeBoosts[0][2].bonus +
+        activeBoosts[0][9].bonus +
+        8
+    )
   );
 
   console.log(`P1 Effective Defence: ${p1effectiveDefence}`);
@@ -214,7 +266,7 @@ const calcPlayerDPS = () => {
 
   // Step Seven: Calculate the melee damage output
   // Average damage per attack = Maximum Hit Chance * Hit Chance / 2
-  p2calculatedDPS = (p2MaximumHit * p2HitChance) / 2 / 2.4;
+  p2calculatedDPS = (p2MaximumHit * p2HitChance) / 2 / playerEquipment[1][4];
 
   p2calculatedDPS = Math.round(p2calculatedDPS * 1000000) / 1000000;
 
@@ -378,20 +430,33 @@ const boostHighlight = (num, player) => {
 };
 
 const resetStats = (player) => {
-  for (let i = 1; i <= 8; i++) {
-    clearGroup(i, player);
-    resetBoost(i, player);
-  }
-  if (player === 1) {
-    p1hp.value = playerLevels[0][3];
-    activeBoosts[0][6] = playerLevels[0][3];
-  } else {
-    p2hp.value = playerLevels[1][3];
-    activeBoosts[1][6] = playerLevels[1][3];
-  }
+  if (p1atk.value !== '' && p2atk.value !== '') {
+    // Function only if the players' hiscores are already filled in/looked up
+    for (let i = 1; i <= 8; i++) {
+      clearGroup(i, player);
+      resetBoost(i, player);
+    }
+    if (player === 1) {
+      p1hp.value = playerLevels[0][3];
+      activeBoosts[0][6] = playerLevels[0][3];
+      equipWeapon(0, 0);
+      p1weapon.selectedIndex = 0;
+      p1cbstyle.selectedIndex = 0;
+      p1skillstyle.selectedIndex = 0;
+    } else {
+      p2hp.value = playerLevels[1][3];
+      activeBoosts[1][6] = playerLevels[1][3];
+      equipWeapon(1, 0);
+      p2weapon.selectedIndex = 0;
+      p2cbstyle.selectedIndex = 0;
+      p2skillstyle.selectedIndex = 0;
+    }
 
-  calcPlayerDPS();
-  hpDifferentials();
+    // Recalculate DPS
+    calcPlayerDPS();
+    // Recalculate HP differentials
+    hpDifferentials();
+  }
 };
 
 const colorize = (element, set) => {
@@ -489,11 +554,14 @@ const resetBoost = (group, player) => {
     activeBoosts[localPlayer][5].bonus = playerLevels[localPlayer][2];
   }
 
+  // Reset player stats
+  playerEquipment[localPlayer] = defaultPlayerEquipment[localPlayer];
+
   // Calculate player DPS once boosts are reset
   calcPlayerDPS();
 
   // Show active boosts in console
-  console.log(activeBoosts[localPlayer]);
+  //console.log(activeBoosts[localPlayer]);
 };
 
 const clearGroup = (num, player) => {
@@ -526,15 +594,36 @@ const assignNewEventListeners = () => {
   p2guthixrest.addEventListener('click', () => {
     if (hpBoosts[0].p2status === 0) {
       hpBoosts[0].p2status = 1;
-      allBoostElementsArray[37].style.border = '1px red solid';
+      allBoostElementsArray[38].style.border = '1px red solid';
       applyHitpointBoost(hpBoosts[0], 1);
     } else {
       hpBoosts[0].p2status = 0;
-      allBoostElementsArray[37].style.border = '0px transparent';
+      allBoostElementsArray[38].style.border = '0px transparent';
       resetHitpoints(1);
     }
   });
-
+  p1bloodybracer.addEventListener('click', () => {
+    if (hpBoosts[1].p1status === 0) {
+      hpBoosts[1].p1status = 1;
+      allBoostElementsArray[19].style.border = '1px red solid';
+      applyHitpointBoost(hpBoosts[1], 0);
+    } else {
+      hpBoosts[1].p1status = 0;
+      allBoostElementsArray[19].style.border = '0px transparent';
+      resetHitpoints(0);
+    }
+  });
+  p2bloodybracer.addEventListener('click', () => {
+    if (hpBoosts[1].p2status === 0) {
+      hpBoosts[1].p2status = 1;
+      allBoostElementsArray[39].style.border = '1px red solid';
+      applyHitpointBoost(hpBoosts[1], 1);
+    } else {
+      hpBoosts[1].p2status = 0;
+      allBoostElementsArray[39].style.border = '0px transparent';
+      resetHitpoints(1);
+    }
+  });
   allBoostElementsArray.forEach((allBoostEl, index) => {
     allBoostEl.addEventListener('click', () => {
       // if (index > 18) {
@@ -606,5 +695,95 @@ const playAudio = (audioIndex) => {
   if (p1atk.value !== '' && p2atk.value !== '') {
     // Now that we have both players' initial stats, calculate their initial DPS values
     audioList[audioIndex].play();
+  }
+};
+
+const equipWeapon = (player, weaponID) => {
+  // Melee Strength
+  playerEquipment[player][0] = definedWeapons[weaponID].meleeStr;
+  // Stab
+  playerEquipment[player][1] = definedWeapons[weaponID].stab;
+  // Slash
+  playerEquipment[player][2] = definedWeapons[weaponID].slash;
+  // Crush
+  playerEquipment[player][3] = definedWeapons[weaponID].crush;
+  // Speed
+  playerEquipment[player][4] = definedWeapons[weaponID].speed;
+
+  console.log(
+    `Active Weapon: ${definedWeapons[weaponID].name}, Melee Str:${definedWeapons[weaponID].meleeStr}`
+  );
+  // By default, pick the default combat style for the selected weapon. A DDS would for example use Stab.
+  changeCombatStyle(player, definedWeapons[weaponID].defaultCBStyle);
+
+  if (player === 0) {
+    // Melee Strength
+    p1melstr.value = definedWeapons[weaponID].meleeStr;
+    // Stab
+    p1stab.value = definedWeapons[weaponID].stab;
+    // Slash
+    p1slash.value = definedWeapons[weaponID].slash;
+    // Crush
+    p1crush.value = definedWeapons[weaponID].crush;
+    // Set Style Selector to Selected Style
+    p1cbstyle.selectedIndex = definedWeapons[weaponID].defaultCBStyle + 1;
+    // Set Skill Style Selector to Default Weapon Style
+    p1skillstyle.selectedIndex = definedWeapons[weaponID].defaultSkillStyle;
+  } else {
+    // Melee Strength
+    p2melstr.value = definedWeapons[weaponID].meleeStr;
+    // Stab
+    p2stab.value = definedWeapons[weaponID].stab;
+    // Slash
+    p2slash.value = definedWeapons[weaponID].slash;
+    // Crush
+    p2crush.value = definedWeapons[weaponID].crush;
+    // Set Style Selector to Default Weapon Style
+    p2cbstyle.selectedIndex = definedWeapons[weaponID].defaultCBStyle + 1;
+    // Set Skill Style Selector to Default Weapon Style
+    p2skillstyle.selectedIndex = definedWeapons[weaponID].defaultSkillStyle;
+  }
+};
+
+const changeCombatStyle = (player, styleID) => {
+  // Set the player's combat style to the selected one
+  // Use the stored values in the array to give the correct value
+  activeBoosts[player][7].bonus = playerEquipment[player][styleID];
+  console.log(`Now using combat style ${definedStyles[styleID]}`);
+  console.log(`Active Weapon Style Bonus: ${activeBoosts[player][7].bonus}`);
+  calcPlayerDPS();
+
+  if (player === 0) {
+    // Style
+    p1activestyle.value = definedStyles[styleID];
+  } else {
+    // Style
+    p2activestyle.value = definedStyles[styleID];
+  }
+};
+
+const changeCombatSkillStyle = (player, styleID) => {
+  // This changes the player's "Skill Style", e.g.
+  // Accurate, Aggressive, or Defensive
+  // This is important because it has an effect on DPS
+  // It was not originally being accounted for! Oops!
+
+  activeBoosts[player][8].bonus = definedSkillStyleValues[styleID];
+
+  // Apply the defense bonus if using defensive
+  if (styleID == '3') {
+    activeBoosts[player][9].bonus = 3;
+  } else {
+    activeBoosts[player][9].bonus = 0;
+  }
+  console.log(`Now using skill style ${definedSkillStyles[styleID]}`);
+  calcPlayerDPS();
+
+  if (player === 0) {
+    // Style
+    p1activeskillstyle.value = definedSkillStyles[styleID];
+  } else {
+    // Style
+    p2activeskillstyle.value = definedSkillStyles[styleID];
   }
 };
