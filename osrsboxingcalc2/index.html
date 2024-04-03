@@ -12,7 +12,8 @@
 <body>
     <h1 style="text-align: center">Apple Slices Boxing Calculator v.2</h1>
     <div class="container d-flex flex-column justify-content-xxl-center">
-        <div class="row">
+        <div class="row displayrow">
+            <div class="sidecol"><img src="assets/img/rocky.png" class="otherimage"></div>
             <div class="col d-flex flex-column justify-content-xxl-center"
                 style="text-align: center; border-width: 1px; border-style: solid">
                 <p class="text-center" style="margin: 0px">
@@ -41,30 +42,37 @@
                     </div>
                 </div>
                 <div class="row dpsborder extraspace">
-                    <div class="col"><label class="form-label bold" style="width: 100%; text-align: center">Player
-                            One AVG DPS<input id="p1dps" type="text"
-                                style="width: 128px; text-align: center; margin: 5px" class="dpsbox" /></label><label
-                            class="form-label bold" style="width: 100%; text-align: center">DPS Differential<input
-                                id="p1dpsdiff" type="text" style="width: 64px; text-align: center; margin: 5px"
-                                class="dpsbox" /></label><label class="form-label bold"
-                            style="width: 100%; text-align: center">HP Differential<input id="p1hpdiff" type="text"
-                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
-                            class="form-label bold" style="width: 100%; text-align: center">Style<input
-                                id="p1activestyle" type="text" style="width: 64px; text-align: center; margin: 5px"
-                                class="dpsbox" /></label><label class="form-label bold"
-                            style="width: 100%; text-align: center">Skill Style<input id="p1activeskillstyle"
-                                type="text" style="width: 112px; text-align: center; margin: 5px"
-                                class="dpsbox" /></label><label class="form-label bold"
-                            style="width: 100%; text-align: center">Melee Strength<input id="p1melstr" type="text"
-                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
-                            class="form-label bold" style="width: 100%; text-align: center">Stab Bonus<input id="p1stab"
-                                type="text" style="width: 64px; text-align: center; margin: 5px"
-                                class="dpsbox" /></label><label class="form-label bold"
-                            style="width: 100%; text-align: center">Slash Bonus<input id="p1slash" type="text"
-                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
-                            class="form-label bold" style="width: 100%; text-align: center">Crush Bonus<input
-                                id="p1crush" type="text" style="width: 64px; text-align: center; margin: 5px"
-                                class="dpsbox" /></label>
+                    <div class="col">
+                        <div class="row displayrow"> <label class="form-label bold vert"
+                                style="width: 33%; text-align: center">Player
+                                One AVG DPS<input id="p1dps" type="text"
+                                    style="width: 128px; text-align: center; margin: 5px"
+                                    class="dpsbox" /></label><label class="form-label bold vert"
+                                style="width: 33%; text-align: center">DPS Differential<input id="p1dpsdiff" type="text"
+                                    style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                                class="form-label bold vert" style="width: 33%; text-align: center">HP
+                                Differential<input id="p1hpdiff" type="text"
+                                    style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label></div>
+                        <div class="row displayrow"><label class="form-label bold vert"
+                                style="width: 33%; text-align: center">Style<input id="p1activestyle" type="text"
+                                    style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                                class="form-label bold vert" style="width: 33%; text-align: center">Skill Style<input
+                                    id="p1activeskillstyle" type="text"
+                                    style="width: 112px; text-align: center; margin: 5px"
+                                    class="dpsbox" /></label><label class="form-label bold vert"
+                                style="width: 33%; text-align: center">Melee Strength<input id="p1melstr" type="text"
+                                    style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label></div>
+                        <div class="row displayrow"><label class="form-label bold vert"
+                                style="width: 33%; text-align: center">Stab
+                                Bonus<input id="p1stab" type="text" style="width: 64px; text-align: center; margin: 5px"
+                                    class="dpsbox" /></label><label class="form-label bold vert"
+                                style="width: 33%; text-align: center">Slash Bonus<input id="p1slash" type="text"
+                                    style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                                class="form-label bold vert" style="width: 33%; text-align: center">Crush Bonus<input
+                                    id="p1crush" type="text" style="width: 64px; text-align: center; margin: 5px"
+                                    class="dpsbox" /></label></div>
+
+
                     </div>
                 </div>
                 <div class="row">
@@ -189,30 +197,36 @@
                     </div>
                 </div>
                 <div class="row dpsborder extraspace">
-                    <div class="col"><label class="form-label bold" style="width: 100%; text-align: center">Player
-                            Two AVG DPS<input id="p2dps" type="text"
-                                style="width: 128px; text-align: center; margin: 5px" class="dpsbox" /></label><label
-                            class="form-label bold" style="width: 100%; text-align: center">DPS Differential<input
-                                id="p2dpsdiff" type="text" style="width: 64px; text-align: center; margin: 5px"
-                                class="dpsbox" /></label><label class="form-label bold"
-                            style="width: 100%; text-align: center">HP Differential<input id="p2hpdiff" type="text"
-                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
-                            class="form-label bold" style="width: 100%; text-align: center">Style<input
-                                id="p2activestyle" type="text" style="width: 64px; text-align: center; margin: 5px"
-                                class="dpsbox" /></label><label class="form-label bold"
-                            style="width: 100%; text-align: center">Skill Style<input id="p2activeskillstyle"
-                                type="text" style="width: 112px; text-align: center; margin: 5px"
-                                class="dpsbox" /></label><label class="form-label bold"
-                            style="width: 100%; text-align: center">Melee Strength<input id="p2melstr" type="text"
-                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
-                            class="form-label bold" style="width: 100%; text-align: center">Stab Bonus<input id="p2stab"
-                                type="text" style="width: 64px; text-align: center; margin: 5px"
-                                class="dpsbox" /></label><label class="form-label bold"
-                            style="width: 100%; text-align: center">Slash Bonus<input id="p2slash" type="text"
-                                style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
-                            class="form-label bold" style="width: 100%; text-align: center">Crush Bonus<input
-                                id="p2crush" type="text" style="width: 64px; text-align: center; margin: 5px"
-                                class="dpsbox" /></label>
+                    <div class="col">
+                        <div class="row"><label class="form-label bold vert"
+                                style="width: 33%; text-align: center">Player
+                                Two AVG DPS<input id="p2dps" type="text"
+                                    style="width: 128px; text-align: center; margin: 5px"
+                                    class="dpsbox" /></label><label class="form-label bold vert"
+                                style="width: 33%; text-align: center">DPS Differential<input id="p2dpsdiff" type="text"
+                                    style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                                class="form-label bold vert" style="width: 33%; text-align: center">HP
+                                Differential<input id="p2hpdiff" type="text"
+                                    style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label></div>
+                        <div class="row"><label class="form-label bold vert"
+                                style="width: 33%; text-align: center">Style<input id="p2activestyle" type="text"
+                                    style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                                class="form-label bold vert" style="width: 33%; text-align: center">Skill Style<input
+                                    id="p2activeskillstyle" type="text"
+                                    style="width: 112px; text-align: center; margin: 5px"
+                                    class="dpsbox" /></label><label class="form-label bold vert"
+                                style="width: 33%; text-align: center">Melee Strength<input id="p2melstr" type="text"
+                                    style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label></div>
+                        <div class="row"><label class="form-label bold vert" style="width: 33%; text-align: center">Stab
+                                Bonus<input id="p2stab" type="text" style="width: 64px; text-align: center; margin: 5px"
+                                    class="dpsbox" /></label><label class="form-label bold vert"
+                                style="width: 33%; text-align: center">Slash Bonus<input id="p2slash" type="text"
+                                    style="width: 64px; text-align: center; margin: 5px" class="dpsbox" /></label><label
+                                class="form-label bold vert" style="width: 33%; text-align: center">Crush Bonus<input
+                                    id="p2crush" type="text" style="width: 64px; text-align: center; margin: 5px"
+                                    class="dpsbox" /></label></div>
+
+
                     </div>
                 </div>
                 <div class="row">
@@ -308,6 +322,7 @@
                     </div>
                 </div>
             </div>
+            <div class="sidecol"><img src="assets/img/boxer.png" class="otherimage"></div>
         </div>
         <div class="row">
             <div class="col" style="text-align: center">

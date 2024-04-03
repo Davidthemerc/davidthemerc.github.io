@@ -23,13 +23,19 @@
 
 @media (orientation: landscape) {
   .apple {
-    width: 15vw;
+    width: 10vw;
+  }
+  .otherimage {
+    width: 5vw;
   }
 }
 
 @media (orientation: portrait) {
   .apple {
-    width: 15vh;
+    width: 10vh;
+  }
+  .otherimage {
+    width: 5vw;
   }
 }
 
@@ -82,4 +88,39 @@
   width: 160px;
   margin: 0.25rem;
   text-align: center;
+}
+
+.displayrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vert {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.row {
+  justify-content: center;
+}
+
+.form-label {
+  margin-top: 0.25rem;
+  padding: 0.25rem;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidecol {
+  width: fit-content;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5px;
 }

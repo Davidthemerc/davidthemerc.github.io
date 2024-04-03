@@ -554,9 +554,6 @@ const resetBoost = (group, player) => {
     activeBoosts[localPlayer][5].bonus = playerLevels[localPlayer][2];
   }
 
-  // Reset player stats
-  playerEquipment[localPlayer] = defaultPlayerEquipment[localPlayer];
-
   // Calculate player DPS once boosts are reset
   calcPlayerDPS();
 
