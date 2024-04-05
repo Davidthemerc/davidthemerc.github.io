@@ -24,8 +24,8 @@ body {
 
 .cube {
   display: flex;
-  width: 100px;
-  height: 100px;
+  width: 1em;
+  height: 1em;
   border: 1px solid black;
   align-items: center;
   justify-content: center;
@@ -45,7 +45,7 @@ img {
 }
 
 .textbox {
-  font-size: 20px;
+  font-size: 1em;
   padding: 1rem;
 }
 

@@ -74,7 +74,7 @@ const bingoTiles = [
   },
   {
     tileCoordinates: 'A8',
-    tileName: 'The Ruffle tile',
+    tileName: 'The Ruffle Tile (tm)',
     tileDescription: 'Get barrows (2.0) chest with multiple drops',
     difficulties: {
       easy: 'Single item in chest',
