@@ -1,5 +1,5 @@
 // Function to display data on hover
-const displayDataOnHover = (position) => {
+const displayDataOnHover = (position, event) => {
   // Find the corresponding tile object
   var tileObject = bingoTiles.find(function (tile) {
     return tile.tileCoordinates === position;
@@ -20,23 +20,28 @@ const displayDataOnHover = (position) => {
       tileObject.difficulties.elite = 'N/A';
     }
 
-    // Replace 'dataDisplayElement' with the appropriate element where you want to display the data
-    textBox.innerHTML = `
-      <h3>${tileObject.tileName}</h3>
-      <p>${tileObject.tileDescription}</p>
-      <h4>Difficulties:</h4>
-      <ul>
-          <li>Easy: ${tileObject.difficulties.easy}</li>
-          <li>Medium: ${tileObject.difficulties.medium}</li>
-          <li>Hard: ${tileObject.difficulties.hard}</li>
-          <li>Elite: ${tileObject.difficulties.elite}</li>
-      </ul>
-  `;
+    hoverBox.innerHTML = `
+          <h3>${tileObject.tileName}</h3>
+          <p>${tileObject.tileDescription}</p>
+          <h4>Difficulties:</h4>
+          <ul>
+              <li>Easy: ${tileObject.difficulties.easy}</li>
+              <li>Medium: ${tileObject.difficulties.medium}</li>
+              <li>Hard: ${tileObject.difficulties.hard}</li>
+              <li>Elite: ${tileObject.difficulties.elite}</li>
+          </ul>
+      `;
+
+    // Position the hover box just below the hover point
+    hoverBox.style.top = event.clientY + 'px';
+    hoverBox.style.left = event.clientX + 'px';
+
+    // Show the hover box
+    hoverBox.style.display = 'block';
   }
 };
 
-// Function to clear data display
-const clearDataDisplay = () => {
-  // Replace 'dataDisplayElement' with the appropriate element where you want to display the data
-  textBox.textContent = '';
+// Function to hide the hover box when mouse leaves the image
+const hideHoverBox = () => {
+  hoverBox.style.display = 'none';
 };

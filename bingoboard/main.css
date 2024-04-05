@@ -60,3 +60,10 @@ img {
     font-size: 5rem;
   }
 }
+
+#hoverbox {
+  position: absolute;
+  background-color: white;
+  border: 1px black solid;
+  padding: 0.25rem;
+}
