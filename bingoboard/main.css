@@ -24,8 +24,8 @@ body {
 
 .cube {
   display: flex;
-  width: 1em;
-  height: 1em;
+  width: 1.25em;
+  height: 1.25em;
   border: 1px solid black;
   align-items: center;
   justify-content: center;
