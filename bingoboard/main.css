@@ -1,0 +1,62 @@
+.top {
+  text-align: center;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: fit-content;
+  border: 1px black solid;
+}
+
+.row {
+  display: flex;
+  justify-content: center;
+  max-width: 90vw;
+}
+
+.cube {
+  display: flex;
+  width: 100px;
+  height: 100px;
+  border: 1px solid black;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  font-weight: bold;
+  color: red;
+  background-color: rgba(211, 211, 211, 0.288);
+}
+
+img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.t3 {
+  color: blue;
+}
+
+.textbox {
+  font-size: 20px;
+  padding: 1rem;
+}
+
+@media (orientation: landscape) {
+  .cube {
+    font-size: 5rem;
+  }
+}
+
+@media (orientation: portrait) {
+  .cube {
+    font-size: 5rem;
+  }
+}
