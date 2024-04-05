@@ -45,3 +45,8 @@ const displayDataOnHover = (position, event) => {
 const hideHoverBox = () => {
   hoverBox.style.display = 'none';
 };
+
+// Random number function
+// Accepts minimum and maximum number as parameters
+const ranBetween = (min, max) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;

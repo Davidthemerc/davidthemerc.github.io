@@ -22,6 +22,10 @@ body {
   max-width: 90vw;
 }
 
+.bottomrow {
+  flex-direction: column;
+}
+
 .cube {
   display: flex;
   width: 1.25em;
@@ -66,4 +70,34 @@ img {
   background-color: white;
   border: 1px black solid;
   padding: 0.25rem;
+}
+
+button {
+  font-size: 2rem;
+  margin: 1rem;
+}
+
+#randomtilebox {
+  padding-top: 3rem;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bottomrow {
+  align-items: center;
+}
+
+#durarow {
+  flex-direction: row;
+}
+
+.dura {
+  margin: 0.25rem;
+}
+
+button {
+  text-align: center;
+  width: fit-content;
 }

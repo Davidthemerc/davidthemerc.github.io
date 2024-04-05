@@ -654,3 +654,12 @@ const bingoTiles = [
 // This completes the JavaScript array for the bingo tiles, each tile detailed with its coordinates, name, description, and difficulty levels of challenges.
 
 // This code segment is aimed at completing the representation of the bingo tiles in the JavaScript array. Continue adding any remaining tiles by following the format demonstrated in these examples to ensure the dataset is comprehensive and accurately represented.
+
+let duraText = [
+  `How rude! I'll remember this when I assign your next task.`,
+  `You're a quitter? You modern adventurers sicken me.`,
+  `How crass! I should have never taken this "Bingo" side gig. I'll stick to slayer...`,
+  `You clearly visit Turael more than me! Noob.`,
+  `You will never max with that attitude, adventurer!`,
+  `Coward! Maybe I can find something a little easier for you...`,
+];
