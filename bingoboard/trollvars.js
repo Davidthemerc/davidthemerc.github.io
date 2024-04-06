@@ -14,7 +14,7 @@ const bingoTiles = [
   {
     tileCoordinates: 'A3',
     tileName: 'Spirit Shield',
-    tileDescription: 'Complete any Spirit Shield from scratch.',
+    tileDescription: 'Complete any Spirit shield from scratch.',
     difficulties: {
       easy: '',
       medium: '',
@@ -67,7 +67,7 @@ const bingoTiles = [
     difficulties: {
       easy: '',
       medium:
-        'Obtain every ring from dks: Berserker Ring, Warrior Ring, Archers Ring, Seers Ring, Ring Of Life',
+        'Obtain every ring from DKs: Berserker Ring, Warrior Ring, Archers Ring, Seers Ring, Ring Of Life',
       hard: '',
       elite: '',
     },
@@ -75,7 +75,7 @@ const bingoTiles = [
   {
     tileCoordinates: 'A8',
     tileName: 'The Ruffle Tile (tm)',
-    tileDescription: `Get barrows (2.0) chest with multiple drops`,
+    tileDescription: `Get barrows (2.0) chest with multiple drops (though Ruffles won't!)`,
     difficulties: {
       easy: 'Single item in chest',
       medium: 'Double item in chest',
@@ -115,7 +115,7 @@ const bingoTiles = [
       easy: '',
       medium:
         'Full Sandwich Lady outfit: Sandwich Lady hat, Sandwich Lady top, Sandwich Lady bottom',
-      hard: 'Stale baguette',
+      hard: 'Stale baguette (no, not from Panera.)',
       elite: '',
     },
   },
@@ -156,7 +156,7 @@ const bingoTiles = [
   },
   {
     tileCoordinates: 'B7',
-    tileName: 'We do a bit of Skilling',
+    tileName: 'We do a Bit of Skilling',
     tileDescription: `Get a cumulative amount of xp in the following skills: Slayer, Agility, Prayer, Farming, Hunter.`,
     difficulties: {
       easy: 'Get a total of 10 Million XP',
@@ -211,7 +211,7 @@ const bingoTiles = [
       medium: '2 unique Champion scrolls',
       hard: '3 unique Champion scrolls',
       elite:
-        'Every champion scroll (not the human one): Earth warrior champion scroll, Ghoul champion scroll, Giant champion scroll, Goblin champion scroll, Hobgoblin champion scroll, Imp champion scroll, Jogre champion scroll, Lesser demon champion scroll, Skeleton champion scroll, Zombie champion scroll.',
+        'Every champion scroll (not the human one): Earth warrior champion scroll, Ghoul champion scroll, Giant champion scroll, Goblin champion scroll, Hobgoblin champion scroll, Imp champion scroll, Jogre champion scroll, Lesser demon champion scroll, Skeleton champion scroll, Zombie champion scroll. Apologies in advance to all of these monsters!',
     },
   },
   {
@@ -605,7 +605,7 @@ const bingoTiles = [
   },
   {
     tileCoordinates: 'G5',
-    tileName: "Obor's club",
+    tileName: "Obor's Club",
     tileDescription: 'Obtain the hill giant club from Obor',
     difficulties: {
       easy: '',
@@ -654,12 +654,31 @@ const bingoTiles = [
 
 // This code segment is aimed at completing the representation of the bingo tiles in the JavaScript array. Continue adding any remaining tiles by following the format demonstrated in these examples to ensure the dataset is comprehensive and accurately represented.
 
+let duraGText = [
+  `Actually, have you considered going outside and touching grass today?`,
+  `When you're done with your tile, perhaps consider going outside for a walk!`,
+  `Don't forget to drink water! Bingo without water can be quite...lethal.`,
+  `Good luck! Don't forget to come back when you need a new tile!`,
+  `You accepted that a little too quickly! Are you sure you're alright?`,
+  ``,
+];
+
 let duraText = [
   `How rude! I'll remember this when I assign your next task.`,
   `You're a quitter? You modern adventurers sicken me.`,
   `How crass! I should have never taken this "Bingo" side gig. I'll stick to slayer...`,
-  `You clearly visit Turael more than me! Noob.`,
+  `You clearly visit Turael and Mazchna more than me! Noob!`,
   `You will never max with that attitude, adventurer!`,
   `Coward! Maybe I can find something a little easier for you...`,
-  `Mocz would have attempted that tile! Why won't you?`,
+  `Mocz would have tried that tile! Why won't you?`,
+  `I hope you get PKed holding many valuables later today!`,
+  `Don't be surprised when your next task is Waterfiends!`,
+];
+
+let duraGreet = [
+  `Ello, your assigned tile is`,
+  `You again? Did you go on your walk yet? No? Ok, go do tile`,
+  `Ello again. I hope you drank enough water today. Try tile`,
+  `My, my. Back to do Bingo *again*? I'm getting worried. Your tile is`,
+  `Are you still here? Leave me alone and do tile`,
 ];
