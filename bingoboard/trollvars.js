@@ -660,7 +660,7 @@ let duraGText = [
   `Don't forget to drink water! Bingo without water can be quite...lethal.`,
   `Good luck! Don't forget to come back when you need a new tile!`,
   `You accepted that a little too quickly! Are you sure you're alright?`,
-  ``,
+  `You're OK with that tile assignment? Well, good for you!`,
 ];
 
 let duraText = [
