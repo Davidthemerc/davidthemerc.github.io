@@ -51,9 +51,12 @@ const populateContenders = (kc) => {
     const conEl = document.createElement('p');
     conEl.className = 'list';
     if (kc - contender.guess > 0) {
-      displayVal = `+${kc - contender.guess}`;
+      displayVal = `-${Math.abs(kc - contender.guess)}`;
+    } else if (Math.abs(kc - contender.guess) <= 25) {
+      displayVal = `-${Math.abs(kc - contender.guess)}`;
+      conEl.classList += ' green';
     } else {
-      displayVal = `${kc - contender.guess}`;
+      displayVal = `+${Math.abs(kc - contender.guess)}`;
     }
     conEl.innerHTML = `<b>${index + 1}.</b> <i>${
       contender.name
@@ -68,9 +71,9 @@ const populateShamed = (kc) => {
     const shamedEl = document.createElement('p');
     shamedEl.className = 'listshame';
     if (kc - shame.guess > 0) {
-      displayVal = `+${kc - shame.guess}`;
+      displayVal = `-${Math.abs(kc - shame.guess)}`;
     } else {
-      displayVal = `${kc - shame.guess}`;
+      displayVal = `+${Math.abs(kc - shame.guess)}`;
     }
     shamedEl.innerHTML = `<b>${index + 1}.</b> <i>${
       shame.name

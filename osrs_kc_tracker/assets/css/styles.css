@@ -18,3 +18,7 @@ p {
 .margintop {
   margin-top: 1rem;
 }
+
+.green {
+  color: green;
+}
