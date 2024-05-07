@@ -1,0 +1,20 @@
+body {
+  background-color: #dba3bf;
+}
+
+.list {
+  font-size: 1.5rem;
+}
+
+p {
+  margin: 0px;
+}
+
+.listshame {
+  font-size: 1.5rem;
+  color: darkred;
+}
+
+.margintop {
+  margin-top: 1rem;
+}
