@@ -52,12 +52,14 @@ const populateContenders = (kc) => {
     conEl.className = 'list';
     if (kc - contender.guess > 0) {
       displayVal = `-${Math.abs(kc - contender.guess)}`;
-    } else if (Math.abs(kc - contender.guess) <= 25) {
-      displayVal = `-${Math.abs(kc - contender.guess)}`;
-      conEl.classList += ' green';
     } else {
       displayVal = `+${Math.abs(kc - contender.guess)}`;
     }
+
+    if (Math.abs(kc - contender.guess) <= 25) {
+      conEl.classList += ' green';
+    }
+
     conEl.innerHTML = `<b>${index + 1}.</b> <i>${
       contender.name
     }</i> - Guess: <u>${contender.guess}</u> (${displayVal})`;
