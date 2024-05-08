@@ -3,7 +3,7 @@ body {
 }
 
 p {
-  font-size: 4vh;
+  font-size: 3vh;
   margin: 0px;
 }
 
@@ -40,6 +40,7 @@ p {
 
 img {
   width: 100%;
+  padding: 0.15em;
 }
 
 @media (orientation: portrait) {
