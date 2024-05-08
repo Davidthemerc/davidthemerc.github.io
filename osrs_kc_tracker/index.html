@@ -11,39 +11,40 @@
 
 <body>
     <div class="container">
-        <div class="row" style="margin: 2rem;border: 3px solid black;">
+        <div class="row titlerow" style="margin: 2rem;border: 3px solid black;">
             <div
-                class="col-2 d-flex d-lg-flex d-xxl-flex justify-content-center align-items-center justify-content-lg-center align-items-lg-center justify-content-xxl-center align-items-xxl-center">
-                <img src="assets/img/Sraracha.png" style="width: 100%;">
+                class="col-2 d-flex justify-content-center align-items-center justify-content-center align-items-lg-center justify-content-center align-items-center">
+                <img src="assets/img/Sraracha.png">
             </div>
             <div
-                class="col-8 d-flex d-xxl-flex justify-content-center align-items-center justify-content-xxl-center align-items-xxl-center">
-                <p style="font-weight: bold;text-align: center;margin-bottom: 0px;font-size: 4rem;">Spaghett ii's Quest
-                    for <em>Sraracha </em>- Guess the KC</p>
+                class="col-8 d-flex justify-content-center align-items-center justify-content-center align-items-center">
+                <p class="title" style="font-weight: bold;text-align: center;margin-bottom: 0px;">Spaghett ii's Quest
+                    for Sraracha - Guess the KC</p>
             </div>
             <div
-                class="col-2 d-flex d-lg-flex d-xxl-flex justify-content-center align-items-center justify-content-lg-center align-items-lg-center justify-content-xxl-center align-items-xxl-center">
-                <img src="assets/img/cudgel.png" style="width: 100%;padding: .5rem;">
+                class="col-2 d-flex justify-content-center align-items-center justify-content-center align-items-lg-center justify-content-center align-items-center">
+                <img src="assets/img/cudgel.png">
             </div>
         </div>
-        <div class="row d-flex justify-content-center justify-content-xxl-center" style="margin: 2rem;">
-            <div class="col-auto d-flex d-xxl-flex justify-content-xxl-center align-items-xxl-center"
+        <div class="row d-flex justify-content-center align-items-center" style="margin: 2rem;">
+            <div class="col-auto d-flex justify-content-center align-items-center"
                 style="border: .25rem solid #642824 ;">
-                <p id="kcdisplay" style="margin-bottom: 0px;font-size: 3rem;font-weight: bold;">Current KC:</p>
+                <p class="kc" id="kcdisplay" style="margin-bottom: 0px;font-weight: bold;text-align: center;">Current
+                    KC:</p>
             </div>
         </div>
         <div class="row" style="margin: 2rem;">
-            <div class="col d-flex flex-column" style="border: .25rem none #642824 ;">
-                <div class="d-flex justify-content-xxl-center">
-                    <p class="d-flex justify-content-center"
-                        style="font-size: 2rem;text-decoration: underline;font-weight: bold;">Contending Guessers
+            <div class="col d-flex flex-column" style="border: .25rem none #642824 ;text-align: center;">
+                <div class="d-flex justify-content-center">
+                    <p class="d-flex justify-content-center" style="text-decoration: underline;font-weight: bold;">
+                        Contending Guessers
                         (Closest to Farthest):</p>
                 </div>
                 <div id="contenders">
                 </div>
-                <div class="d-xxl-flex justify-content-xxl-center">
+                <div class="d-flex justify-content-center">
                     <p class="d-flex justify-content-center margintop"
-                        style="font-size: 2rem;text-decoration: underline;font-weight: bold;">Hall of Shame
+                        style="text-decoration: underline;font-weight: bold;">Hall of Shame
                         (Mathematically Eliminated, Farthest to Closest):</p>
                 </div>
                 <div id="shame">

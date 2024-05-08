@@ -54,7 +54,7 @@ const guesses = [
   { name: 'Penscrawl', guess: 5861 },
   { name: 'RangingLoony', guess: 5862 },
   { name: 'Slashy Ashy', guess: 54112 },
-  { name: 'Glummm', guess: 5123 },
+  { name: 'Glummm', guess: 5555 },
   { name: '1 to Maxed', guess: 6284 },
   { name: 'A Wild Aaron', guess: 6153 },
   { name: 'freshim', guess: 5921 },

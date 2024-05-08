@@ -2,17 +2,32 @@ body {
   background-color: #dba3bf;
 }
 
-.list {
-  font-size: 1.5rem;
-}
-
 p {
+  font-size: 4vh;
   margin: 0px;
 }
 
+.list {
+  font-size: 3vh;
+}
+
 .listshame {
-  font-size: 1.5rem;
+  font-size: 3vh;
   color: darkred;
+}
+
+.title {
+  font-size: 4vh;
+}
+
+.titlerow {
+  text-align: center;
+  align-items: center;
+  justify-items: center;
+}
+
+.kc {
+  font-size: 4vh;
 }
 
 .margintop {
@@ -21,4 +36,55 @@ p {
 
 .green {
   color: green;
+}
+
+img {
+  width: 100%;
+}
+
+@media (orientation: portrait) {
+  .list {
+    font-size: 2vh;
+  }
+
+  .listshame {
+    font-size: 2vh;
+    color: darkred;
+  }
+
+  .title {
+    font-size: 3vh;
+  }
+
+  .kc {
+    font-size: 3vh;
+  }
+
+  .titlerow {
+    flex-direction: column;
+  }
+
+  img {
+    width: 300%;
+    padding: 0.25em;
+  }
+}
+
+@media (min-width: 1200px) {
+  .list {
+    font-size: 2vh;
+  }
+
+  .listshame {
+    font-size: 2vh;
+    color: darkred;
+  }
+
+  .title {
+    font-size: 3vh;
+  }
+
+  .kc {
+    font-size: 3vh;
+  }
 }
