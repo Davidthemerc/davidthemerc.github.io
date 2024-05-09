@@ -61,4 +61,7 @@ const guesses = [
   { name: 'Chip Exotic', guess: 6522 },
   { name: 'Warm Pillows', guess: 7369 },
   { name: 'Scannor', guess: 6379 },
+  { name: 'ACCL', guess: 6450 },
+  { name: 'KTDon', guess: 5827 },
+  { name: 'Lord Phood', guess: 6972 },
 ];

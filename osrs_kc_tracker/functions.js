@@ -63,6 +63,15 @@ const populateContenders = (kc) => {
     conEl.innerHTML = `<b>${index + 1}.</b> <i>${
       contender.name
     }</i> - Guess: <u>${contender.guess}</u> (${displayVal})`;
+
+    if (contender.name === 'Lord Phood') {
+      conEl.innerHTML = `<b>${index + 1}.</b> <i>${
+        contender.name
+      }</i> <img class="frog" src="assets/img/froggy.png"> - Guess: <u>${
+        contender.guess
+      }</u> (${displayVal})`;
+    }
+
     contendersEl.appendChild(conEl);
   });
 };
@@ -80,6 +89,15 @@ const populateShamed = (kc) => {
     shamedEl.innerHTML = `<b>${index + 1}.</b> <i>${
       shame.name
     }</i> - Guess: <u>${shame.guess}</u> (${displayVal})`;
+
+    if (shame.name === 'Lord Phood') {
+      shamedEl.innerHTML = `<b>${index + 1}.</b> <i>${
+        shame.name
+      }</i> <img class="frog" src="assets/img/froggy.png"> - Guess: <u>${
+        shame.guess
+      }</u> (${displayVal})`;
+    }
+
     shameEl.appendChild(shamedEl);
   });
 };
