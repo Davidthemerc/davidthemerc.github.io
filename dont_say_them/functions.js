@@ -8,6 +8,7 @@ const saveJSON = (savedItem, savedName) => {
   localStorage.setItem(savedName, JSON.stringify(savedItem));
 };
 
+// Function to retrieve game status from local storage
 const retrieveGameStatus = () => {
   const saveJSON = localStorage.getItem('DST-gameData');
 
@@ -29,6 +30,9 @@ const startGame = () => {
   gameStatus.started = 1;
   updateScore();
 
+  // Clear word display
+  clearWordDisplay();
+
   // Load up game area elements
   loadWords();
 
@@ -36,6 +40,7 @@ const startGame = () => {
   startTimer(59);
 };
 
+// Function to run when success button is used
 const successFunction = () => {
   // Add a point
   gameStatus.points += 1;
@@ -53,6 +58,7 @@ const successFunction = () => {
   loadWords();
 };
 
+// Function to run when penalty button is used
 const penaltyFunction = () => {
   // Penalty function, of course
   // Let's lose a point, after all this is a penalty
@@ -69,6 +75,7 @@ const penaltyFunction = () => {
   clearInterval(interval);
 };
 
+// Function to run when reset button is used
 const resetGame = () => {
   // Reset game: Clear game area, set score to 0
   wordDisplayEl.innerHTML = '';
@@ -78,10 +85,13 @@ const resetGame = () => {
   timerEl.innerHTML = `Time: 01:00`;
   updateScore();
 
-  // Clear timer interval
+  // Clear active timer interval
   clearInterval(interval);
 };
 
+// Function to run when the user refreshes the page - specifically, when the page is loaded into the browser
+// We don't want the game to keep running if refreshed - this can cause an error state
+// Technically, this should result in a penalty, but we'll leave it to users to enforce
 const refreshReset = () => {
   // Reset game: Clear game area, set score to 0
   wordDisplayEl.innerHTML = '';
@@ -94,16 +104,19 @@ const refreshReset = () => {
   clearInterval(interval);
 };
 
+// Function to run when clearing word display
 const clearWordDisplay = () => {
   wordDisplayEl.innerHTML = '';
   illegalWordsEl.innerHTML = '';
 };
 
+// Function to run when updating score
 const updateScore = () => {
   pointsEl.innerHTML = `Points: ${gameStatus.points}`;
   saveJSON(gameStatus, 'DST-gameData');
 };
 
+// Function to load words (target and illegal) into the word display
 const loadWords = () => {
   const num = ranBetween(0, wordArray.length - 1);
   let selectedWord = wordArray[num].targetWord;
@@ -114,7 +127,6 @@ const loadWords = () => {
   theword.textContent = `Word:`;
   const word = document.createElement('span');
   word.className = 'word';
-  // selectedWord = selectedWord.charAt(0).toUpperCase() + selectedWord.slice(1);
   word.textContent = ` ${selectedWord}`;
   wordDisplayEl.appendChild(theword);
   wordDisplayEl.appendChild(word);
@@ -130,13 +142,24 @@ const loadWords = () => {
     let thisIllegalWord = wordArray[num].illegalWords[i];
     let p = document.createElement('p');
     p.className = 'dontsay';
-    // thisIllegalWord =
-    //   thisIllegalWord.charAt(0).toUpperCase() + thisIllegalWord.slice(1);
     p.textContent = thisIllegalWord;
     illegalWordsEl.appendChild(p);
   }
+
+  // Let's do a 1/15 chance that all words are banned! Charades only!
+  let charadesChance = ranBetween(0, 15);
+
+  // Good luck with the Charades lol
+  if (charadesChance === 15) {
+    illegalWordsEl.innerHTML = '';
+    const charades = document.createElement('p');
+    charades.className = 'donttitle';
+    charades.textContent = 'All words are illegal! Charades only!';
+    illegalWordsEl.appendChild(charades);
+  }
 };
 
+// Function to run when time is up
 const timesUp = () => {
   // Update the score display
   updateScore();
@@ -144,8 +167,11 @@ const timesUp = () => {
   // Play the penalty buzzer audio
   playAudio(0);
 
-  // Clear the word display
-  clearWordDisplay();
+  // Update - Don't clear the word display - we want the user to show the word
+  // clearWordDisplay();
+
+  // Clear active interval
+  clearInterval(interval);
 
   // Set game started status to 0
   gameStatus.started = 0;
@@ -154,6 +180,7 @@ const timesUp = () => {
   timerEl.innerHTML = `Time: 01:00`;
 };
 
+// Function to start the countdown timer. Default is 1 minute.
 const startTimer = (duration) => {
   let timer = duration,
     minutes,

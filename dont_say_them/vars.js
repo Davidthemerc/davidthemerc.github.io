@@ -4,18 +4,22 @@ const defaultGameStatus = {
   points: 0,
 };
 
+// Audio array
 const audio = [
   { id: 0, dir: 'assets/audio/buzzer.mp3', name: 'buzzer' },
   { id: 1, dir: 'assets/audio/success.mp3', name: 'success' },
 ];
 
+// Audiolist array conversion
 const audioList = Array();
 
+// Convert array to make audio accessible
 audio.forEach((sound, index) => {
   audioList[index] = new Audio();
   audioList[index].src = sound.dir;
 });
 
+// Array of Target Words, and their associated Illegal Words
 const wordArray = [
   { targetWord: 'apple', illegalWords: ['fruit', 'red', 'pie', 'tree'] },
   { targetWord: 'banana', illegalWords: ['fruit', 'yellow', 'peel', 'monkey'] },
