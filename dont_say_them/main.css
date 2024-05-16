@@ -1,0 +1,96 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  background-color: rgb(221, 170, 241);
+}
+
+.title {
+  margin: 0.2rem;
+  font-size: 2.5em;
+  font-weight: bold;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  color: darkred;
+}
+
+.donttitle {
+  font-size: 2.5em;
+  font-weight: bold;
+  color: darkred;
+  text-decoration: underline;
+}
+
+p {
+  margin: 0.5rem;
+}
+
+p,
+span {
+  font-size: 2em;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  margin-bottom: 7px;
+  border-bottom: 2px black solid;
+  height: 41vh;
+}
+
+button {
+  font-size: 2em;
+  width: 7em;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+#illegalWords {
+  display: flex;
+  flex-direction: column;
+}
+
+.word,
+.theword {
+  font-size: 2.5em;
+  font-weight: bold;
+}
+
+.theword {
+  text-decoration: underline;
+}
+
+#wordDisplay {
+  margin-bottom: 4rem;
+}
+
+#gameArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 59vh;
+}
+
+@media (min-height: 1200px) {
+  .word,
+  .theword {
+    font-size: 5em;
+  }
+
+  p,
+  span,
+  .donttitle {
+    font-size: 4em;
+  }
+
+  .title {
+    font-size: 4em;
+  }
+  button {
+    font-size: 3em;
+  }
+}
