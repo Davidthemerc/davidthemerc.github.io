@@ -1217,7 +1217,10 @@ const wordArray = [
     illegalWords: ['train', 'animals', 'behavior', 'perform'],
   },
   { targetWord: 'dog walker', illegalWords: ['dog', 'walk', 'pet', 'leash'] },
-  { targetWord: 'pet groomer', illegalWords: ['pet', 'care', 'hair', 'clean'] },
+  {
+    targetWord: 'pet groomer',
+    illegalWords: ['dog', 'care', 'hair', 'clean'],
+  },
   {
     targetWord: 'park ranger',
     illegalWords: ['nature', 'protect', 'park', 'wildlife'],
