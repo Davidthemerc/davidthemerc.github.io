@@ -14,7 +14,7 @@ body {
 }
 
 .donttitle {
-  font-size: 2.5em;
+  font-size: 2em;
   font-weight: bold;
   color: darkred;
   text-decoration: underline;
@@ -64,7 +64,7 @@ button {
 }
 
 #wordDisplay {
-  margin-bottom: 4rem;
+  margin-bottom: 2rem;
 }
 
 #gameArea {
