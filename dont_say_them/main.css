@@ -26,7 +26,7 @@ p {
 
 p,
 span {
-  font-size: 2em;
+  font-size: 1.75em;
 }
 
 header {
@@ -38,11 +38,11 @@ header {
   padding-bottom: 5px;
   margin-bottom: 7px;
   border-bottom: 2px black solid;
-  height: 41vh;
+  height: 42vh;
 }
 
 button {
-  font-size: 2em;
+  font-size: 1.75em;
   width: 7em;
   padding-top: 0.25rem;
   padding-bottom: 0.25rem;
@@ -55,7 +55,7 @@ button {
 
 .word,
 .theword {
-  font-size: 2.5em;
+  font-size: 2em;
   font-weight: bold;
 }
 
@@ -72,7 +72,7 @@ button {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 59vh;
+  height: 50vh;
 }
 
 @media (min-height: 1200px) {
