@@ -65,4 +65,5 @@ const guesses = [
   { name: 'KTDon', guess: 5827 },
   { name: 'Lord Phood', guess: 6972 },
   { name: 'Charlestoned', guess: 8000 },
+  { name: '26atomic26', guess: 6250 },
 ];
