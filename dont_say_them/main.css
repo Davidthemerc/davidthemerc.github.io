@@ -42,8 +42,8 @@ header {
 }
 
 button {
-  font-size: 1.75em;
-  width: 7em;
+  font-size: 1.25em;
+  width: 10em;
   padding-top: 0.25rem;
   padding-bottom: 0.25rem;
 }
@@ -90,6 +90,6 @@ button {
     font-size: 4em;
   }
   button {
-    font-size: 3em;
+    font-size: 2em;
   }
 }

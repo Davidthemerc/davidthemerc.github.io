@@ -42,6 +42,9 @@ const startGame = () => {
 
 // Function to run when success button is used
 const successFunction = () => {
+  // Gain 2 seconds
+  timeAdjust(2, 'plus');
+
   // Add a point
   gameStatus.points += 1;
 
@@ -50,6 +53,17 @@ const successFunction = () => {
 
   // Play the success audio
   playAudio(1);
+
+  // Clear the word display
+  clearWordDisplay();
+
+  // Update word display with new words
+  loadWords();
+};
+
+const skipFunction = () => {
+  // Skip, but lose 5 seconds
+  timeAdjust(5, 'minus');
 
   // Clear the word display
   clearWordDisplay();
@@ -150,13 +164,13 @@ const loadWords = () => {
   let charadesChance = ranBetween(0, 15);
 
   // Good luck with the Charades lol
-  if (charadesChance === 15) {
-    illegalWordsEl.innerHTML = '';
-    const charades = document.createElement('p');
-    charades.className = 'donttitle';
-    charades.textContent = 'All words are illegal! Charades only!';
-    illegalWordsEl.appendChild(charades);
-  }
+  // if (charadesChance === 15) {
+  //   illegalWordsEl.innerHTML = '';
+  //   const charades = document.createElement('p');
+  //   charades.className = 'donttitle';
+  //   charades.textContent = 'Charades for double points (pass next word) ';
+  //   illegalWordsEl.appendChild(charades);
+  // }
 };
 
 // Function to run when time is up
@@ -182,9 +196,7 @@ const timesUp = () => {
 
 // Function to start the countdown timer. Default is 1 minute.
 const startTimer = (duration) => {
-  let timer = duration,
-    minutes,
-    seconds;
+  timer = duration;
   interval = setInterval(() => {
     minutes = parseInt(timer / 60, 10);
     seconds = parseInt(timer % 60, 10);
@@ -199,4 +211,27 @@ const startTimer = (duration) => {
       timesUp();
     }
   }, 1000);
+};
+
+// Function to deduct 5 seconds from the active timer.
+const timeAdjust = (time, type) => {
+  if (type === 'minus') {
+    timer -= time;
+  } else {
+    timer += time;
+  }
+
+  minutes = parseInt(timer / 60, 10);
+  seconds = parseInt(timer % 60, 10);
+
+  minutes = minutes < 10 ? '0' + minutes : minutes;
+  seconds = seconds < 10 ? '0' + seconds : seconds;
+
+  timerEl.textContent = `Time: ${minutes + ':' + seconds}`;
+
+  if (timer < 0) {
+    timer = 0;
+    clearInterval(interval);
+    timesUp();
+  }
 };

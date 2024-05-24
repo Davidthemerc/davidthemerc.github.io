@@ -21,7 +21,10 @@ audio.forEach((sound, index) => {
 
 // Array of Target Words, and their associated Illegal Words
 const wordArray = [
-  { targetWord: 'apple', illegalWords: ['fruit', 'red', 'pie', 'tree'] },
+  {
+    targetWord: 'apple',
+    illegalWords: ['fruit', 'red', 'pie', 'tree'],
+  },
   { targetWord: 'banana', illegalWords: ['fruit', 'yellow', 'peel', 'monkey'] },
   { targetWord: 'car', illegalWords: ['vehicle', 'drive', 'engine', 'wheel'] },
   { targetWord: 'house', illegalWords: ['home', 'building', 'roof', 'door'] },
@@ -811,32 +814,16 @@ const wordArray = [
     illegalWords: ['website', 'create', 'internet', 'code'],
   },
   {
-    targetWord: 'software developer',
-    illegalWords: ['code', 'computer', 'program', 'develop'],
-  },
-  {
     targetWord: 'programmer',
     illegalWords: ['code', 'computer', 'software', 'develop'],
-  },
-  {
-    targetWord: 'network engineer',
-    illegalWords: ['network', 'computer', 'connect', 'technology'],
   },
   {
     targetWord: 'animator',
     illegalWords: ['animation', 'create', 'cartoon', 'visual'],
   },
   {
-    targetWord: 'sound engineer',
-    illegalWords: ['sound', 'music', 'record', 'edit'],
-  },
-  {
     targetWord: 'radio host',
     illegalWords: ['broadcast', 'talk', 'show', 'radio'],
-  },
-  {
-    targetWord: 'TV host',
-    illegalWords: ['show', 'television', 'talk', 'broadcast'],
   },
   {
     targetWord: 'comedian',
@@ -845,10 +832,6 @@ const wordArray = [
   {
     targetWord: 'magician',
     illegalWords: ['magic', 'trick', 'perform', 'illusion'],
-  },
-  {
-    targetWord: 'trainer',
-    illegalWords: ['exercise', 'fitness', 'coach', 'train'],
   },
   {
     targetWord: 'bodybuilder',
@@ -912,7 +895,7 @@ const wordArray = [
     illegalWords: ['books', 'read', 'library', 'catalog'],
   },
   {
-    targetWord: 'policeman',
+    targetWord: 'police officer',
     illegalWords: ['law', 'enforcement', 'arrest', 'uniform'],
   },
   {
@@ -943,14 +926,6 @@ const wordArray = [
   {
     targetWord: 'optician',
     illegalWords: ['eyes', 'glasses', 'vision', 'lens'],
-  },
-  {
-    targetWord: 'policewoman',
-    illegalWords: ['law', 'enforcement', 'arrest', 'uniform'],
-  },
-  {
-    targetWord: 'porter',
-    illegalWords: ['luggage', 'hotel', 'carry', 'service'],
   },
   {
     targetWord: 'secretary',
@@ -990,10 +965,6 @@ const wordArray = [
     illegalWords: ['think', 'study', 'knowledge', 'wisdom'],
   },
   {
-    targetWord: 'theologian',
-    illegalWords: ['religion', 'study', 'faith', 'belief'],
-  },
-  {
     targetWord: 'psychiatrist',
     illegalWords: ['mental', 'health', 'doctor', 'therapy'],
   },
@@ -1018,14 +989,6 @@ const wordArray = [
     illegalWords: ['counseling', 'mental', 'health', 'therapy'],
   },
   {
-    targetWord: 'psychoanalyst',
-    illegalWords: ['mental', 'therapy', 'Freud', 'analysis'],
-  },
-  {
-    targetWord: 'dietitian',
-    illegalWords: ['nutrition', 'food', 'health', 'diet'],
-  },
-  {
     targetWord: 'counselor',
     illegalWords: ['advice', 'guidance', 'therapy', 'support'],
   },
@@ -1048,10 +1011,6 @@ const wordArray = [
   {
     targetWord: 'makeup artist',
     illegalWords: ['beauty', 'cosmetics', 'apply', 'face'],
-  },
-  {
-    targetWord: 'esthetician',
-    illegalWords: ['skin', 'beauty', 'care', 'treatment'],
   },
   {
     targetWord: 'interior designer',
@@ -1102,14 +1061,6 @@ const wordArray = [
     illegalWords: ['bank', 'loan', 'money', 'approve'],
   },
   {
-    targetWord: 'stockbroker',
-    illegalWords: ['stocks', 'market', 'buy', 'sell'],
-  },
-  {
-    targetWord: 'underwriter',
-    illegalWords: ['insurance', 'risk', 'policy', 'approve'],
-  },
-  {
     targetWord: 'entrepreneur',
     illegalWords: ['business', 'start', 'company', 'venture'],
   },
@@ -1126,19 +1077,11 @@ const wordArray = [
     illegalWords: ['oversee', 'work', 'manage', 'staff'],
   },
   {
-    targetWord: 'team leader',
-    illegalWords: ['group', 'project', 'manage', 'lead'],
-  },
-  {
     targetWord: 'project manager',
     illegalWords: ['plan', 'execute', 'project', 'manage'],
   },
   {
-    targetWord: 'quality control',
-    illegalWords: ['standard', 'check', 'product', 'inspect'],
-  },
-  {
-    targetWord: 'personal assistant',
+    targetWord: 'assistant',
     illegalWords: ['help', 'schedule', 'tasks', 'manage'],
   },
   {
@@ -1216,10 +1159,6 @@ const wordArray = [
     illegalWords: ['wall', 'smooth', 'plaster', 'surface'],
   },
   { targetWord: 'tiler', illegalWords: ['tile', 'floor', 'wall', 'install'] },
-  {
-    targetWord: 'animal trainer',
-    illegalWords: ['train', 'animals', 'behavior', 'perform'],
-  },
   { targetWord: 'dog walker', illegalWords: ['dog', 'walk', 'pet', 'leash'] },
   {
     targetWord: 'pet groomer',
@@ -1246,10 +1185,6 @@ const wordArray = [
   {
     targetWord: 'winemaker',
     illegalWords: ['wine', 'grapes', 'vineyard', 'ferment'],
-  },
-  {
-    targetWord: 'sommelier',
-    illegalWords: ['wine', 'taste', 'restaurant', 'serve'],
   },
   { targetWord: 'valet', illegalWords: ['car', 'park', 'hotel', 'service'] },
   {
@@ -1644,7 +1579,6 @@ const wordArray = [
     targetWord: 'Redwood',
     illegalWords: ['tree', 'tall', 'California', 'giant'],
   },
-  { targetWord: 'Fir', illegalWords: ['tree', 'needles', 'conifer', 'wood'] },
   {
     targetWord: 'English',
     illegalWords: ['language', 'speak', 'words', 'world'],
@@ -1670,7 +1604,7 @@ const wordArray = [
     illegalWords: ['language', 'Japan', 'east', 'sun'],
   },
 
-  // Top ten most well known dinosaurs
+  // Top five most well known dinosaurs
   {
     targetWord: 'Tyrannosaurus Rex',
     illegalWords: ['T-Rex', 'dinosaur', 'carnivore', 'rex'],
@@ -2081,4 +2015,101 @@ const wordArray = [
   },
   { targetWord: 'Truck', illegalWords: ['bed', 'tow', 'pickup', 'semi'] },
   { targetWord: 'Scooter', illegalWords: ['ride', 'wheels', 'motor', 'stand'] },
+  { targetWord: 'Balloon', illegalWords: ['float', 'air', 'inflate', 'party'] },
+  {
+    targetWord: 'Dinosaur',
+    illegalWords: ['extinct', 'fossil', 'reptile', 'prehistoric'],
+  },
+  { targetWord: 'Rainbow', illegalWords: ['colors', 'sky', 'arc', 'rain'] },
+  { targetWord: 'Kitten', illegalWords: ['cat', 'pet', 'small', 'fur'] },
+  { targetWord: 'Puppy', illegalWords: ['dog', 'pet', 'small', 'bark'] },
+  {
+    targetWord: 'Cupcake',
+    illegalWords: ['bake', 'frosting', 'sweet', 'cake'],
+  },
+  {
+    targetWord: 'Unicorn',
+    illegalWords: ['mythical', 'horn', 'horse', 'magic'],
+  },
+  { targetWord: 'Pirate', illegalWords: ['ship', 'treasure', 'sea', 'sailor'] },
+  {
+    targetWord: 'Princess',
+    illegalWords: ['royalty', 'castle', 'queen', 'tiara'],
+  },
+  {
+    targetWord: 'Rocket',
+    illegalWords: ['space', 'launch', 'NASA', 'astronaut'],
+  },
+  { targetWord: 'Fairy', illegalWords: ['wings', 'magic', 'small', 'myth'] },
+  { targetWord: 'Castle', illegalWords: ['fortress', 'king', 'queen', 'moat'] },
+  { targetWord: 'Dragon', illegalWords: ['fire', 'myth', 'wings', 'scales'] },
+  { targetWord: 'Mermaid', illegalWords: ['sea', 'fish', 'tail', 'myth'] },
+  { targetWord: 'Elephant', illegalWords: ['trunk', 'animal', 'large', 'zoo'] },
+  { targetWord: 'Giraffe', illegalWords: ['neck', 'animal', 'spots', 'zoo'] },
+  {
+    targetWord: 'Ice Cream',
+    illegalWords: ['dessert', 'cold', 'scoop', 'cone'],
+  },
+  { targetWord: 'Airplane', illegalWords: ['fly', 'sky', 'jet', 'wings'] },
+  {
+    targetWord: 'Train',
+    illegalWords: ['tracks', 'rail', 'locomotive', 'ride'],
+  },
+  { targetWord: 'Bicycle', illegalWords: ['bike', 'pedal', 'wheels', 'ride'] },
+  { targetWord: 'Kite', illegalWords: ['fly', 'wind', 'string', 'sky'] },
+  {
+    targetWord: 'Robot',
+    illegalWords: ['machine', 'program', 'metal', 'android'],
+  },
+  { targetWord: 'Lollipop', illegalWords: ['candy', 'sweet', 'stick', 'suck'] },
+  { targetWord: 'Moon', illegalWords: ['night', 'sky', 'crater', 'orbit'] },
+  { targetWord: 'Star', illegalWords: ['night', 'sky', 'shine', 'twinkle'] },
+  {
+    targetWord: 'Teddy Bear',
+    illegalWords: ['stuffed', 'toy', 'hug', 'fuzzy'],
+  },
+  { targetWord: 'Flower', illegalWords: ['petal', 'garden', 'bloom', 'plant'] },
+  { targetWord: 'Bubble', illegalWords: ['soap', 'pop', 'blow', 'float'] },
+  { targetWord: 'Crayon', illegalWords: ['color', 'draw', 'wax', 'art'] },
+  { targetWord: 'Tree', illegalWords: ['leaves', 'wood', 'branches', 'grow'] },
+  {
+    targetWord: 'Butterfly',
+    illegalWords: ['wings', 'caterpillar', 'colorful', 'metamorphosis'],
+  },
+  {
+    targetWord: 'Snowman',
+    illegalWords: ['winter', 'cold', 'frosty', 'build'],
+  },
+  {
+    targetWord: 'Cupcake',
+    illegalWords: ['bake', 'frosting', 'sweet', 'dessert'],
+  },
+  { targetWord: 'Whale', illegalWords: ['ocean', 'large', 'mammal', 'water'] },
+  {
+    targetWord: 'Dolphin',
+    illegalWords: ['ocean', 'intelligent', 'mammal', 'swim'],
+  },
+  {
+    targetWord: 'Penguin',
+    illegalWords: ['cold', 'bird', 'Antarctica', 'tuxedo'],
+  },
+  {
+    targetWord: 'Octopus',
+    illegalWords: ['tentacles', 'ocean', 'eight', 'ink'],
+  },
+  { targetWord: 'Shark', illegalWords: ['ocean', 'teeth', 'fish', 'predator'] },
+  {
+    targetWord: 'Firetruck',
+    illegalWords: ['red', 'fire', 'emergency', 'ladder'],
+  },
+  {
+    targetWord: 'Police Car',
+    illegalWords: ['sirens', 'emergency', 'vehicle', 'officer'],
+  },
+  {
+    targetWord: 'Ambulance',
+    illegalWords: ['emergency', 'vehicle', 'paramedic', 'hospital'],
+  },
+  { targetWord: 'Helicopter', illegalWords: ['rotor', 'fly', 'air', 'rescue'] },
+  { targetWord: 'Bus', illegalWords: ['public', 'transport', 'ride', 'stop'] },
 ];

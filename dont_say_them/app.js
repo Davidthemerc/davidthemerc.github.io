@@ -1,6 +1,7 @@
 // Variable definitions
 const startButton = document.getElementById('startButton');
 const successButton = document.getElementById('successButton');
+const skipButton = document.getElementById('skipButton');
 const penaltyButton = document.getElementById('penaltyButton');
 const resetButton = document.getElementById('resetButton');
 const pointsEl = document.getElementById('points');
@@ -10,6 +11,8 @@ const illegalWordsEl = document.getElementById('illegalWords');
 const gameStatus = retrieveGameStatus();
 const timerEl = document.getElementById('timer');
 let interval;
+let timer;
+let minutes, seconds;
 
 // Update Saved Score
 updateScore();
@@ -31,6 +34,15 @@ startButton.addEventListener('click', () => {
 successButton.addEventListener('click', () => {
   if (gameStatus.started === 1) {
     successFunction();
+  } else {
+    // Do nothing
+  }
+});
+
+// Skip Button Event Listener
+skipButton.addEventListener('click', () => {
+  if (gameStatus.started === 1) {
+    skipFunction();
   } else {
     // Do nothing
   }
