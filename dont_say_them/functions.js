@@ -161,16 +161,15 @@ const loadWords = () => {
   }
 
   // Let's do a 1/15 chance that all words are banned! Charades only!
-  let charadesChance = ranBetween(0, 15);
+  let charadesChance = ranBetween(0, 10);
 
   // Good luck with the Charades lol
-  // if (charadesChance === 15) {
-  //   illegalWordsEl.innerHTML = '';
-  //   const charades = document.createElement('p');
-  //   charades.className = 'donttitle';
-  //   charades.textContent = 'Charades for double points (pass next word) ';
-  //   illegalWordsEl.appendChild(charades);
-  // }
+  if (charadesChance === 10) {
+    const charades = document.createElement('p');
+    charades.className = 'donttitle';
+    charades.textContent = 'Charades for double pts (free pass next word) ';
+    illegalWordsEl.appendChild(charades);
+  }
 };
 
 // Function to run when time is up

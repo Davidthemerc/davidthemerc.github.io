@@ -4,10 +4,10 @@ async function hiscores(playerName) {
   // Using a CORS proxy
   const proxyUrl = 'https://corsproxy.io/?';
 
-  const url = `https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=${playerName}`;
+  const url = `https://raw.githubusercontent.com/Davidthemerc/davidthemerc.github.io/main/data.json`;
 
   try {
-    const response = await fetch(proxyUrl + url, {
+    const response = await fetch(url, {
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
       },
