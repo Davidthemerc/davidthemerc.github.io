@@ -7,7 +7,7 @@ async function hiscores(playerName) {
   const url = `https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=${playerName}`;
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(proxyUrl + url, {
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
       },
