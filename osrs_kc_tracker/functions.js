@@ -6,8 +6,10 @@ async function hiscores(playerName) {
 
   const url = `https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=${playerName}`;
 
+  const dataJSON = 'data.json';
+
   try {
-    const response = await fetch(proxyUrl + url, {
+    const response = await fetch(dataJSON, {
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
       },
@@ -36,6 +38,7 @@ async function hiscores(playerName) {
 
     // Populate list of shamed
     populateShamed(killcount);
+
   } catch (error) {
     console.error('Error fetching player stats:', error);
   }
