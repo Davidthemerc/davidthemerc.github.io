@@ -14,7 +14,7 @@ jobs:
 
       - name: Fetch player stats
         run: |
-          curl -o data.json "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=Spaghett%20ii"
+          curl -o osrs_kc_tracker/data.json "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=Spaghett%20ii"
 
       - name: Commit and push changes
         run: |
