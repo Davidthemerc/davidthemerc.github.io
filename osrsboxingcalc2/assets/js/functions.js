@@ -1,10 +1,8 @@
 async function hiscores(playerName, player) {
   // Do nothing if both names aren't filled out
+  const proxyUrl = 'https://e8gsqorhc2.execute-api.us-east-2.amazonaws.com/';
 
-  // Using a CORS proxy
-  const proxyUrl = 'https://corsproxy.io/?';
-
-  const url = `https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=${playerName}`;
+  const url = `hiscores?player=${playerName}`;
 
   try {
     const response = await fetch(proxyUrl + url, {
