@@ -1,15 +1,10 @@
 async function hiscores(playerName) {
-  // Do nothing if both names aren't filled out
+  const proxyUrl = 'https://e8gsqorhc2.execute-api.us-east-2.amazonaws.com/';
 
-  // Using a CORS proxy
-  const proxyUrl = 'https://corsproxy.io/?';
-
-  const url = `https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=${playerName}`;
-
-  const dataJSON = 'data.json';
+  const url = `hiscores?player=Spaghett ii`;
 
   try {
-    const response = await fetch(dataJSON, {
+    const response = await fetch(proxyUrl + url, {
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
       },
@@ -38,7 +33,6 @@ async function hiscores(playerName) {
 
     // Populate list of shamed
     populateShamed(killcount);
-
   } catch (error) {
     console.error('Error fetching player stats:', error);
   }

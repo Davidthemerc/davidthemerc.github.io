@@ -7,4 +7,4 @@ const contenderArray = [];
 const shameArray = [];
 
 // Lookup stats
-currentKC = hiscores('Spaghett ii');
+currentKC = hiscores();
