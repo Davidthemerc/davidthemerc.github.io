@@ -14,7 +14,7 @@ async function hiscores(playerName) {
     const lines = data.split('\n');
 
     // OSRS API usually lists skills in a specific order: Attack, Defence, Strength, etc.
-    const killcount = lines[78].split(',')[1]; // Get the Sarachnis kill count
+    const killcount = lines[79].split(',')[1]; // Get the Sarachnis kill count
 
     console.log(`Sarachnis Killcount: ${killcount}`);
 
