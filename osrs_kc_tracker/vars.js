@@ -69,4 +69,8 @@ const guesses = [
   { name: 'Mike vs RNG', guess: 8954 },
   { name: 'SlinkyDabz', guess: 6785 },
   { name: 'Im_CoffeeMan', guess: 9231 },
+  { name: 'Lord Phood', guess: 7269 },
+  { name: '6 Foot', guess: 7066 },
+  { name: 'Sakey', guess: 8354 },
+  { name: 'Berkinator', guess: 7778 },
 ];
