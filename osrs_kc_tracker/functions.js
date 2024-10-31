@@ -69,6 +69,12 @@ const populateContenders = (kc) => {
       }</u> (${displayVal})`;
     }
 
+    if (contender.name === 'Penscrawl' && contender.guess === 7362) {
+      conEl.innerHTML = `<b>${index + 1}.</b> <i>${contender.name} "Next KC" ${
+        contender.guess
+      }</u> (${displayVal})`;
+    }
+
     contendersEl.appendChild(conEl);
   });
 };

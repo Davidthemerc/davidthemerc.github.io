@@ -73,4 +73,6 @@ const guesses = [
   { name: '6 Foot', guess: 7066 },
   { name: 'Sakey', guess: 8354 },
   { name: 'Berkinator', guess: 7778 },
+  { name: '1st Ironman', guess: 7986 },
+  { name: 'Penscrawl', guess: 7362 },
 ];
