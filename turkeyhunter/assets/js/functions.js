@@ -316,7 +316,13 @@ const weaponDamage = (weapon) => {
     playAudio(0);
   }
 
-  if (damage >= 20) {
+  console.log(`Damage=${damage}`);
+
+  if (
+    (weaponTier < 6 && damage === 20) ||
+    (weaponTier === 6 && damage === 25) ||
+    (weaponTier === 7 && damage === 28)
+  ) {
     // Critical hit!
     setTimeout(() => {
       playAudio(ranBetween(22, 24));
