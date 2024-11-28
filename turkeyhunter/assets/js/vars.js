@@ -78,6 +78,21 @@ const audio = [
     dir: 'assets/audio/laser_rifle_reload.mp3',
     name: 'laser rifle reload',
   },
+  {
+    id: 43,
+    dir: 'assets/audio/bpowder_shell.wav',
+    name: 'black powder shotgun reload shell',
+  },
+  {
+    id: 44,
+    dir: 'assets/audio/bpowder_fire.wav',
+    name: 'black powder shotgun fire',
+  },
+  {
+    id: 45,
+    dir: 'assets/audio/bpowder_reload.mp3',
+    name: 'black powder shotgun reload',
+  },
 ];
 
 const audioList = Array();
@@ -198,6 +213,20 @@ const armoryWeapons = [
     weaponReloadTime: 3.25,
     weaponEmptySound: 40,
   },
+  {
+    weaponName: 'Black Powder Shotgun',
+    basicName: 'bps',
+    weaponID: 5,
+    currentMag: 0,
+    weaponDamage: 6,
+    weaponMag: 1,
+    weaponAmmo: 60,
+    weaponFireSound: 44,
+    weaponFiringTime: 1.6,
+    weaponReloadSound: 45,
+    weaponReloadTime: 1.2,
+    weaponEmptySound: 19,
+  },
 ];
 
 const armoryWeaponCosts = [
@@ -206,6 +235,7 @@ const armoryWeaponCosts = [
   { weaponName: 'XR Shotgun', weaponID: 2, weaponCost: 500 },
   { weaponName: 'T-3 Rifle', weaponID: 3, weaponCost: 1000 },
   { weaponName: 'Laser Rifle', weaponID: 4, weaponCost: 1500 },
+  { weaponName: 'Black Powder Shotgun', weaponID: 5, weaponCost: 700 },
 ];
 
 const armoryAmmo = [
@@ -215,6 +245,7 @@ const armoryAmmo = [
   { ammoName: 'Shotgun shells', cost: 40, amount: 84 },
   { ammoName: 'Rifle rounds', cost: 50, amount: 60 },
   { ammoName: 'Energy cells', cost: 60, amount: 30 },
+  { ammoName: 'Black Powder shells', cost: 60, amount: 60 },
 ];
 
 const armoryUpgrades = [
@@ -224,6 +255,11 @@ const armoryUpgrades = [
   { upgradeName: 'ZR Shotgun', upgradeCost: 250, upgradeTier: 4 },
   { upgradeName: 'T-4 Rifle', upgradeCost: 400, upgradeTier: 5 },
   { upgradeName: 'Laser Rifle+', upgradeCost: 500, upgradeTier: 6 },
+  {
+    upgradeName: 'Black Powder Shotgun Special',
+    upgradeCost: 300,
+    upgradeTier: 7,
+  },
 ];
 
 const armoryPrices = [
@@ -279,6 +315,21 @@ const armoryPrices = [
   },
   {
     elDef: document.getElementById('armprice10'),
+    itemName: '',
+    price: 60,
+  },
+  {
+    elDef: document.getElementById('armprice11'),
+    itemName: '',
+    price: 700,
+  },
+  {
+    elDef: document.getElementById('armprice12'),
+    itemName: '',
+    price: 300,
+  },
+  {
+    elDef: document.getElementById('armprice13'),
     itemName: '',
     price: 60,
   },

@@ -300,26 +300,35 @@ const weaponDamage = (weapon) => {
     damage = ranBetween(17, 20);
   }
 
-  // Tier 5 Weapons
+  // Tier 6 Weapons
   // Upgraded Rifle, etc.
   if (weaponTier === 6) {
     damage = ranBetween(20, 25);
   }
 
-  if (damage >= 15) {
+  // Tier 7 Weapons
+  // Black Powder Shotgun, etc.
+  if (weaponTier === 7) {
+    damage = ranBetween(21, 28);
+  }
+
+  if (damage >= 13) {
     playAudio(0);
   }
 
-  if (damage === 20) {
+  if (damage >= 20) {
     // Critical hit!
     setTimeout(() => {
       playAudio(ranBetween(22, 24));
     }, 1000);
     return turkeyHealth;
+  } else if (damage >= 25) {
+    // Successful greater hit! Return 3 damage
+    return 3;
   } else if (damage >= 17) {
     // Successful greater hit! Return 2 damage
     return 2;
-  } else if (damage >= 15) {
+  } else if (damage >= 13) {
     // Successful hit! Return 1 damage
     return 1;
   } else {
@@ -731,4 +740,32 @@ const getTurkey = () => {
   hunter.turkeysBagged.push(turkeyStats);
   hunter.turkeysBaggedCount += 1;
   saveJSON(hunter, 'TH-HunterData');
+};
+
+const isThanksgivingWeekend = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+
+  // Calculate Thanksgiving (4th Thursday of November)
+  const novemberFirst = new Date(year, 10, 1); // November is month 10 in JS (0-indexed)
+  const dayOfWeek = novemberFirst.getDay(); // Day of the week for Nov 1
+  const offset = (11 - dayOfWeek) % 7; // Days to reach the first Thursday
+  const thanksgiving = new Date(year, 10, 1 + offset + 21); // Add 3 more weeks (21 days)
+
+  const blackFriday = new Date(thanksgiving);
+  blackFriday.setDate(thanksgiving.getDate() + 1);
+
+  const saturday = new Date(thanksgiving);
+  saturday.setDate(thanksgiving.getDate() + 2);
+
+  const sunday = new Date(thanksgiving);
+  sunday.setDate(thanksgiving.getDate() + 3);
+
+  // Check if today is Thanksgiving, Black Friday, Saturday, or Sunday
+  return (
+    today.toDateString() === thanksgiving.toDateString() ||
+    today.toDateString() === blackFriday.toDateString() ||
+    today.toDateString() === saturday.toDateString() ||
+    today.toDateString() === sunday.toDateString()
+  );
 };

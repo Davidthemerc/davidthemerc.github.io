@@ -20,7 +20,16 @@ titleEl.innerHTML = `Dall Woods - Area ${randomWoods}`;
 
 // Roll to determine if there are even turkeys in this part of the woods
 // Turkeys will only appear on rolls of 4 & 5 (turkeyChance>3)
-const turkeyChance = ranBetween(1, 5);
+let turkeyChance = ranBetween(1, 5);
+
+// If this is Thanksgiving, Black Friday, or the weekend of Thanksgiving, 100% chance!
+// Example usage
+if (isThanksgivingWeekend()) {
+  console.log('Today is Thanksgiving, Black Friday, or the weekend after.');
+  turkeyChance = 5;
+} else {
+  console.log('Today is not Thanksgiving weekend. No extra turkeys, sorry!');
+}
 
 // Turkey is alive!
 const turkey = document.createElement('img');
@@ -168,6 +177,13 @@ moveArea.addEventListener('click', () => {
 talkToHunter.addEventListener('click', () => {
   let chance = ranBetween(0, 7);
 
+  // Extra chance to find a hunter on Thanksgiving weekend
+  if (isThanksgivingWeekend()) {
+    chance = 7;
+  } else {
+    // Do nothing, sorry!
+  }
+
   if (chance > 4) {
     location.assign('talk.html');
   } else {
@@ -186,6 +202,13 @@ backToLodge.addEventListener('click', () => {
 let timeDiff = ranBetween(600, 900);
 let randomFactor = ranBetween(4, 7);
 let randomFactor2 = ranBetween(6, 8);
+
+// Extra time to shoot the turkey on Thanksgiving weekend
+if (isThanksgivingWeekend()) {
+  randomFactor += ranBetween(3, 7);
+} else {
+  // Do nothing, sorry!
+}
 
 // // Debugging
 // console.log(`timeDiff: ${timeDiff}`);

@@ -14,6 +14,10 @@ const hunter = loadHunter();
 // Assign the hunter's saved name to the link on the page
 hunterNameEl.innerHTML = `Welcome ${hunter.name}!`;
 
+if (hunter.name === 'Developer') {
+  hunterNameEl.innerHTML = "Welcome Developer! You're awesome!";
+}
+
 // Assign the hunter's current weapon to the weapon status element
 statusWeaponEl.innerHTML = hunter.weapons[hunter.currentWeapon].weaponName;
 
