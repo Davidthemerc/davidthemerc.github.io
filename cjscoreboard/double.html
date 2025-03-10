@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Celebrity Jeopardy Scorer</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=ABeeZee&amp;display=swap">
+    <link rel="stylesheet" href="assets/fonts/fontawesome-all.min.css">
+</head>
+
+<body class="d-flex flex-column" style="background: #060CE9;">
+    <div class="row">
+        <div class="col">
+            <h1 class="text-center" style="color: #f9dd16;">Celebrity Jeopardy Scorer</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col d-flex flex-row justify-content-center">
+            <p id="moneydisplay" class="fs-1"
+                style="background: var(--bs-light);border: 3px solid var(--bs-secondary);padding: 0rem 7rem 0rem 7rem;font-family: ABeeZee, sans-serif;">
+                0</p>
+        </div>
+    </div>
+    <div class="row d-flex flex-row" style="height: fit-content;margin: .25rem;">
+        <div class="col d-flex flex-row justify-content-center"><button id="down1" class="btn btn-primary" type="button"
+                style="border-radius: 1rem;background: var(--bs-red);padding-right: 2.5rem;padding-left: 2.5rem;"><i
+                    class="far fa-times-circle fs-1"></i></button></div>
+        <div class="col-auto d-flex align-self-center">
+            <p id="money1" class="fs-3 text-center flex-column" style="color: #f9dd16;font-weight: bold;margin: 0;">200
+            </p>
+        </div>
+        <div class="col d-flex flex-row justify-content-center"><button id="up1" class="btn btn-primary" type="button"
+                style="border-radius: 1rem;background: var(--bs-success);padding-right: 2.5rem;padding-left: 2.5rem;"><i
+                    class="far fa-check-circle fs-1"></i></button></div>
+    </div>
+    <div class="row d-flex flex-row" style="height: fit-content;margin: .25rem;">
+        <div class="col d-flex flex-row justify-content-center"><button id="down2" class="btn btn-primary" type="button"
+                style="border-radius: 1rem;background: var(--bs-red);padding-right: 2.5rem;padding-left: 2.5rem;"><i
+                    class="far fa-times-circle fs-1"></i></button></div>
+        <div class="col-auto d-flex align-self-center">
+            <p id="money2" class="fs-3 text-center flex-column" style="color: #f9dd16;font-weight: bold;margin: 0;">400
+            </p>
+        </div>
+        <div class="col d-flex flex-row justify-content-center"><button id="up2" class="btn btn-primary" type="button"
+                style="border-radius: 1rem;background: var(--bs-success);padding-right: 2.5rem;padding-left: 2.5rem;"><i
+                    class="far fa-check-circle fs-1"></i></button></div>
+    </div>
+    <div class="row d-flex flex-row" style="height: fit-content;margin: .25rem;">
+        <div class="col d-flex flex-row justify-content-center"><button id="down3" class="btn btn-primary" type="button"
+                style="border-radius: 1rem;background: var(--bs-red);padding-right: 2.5rem;padding-left: 2.5rem;"><i
+                    class="far fa-times-circle fs-1"></i></button></div>
+        <div class="col-auto d-flex align-self-center">
+            <p id="money3" class="fs-3 text-center flex-column" style="color: #f9dd16;font-weight: bold;margin: 0;">600
+            </p>
+        </div>
+        <div class="col d-flex flex-row justify-content-center"><button id="up3" class="btn btn-primary" type="button"
+                style="border-radius: 1rem;background: var(--bs-success);padding-right: 2.5rem;padding-left: 2.5rem;"><i
+                    class="far fa-check-circle fs-1"></i></button></div>
+    </div>
+    <div class="row d-flex flex-row" style="height: fit-content;margin: .25rem;">
+        <div class="col d-flex flex-row justify-content-center"><button id="down4" class="btn btn-primary" type="button"
+                style="border-radius: 1rem;background: var(--bs-red);padding-right: 2.5rem;padding-left: 2.5rem;"><i
+                    class="far fa-times-circle fs-1"></i></button></div>
+        <div class="col-auto d-flex align-self-center">
+            <p id="money4" class="fs-3 text-center flex-column" style="color: #f9dd16;font-weight: bold;margin: 0;">800
+            </p>
+        </div>
+        <div class="col d-flex flex-row justify-content-center"><button id="up4" class="btn btn-primary" type="button"
+                style="border-radius: 1rem;background: var(--bs-success);padding-right: 2.5rem;padding-left: 2.5rem;"><i
+                    class="far fa-check-circle fs-1"></i></button></div>
+    </div>
+    <div class="row d-flex flex-row" style="height: fit-content;margin: .25rem;">
+        <div class="col d-flex flex-row justify-content-center"><button id="down5" class="btn btn-primary" type="button"
+                style="border-radius: 1rem;background: var(--bs-red);padding-right: 2.5rem;padding-left: 2.5rem;"><i
+                    class="far fa-times-circle fs-1"></i></button></div>
+        <div class="col-auto d-flex align-self-center">
+            <p id="money5" class="fs-3 text-center flex-column" style="color: #f9dd16;font-weight: bold;margin: 0;">
+                1000
+            </p>
+        </div>
+        <div class="col d-flex flex-row justify-content-center"><button id="up5" class="btn btn-primary" type="button"
+                style="border-radius: 1rem;background: var(--bs-success);padding-right: 2.5rem;padding-left: 2.5rem;"><i
+                    class="far fa-check-circle fs-1"></i></button></div>
+    </div>
+    <div class="row d-flex flex-row" style="height: fit-content;margin: .25rem;">
+        <div class="col d-flex flex-row align-items-start"><button id="dddown" class="btn btn-primary" type="button"
+                style="border-radius: 1rem;background: var(--bs-red);padding-right: 1.5rem;padding-left: 1.5rem;"><i
+                    class="far fa-times-circle fs-1"></i></button></div>
+        <div class="col-auto d-flex align-self-center"><input id="money6" type="text"
+                style="width: 7rem;background: #060CE9;text-align: center;" placeholder="Daily Double"
+                inputmode="numeric"></div>
+        <div class="col d-flex flex-row justify-content-end"><button id="ddup" class="btn btn-primary" type="button"
+                style="border-radius: 1rem;background: var(--bs-success);padding-right: 1.5rem;padding-left: 1.5rem;"><i
+                    class="far fa-check-circle fs-1"></i></button></div>
+    </div>
+    <div class="row" style="height: 35vh;">
+        <div class="col d-flex flex-column justify-content-end align-items-center"><button id="backpage"
+                class="btn btn-primary" type="button"
+                style="padding: .25rem;background: var(--bs-secondary-bg-subtle);color: var(--bs-black);font-family: ABeeZee, sans-serif;">
+                JEOPARDY ROUND &lt;&lt; </button><button id="nextpage" class="btn btn-primary" type="button"
+                style="padding: .25rem;background: var(--bs-secondary-bg-subtle);color: var(--bs-black);font-family: ABeeZee, sans-serif;">TRIPLE
+                JEOPARDY &gt;&gt;</button>
+        </div>
+    </div>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="vars.js"></script>
+    <script src="function.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
