@@ -24,7 +24,7 @@
     <canvas id="eggCanvas"></canvas>
 
     <script>
-        const EGG_COUNT = 339;
+        const EGG_COUNT = 319;
         const canvas = document.getElementById('eggCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -62,9 +62,9 @@
                 this.radiusY = 21;
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
-                this.vx = (Math.random() - 0.5) * 8;
-                this.vy = (Math.random() - 0.5) * 8;
-                this.maxSpeed = 12;
+                this.vx = (Math.random() - 0.5) * 7;
+                this.vy = (Math.random() - 0.5) * 7;
+                this.maxSpeed = 9;
 
                 const hue = Math.random() * 360;
                 const saturation = Math.random() < 0.5 ? 70 : 100;
@@ -78,6 +78,7 @@
                     `hsl(${(hue + 90) % 360}, 90%, 60%)`,
                     `hsl(${(hue + 270) % 360}, 100%, 50%)`
                 ];
+
             }
 
             draw(ctx) {
@@ -141,6 +142,12 @@
                     this.vy += Math.sin(angle) * force;
                 }
 
+                // Prevent stuck eggs: small nudge if velocities are too low
+                const minSpeed = 0.2;
+                if (Math.abs(this.vx) < minSpeed) this.vx += (Math.random() - 0.5) * 0.5;
+                if (Math.abs(this.vy) < minSpeed) this.vy += (Math.random() - 0.5) * 0.5;
+
+                // Clamp speed
                 const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
                 if (speed > this.maxSpeed) {
                     const scale = this.maxSpeed / speed;
@@ -151,13 +158,41 @@
                 this.x += this.vx;
                 this.y += this.vy;
 
-                if (this.x - this.radiusX < 0 || this.x + this.radiusX > width) {
+                // Clamp position to screen boundaries to prevent "half offscreen" eggs
+                this.x = Math.max(this.radiusX, Math.min(width - this.radiusX, this.x));
+                this.y = Math.max(this.radiusY, Math.min(height - this.radiusY, this.y));
+
+                // Bounce only if moving into the wall (prevents jitter)
+                if (this.x - this.radiusX <= 0 && this.vx < 0) {
+                    this.vx *= -1;
+                } else if (this.x + this.radiusX >= width && this.vx > 0) {
                     this.vx *= -1;
                 }
-                if (this.y - this.radiusY < 0 || this.y + this.radiusY > height) {
+
+                if (this.y - this.radiusY <= 0 && this.vy < 0) {
+                    this.vy *= -1;
+                } else if (this.y + this.radiusY >= height && this.vy > 0) {
                     this.vy *= -1;
                 }
+
+                // Edge nudging to discourage edge-hugging
+                const edgeThreshold = 50;
+                const parallelThreshold = 1.0;
+                const strongNudge = 0.8;
+
+                if (this.x < edgeThreshold && Math.abs(this.vx) < parallelThreshold) {
+                    this.vx += strongNudge;
+                } else if (this.x > width - edgeThreshold && Math.abs(this.vx) < parallelThreshold) {
+                    this.vx -= strongNudge;
+                }
+
+                if (this.y < edgeThreshold && Math.abs(this.vy) < parallelThreshold) {
+                    this.vy += strongNudge;
+                } else if (this.y > height - edgeThreshold && Math.abs(this.vy) < parallelThreshold) {
+                    this.vy -= strongNudge;
+                }
             }
+
         }
 
         const eggs = Array.from({ length: EGG_COUNT }, () => new Egg());
