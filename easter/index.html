@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bouncing Eggs</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: white;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="eggCanvas"></canvas>
+
+    <script>
+        const EGG_COUNT = 339;
+        const canvas = document.getElementById('eggCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        let cursor = { x: -1000, y: -1000 };
+        let ripples = [];
+
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        });
+
+        canvas.addEventListener('mousemove', e => {
+            cursor.x = e.clientX;
+            cursor.y = e.clientY;
+        });
+
+        canvas.addEventListener('touchstart', e => {
+            if (e.touches.length > 0) {
+                cursor.x = e.touches[0].clientX;
+                cursor.y = e.touches[0].clientY;
+                ripples.push({ x: cursor.x, y: cursor.y, radius: 0, alpha: 1 });
+            }
+        }, { passive: true });
+
+        class Egg {
+            constructor() {
+                this.radiusX = 15;
+                this.radiusY = 21;
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.maxSpeed = 12;
+
+                const hue = Math.random() * 360;
+                const saturation = Math.random() < 0.5 ? 70 : 100;
+                const lightness = Math.random() < 0.5 ? 80 : 60;
+                this.hue = hue;
+                this.color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+
+                this.striped = Math.random() < 0.3;
+                this.stripeColors = [
+                    `hsl(${(hue + 180) % 360}, 80%, 70%)`,
+                    `hsl(${(hue + 90) % 360}, 90%, 60%)`,
+                    `hsl(${(hue + 270) % 360}, 100%, 50%)`
+                ];
+            }
+
+            draw(ctx) {
+                // Slight shadow for depth
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+                ctx.shadowBlur = 2;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 1;
+
+                // Slight 3D effect via radial gradient
+                const gradient = ctx.createRadialGradient(
+                    this.x - this.radiusX * 0.3,
+                    this.y - this.radiusY * 0.3,
+                    .4,
+                    this.x,
+                    this.y,
+                    this.radiusX
+                );
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                gradient.addColorStop(1, this.color);
+
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y, this.radiusX, this.radiusY, 0, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+
+                // Stripes
+                if (this.striped) {
+                    const stripeHeight = this.radiusY * 0.09;
+                    const offsets = [-this.radiusY / 3, 0, this.radiusY / 3];
+
+                    ctx.save();
+                    for (let i = 0; i < 3; i++) {
+                        ctx.beginPath();
+                        ctx.rect(
+                            this.x - this.radiusX,
+                            this.y + offsets[i] - stripeHeight / 2,
+                            this.radiusX * 2,
+                            stripeHeight
+                        );
+                        ctx.fillStyle = this.stripeColors[i];
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+            }
+
+            update() {
+                const dx = this.x - cursor.x;
+                const dy = this.y - cursor.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const minDist = 100;
+                if (dist < minDist) {
+                    const force = (minDist - dist) / minDist;
+                    const angle = Math.atan2(dy, dx);
+                    this.vx += Math.cos(angle) * force;
+                    this.vy += Math.sin(angle) * force;
+                }
+
+                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (speed > this.maxSpeed) {
+                    const scale = this.maxSpeed / speed;
+                    this.vx *= scale;
+                    this.vy *= scale;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x - this.radiusX < 0 || this.x + this.radiusX > width) {
+                    this.vx *= -1;
+                }
+                if (this.y - this.radiusY < 0 || this.y + this.radiusY > height) {
+                    this.vy *= -1;
+                }
+            }
+        }
+
+        const eggs = Array.from({ length: EGG_COUNT }, () => new Egg());
+
+        function drawRipples() {
+            for (let i = ripples.length - 1; i >= 0; i--) {
+                const r = ripples[i];
+                ctx.beginPath();
+                ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(0, 150, 255, ${r.alpha})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                r.radius += 2;
+                r.alpha -= 0.03;
+                if (r.alpha <= 0) ripples.splice(i, 1);
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            eggs.forEach(egg => {
+                egg.update();
+                egg.draw(ctx);
+            });
+            drawRipples();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>
