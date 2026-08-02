@@ -178,7 +178,7 @@ const blackjackCreateCard = (element, who, cardID) => {
   // Pick a card, any card, unless we specifically choose one
   let pick;
   cardID === undefined
-    ? (pick = ranBetween(0, deckArray.length))
+    ? (pick = ranBetween(0, deckArray.length - 1))
     : (pick = cardID);
 
   // Define card attributes and place in DOM
@@ -197,7 +197,7 @@ const blackjackCreateHiddenCard = (element, who, cardID) => {
   // Pick a card, any card, unless we specifically choose one
   let pick;
   cardID === undefined
-    ? (pick = ranBetween(0, deckArray.length))
+    ? (pick = ranBetween(0, deckArray.length - 1))
     : (pick = cardID);
 
   // Define card attributes and place in DOM
@@ -234,6 +234,12 @@ const blackjackDeal = () => {
     if (gameStatus.gameStarted === 1) {
       throw new Error('A game is already in progress!');
     } else {
+      // Clear the board from the previous game
+      playerTrayEl.innerHTML = '';
+      dealerTrayEl.innerHTML = '';
+      playerCounterEl.value = '0';
+      dealerCounterEl.value = '???';
+
       // Rest of function
       // Set game status to started
       gameStatus.gameStarted = 1;
@@ -249,14 +255,23 @@ const blackjackDeal = () => {
 
 const countHand = (who) => {
   let count = 0;
-  if (who === 'Dealer') {
-    dealerHand.forEach((card) => {
+  let aces = 0;
+  let hand = who === 'Dealer' ? dealerHand : playerHand;
+
+  hand.forEach((card) => {
+    if (card.name.includes('Ace')) {
+      aces++;
+      count += 11;
+    } else {
       count += card.value;
-    });
-  } else {
-    playerHand.forEach((card) => {
-      count += card.value;
-    });
+    }
+  });
+
+  // Adjust for aces if busting
+  while (count > 21 && aces > 0) {
+    count -= 10;
+    aces--;
   }
+
   return count;
 };

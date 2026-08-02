@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#8e1b1b" />
+  <meta name="description" content="Track Lotería draws and analyze shuffle patterns entirely in your browser." />
+  <title>Lotería Draw Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Local-only shuffle analysis</p>
+        <h1>Lotería Draw Tracker</h1>
+      </div>
+      <button id="themeToggle" class="icon-button" type="button" aria-label="Toggle dark mode">◐</button>
+    </header>
+
+    <main>
+      <section id="recordView" class="view active" aria-labelledby="recordTab">
+        <div class="card hero-card">
+          <div>
+            <p class="eyebrow">Current game</p>
+            <h2 id="currentGameTitle">New draw</h2>
+            <p id="drawSummary" class="muted">Tap cards below in the order they are drawn.</p>
+          </div>
+          <div class="hero-actions">
+            <button id="undoButton" class="button secondary" type="button" disabled>Undo</button>
+            <button id="saveGameButton" class="button primary" type="button" disabled>Save game</button>
+          </div>
+        </div>
+
+        <div class="card draw-strip-card">
+          <div class="section-heading compact">
+            <div>
+              <h3>Draw order</h3>
+              <p class="muted"><span id="drawCount">0</span> cards recorded</p>
+            </div>
+            <button id="clearCurrentButton" class="text-button danger-text" type="button" disabled>Clear current</button>
+          </div>
+          <ol id="drawOrder" class="draw-order empty-state-list">
+            <li class="empty-message">No cards recorded yet.</li>
+          </ol>
+        </div>
+
+        <div class="card">
+          <div class="section-heading">
+            <div>
+              <h3>Card deck</h3>
+              <p class="muted">Each card can be selected once per game.</p>
+            </div>
+            <label class="search-box">
+              <span class="sr-only">Search cards</span>
+              <input id="cardSearch" type="search" placeholder="Search cards…" autocomplete="off" />
+            </label>
+          </div>
+          <div id="cardGrid" class="card-grid" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="historyView" class="view" aria-labelledby="historyTab">
+        <div class="card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Saved locally</p>
+              <h2>Game history</h2>
+              <p id="historySummary" class="muted">No games saved yet.</p>
+            </div>
+          </div>
+          <div id="historyList" class="history-list"></div>
+        </div>
+      </section>
+
+      <section id="statsView" class="view" aria-labelledby="statsTab">
+        <div class="stats-grid summary-grid">
+          <article class="stat-card"><span class="stat-label">Games</span><strong id="statGames">0</strong></article>
+          <article class="stat-card"><span class="stat-label">Cards drawn</span><strong id="statDraws">0</strong></article>
+          <article class="stat-card"><span class="stat-label">Avg. cards/game</span><strong id="statAverage">0</strong></article>
+          <article class="stat-card"><span class="stat-label">Unique cards seen</span><strong id="statUnique">0</strong></article>
+        </div>
+
+        <div class="stats-grid">
+          <article class="card stat-panel">
+            <div class="section-heading compact"><div><p class="eyebrow">Frequency</p><h3>Top 5 cards</h3></div></div>
+            <div id="topCards" class="ranking-list"></div>
+          </article>
+          <article class="card stat-panel">
+            <div class="section-heading compact"><div><p class="eyebrow">Opening position</p><h3>Most common first cards</h3></div></div>
+            <div id="firstCards" class="ranking-list"></div>
+          </article>
+          <article class="card stat-panel">
+            <div class="section-heading compact"><div><p class="eyebrow">Closing position</p><h3>Most common last cards</h3></div></div>
+            <div id="lastCards" class="ranking-list"></div>
+          </article>
+          <article class="card stat-panel">
+            <div class="section-heading compact"><div><p class="eyebrow">Placement</p><h3>Earliest average position</h3></div></div>
+            <div id="averagePositions" class="ranking-list"></div>
+          </article>
+        </div>
+
+        <div class="card">
+          <div class="section-heading">
+            <div><p class="eyebrow">All cards</p><h3>Complete frequency table</h3><p class="muted">Sort by count, appearance rate, or average draw position.</p></div>
+            <select id="statsSort" class="select-input" aria-label="Sort statistics">
+              <option value="count">Most drawn</option>
+              <option value="rate">Highest appearance rate</option>
+              <option value="position">Earliest average position</option>
+              <option value="name">Card name</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Card</th><th>Draws</th><th>Games seen</th><th>Appearance</th><th>Avg. position</th></tr></thead>
+              <tbody id="statsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="settingsView" class="view" aria-labelledby="settingsTab">
+        <div class="card settings-card">
+          <p class="eyebrow">Backup and recovery</p>
+          <h2>Data settings</h2>
+          <p class="muted">All information stays in this browser. Export a backup before clearing browser data or moving devices.</p>
+          <div class="settings-actions">
+            <button id="exportButton" class="button primary" type="button">Export JSON backup</button>
+            <label class="button secondary file-button">Import JSON backup<input id="importInput" type="file" accept="application/json,.json" /></label>
+          </div>
+          <div class="storage-status">
+            <span>Storage version</span><strong id="storageVersion">1</strong>
+            <span>Saved games</span><strong id="settingsGameCount">0</strong>
+            <span>Approx. size</span><strong id="storageSize">0 KB</strong>
+          </div>
+        </div>
+
+        <div class="card danger-zone">
+          <p class="eyebrow danger-text">Danger zone</p>
+          <h3>Delete all local data</h3>
+          <p class="muted">Use this if stored data is corrupted or a future update requires a clean reset. This cannot be undone unless you have an export.</p>
+          <button id="clearStorageButton" class="button danger" type="button">Delete all local data</button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Primary navigation">
+      <button id="recordTab" class="nav-item active" data-view="recordView" type="button"><span>＋</span>Record</button>
+      <button id="historyTab" class="nav-item" data-view="historyView" type="button"><span>☰</span>History</button>
+      <button id="statsTab" class="nav-item" data-view="statsView" type="button"><span>▥</span>Stats</button>
+      <button id="settingsTab" class="nav-item" data-view="settingsView" type="button"><span>⚙</span>Settings</button>
+    </nav>
+  </div>
+
+  <dialog id="confirmDialog">
+    <form method="dialog" class="dialog-card">
+      <h3 id="dialogTitle">Confirm action</h3>
+      <p id="dialogMessage" class="muted"></p>
+      <div class="dialog-actions">
+        <button value="cancel" class="button secondary">Cancel</button>
+        <button id="dialogConfirm" value="confirm" class="button danger">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js" defer></script>
+</body>
+</html>
