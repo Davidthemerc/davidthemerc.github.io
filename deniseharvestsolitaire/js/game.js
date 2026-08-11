@@ -40,6 +40,19 @@ document.addEventListener('DOMContentLoaded',()=>{
  function playable(card){return card?.wild||game.waste?.wild||Math.abs(card.r-game.waste.r)===1||Math.abs(card.r-game.waste.r)===12}
  function blocked(c){if(c.bonusUnlocked)return false;return c.blockers.some(id=>{const b=game.layout.find(x=>x.id===id);return b&&!b.removed})}
  function exposed(){return game.layout.filter(c=>!c.removed&&!blocked(c))}
+ function tableauCleared(){return Array.isArray(game.layout)&&game.layout.length>0&&game.layout.every(c=>c.removed)}
+ function finishIfCleared(source=''){
+   if(!handStarted||handComplete||game.completing||!tableauCleared())return false;
+   game.completing=true;
+   try{win();return true}
+   catch(err){
+     game.completing=false;handComplete=false;handStarted=true;
+     console.error('Completion flow failed',source,err);
+     msg('The field is clear. Retrying completion…');
+     setTimeout(()=>finishIfCleared('retry'),60);
+     return true;
+   }
+ }
  function specialProgress(c){
    const req=c.specialRequires||[];
    return req.reduce((n,id)=>{const x=game.layout.find(v=>v.id===id);return n+(x&&x.removed?1:0)},0);
@@ -319,8 +332,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    state.rosieRescues=(state.rosieRescues||0)+1;state.stats.rosieRescuesFound=(state.stats.rosieRescuesFound||0)+1;return"1 Rosie Rescue 🐾";
  }
  function winDaily(){
-   handComplete=true;handStarted=false;DSH.Audio.play.win();
-   const desc=dailyDescriptor(),C=DSH.Config.dailyChallenge,perfect=(game.drawPacksBought||0)===0&&(game.powersUsed||0)===0,levelStreak=game.levelBestStreak||0;
+   const C=DSH.Config.dailyChallenge,perfect=(game.drawPacksBought||0)===0&&(game.powersUsed||0)===0,levelStreak=game.levelBestStreak||0;
    let stars=1;if(perfect||levelStreak>=DSH.Config.scoring.threeStarStreak)stars=2;if(perfect&&levelStreak>=DSH.Config.scoring.threeStarStreak)stars=3;
    state.stats.dailyChallengesCompleted=(state.stats.dailyChallengesCompleted||0)+1;
    if(perfect)state.stats.dailyPerfectClears=(state.stats.dailyPerfectClears||0)+1;
@@ -328,8 +340,10 @@ document.addEventListener('DOMContentLoaded',()=>{
    const firstClaim=state.dailyLastClaimDate!==game.dailyKey;
    let coins=0,gems=0,powerText='',streakBonus='';
    if(firstClaim){
-     coins=C.coins;gems=C.gems+(perfect?C.perfectGem:0);if((state.rosieAdventureFinds?.star||0)>0){state.rosieAdventureFinds.star--;gems++;details.push('🌟 Shooting Star: +1 guaranteed gem')}
-   state.coins+=coins;state.gems+=gems;
+     // Shooting Star is intentionally reserved for the next NORMAL Solitaire clear.
+     // Daily Challenge must never consume it.
+     coins=C.coins;gems=C.gems+(perfect?C.perfectGem:0);
+     state.coins+=coins;state.gems+=gems;
      powerText=grantDailyPower(game.dailyRewardPower);
      const gap=state.dailyLastWinDate?dateSerial(game.dailyKey)-dateSerial(state.dailyLastWinDate):999;
      state.dailyWinStreak=gap===1?(state.dailyWinStreak||0)+1:1;
@@ -345,6 +359,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      }
      DSH.Progress.addHappiness(state,2);
    }
+   handComplete=true;handStarted=false;game.completing=false;DSH.Audio.play.win();
    DSH.Save.save(state);renderAllBalances();renderDailyUI();renderStats();
    setTextIfPresent('rewardCoins',coins);setTextIfPresent('rewardGems',gems);
    setTextIfPresent('winStars','★'.repeat(stars)+'☆'.repeat(3-stars));
@@ -384,7 +399,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      handleHarvestChain(c);applySpecialClear(c,true);chargeShearsFromClear();awardStreakMilestone();updateMission();
      DSH.Save.save(state);locked=false;
      const remaining=game.layout.some(x=>!x.removed);render(true);
-     if(!remaining)win();else if(game.streak>=3)msg(`${game.streak}-card streak!`);
+     if(!remaining)finishIfCleared('normal-play');else if(game.streak>=3)msg(`${game.streak}-card streak!`);
    });
  }
  function awardStreakMilestone(){
@@ -422,7 +437,9 @@ document.addEventListener('DOMContentLoaded',()=>{
    }
  }
  function draw(){
-   if(locked)return;if(!game.stock.length){DSH.Audio.play.bad();msg('No cards remain in the draw pile.');return}
+   if(locked||handComplete)return;
+   if(finishIfCleared('draw'))return;
+   if(!game.stock.length){render();DSH.Audio.play.bad();msg('No cards remain in the draw pile.');return}
    if(!game.previewChoiceUsed&&game.stock.length>=2&&Math.random()<DSH.Config.specialCards.previewChoiceChance){showPreviewChoice();return}
    snapshot();game.waste=game.stock.pop();game.streak=0;game.harvestChainGroup=null;game.harvestChainCount=0;game.moves++;if(game.missionMetrics)game.missionMetrics.endRun=0;const buzzed=buzzBee();updateMission();DSH.Audio.play.draw();render(true);msg(buzzed?'🐝 A Bee buzzed to a new field position!':'New active card.');
  }
@@ -481,7 +498,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    c.removed=true;state.stats.cardsCleared++;applySpecialClear(c,true);game.score+=70;
    DSH.Audio.play.flip();DSH.Save.save(state);render(true);
    msg(`✂️ Garden Shears cut away that card without changing the active card. ${game.shearsCharges} charge${game.shearsCharges===1?'':'s'} remain.`);
-   if(game.layout.every(x=>x.removed))win();return true;
+   finishIfCleared('shears');return true;
  }
 
  function toggleGateMode(){
@@ -505,7 +522,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    DSH.Audio.play.flip();
    render(true);
    msg('Magic Gate! That card was moved to the bottom of the draw pile without changing the active card.');
-   if(game.layout.every(x=>x.removed))win();
+   finishIfCleared('gate');
    return true;
  }
 
@@ -580,7 +597,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      DSH.Save.save(state);DSH.Audio.play.flip();render(true);
      msg(`🐾 Rosie cleared ${qty} stubborn field card${qty===1?'':'s'} for you!`);
      showRewardToast('Rosie to the Rescue!',`Cleared ${qty} field card${qty===1?'':'s'}`,'🐕');
-     if(game.layout.every(x=>x.removed))win();
+     finishIfCleared('rosie-clear');
      return;
    }
 
@@ -618,7 +635,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    target.removed=true;applySpecialClear(target,true);state.stats.cardsCleared++;game.score+=80;game.streak=0;
    consume();state.stats.rosieRescueClears=(state.stats.rosieRescueClears||0)+1;state.stats.rosieRescueCardsCleared=(state.stats.rosieRescueCardsCleared||0)+1;
    DSH.Save.save(state);DSH.Audio.play.flip();render(true);msg('🐾 Rosie cleared a troublesome card that had nowhere else to go.');
-   if(game.layout.every(x=>x.removed))win();
+   finishIfCleared('rosie-last-resort');
  }
 
  function buyShopItem(kind){
@@ -688,7 +705,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(!valid){DSH.Audio.play.bad();msg(`The Magic Dice rolled ${game.diceRoll}; choose a card 1 or 2 ranks above it.`);return false}
    snapshot();c.removed=true;applySpecialClear(c,true);game.diceUsed=true;game.powersUsed=(game.powersUsed||0)+1;state.stats.powersUsed=(state.stats.powersUsed||0)+1;updateMission();game.diceMode=false;game.diceRoll=0;
    state.stats.cardsCleared++;game.score+=125;DSH.Save.save(state);DSH.Audio.play.flip();render(true);msg('🎲 Magic Dice cleared the card!');
-   if(game.layout.every(x=>x.removed))win();return true;
+   finishIfCleared('dice');return true;
  }
  function toggleSeed(){
    if(locked)return;
@@ -729,12 +746,12 @@ document.addEventListener('DOMContentLoaded',()=>{
    setTimeout(()=>{
      targets.forEach(c=>{c.removed=true;applySpecialClear(c,true);state.stats.cardsCleared++;game.score+=75});
      game.streak=0;DSH.Save.save(state);locked=false;render(true);msg(`Windmill! ${targets.length} face-up cards blown away. 🌬️`);
-     if(game.layout.every(c=>c.removed))win();
+     finishIfCleared('windmill');
    },580);
  }
  function win(){
    if(game.dailyMode)return winDaily();
-   handComplete=true;handStarted=false;DSH.Audio.play.win();
+   handComplete=true;handStarted=false;game.completing=false;DSH.Audio.play.win();
    const completedLevel=state.level,S=DSH.Config.scoring;
    const perfect=(game.drawPacksBought||0)===0&&(game.powersUsed||0)===0;
    const levelStreak=game.levelBestStreak||0;
@@ -749,6 +766,8 @@ document.addEventListener('DOMContentLoaded',()=>{
    let coins=Math.round((base+streak+barnBonus+starBonus+perfectBonus)*(DSH.Weather.effects(state).levelCoin||1));
    let gems=1+(completedLevel%3===0?1:0);
    let perfectGem=0;if(perfect&&Math.random()<S.perfectGemChance){perfectGem=1;gems++}
+   let shootingStarGem=0;
+   if((state.rosieAdventureFinds?.star||0)>0){state.rosieAdventureFinds.star--;shootingStarGem=1;gems++}
    updateMission();const missionResult=missionReward();
    let milestoneResult=null;
    if(completedLevel%DSH.Config.milestones.interval===0&&!state.milestonesCleared[completedLevel]){
@@ -782,6 +801,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(milestoneResult)details.push(`🏆 ${milestoneResult.name}: +${milestoneResult.coins} coins +${milestoneResult.gems} 💎 +1 Rosie Rescue 🐾`);
    if(game.challengeHand)details.push(`🔥 Challenge Hand: +${DSH.Config.specialCards.challengeCoins} coins +${DSH.Config.specialCards.challengeGems} 💎`);if(game.luckyHand)details.push('🌟 Lucky Hand completed');
    if(perfect)details.push(`Perfect Clear +${perfectBonus} coins${perfectGem?' +1 💎':''}`);
+   if(shootingStarGem)details.push('🌟 Shooting Star: +1 guaranteed gem');
    if(achievements.length)details.push(`Achievement: ${achievements.map(x=>x.name).join(', ')} (+${achievementGems} 💎)`);
    setTextIfPresent('winBonusText',details.join(' • '));
    showRewardToast(milestoneResult?'Milestone Cleared!':stars===3?'Three-Star Clear!':'Level Complete',milestoneResult?`${milestoneResult.name} • ${milestoneResult.coins} coins • ${milestoneResult.gems} 💎 • Rosie Rescue`:perfect?'Perfect Clear — no purchased draws or powers used!':`${stars} star${stars===1?'':'s'} earned`,milestoneResult?'🏆':'⭐');
@@ -885,7 +905,9 @@ document.addEventListener('DOMContentLoaded',()=>{
  function render(animateReveals=false){
    applyAccessibilitySettings();renderAllBalances();
    document.getElementById('levelNum').textContent=game.dailyMode?'DAILY':state.level;document.getElementById('formationName').textContent=game.formation||'Meadow';
-   document.getElementById('stockCount').textContent=game.stock?.length||0;
+   const stockN=game.stock?.length||0;document.getElementById('stockCount').textContent=stockN;
+   const stockWrapEl=document.getElementById('stockWrap');if(stockWrapEl){stockWrapEl.classList.toggle('empty',stockN===0);stockWrapEl.classList.toggle('disabled',!!handComplete);stockWrapEl.setAttribute('aria-disabled',(stockN===0||handComplete)?'true':'false')}
+   const messageEl=document.getElementById('message');if(stockN>0&&messageEl?.textContent==='No cards remain in the draw pile.')messageEl.textContent=`${stockN} draw card${stockN===1?'':'s'} remain.`;
    document.getElementById('windmillBtn').disabled=state.windmills<=0;
    const rb=document.getElementById('rosieBtn');if(rb){rb.disabled=(state.rosieRescues||0)<=0;rb.title=(state.rosieRescues||0)>0?'Rosie Rescue — Rosie will choose the most useful kind of help':'No Rosie Rescues available'}
    const gb=document.getElementById('gateBtn');if(gb){gb.disabled=(state.magicGates||0)<=0;gb.classList.toggle('active',!!game.gateMode)}
@@ -922,6 +944,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      el.onclick=()=>play(c.id);el.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&!isBlocked){e.preventDefault();play(c.id)}};f.appendChild(el);if(became)DSH.Audio.play.flip();
    });
    lastExposed=now;renderMissionChip();renderPowerMode();DSH.Farm.render();renderStats();renderSettings();setTimeout(collectMechanicNotices,0);
+   if(handStarted&&!handComplete&&tableauCleared())setTimeout(()=>finishIfCleared('render-safety-net'),0);
  }
  function animateCardToWaste(id,done){
    if(state.settings.reducedMotion){done();return}

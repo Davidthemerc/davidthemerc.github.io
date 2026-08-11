@@ -459,3 +459,18 @@ v40 changes
 - When Rosie returns from an Adventure she can peek onto the Main Menu; tapping her opens the Farm.
 - Added stronger internal panel scrolling/safe-area/mobile layout rules so gameplay stays fixed while large menus scroll within their own panels.
 - Retained and regression-tested the 3/3 timed-harvest cap, Weather/Events, Farm Orders, Farmhouse, Daily Challenge, Mission Board, v39 Reserve/Challenge/Lucky Hands, and all prior save migrations.
+
+v40.1 bug-fix / general error pass
+----------------------------------
+- Fixed Daily Challenge completion occasionally leaving an empty tableau without opening the completion screen.
+- Root cause fixed: Daily completion contained an invalid reference to a normal-level Shooting Star reward detail. Shooting Star is now correctly preserved for the next NORMAL Solitaire clear.
+- Added a centralized tableau-completion guard used by normal card play, Garden Shears, Magic Gate, Rosie direct clears, Magic Dice, Windmill, draw-pile interaction, and a final render safety net.
+- If the tableau is already empty, tapping Draw now routes to completion before any stock-empty warning can appear.
+- Fixed a contradictory stale "No cards remain in the draw pile" message remaining visible after bonus/added stock appeared.
+- Empty stock is now visually dimmed so an actually exhausted draw pile is unmistakable.
+- Fixed a separate Rosie Adventures runtime error caused by a missing unlockedRegionIndex() helper in farm.js.
+- Restored the Shooting Star Adventure Find's intended behavior: it is consumed only by a completed normal Solitaire level and guarantees +1 gem there.
+- Added build marker 40.1 while retaining save schema v40; no save migration is needed from v40.
+- Added cache-busting ?v=40.1 asset URLs so GitHub Pages/mobile Chrome is less likely to mix old JS/CSS with the new index after deployment.
+- General static error pass: TypeScript checkJs high-signal undefined-name scan is clean across all JS files.
+- Runtime smoke tests now cover Farm rendering, Daily completion, Shooting Star preservation in Daily, Shooting Star consumption on normal clears, and stock-count/message synchronization.

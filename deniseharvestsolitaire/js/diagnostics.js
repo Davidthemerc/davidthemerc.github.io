@@ -47,7 +47,7 @@ DSH.Diagnostics=(()=>{
  function textReport(state,range={from:1,to:500,samples:6}){
    const save=saveReport(state),levels=levelAudit(range.from,range.to,range.samples),eco=economySnapshot(state);
    return[
-     `Denise's Solitaire Harvest v${DSH.Save.VERSION} Diagnostics`,
+     `Denise's Solitaire Harvest build ${DSH.Config.build||DSH.Save.VERSION} • save schema v${DSH.Save.VERSION} Diagnostics`,
      `Generated: ${new Date().toISOString()}`,
      '',
      `SAVE: ${save.healthy?'HEALTHY':'ISSUES FOUND'} • Level ${save.level} • ${save.issues.length} issue(s)`,

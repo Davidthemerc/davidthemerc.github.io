@@ -100,6 +100,7 @@ DSH.Farm=(()=>{
      </div>`;
    }).join('');
  }
+ function unlockedRegionIndex(){return Math.max(0,Math.min(Number(state?.region)||0,regionDefs.length-1))}
  function activeRegionIndex(){
    const max=Math.max(0,Math.min(state.region||0,regionDefs.length-1));
    state.farmRegionView=Math.max(0,Math.min(Number(state.farmRegionView)||0,max));

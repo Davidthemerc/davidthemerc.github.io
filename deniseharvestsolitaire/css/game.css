@@ -1688,3 +1688,8 @@ body.reduced-motion .mainRosiePeek,body.reduced-motion .rosiePawTrail,body.reduc
 
 /* v40 Rosie peek anchoring */
 .mainMenuCard{position:relative}
+
+/* v40.1 stock state clarity */
+.stockWrap.empty .stockCard{opacity:.16;filter:grayscale(1);box-shadow:none!important}
+.stockWrap.empty .stockCount{background:#6e726c!important;color:#fff!important}
+.stockWrap.disabled{pointer-events:none}
