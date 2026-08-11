@@ -1,0 +1,1690 @@
+:root{--gold:#ffc83d;--cream:#fff8e7;--ink:#263125;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#214c2d;color:var(--ink)}
+button,input,select{font:inherit}button{touch-action:manipulation}#app{position:fixed;inset:0;overflow:hidden;background:#7fd5ef}
+.scene{position:absolute;inset:0;background:radial-gradient(circle at 68% 17%,rgba(255,255,255,.55),transparent 9%),linear-gradient(#0aa9ec 0 27%,#80d7ed 27% 39%,#75b554 39% 58%,#218336 58% 100%);overflow:hidden}
+.mountains{position:absolute;left:0;right:0;top:18%;height:34%;opacity:.95;background:linear-gradient(128deg,transparent 0 6%,#9a7858 6% 13%,transparent 13% 20%,#c79a67 20% 29%,transparent 29% 40%,#b88f61 40% 51%,transparent 51% 63%,#d0a472 63% 73%,transparent 73% 84%,#a77d59 84% 93%,transparent 93%);filter:drop-shadow(0 5px 2px rgba(72,67,45,.18))}
+.horizon{position:absolute;left:-5%;right:-5%;top:41%;height:23%;background:linear-gradient(180deg,#84c640,#5eb32f 30%,#4ca425 65%,#44951f);transform:skewY(-1deg)}
+.path{position:absolute;left:35%;right:31%;bottom:-4%;height:53%;background:linear-gradient(90deg,transparent 0 8%,#d9a62c 20%,#f0c040 50%,#d29a28 80%,transparent 92%);clip-path:polygon(45% 0,56% 0,100% 100%,0 100%);opacity:.95}
+.treeLine{position:absolute;left:0;right:0;top:34%;height:19%;background:radial-gradient(ellipse at 4% 72%,#164f21 0 18%,transparent 19%),radial-gradient(ellipse at 12% 58%,#236b29 0 17%,transparent 18%),radial-gradient(ellipse at 19% 70%,#175e26 0 17%,transparent 18%),radial-gradient(ellipse at 87% 66%,#1c6528 0 18%,transparent 19%),radial-gradient(ellipse at 96% 54%,#165422 0 18%,transparent 19%)}
+.fence{position:absolute;left:0;right:0;bottom:6%;height:27%;opacity:.8}.fence:before,.fence:after{content:"";position:absolute;left:-4%;right:-4%;height:14px;background:#d8c3a0;border:2px solid #9a8062;transform:rotate(-1deg)}.fence:before{top:32%}.fence:after{top:60%}
+.post{position:absolute;width:22px;height:100%;background:#d7c29e;border:2px solid #9d8463;bottom:0;border-radius:5px}.post.p1{left:6%}.post.p2{left:20%}.post.p3{right:18%}.post.p4{right:5%}
+.hud{position:absolute;left:0;right:0;top:0;height:74px;padding:calc(8px + var(--safe-top)) 12px 8px;display:flex;align-items:center;justify-content:space-between;z-index:40;pointer-events:none}.hud>*{pointer-events:auto}.hudLeft,.hudRight{display:flex;gap:7px;align-items:center}
+.currency,.levelBadge,.streakPanel,.iconBtn,.windmillHud{backdrop-filter:blur(3px);box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.currency{display:flex;align-items:center;gap:8px;background:linear-gradient(#68d3f4,#36aee3);border:3px solid #f0de74;border-radius:24px;padding:6px 13px;color:#fff;font-size:clamp(16px,2vw,24px);font-weight:950;text-shadow:0 2px 2px #29698c}
+.coinIcon{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#ffe66b,#f1a80c 66%,#a86500);border:3px solid #ffd85c;color:#865300}
+.levelBadge{background:rgba(17,92,40,.84);border:2px solid #d9efaa;color:white;border-radius:16px;padding:7px 12px;font-weight:900}.formationBadge{max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.streakPanel{min-width:190px;background:linear-gradient(#25c2ed,#108fc9);border:3px solid #eddb73;border-radius:24px;padding:7px 13px;color:white;text-align:center}.streakTitle{font-size:11px;font-weight:950}.streakDots{display:flex;gap:7px;justify-content:center;margin-top:5px}.streakDot{width:16px;height:16px;border-radius:50%;background:#294353;border:2px solid rgba(255,255,255,.5)}.streakDot.on{background:#ef4a46;box-shadow:0 0 8px #ffdb66}
+.iconBtn{width:42px;height:42px;border-radius:50%;border:3px solid #f0db69;background:linear-gradient(#ffe35b,#eea212);font-size:20px;font-weight:900;color:#72510c;cursor:pointer}
+.windmillHud{height:42px;border-radius:21px;border:3px solid #d9f3ff;background:linear-gradient(#74dcff,#199bd3);color:#fff;padding:0 10px;display:flex;gap:5px;align-items:center;font-weight:950;cursor:pointer}.windmillHud:disabled{filter:grayscale(.8);opacity:.55}
+#field{position:absolute;left:2%;right:2%;top:12%;bottom:28%;z-index:10}
+.card{position:absolute;width:clamp(56px,7.7vw,88px);aspect-ratio:.70;border-radius:9px;background:linear-gradient(#fff,#f6f6f6);border:2px solid #ddd;box-shadow:0 6px 12px rgba(0,0,0,.33);cursor:pointer;user-select:none;transition:transform .15s,filter .15s,opacity .18s;display:flex;align-items:center;justify-content:center;font-weight:950;transform-origin:center}
+.card:hover{transform:translateY(-5px)}.card.red{color:#e40d2f}.card.black{color:#242526}.card .big{font-size:clamp(29px,4.5vw,54px);line-height:1}.card .corner{position:absolute;left:6px;top:4px;font-size:clamp(12px,1.7vw,19px);line-height:.9}.card .corner span{display:block;text-align:center}
+.card.faceDown{background:linear-gradient(135deg,#2aa9eb,#087bc0);border:4px solid #e6fbff;pointer-events:none;transform:rotateY(180deg)}.card.faceDown:after{content:"";position:absolute;inset:7px;border:2px solid rgba(255,255,255,.25);background:repeating-linear-gradient(45deg,rgba(255,255,255,.08) 0 4px,transparent 4px 8px);border-radius:5px}
+.card.playable{box-shadow:0 0 0 3px rgba(255,237,90,.9),0 7px 14px rgba(0,0,0,.35);animation:readyPulse 1.2s ease-in-out infinite alternate}@keyframes readyPulse{to{filter:brightness(1.08)}}
+.card.wild{background:linear-gradient(145deg,#fff,#fff3a8 45%,#d7b6ff);color:#7b3aac;border-color:#fff6a8}.card.wild .big{font-size:clamp(31px,5vw,58px)}
+.card.flipIn{animation:flipIn .42s ease both}@keyframes flipIn{0%{transform:rotateY(180deg) scale(.93)}55%{transform:rotateY(75deg) scale(1.03)}100%{transform:rotateY(0) scale(1)}}
+.card.flyToWaste{animation:flyWaste .32s cubic-bezier(.2,.8,.4,1) forwards}@keyframes flyWaste{to{transform:translate(var(--flyX),var(--flyY)) rotate(8deg) scale(.78);opacity:.15}}
+.card.windGone{animation:windGone .52s ease forwards}@keyframes windGone{to{transform:translateX(95vw) rotate(35deg) scale(.72);opacity:0}}
+.bottomBar{position:absolute;left:0;right:0;bottom:0;height:27%;min-height:145px;z-index:25;display:flex;align-items:flex-end;justify-content:center;padding:0 12px calc(12px + var(--safe-bottom));pointer-events:none}
+.tray{height:105px;min-width:min(620px,94vw);background:linear-gradient(#f8ad28,#b96c08);border:4px solid #ffe26a;border-bottom-width:8px;border-radius:36px 36px 16px 16px;box-shadow:0 8px 18px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;gap:26px;padding:0 24px;pointer-events:auto}
+.stockWrap{position:relative;width:118px;height:84px;cursor:pointer}.stockCard{position:absolute;width:66px;height:91px;right:3px;bottom:3px;border-radius:8px;background:linear-gradient(135deg,#1ca9ef,#097bc3);border:3px solid white;box-shadow:-5px 0 0 #148ed1,-10px 0 0 white,-15px 0 0 #148ed1,-20px 0 0 white,-25px 0 0 #148ed1}
+.stockCount{position:absolute;left:0;bottom:29px;color:white;background:#145d31;border:2px solid #ffdf63;border-radius:999px;padding:4px 9px;font-weight:950;z-index:4}
+.waste{width:76px;height:105px;border-radius:8px;background:#fff;border:3px solid #ddd;box-shadow:0 5px 10px rgba(0,0,0,.28);display:grid;place-items:center;font-weight:950;font-size:42px;position:relative}.waste.red{color:#e40d2f}.waste.black{color:#222}.waste.wildWaste{background:linear-gradient(145deg,#fff,#fff0a0,#d8bcff);color:#7b3aac}.waste small{position:absolute;left:5px;top:3px;font-size:16px}.comboReadout{min-width:135px;text-align:center;color:#fff;text-shadow:0 2px 2px #854c0b;font-weight:950}.comboReadout .num{font-size:34px;color:#fff06d}
+.sideActions{position:absolute;right:14px;bottom:18px;display:flex;gap:8px;pointer-events:auto}.roundBtn{width:56px;height:56px;border-radius:50%;border:4px solid #ffe268;background:linear-gradient(#ffdb34,#e5880a);box-shadow:0 5px 9px rgba(0,0,0,.3);font-size:25px;cursor:pointer}
+.message{position:absolute;left:50%;top:79px;transform:translateX(-50%);z-index:45;background:rgba(18,76,38,.82);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:850;max-width:80%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .3s}
+#gustLayer,#particleLayer{position:absolute;inset:0;pointer-events:none;z-index:70;overflow:hidden}.gust{position:absolute;left:-35%;top:28%;width:35%;height:28%;border-radius:50%;border-top:10px solid rgba(232,251,255,.85);border-bottom:6px solid rgba(232,251,255,.58);filter:blur(1px);animation:gust 650ms ease-out forwards}@keyframes gust{to{left:115%;transform:scaleX(1.5) rotate(-8deg);opacity:0}}.particle{position:absolute;font-size:22px;animation:particle .7s ease-out forwards}@keyframes particle{to{transform:translate(var(--px),var(--py)) rotate(120deg) scale(.4);opacity:0}}
+.overlay{position:absolute;inset:0;background:rgba(8,28,16,.64);display:none;align-items:center;justify-content:center;z-index:100;padding:18px}.overlay.open{display:flex}.panel{width:min(760px,96vw);max-height:min(720px,92vh);overflow:auto;background:linear-gradient(#fffaf0,#f1e4c6);border:4px solid #d8b954;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,.28)}
+.panelHeader{position:sticky;top:0;z-index:2;background:linear-gradient(#397c45,#225e34);color:white;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}.panelHeader h2{margin:0;font-size:22px}.closeBtn{border:0;background:#f4c44d;border-radius:50%;width:36px;height:36px;font-size:20px;font-weight:950;cursor:pointer}.panelBody{padding:16px}
+.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.tab{border:0;border-radius:999px;padding:8px 12px;background:#ded2b3;font-weight:900;cursor:pointer}.tab.active{background:#4c8d51;color:white}.tabPage{display:none}.tabPage.active{display:block}
+.farmScene{height:220px;border-radius:18px;background:linear-gradient(#8ad9f5 0 44%,#7ec95d 44% 100%);position:relative;overflow:hidden;border:2px solid #b4bf78}.barn{position:absolute;right:34px;bottom:42px;width:98px;height:75px;background:#b74943;border:4px solid #7b332e;border-radius:7px}.barn:before{content:"";position:absolute;left:-10px;top:-39px;border-left:57px solid transparent;border-right:57px solid transparent;border-bottom:44px solid #7d302e}.rosie{position:absolute;left:28px;bottom:36px;font-size:62px;filter:drop-shadow(0 4px 2px rgba(0,0,0,.2))}.plots{position:absolute;left:125px;right:150px;bottom:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.plot{height:47px;background:#744b2c;border:2px solid #57371f;border-radius:8px;display:grid;place-items:center;font-size:26px;cursor:pointer}.plot.ready{box-shadow:0 0 0 3px #ffe360 inset;animation:pulse .8s alternate infinite}@keyframes pulse{to{filter:brightness(1.25)}}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.item{border:2px solid #dac89e;background:#fffaf0;border-radius:13px;padding:10px}.item b{display:block}.item small{display:block;color:#716c5d;min-height:34px}.item button,.primary{margin-top:8px;border:0;border-radius:10px;padding:9px 11px;font-weight:900;cursor:pointer;background:#4e8d50;color:white}.fileLabel{display:inline-block;cursor:pointer}.saveArea{width:100%;height:125px;resize:vertical;font-family:ui-monospace,monospace;font-size:11px}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.progress{height:10px;background:#ded3b9;border-radius:999px;overflow:hidden}.progress>div{height:100%;background:linear-gradient(90deg,#f1c53b,#5ba955)}.statBox{background:#fff7df;border:1px solid #dbc999;border-radius:12px;padding:10px;font-weight:800}.hint{background:#fff5d7;border-left:5px solid #e3b532;padding:9px;border-radius:8px}.winPanel{text-align:center;width:min(420px,92vw)}.winPanel h2{font-size:32px;margin:6px}.rewards{font-size:22px;font-weight:950;margin:15px}
+@media(max-width:800px){.formationBadge{display:none}.streakPanel{min-width:125px;padding:5px 8px}.streakDot{width:12px;height:12px}.currency{padding:4px 8px}.coinIcon{width:31px;height:31px}.levelBadge{font-size:12px;padding:6px 8px}.iconBtn{width:36px;height:36px}.windmillHud{height:36px}.hud{height:66px;padding-left:6px;padding-right:6px}#field{top:13%;bottom:30%;left:0;right:0}.message{top:70px;font-size:11px}.tray{min-width:min(430px,94vw);height:90px;gap:14px;padding:0 14px}.stockWrap{width:90px}.stockCard{width:56px;height:77px}.waste{width:62px;height:86px;font-size:33px}.comboReadout{min-width:90px}.comboReadout .num{font-size:27px}.roundBtn{width:47px;height:47px}.grid{grid-template-columns:1fr}.plots{left:95px;right:120px}}
+@media(max-height:620px){.hud{height:58px}.message{display:none}#field{top:10%;bottom:29%}.bottomBar{height:25%;min-height:115px}.tray{height:78px}.stockCard{height:68px;width:49px}.waste{height:75px;width:54px;font-size:30px}.roundBtn{width:44px;height:44px}}
+.reduced-motion *, .reduced-motion *:before,.reduced-motion *:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+
+
+/* v4 main-menu / mobile / currency / Rosie overrides */
+.coinIcon,.miniCoin{
+  display:inline-grid;place-items:center;border-radius:50%;
+  color:#8b5600;background:radial-gradient(circle at 34% 28%,#fff38b 0 11%,#ffd84d 12% 38%,#f3ad12 66%,#b36c00 100%);
+  border:3px solid #ffe467;box-shadow:inset 0 0 0 2px #d78d08,0 2px 4px rgba(0,0,0,.25);
+  font-size:0
+}
+.coinIcon:after,.miniCoin:after{content:"✦";font-size:20px;font-weight:1000;color:#9b6000;text-shadow:0 1px #ffe991}
+.coinIcon{width:38px;height:38px}.miniCoin{width:24px;height:24px;vertical-align:middle;border-width:2px}.miniCoin:after{font-size:13px}
+.mainMenuOverlay{z-index:150;background:linear-gradient(rgba(8,45,24,.55),rgba(5,30,16,.72));overflow:hidden}
+.mainMenuCard{
+ width:min(620px,94vw);max-height:94vh;overflow:auto;text-align:center;
+ background:linear-gradient(180deg,#fff8dd,#f0dfb6);border:4px solid #e5c04d;border-radius:28px;
+ box-shadow:0 18px 45px rgba(0,0,0,.38);padding:18px
+}
+.brandMark{font-size:48px;filter:drop-shadow(0 3px 2px rgba(0,0,0,.18))}
+.mainMenuCard h1{margin:0 0 8px;color:#315b35;font-size:clamp(28px,5vw,44px);line-height:1.02}
+.mainBalances{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:10px 0 15px}
+.mainBalances>span,.farmBalances>span{display:flex;align-items:center;gap:6px;background:#fffaf0;border:2px solid #dac584;border-radius:999px;padding:7px 11px;font-weight:950}
+.mainMenuButtons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.mainChoice{
+ border:2px solid #d6c28d;border-radius:16px;background:#fffaf0;padding:12px;display:flex;align-items:center;gap:12px;text-align:left;
+ color:#334631;cursor:pointer;box-shadow:0 3px 0 rgba(79,62,26,.14)
+}
+.mainChoice>span{font-size:30px}.mainChoice b{display:block;font-size:18px}.mainChoice small{display:block;color:#6c705f;margin-top:2px}
+.mainChoice.primaryChoice{grid-column:1/-1;background:linear-gradient(#6dbd63,#4a944a);color:white;border-color:#d8e99b}
+.mainChoice.primaryChoice small{color:#e9f7de}.menuFooter{font-size:12px;color:#716b58;margin-top:12px}
+.sectionOverlay{z-index:160}
+.sectionOverlay .panel{max-height:92vh}
+.compactPanel{width:min(560px,94vw)}
+.secondaryBtn{margin-top:8px;border:0;border-radius:10px;padding:9px 11px;font-weight:900;cursor:pointer;background:#d8ceb3;color:#4f4a3c}
+.farmBalances{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.farmScene{height:235px}
+.rosieDog{position:absolute;left:30px;bottom:30px;width:105px;height:90px;filter:drop-shadow(0 4px 2px rgba(0,0,0,.2))}
+.rosieBody{position:absolute;left:18px;bottom:14px;width:75px;height:48px;background:linear-gradient(145deg,#a8663b,#7b4529);border-radius:52% 48% 50% 48%}
+.rosieHead{position:absolute;left:0;bottom:44px;width:50px;height:44px;background:linear-gradient(145deg,#a8663b,#814a2b);border-radius:52% 48% 48% 52%}
+.ear{position:absolute;top:-7px;width:20px;height:30px;background:#754026;border-radius:80% 20% 75% 30%;transform-origin:top}
+.leftEar{left:2px;transform:rotate(-24deg)}.rightEar{right:0;transform:rotate(24deg) scaleX(-1)}
+.rosieMuzzle{position:absolute;left:2px;bottom:6px;width:24px;height:15px;background:#c1845f;border-radius:50%}
+.rosieMuzzle:after{content:"";position:absolute;left:2px;top:3px;width:6px;height:5px;background:#34251f;border-radius:50%}
+.pinkCollar{position:absolute;left:11px;bottom:43px;width:42px;height:8px;background:#e685a9;border:2px solid #b6537a;border-radius:6px;z-index:4}
+.rosieTail{position:absolute;right:1px;bottom:36px;width:38px;height:14px;border-radius:80% 20% 80% 20%;background:#7d4629;transform:rotate(-42deg);transform-origin:left}
+.rosieLeg{position:absolute;bottom:3px;width:13px;height:27px;background:#88502f;border-radius:5px}.leg1{left:30px}.leg2{left:72px}
+.rosieName{position:absolute;left:20px;bottom:4px;background:rgba(255,255,255,.8);padding:3px 7px;border-radius:999px;font-size:11px;font-weight:950}
+.bonusToast{
+ position:absolute;left:50%;top:48%;transform:translate(-50%,-50%) scale(.7);z-index:80;pointer-events:none;opacity:0;
+ text-align:center;color:white;text-shadow:0 3px 4px rgba(0,0,0,.38)
+}
+.bonusToast.show{animation:bonusPop 1.35s ease both}
+.bonusBurst{font-size:clamp(24px,5vw,52px);font-weight:1000;color:#ffe85d;letter-spacing:.5px}
+#bonusToastText{font-size:clamp(18px,3vw,30px);font-weight:950;background:rgba(22,102,47,.88);border:3px solid #ffe36e;border-radius:999px;padding:7px 14px;display:inline-block;margin-top:5px}
+@keyframes bonusPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.55)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.13)}38%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-56%) scale(.92)}}
+.bonusCoin{position:absolute;z-index:81;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff58d,#f5ae12 66%,#a96500);border:2px solid #ffe26b;pointer-events:none;animation:bonusCoin 900ms ease-out forwards}
+@keyframes bonusCoin{to{transform:translate(var(--bx),var(--by)) rotate(540deg) scale(.5);opacity:0}}
+@media(max-width:650px){
+ .mainMenuCard{width:96vw;max-height:96vh;padding:12px;border-radius:22px}
+ .mainMenuButtons{grid-template-columns:1fr}.mainChoice.primaryChoice{grid-column:auto}
+ .mainChoice{padding:10px}.mainChoice>span{font-size:25px}.mainChoice b{font-size:16px}
+ .sectionOverlay{padding:6px}.sectionOverlay .panel{width:98vw;max-height:97vh;border-radius:16px;border-width:3px}
+ .sectionOverlay .panelBody{padding:11px}.panelHeader{padding:10px 12px}.panelHeader h2{font-size:18px}
+ .saveArea{height:110px}.farmBalances{gap:5px}.farmBalances>span{font-size:12px;padding:5px 8px}
+ .farmScene{height:205px}.rosieDog{transform:scale(.82);transform-origin:left bottom;left:14px}
+ .plots{left:90px;right:80px}
+}
+
+.rosieDog.bandanaOn:after{content:"";position:absolute;left:33px;bottom:35px;width:25px;height:24px;background:#ea78a5;clip-path:polygon(0 0,100% 0,58% 100%);transform:rotate(12deg);z-index:5}
+
+.optionsDivider{height:2px;background:#d7c69b;margin:18px 0 12px}.smallCopy{font-size:13px;color:#665f50}.mainMenuCard{scrollbar-width:thin}
+@media(max-height:560px){
+ .mainMenuCard{width:min(760px,96vw);max-height:96dvh;padding:9px 12px}.brandMark{font-size:30px}.mainMenuCard h1{font-size:24px;margin-bottom:3px}.mainBalances{margin:5px 0 8px}.mainMenuButtons{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.mainChoice{padding:7px 9px}.mainChoice.primaryChoice{grid-column:1/-1}.mainChoice>span{font-size:21px}.mainChoice b{font-size:14px}.mainChoice small{font-size:10px}.menuFooter{margin-top:5px}
+}
+
+/* v6: revert Rosie to the original simple dog graphic, recolored by its native brown/sable art with a pink collar overlay. */
+.rosieDog{display:none!important}
+.rosieOriginal{
+  position:absolute;left:26px;bottom:31px;width:94px;height:105px;
+  z-index:4;filter:drop-shadow(0 5px 3px rgba(0,0,0,.22));
+  transform-origin:bottom center;
+}
+.rosieEmoji{
+  position:absolute;left:0;bottom:0;font-size:88px;line-height:1;
+  transform:scaleX(-1);
+}
+.rosiePinkCollar{
+  position:absolute;left:35px;top:29px;width:42px;height:9px;
+  background:linear-gradient(#ff91b2,#e75f8d);
+  border:2px solid #a33d63;border-radius:7px;
+  transform:rotate(-7deg);
+  box-shadow:0 1px 2px rgba(0,0,0,.25);
+  pointer-events:none;
+}
+.rosiePinkCollar:after{
+  content:"";position:absolute;width:7px;height:7px;border-radius:50%;
+  background:#f5c743;border:1px solid #976500;left:15px;top:5px;
+}
+@media(max-width:800px){
+ .rosieOriginal{left:17px;bottom:29px;transform:scale(.88);transform-origin:left bottom}
+}
+
+/* v7 Rosie: stable inline SVG so coat color and collar alignment are identical across browsers/platforms. */
+.rosieOriginal{
+  position:absolute;
+  left:14px;
+  bottom:12px;
+  width:126px;
+  height:138px;
+  z-index:4;
+  filter:drop-shadow(0 5px 3px rgba(0,0,0,.20));
+  transform-origin:left bottom;
+}
+.rosieSvg{
+  display:block;
+  width:100%;
+  height:100%;
+  overflow:visible;
+}
+.rosieEmoji,.rosiePinkCollar{display:none!important}
+@media(max-width:800px){
+  .rosieOriginal{
+    left:9px;
+    bottom:8px;
+    width:118px;
+    height:130px;
+    transform:none;
+  }
+}
+@media(max-width:430px){
+  .rosieOriginal{
+    width:110px;
+    height:121px;
+    left:7px;
+    bottom:7px;
+  }
+}
+
+/* v8 mobile HUD: preserve all controls without crowding. */
+@media(max-width:800px){
+  .hud{gap:4px;padding-left:5px;padding-right:5px}
+  .hudLeft,.hudRight{gap:4px;min-width:0}
+  .currency{gap:4px;padding:3px 7px;min-width:0;font-size:17px}
+  .currency .coinIcon{width:30px;height:30px;font-size:16px;flex:0 0 30px}
+  .levelBadge{padding:5px 7px;font-size:11px;border-radius:13px}
+  .streakPanel{min-width:0;width:132px;padding:4px 7px;border-width:2px}
+  .streakTitle{font-size:10px}
+  .streakDots{gap:5px;margin-top:3px}
+  .streakDot{width:11px;height:11px;border-width:1px}
+  .windmillHud{height:33px;min-width:49px;padding:0 7px;border-width:2px}
+  .iconBtn{width:34px;height:34px;flex:0 0 34px;border-width:2px}
+}
+@media(max-width:430px){
+  .currency{font-size:16px;padding:3px 5px}
+  .currency .coinIcon{width:28px;height:28px;flex-basis:28px}
+  .levelBadge{font-size:10px;padding:5px 6px}
+  .streakPanel{width:125px}
+  .windmillHud{min-width:45px;padding:0 5px}
+  .iconBtn{width:32px;height:32px;flex-basis:32px}
+}
+
+/* v8 Rosie: original browser dog graphic, no recoloring or collar overlay.
+   Centered in the open strip between the farm-scene left edge and crop field. */
+.rosieOriginal.rosieCentered{
+  position:absolute;
+  left:9px;
+  bottom:18px;
+  width:112px;
+  height:112px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:4;
+  filter:drop-shadow(0 4px 3px rgba(0,0,0,.18));
+  transform:none;
+}
+.rosieEmojiV8{
+  display:block!important;
+  font-size:92px;
+  line-height:1;
+  transform:scaleX(-1);
+}
+.rosieSvg,.rosiePinkCollar,.rosieEmoji{display:none!important}
+@media(max-width:800px){
+  .rosieOriginal.rosieCentered{left:5px;bottom:17px;width:105px;height:105px;transform:none}
+  .rosieEmojiV8{font-size:86px}
+}
+
+/* v9: dedicated full-screen Main Menu. Gameplay is not visible behind it. */
+#app.menu-mode > .scene,
+#app.menu-mode > .hud,
+#app.menu-mode > .message,
+#app.menu-mode > #field,
+#app.menu-mode > .bottomBar,
+#app.menu-mode > #gustLayer,
+#app.menu-mode > #particleLayer,
+#app.menu-mode > #bonusToast{
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+.mainMenuScreen{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  padding:0!important;
+  background:
+    radial-gradient(circle at 72% 14%,rgba(255,255,255,.55),transparent 10%),
+    linear-gradient(#12ace9 0 31%,#83d6ed 31% 43%,#7bc75a 43% 70%,#4d9e36 70% 100%)!important;
+  backdrop-filter:none!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+
+.mainMenuScreen .mainMenuCard{
+  width:min(620px,94vw)!important;
+  max-width:none!important;
+  max-height:none!important;
+  border-radius:26px!important;
+  margin:0 auto!important;
+}
+
+@media(max-width:800px){
+  .mainMenuScreen{
+    align-items:stretch!important;
+    justify-content:stretch!important;
+  }
+  .mainMenuScreen .mainMenuCard{
+    width:100%!important;
+    height:100dvh!important;
+    min-height:100%!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    padding:
+      max(22px,calc(env(safe-area-inset-top) + 18px))
+      18px
+      max(22px,calc(env(safe-area-inset-bottom) + 18px))!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    background:
+      radial-gradient(circle at 75% 14%,rgba(255,255,255,.48),transparent 11%),
+      linear-gradient(180deg,rgba(24,174,226,.96) 0 34%,rgba(116,198,83,.97) 34% 100%)!important;
+  }
+  .mainMenuScreen .mainMenuButtons{
+    width:min(430px,100%)!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+    gap:11px!important;
+  }
+  .mainMenuScreen h1{
+    font-size:clamp(28px,7.5vw,42px)!important;
+    margin-top:4px!important;
+  }
+}
+
+/* v9: gameplay uses its own compact currency node; exact balances remain in menu/farm. */
+#hudCoins{min-width:2.4ch;white-space:nowrap}
+
+/* v10 farm composition */
+.rosieOriginal.rosieCentered{
+  width:90px!important;
+  height:90px!important;
+  left:10px!important;
+  bottom:17px!important;
+}
+.rosieEmojiV8{font-size:72px!important}
+.farmScene .barn{
+  bottom:72px!important;
+  right:28px!important;
+  z-index:1;
+}
+
+/* A purchased Cozy Fence is now visibly present. */
+.farmScene.hasCozyFence:before,
+.farmScene.hasCozyFence:after{
+  content:"";
+  position:absolute;
+  left:3%;
+  right:3%;
+  height:8px;
+  background:linear-gradient(#e7c792,#b78a55);
+  border:2px solid #8e633b;
+  border-radius:5px;
+  z-index:3;
+  pointer-events:none;
+}
+.farmScene.hasCozyFence:before{bottom:13px}
+.farmScene.hasCozyFence:after{bottom:34px}
+.farmScene.hasCozyFence{
+  box-shadow:inset 0 0 0 5px #b98a54;
+}
+
+/* In-hand bailout controls */
+.buyDrawsBtn{
+  min-width:64px;height:56px;border-radius:18px;border:4px solid #ffe268;
+  background:linear-gradient(#64c864,#2e8b44);color:white;font-weight:950;
+  box-shadow:0 5px 9px rgba(0,0,0,.3);cursor:pointer;line-height:1.05;
+}
+.buyDrawsBtn small{display:block;color:#fff4a8;font-size:11px;margin-top:2px}
+.buyDrawsBtn:disabled{filter:grayscale(.75);opacity:.55;cursor:not-allowed}
+
+.gateHud.active{
+  background:linear-gradient(#ffdc73,#d69518)!important;
+  box-shadow:0 0 0 3px #fff4a2,0 0 18px #ffe66b!important;
+}
+.card.gateTarget{
+  box-shadow:0 0 0 4px #ffdf65,0 0 18px rgba(255,223,101,.9),0 7px 14px rgba(0,0,0,.35)!important;
+  cursor:crosshair;
+}
+
+@media(max-width:800px){
+  .rosieOriginal.rosieCentered{width:84px!important;height:84px!important;left:8px!important}
+  .rosieEmojiV8{font-size:68px!important}
+  .farmScene .barn{bottom:78px!important;right:18px!important}
+  .buyDrawsBtn{min-width:53px;height:47px;border-width:3px;font-size:12px;padding:2px 5px}
+  .buyDrawsBtn small{font-size:9px}
+  .gateHud{min-width:42px!important}
+}
+
+/* v11 farm composition refinements */
+
+/* Rosie: ~15% smaller than v10. */
+.rosieOriginal.rosieCentered{
+  width:76px!important;
+  height:76px!important;
+  left:10px!important;
+  bottom:16px!important;
+  z-index:4!important;
+}
+.rosieEmojiV8{
+  font-size:61px!important;
+}
+
+/* Barn stays in the same general position but sits behind the crop field. */
+.farmScene .barn{
+  bottom:72px!important;
+  right:28px!important;
+  z-index:0!important;
+}
+.farmScene .plots{
+  z-index:2!important;
+}
+.farmScene .plot{
+  position:relative;
+  z-index:2;
+}
+
+/* Replace the long rail look with compact T-style fence shapes.
+   The fence sits above/behind Rosie and does not run across her body. */
+.farmScene.hasCozyFence:before,
+.farmScene.hasCozyFence:after{
+  display:none!important;
+}
+
+.farmScene.hasCozyFence{
+  box-shadow:inset 0 0 0 4px #b98a54;
+}
+
+/* Three compact "T" fence sections across the back/bottom edge. */
+.farmScene.hasCozyFence .plots:before,
+.farmScene.hasCozyFence .plots:after{
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  z-index:1;
+}
+
+/* Left pair of T posts */
+.farmScene.hasCozyFence .plots:before{
+  left:-108px;
+  bottom:48px;
+  width:88px;
+  height:54px;
+  background:
+    linear-gradient(#d5ad72,#ae7b45) 6px 0/10px 54px no-repeat,
+    linear-gradient(#d5ad72,#ae7b45) 0 7px/28px 8px no-repeat,
+    linear-gradient(#d5ad72,#ae7b45) 53px 0/10px 54px no-repeat,
+    linear-gradient(#d5ad72,#ae7b45) 47px 7px/28px 8px no-repeat;
+  filter:drop-shadow(0 2px 1px rgba(0,0,0,.18));
+}
+
+/* Right single T post */
+.farmScene.hasCozyFence .plots:after{
+  right:-92px;
+  bottom:48px;
+  width:40px;
+  height:54px;
+  background:
+    linear-gradient(#d5ad72,#ae7b45) 14px 0/10px 54px no-repeat,
+    linear-gradient(#d5ad72,#ae7b45) 0 7px/38px 8px no-repeat;
+  filter:drop-shadow(0 2px 1px rgba(0,0,0,.18));
+}
+
+/* Small extra rear T post to make the fence read as a repeating t-t-t motif. */
+.farmScene.hasCozyFence .rosieName:before{
+  content:"";
+  position:absolute;
+  left:92px;
+  bottom:50px;
+  width:38px;
+  height:52px;
+  background:
+    linear-gradient(#d5ad72,#ae7b45) 14px 0/10px 52px no-repeat,
+    linear-gradient(#d5ad72,#ae7b45) 0 7px/38px 8px no-repeat;
+  z-index:1;
+  pointer-events:none;
+  filter:drop-shadow(0 2px 1px rgba(0,0,0,.18));
+}
+
+@media(max-width:800px){
+  .rosieOriginal.rosieCentered{
+    width:72px!important;
+    height:72px!important;
+    left:8px!important;
+    bottom:15px!important;
+  }
+  .rosieEmojiV8{
+    font-size:58px!important;
+  }
+  .farmScene .barn{
+    bottom:78px!important;
+    right:18px!important;
+    z-index:0!important;
+  }
+}
+
+/* v12: Cozy Fence = two modest connected T sections on the LEFT only. */
+.farmScene.hasCozyFence .plots:after,
+.farmScene.hasCozyFence .rosieName:before{display:none!important}
+.farmScene.hasCozyFence .plots:before{
+  left:-112px!important; bottom:53px!important; width:102px!important; height:50px!important;
+  background:
+    linear-gradient(#d5ad72,#ae7b45) 8px 0/9px 50px no-repeat,
+    linear-gradient(#d5ad72,#ae7b45) 63px 0/9px 50px no-repeat,
+    linear-gradient(#d5ad72,#ae7b45) 4px 7px/72px 8px no-repeat!important;
+  filter:drop-shadow(0 2px 1px rgba(0,0,0,.18));
+}
+
+/* Purchased collar is visible on the original dog and represents Rosie's Rescue. */
+.farmScene.hasPinkCollar .rosieOriginal:after{
+  content:"";position:absolute;left:44px;top:30px;width:22px;height:5px;
+  background:#ef6f9e;border:1px solid #a43f68;border-radius:5px;
+  transform:rotate(-8deg);z-index:5;pointer-events:none;
+}
+.rosieHud span{font-size:16px}
+
+/* v13 mobile gameplay HUD redesign: status above, actions below. */
+
+/* Power-up buttons live in the bottom tray now. */
+.powerStrip{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:5px;
+  min-width:0;
+}
+.powerStrip .windmillHud,
+.powerStrip .buyDrawsBtn,
+.powerStrip .roundBtn{
+  position:relative;
+  flex:0 0 auto;
+}
+.powerStrip .windmillHud{
+  width:48px;
+  min-width:48px;
+  height:48px;
+  padding:0 4px;
+  border-radius:16px;
+}
+.powerStrip .windmillHud span{font-size:17px}
+.powerStrip .windmillHud b{
+  position:absolute;right:2px;top:1px;
+  min-width:17px;height:17px;line-height:17px;
+  border-radius:9px;background:#155f38;color:white;
+  font-size:10px;border:1px solid rgba(255,255,255,.75);
+}
+.powerStrip .windmillHud:disabled{
+  opacity:.42;filter:saturate(.35);
+}
+.powerStrip .buyDrawsBtn{
+  width:52px;min-width:52px;height:48px;border-radius:16px;
+}
+.powerStrip .roundBtn{
+  width:48px;height:48px;flex-basis:48px;
+}
+
+/* Combo uses no permanent large block. It becomes prominent only during a streak. */
+.comboBox{
+  transition:opacity .15s,transform .15s;
+}
+.comboBox:not(.comboActive){
+  opacity:.28;
+  transform:scale(.82);
+}
+.comboBox.comboActive{
+  opacity:1;
+  transform:scale(1);
+}
+
+/* Streak header is shorter; dots remain as visual progress. */
+.streakTitle{white-space:nowrap}
+#streakFraction{
+  display:inline-block;
+  margin-left:4px;
+  color:#fff6a3;
+  font-weight:950;
+}
+
+@media(max-width:800px){
+  /* Top row is information/navigation only. */
+  .hud{
+    display:grid!important;
+    grid-template-columns:auto auto minmax(104px,1fr) auto;
+    align-items:center;
+    gap:5px!important;
+    padding:5px 7px!important;
+  }
+  .hudLeft,.hudRight{display:contents!important}
+  .currency{grid-column:1;min-width:0!important}
+  .levelBadge{grid-column:2}
+  .streakPanel{
+    grid-column:3;
+    width:auto!important;
+    min-width:104px!important;
+    max-width:150px;
+    padding:4px 6px!important;
+  }
+  .hud .iconBtn{grid-column:4}
+  .streakDots{gap:4px!important;justify-content:center}
+  .streakDot{width:10px!important;height:10px!important}
+  .streakTitle{font-size:10px!important;text-align:center}
+
+  /* Tutorial sentence no longer consumes a permanent row on established play. */
+  .message{
+    top:62px!important;
+    max-width:76vw!important;
+    font-size:11px!important;
+    padding:6px 10px!important;
+    opacity:.82;
+  }
+
+  /* Reallocate the bottom tray to stock, waste, and compact powers. */
+  .bottomBar{
+    padding:5px 7px!important;
+    gap:6px!important;
+    min-height:108px;
+  }
+  .stockWrap{flex:0 0 116px!important}
+  .wasteWrap{flex:0 0 72px!important}
+  .powerStrip{
+    flex:1 1 auto;
+    gap:3px;
+    justify-content:flex-end;
+    flex-wrap:nowrap;
+  }
+  .powerStrip .windmillHud{
+    width:39px!important;min-width:39px!important;height:42px!important;
+    border-radius:13px!important;padding:0 2px!important;
+  }
+  .powerStrip .buyDrawsBtn{
+    width:45px!important;min-width:45px!important;height:42px!important;
+    border-radius:13px!important;font-size:11px!important;
+  }
+  .powerStrip .roundBtn{
+    width:42px!important;height:42px!important;flex-basis:42px!important;
+  }
+  .powerStrip .windmillHud span{font-size:14px!important}
+  .powerStrip .windmillHud b{
+    min-width:15px;height:15px;line-height:15px;font-size:9px;
+  }
+
+  /* Combo becomes a small overlay above the waste rather than owning tray width. */
+  .comboBox{
+    position:absolute!important;
+    right:8px!important;
+    top:-31px!important;
+    width:auto!important;
+    min-width:58px!important;
+    padding:3px 8px!important;
+    border-radius:14px;
+    background:rgba(28,100,50,.82);
+    pointer-events:none;
+    z-index:8;
+  }
+  .comboBox:not(.comboActive){opacity:0!important}
+  .comboBox .comboLabel{font-size:9px!important}
+  .comboBox #combo{font-size:17px!important}
+}
+
+@media(max-width:430px){
+  .hud{grid-template-columns:auto auto minmax(96px,1fr) auto;gap:3px!important}
+  .currency{padding:2px 4px!important;font-size:15px!important}
+  .currency .coinIcon{width:27px!important;height:27px!important;flex-basis:27px!important}
+  .levelBadge{padding:4px 5px!important}
+  .streakPanel{min-width:96px!important;padding:3px 4px!important}
+  .bottomBar{gap:4px!important}
+  .stockWrap{flex-basis:108px!important}
+  .wasteWrap{flex-basis:68px!important}
+  .powerStrip{gap:2px!important}
+  .powerStrip .windmillHud{width:36px!important;min-width:36px!important}
+  .powerStrip .buyDrawsBtn{width:42px!important;min-width:42px!important}
+  .powerStrip .roundBtn{width:39px!important;height:42px!important;flex-basis:39px!important}
+}
+
+/* v14: bottom interface is split into a power shelf + primary card tray. */
+
+/* Remove all visual footprint from the retired Combo UI. */
+.comboBox{display:none!important}
+
+/* Dedicated special-power shelf, above the primary tray. */
+.powerShelf{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:118px;
+  z-index:18;
+  display:flex;
+  justify-content:center;
+  pointer-events:none;
+}
+.powerShelfInner{
+  pointer-events:auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  padding:7px 12px;
+  border:3px solid rgba(255,225,105,.92);
+  border-radius:22px;
+  background:linear-gradient(180deg,rgba(35,123,68,.94),rgba(24,91,51,.96));
+  box-shadow:0 5px 12px rgba(0,0,0,.28);
+}
+.powerShelf .windmillHud,
+.powerShelf .buyDrawsBtn{
+  position:relative;
+  width:58px!important;
+  min-width:58px!important;
+  height:50px!important;
+  border-radius:15px!important;
+  margin:0!important;
+  flex:0 0 58px!important;
+}
+.powerShelf .windmillHud span{font-size:19px!important}
+.powerShelf .windmillHud b{
+  position:absolute;
+  right:3px;
+  top:2px;
+  min-width:18px;
+  height:18px;
+  line-height:18px;
+  border-radius:10px;
+  background:#174f31;
+  color:#fff;
+  border:1px solid rgba(255,255,255,.75);
+  font-size:10px;
+}
+.powerShelf .windmillHud:disabled{
+  opacity:.38;
+  filter:saturate(.25);
+}
+.powerShelf .buyDrawsBtn{
+  font-size:12px!important;
+}
+.powerShelf .buyDrawsBtn small{font-size:10px!important}
+
+/* Bottom tray goes back to three clean zones: stock / waste / undo. */
+.bottomBar{
+  display:grid!important;
+  grid-template-columns:minmax(118px,1fr) auto minmax(58px,1fr)!important;
+  align-items:center!important;
+  gap:18px!important;
+  min-height:112px!important;
+  padding:7px 16px!important;
+}
+.bottomBar .stockWrap{
+  justify-self:center!important;
+  width:132px!important;
+  min-width:132px!important;
+}
+.bottomBar .wasteWrap{
+  justify-self:center!important;
+  width:82px!important;
+  min-width:82px!important;
+}
+.bottomUtility{
+  justify-self:end!important;
+  display:flex!important;
+  align-items:center!important;
+}
+.bottomUtility .roundBtn{
+  width:54px!important;
+  height:54px!important;
+  flex:0 0 54px!important;
+}
+
+/* Streak is the sole chain mechanic in the visible UI. */
+.streakTitle:before{content:"";}
+
+@media(max-width:800px){
+  .powerShelf{
+    bottom:111px!important;
+  }
+  .powerShelfInner{
+    gap:9px!important;
+    padding:6px 10px!important;
+    border-radius:19px!important;
+  }
+  .powerShelf .windmillHud,
+  .powerShelf .buyDrawsBtn{
+    width:52px!important;
+    min-width:52px!important;
+    flex-basis:52px!important;
+    height:46px!important;
+  }
+
+  .bottomBar{
+    grid-template-columns:minmax(108px,1fr) 76px minmax(50px,1fr)!important;
+    gap:14px!important;
+    min-height:105px!important;
+    padding:6px 13px!important;
+  }
+  .bottomBar .stockWrap{
+    width:116px!important;
+    min-width:116px!important;
+    flex:none!important;
+  }
+  .bottomBar .wasteWrap{
+    width:76px!important;
+    min-width:76px!important;
+    flex:none!important;
+  }
+  .bottomUtility .roundBtn{
+    width:49px!important;
+    height:49px!important;
+    flex-basis:49px!important;
+  }
+}
+
+@media(max-width:430px){
+  .powerShelf{
+    bottom:106px!important;
+  }
+  .powerShelfInner{
+    width:auto!important;
+    max-width:92vw!important;
+    gap:7px!important;
+    padding:5px 8px!important;
+  }
+  .powerShelf .windmillHud,
+  .powerShelf .buyDrawsBtn{
+    width:48px!important;
+    min-width:48px!important;
+    flex-basis:48px!important;
+    height:44px!important;
+  }
+  .bottomBar{
+    grid-template-columns:1fr 72px 1fr!important;
+    gap:10px!important;
+    min-height:101px!important;
+    padding:5px 10px!important;
+  }
+  .bottomBar .stockWrap{
+    width:108px!important;
+    min-width:108px!important;
+  }
+  .bottomBar .wasteWrap{
+    width:72px!important;
+    min-width:72px!important;
+  }
+  .bottomUtility .roundBtn{
+    width:46px!important;
+    height:46px!important;
+    flex-basis:46px!important;
+  }
+}
+
+/* ============================
+   v15 approved mobile layout
+   ============================ */
+:root{
+  --v15-tray-h:128px;
+  --v15-shelf-gap:10px;
+  --v15-shelf-h:82px;
+}
+html,body,#app{height:100%;min-height:100dvh;overflow:hidden}
+#app{position:fixed;inset:0}
+
+/* Fully retire old combo presentation. */
+.comboReadout,.comboBox{display:none!important}
+
+/* Top HUD: coins, level, streak, fullscreen, menu. */
+@media(max-width:800px){
+  .hud{
+    height:68px!important;
+    display:grid!important;
+    grid-template-columns:auto auto minmax(112px,1fr) 36px 36px!important;
+    align-items:center!important;
+    gap:5px!important;
+    padding:6px 7px!important;
+  }
+  .hudLeft,.hudRight{display:contents!important}
+  .currency{grid-column:1!important}
+  .levelBadge:not(.formationBadge){grid-column:2!important}
+  .formationBadge{display:none!important}
+  .streakPanel{
+    grid-column:3!important;
+    width:100%!important;
+    min-width:112px!important;
+    max-width:190px!important;
+    padding:4px 7px!important;
+  }
+  .fullscreenBtn{grid-column:4!important}
+  #homeBtn{grid-column:5!important}
+  .iconBtn{
+    width:36px!important;height:36px!important;flex:0 0 36px!important;
+    border-width:2px!important;
+  }
+  .fullscreenBtn{
+    color:#fff!important;
+    background:linear-gradient(#65caf0,#258dbb)!important;
+    font-size:16px!important;
+  }
+}
+
+/* Card field reserves guaranteed room for lower controls. */
+@media(max-width:800px){
+  #field{
+    top:76px!important;
+    bottom:calc(var(--v15-tray-h) + var(--v15-shelf-h) + 28px)!important;
+    left:6px!important;right:6px!important;
+  }
+  .message{
+    top:73px!important;
+    max-width:76vw!important;
+    padding:6px 10px!important;
+    font-size:11px!important;
+  }
+}
+
+/* Separate power shelf. */
+.powerShelf{
+  position:fixed!important;
+  left:50%!important;
+  right:auto!important;
+  bottom:calc(var(--v15-tray-h) + var(--v15-shelf-gap) + 4px)!important;
+  transform:translateX(-50%)!important;
+  width:auto!important;
+  height:auto!important;
+  max-width:95vw!important;
+  z-index:43!important;
+  pointer-events:none!important;
+}
+.powerShelfInner{
+  pointer-events:auto!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  gap:10px!important;
+  padding:7px 11px 6px!important;
+  border:3px solid #e8d56c!important;
+  border-radius:22px!important;
+  background:linear-gradient(#378e50,#1c6539)!important;
+  box-shadow:0 6px 14px rgba(0,0,0,.28)!important;
+}
+.powerItem{
+  width:59px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  gap:2px!important;
+}
+.powerLabel{
+  display:block!important;
+  color:white!important;
+  min-height:19px!important;
+  font-size:9px!important;
+  line-height:1.02!important;
+  font-weight:900!important;
+  text-align:center!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.5)!important;
+}
+.powerShelf .windmillHud,
+.powerShelf .buyDrawsBtn{
+  width:52px!important;min-width:52px!important;height:46px!important;
+  flex:0 0 52px!important;
+  margin:0!important;
+  border-radius:15px!important;
+}
+.powerShelf .windmillHud span{font-size:17px!important}
+.powerShelf .windmillHud b{
+  position:absolute!important;top:1px!important;right:2px!important;
+  min-width:17px!important;height:17px!important;line-height:17px!important;
+  border-radius:9px!important;font-size:9px!important;
+}
+.powerShelf .windmillHud:disabled{
+  opacity:.38!important;filter:saturate(.25)!important;
+}
+.powerShelf .buyDrawsBtn{font-size:12px!important}
+.powerShelf .buyDrawsBtn small{font-size:9px!important}
+
+/* Bottom tray is always anchored at the viewport bottom. */
+.bottomBar{
+  position:fixed!important;
+  left:8px!important;right:8px!important;bottom:6px!important;
+  height:var(--v15-tray-h)!important;min-height:var(--v15-tray-h)!important;
+  width:auto!important;
+  padding:8px 13px!important;
+  display:grid!important;
+  grid-template-columns:minmax(110px,1fr) 80px minmax(84px,1fr)!important;
+  align-items:center!important;
+  gap:16px!important;
+  border:4px solid #ffe269!important;
+  border-radius:28px!important;
+  background:linear-gradient(#f9b72e,#d68408)!important;
+  box-shadow:0 7px 17px rgba(0,0,0,.34)!important;
+  z-index:42!important;
+}
+.bottomBar .tray{
+  display:contents!important;
+}
+
+/* stock */
+.stockWrap{
+  grid-column:1!important;
+  justify-self:center!important;
+  width:118px!important;min-width:118px!important;height:98px!important;
+  margin:0!important;
+}
+.stockCard{width:64px!important;height:91px!important}
+.stockCount{
+  left:0!important;bottom:28px!important;
+  font-size:15px!important;padding:5px 9px!important;
+}
+
+/* active waste */
+.waste{
+  grid-column:2!important;
+  justify-self:center!important;
+  width:78px!important;height:108px!important;
+  font-size:41px!important;
+  margin:0!important;
+}
+
+/* undo */
+.bottomUtility{
+  grid-column:3!important;
+  position:static!important;
+  justify-self:end!important;
+  align-self:center!important;
+  display:flex!important;
+}
+.undoCluster{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+}
+.undoLabel{
+  color:white!important;
+  font-size:14px!important;
+  font-weight:950!important;
+  text-shadow:0 2px 2px rgba(110,64,0,.5)!important;
+}
+.bottomUtility .roundBtn{
+  width:54px!important;height:54px!important;flex:0 0 54px!important;
+}
+
+/* Phone width tuning */
+@media(max-width:430px){
+  :root{
+    --v15-tray-h:116px;
+    --v15-shelf-h:76px;
+    --v15-shelf-gap:8px;
+  }
+  .hud{
+    height:63px!important;
+    grid-template-columns:auto auto minmax(96px,1fr) 33px 33px!important;
+    gap:3px!important;padding:5px!important;
+  }
+  .currency{font-size:15px!important;padding:3px 4px!important}
+  .currency .coinIcon{width:27px!important;height:27px!important;flex-basis:27px!important}
+  .levelBadge:not(.formationBadge){font-size:10px!important;padding:4px 5px!important}
+  .streakPanel{min-width:96px!important;padding:3px 5px!important}
+  .iconBtn{width:33px!important;height:33px!important;flex-basis:33px!important}
+
+  #field{
+    top:69px!important;
+    bottom:calc(var(--v15-tray-h) + var(--v15-shelf-h) + 20px)!important;
+  }
+
+  .powerShelf{
+    bottom:calc(var(--v15-tray-h) + var(--v15-shelf-gap))!important;
+  }
+  .powerShelfInner{gap:6px!important;padding:5px 7px 4px!important}
+  .powerItem{width:52px!important}
+  .powerLabel{font-size:8.5px!important;min-height:17px!important}
+  .powerShelf .windmillHud,
+  .powerShelf .buyDrawsBtn{
+    width:46px!important;min-width:46px!important;height:42px!important;flex-basis:46px!important;
+  }
+
+  .bottomBar{
+    left:5px!important;right:5px!important;bottom:4px!important;
+    height:var(--v15-tray-h)!important;min-height:var(--v15-tray-h)!important;
+    grid-template-columns:minmax(96px,1fr) 70px minmax(65px,1fr)!important;
+    gap:9px!important;padding:6px 9px!important;border-radius:24px!important;
+  }
+  .stockWrap{width:101px!important;min-width:101px!important;height:88px!important}
+  .stockCard{width:58px!important;height:82px!important}
+  .stockCount{font-size:13px!important;bottom:25px!important}
+  .waste{width:70px!important;height:98px!important;font-size:37px!important}
+  .undoCluster{gap:4px!important}
+  .undoLabel{font-size:11px!important}
+  .bottomUtility .roundBtn{width:48px!important;height:48px!important;flex-basis:48px!important}
+}
+
+/* Short landscape fallback. */
+@media(max-height:560px) and (orientation:landscape){
+  :root{--v15-tray-h:82px;--v15-shelf-h:54px;--v15-shelf-gap:4px}
+  .powerLabel{display:none!important}
+  .powerShelfInner{padding:3px 6px!important}
+  .powerItem{width:43px!important}
+  .powerShelf .windmillHud,.powerShelf .buyDrawsBtn{
+    width:39px!important;min-width:39px!important;height:36px!important;flex-basis:39px!important;
+  }
+  .bottomBar{height:82px!important;min-height:82px!important;padding:3px 8px!important}
+  .stockWrap{height:66px!important}
+  .stockCard{height:64px!important;width:48px!important}
+  .waste{height:70px!important;width:52px!important;font-size:28px!important}
+}
+
+/* v16: repair tableau collapse from v15.
+   JS now measures the real HUD / shelf / tray positions and assigns the field height. */
+@media(max-width:800px){
+  #field{
+    top:72px;
+    bottom:auto!important;
+    height:calc(100dvh - 300px);
+    min-height:260px!important;
+    overflow:visible!important;
+  }
+}
+@media(max-width:430px){
+  #field{
+    top:68px;
+    bottom:auto!important;
+    height:calc(100dvh - 282px);
+    min-height:260px!important;
+  }
+}
+@media(max-height:560px) and (orientation:landscape){
+  #field{
+    min-height:190px!important;
+  }
+}
+
+/* Keep lower controls above tableau but never let them influence field via CSS math. */
+.bottomBar{contain:layout paint}
+
+/* v17: the actual blank-tableau bug was a JS render exception, not field collapse.
+   Restore a simple stable play region and remove v16 runtime-sizing assumptions. */
+@media(max-width:800px){
+  #field{
+    top:76px!important;
+    bottom:230px!important;
+    height:auto!important;
+    min-height:0!important;
+    left:6px!important;
+    right:6px!important;
+    overflow:visible!important;
+  }
+}
+@media(max-width:430px){
+  #field{
+    top:69px!important;
+    bottom:204px!important;
+    height:auto!important;
+    min-height:0!important;
+  }
+}
+@media(max-height:560px) and (orientation:landscape){
+  #field{
+    top:58px!important;
+    bottom:142px!important;
+    height:auto!important;
+    min-height:0!important;
+  }
+}
+
+/* v20 Rewards Shop */
+.shopPanel{max-width:680px}
+.shopBalance{display:inline-block;padding:8px 15px;border:2px solid #d7bf62;border-radius:18px;background:#fff8dc;font-size:18px;font-weight:900}
+.shopIntro{margin:12px 0;color:#4b513d}
+.shopGrid{display:grid;gap:10px}
+.shopItem{display:grid;grid-template-columns:54px 1fr auto;gap:10px;align-items:center;padding:12px;border:2px solid #dfd2a1;border-radius:18px;background:#fffdf3}
+.shopIcon{font-size:34px;text-align:center}
+.shopItem small{display:block;color:#6b6b61;margin:3px 0 6px;line-height:1.25}
+.shopItem strong{color:#216c90}
+.shopItem button{min-width:66px}
+.powerShelfInner{flex-wrap:wrap!important;max-width:420px!important}
+.powerShelf{bottom:calc(var(--v15-tray-h) + 7px)!important}
+.powerItem{width:50px!important}
+.powerLabel{font-size:8px!important}
+@media(max-width:430px){
+ .powerShelfInner{max-width:360px!important;gap:4px 5px!important;padding:4px 7px!important}
+ .powerItem{width:44px!important}
+ .powerShelf .windmillHud,.powerShelf .buyDrawsBtn{width:41px!important;min-width:41px!important;height:38px!important;flex-basis:41px!important}
+ .powerLabel{font-size:7.5px!important;min-height:15px!important}
+ .shopItem{grid-template-columns:44px 1fr;gap:7px}
+ .shopItem button{grid-column:2;justify-self:start}
+}
+
+/* v21 Magic Pouch: collapse the growing power-up toolbar into one control. */
+.powerShelf{pointer-events:none!important;bottom:calc(var(--v15-tray-h) + 8px)!important}
+.powerShelfInner{
+  position:relative!important;display:block!important;width:auto!important;max-width:none!important;
+  padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;
+  pointer-events:auto!important;
+}
+.magicPouchBtn{
+  min-width:172px;height:58px;padding:6px 12px 6px 9px;border-radius:29px;
+  border:3px solid #f6dd6a;background:linear-gradient(#299555,#176b3b);color:white;
+  display:flex;align-items:center;gap:8px;box-shadow:0 4px 10px #0005;font:inherit;
+}
+.magicPouchBtn.active{filter:brightness(1.1);transform:translateY(-1px)}
+.pouchIcon{font-size:30px;line-height:1}
+.pouchText{display:flex;flex-direction:column;align-items:flex-start;line-height:1.05}
+.pouchText b{font-size:14px}.pouchText small{font-size:10px;opacity:.9;margin-top:3px}
+.pouchBadge{
+  margin-left:auto;min-width:27px;height:27px;padding:0 5px;border-radius:14px;background:#ffd74b;color:#14542f;
+  display:grid;place-items:center;font-weight:900;border:2px solid #fff8c8;
+}
+.pouchBadge.empty{opacity:.65}
+.magicPouchPanel{
+  display:none;position:absolute;left:50%;bottom:66px;transform:translateX(-50%);
+  width:min(350px,calc(100vw - 24px));padding:8px 9px 10px;border:3px solid #f5d866;border-radius:22px;
+  background:linear-gradient(#25844a,#155f35);box-shadow:0 8px 24px #0007;z-index:50;color:white;
+}
+.magicPouchPanel.open{display:block;animation:pouchPop .14s ease-out}
+@keyframes pouchPop{from{opacity:0;transform:translateX(-50%) translateY(8px) scale(.97)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+.pouchHeader{display:flex;align-items:center;justify-content:space-between;padding:1px 4px 7px;font-size:15px}
+.pouchHeader button{width:29px;height:29px;min-width:29px;padding:0;border-radius:50%;font-size:21px;line-height:1}
+.pouchGrid{display:grid!important;grid-template-columns:repeat(4,1fr);gap:7px 5px;align-items:start}
+.pouchGrid .powerItem{width:auto!important;min-width:0!important}
+.pouchGrid .powerLabel{font-size:8px!important;line-height:1.05!important;min-height:17px!important;color:#fff!important}
+.pouchGrid .windmillHud,.pouchGrid .buyDrawsBtn{margin:auto}
+@media(max-width:430px){
+ .magicPouchBtn{min-width:154px;height:52px}
+ .pouchIcon{font-size:26px}.pouchText b{font-size:13px}
+ .magicPouchPanel{bottom:59px;width:min(330px,calc(100vw - 18px))}
+ .pouchGrid{grid-template-columns:repeat(4,1fr);gap:6px 3px}
+}
+
+/* v22 permanent reward status */
+.shopItem [id$="Owned"]{font-weight:900;color:#267d46}
+
+/* v23: Magic Pouch is always interactive, even when badge is zero. */
+.magicPouchBtn:disabled{opacity:1!important;filter:none!important;pointer-events:auto!important}
+.magicPouchBtn{cursor:pointer!important}
+.pouchBadge.empty{opacity:.8!important;background:#f6e5a2!important;color:#476046!important}
+
+/* v24: pouch popup must be allowed to escape the compact shelf's bounds.
+   An old v16 `contain: paint` rule clipped the open panel completely. */
+.powerShelf{
+  contain:none!important;
+  overflow:visible!important;
+  z-index:60!important;
+}
+.powerShelfInner{
+  contain:none!important;
+  overflow:visible!important;
+  position:relative!important;
+  z-index:61!important;
+}
+.magicPouchBtn{
+  position:relative!important;
+  z-index:62!important;
+  pointer-events:auto!important;
+}
+.magicPouchPanel{
+  overflow:visible!important;
+  z-index:100!important;
+  pointer-events:auto!important;
+}
+.magicPouchPanel.open{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+.pouchGrid,.pouchHeader,.pouchGrid *{
+  pointer-events:auto;
+}
+
+/* v25 passive 30-minute farm harvest */
+.timedHarvest{
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;
+  margin:14px 0 16px;padding:12px 13px;border:2px solid #d8c57d;border-radius:18px;
+  background:linear-gradient(135deg,#fff9df,#f2e7b8);box-shadow:0 3px 8px #0002;
+}
+.timedHarvestIcon{font-size:34px}
+.timedHarvestInfo{display:flex;flex-direction:column;min-width:0;color:#34422e}
+.timedHarvestInfo b{font-size:17px}.timedHarvestInfo span{font-weight:800;color:#27733e}
+.timedHarvestInfo small{font-size:11px;line-height:1.3;color:#6c684f}
+.timedHarvest button{min-width:92px;padding:10px 9px;border-radius:14px}
+.timedHarvest button:disabled{opacity:.6}
+@media(max-width:430px){
+ .timedHarvest{grid-template-columns:auto 1fr;gap:7px 9px}
+ .timedHarvest button{grid-column:1/-1;width:100%}
+}
+
+/* v26 Rosie Happiness / progression */
+.rosieStatusCard{margin:12px 0;padding:11px 13px;border:2px solid #e1b5c7;border-radius:18px;background:linear-gradient(135deg,#fff2f7,#fff9e5)}
+.rosieStatusTop{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:14px}
+.rosieTreasureStatus{font-size:10px;font-weight:800;color:#8b5070;text-align:right}
+.happinessTrack{height:13px;margin:8px 0;background:#ead9d2;border-radius:999px;overflow:hidden;border:1px solid #ceb8ae}
+#rosieHappinessBar{height:100%;width:50%;background:linear-gradient(90deg,#ff83ad,#ef4e86,#ffcf4c);transition:width .25s}
+.rosieActions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.rosieActions button{margin:0}.rosieActions small{color:#756a62}
+#rosie{cursor:pointer}
+
+/* Victory grading */
+.winStars{font-size:36px;letter-spacing:5px;color:#f2b51f;text-shadow:0 2px #875f08;margin:5px 0}
+.perfectBadge{display:none;margin:7px auto;padding:7px 12px;width:max-content;max-width:90%;border-radius:999px;background:linear-gradient(90deg,#8f63e8,#ed7db0);color:#fff;font-weight:950;box-shadow:0 3px 8px #0003}
+.perfectBadge.show{display:block;animation:pulse .7s alternate 2}
+.winBonusText{font-size:12px;color:#665f50;margin:9px auto 13px;line-height:1.35}
+
+/* Reward toast */
+.rewardToast{position:fixed;left:50%;top:18%;transform:translate(-50%,-15px) scale(.96);z-index:160;display:flex;align-items:center;gap:10px;min-width:230px;max-width:min(420px,90vw);padding:11px 15px;border:3px solid #f3d767;border-radius:20px;background:linear-gradient(#fff9d8,#f3e4a5);box-shadow:0 8px 24px #0005;opacity:0;pointer-events:none}
+.rewardToast.show{animation:rewardToast 2.8s ease both}.rewardToast>span{font-size:30px}.rewardToast div{display:flex;flex-direction:column}.rewardToast b{font-size:14px}.rewardToast small{font-size:11px;line-height:1.25;color:#625f4f}
+@keyframes rewardToast{0%{opacity:0;transform:translate(-50%,10px) scale(.94)}10%,78%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-12px) scale(.98)}}
+
+/* Dice roll presentation */
+.diceRollOverlay{position:fixed;inset:0;z-index:170;display:none;place-items:center;background:#12351a66;pointer-events:none}
+.diceRollOverlay.show{display:grid}.diceRollCard{width:150px;height:150px;border-radius:28px;border:4px solid #ffe273;background:linear-gradient(#7356c8,#46338d);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 12px 30px #0007;animation:diceBounce .18s alternate infinite}
+.diceRollCard span{font-size:12px;font-weight:950}.diceRollCard b{font-size:68px;line-height:1.05}
+@keyframes diceBounce{to{transform:translateY(-7px) rotate(2deg)}}
+
+/* Power targeting */
+.powerModeBar{position:fixed;left:50%;bottom:calc(var(--v15-tray-h) + 72px);transform:translateX(-50%);z-index:65;display:none;align-items:center;gap:8px;padding:7px 10px;border-radius:17px;background:#513b84;color:white;border:2px solid #e8d86d;box-shadow:0 4px 12px #0005;font-size:11px;font-weight:850}
+.powerModeBar.show{display:flex}.powerModeBar button{padding:5px 9px;margin:0;background:#f1c64e;color:#46390f;border-radius:10px}
+.card.powerEligible{box-shadow:0 0 0 4px #71f08a,0 0 20px #5cff7d,0 7px 14px #0006!important;filter:brightness(1.06)}
+.card.powerIneligible{filter:brightness(.58) saturate(.55);opacity:.72}
+.card.powerEligible:hover{transform:translateY(-6px) scale(1.03)}
+.card.powerIneligible{cursor:not-allowed}
+
+/* Harvest streak */
+#harvestStreakText{color:#a06418!important;font-weight:800}
+
+/* v26 mobile tweaks */
+@media(max-width:430px){
+ .rosieStatusTop{align-items:flex-start;flex-direction:column;gap:2px}.rosieTreasureStatus{text-align:left}
+ .rosieActions{display:grid;grid-template-columns:1fr 1fr}.rosieActions small{grid-column:1/-1}
+ .powerModeBar{bottom:calc(var(--v15-tray-h) + 66px);max-width:92vw;white-space:nowrap}
+ .rewardToast{top:14%}
+}
+
+/* v26 achievement presentation */
+.achievementList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.achievement{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 10px;border-radius:12px;border:1px solid #d9c99c;background:#fff8df;font-size:11px}
+.achievement.unlocked{background:#e5f5df;border-color:#91bb7e;color:#28623a}.achievement.locked{opacity:.7}.achievement b{white-space:nowrap}
+
+/* Reward currency particles */
+.rewardParticle{position:absolute;z-index:175;font-size:18px;pointer-events:none;animation:rewardParticle 1s ease-out forwards}
+@keyframes rewardParticle{to{transform:translate(var(--rx),var(--ry)) scale(.55) rotate(100deg);opacity:0}}
+@media(max-width:430px){.achievementList{grid-template-columns:1fr}}
+
+/* v27 level preview */
+.levelPreview{
+  position:fixed;left:50%;top:78px;transform:translate(-50%,-12px) scale(.97);
+  z-index:75;display:flex;flex-direction:column;align-items:center;gap:2px;
+  min-width:220px;max-width:min(420px,88vw);padding:8px 14px;border:2px solid #efd469;border-radius:16px;
+  background:linear-gradient(180deg,#fff9d9,#f5e6a7);box-shadow:0 6px 18px #0004;color:#405138;
+  opacity:0;pointer-events:none;text-align:center;
+}
+.levelPreview.show{animation:levelPreview 2.6s ease both}
+.levelPreview b{font-size:14px}.levelPreview span{font-size:11px;font-weight:850}.levelPreview small{font-size:9px;color:#8a6b24}
+@keyframes levelPreview{0%{opacity:0;transform:translate(-50%,-12px) scale(.97)}10%,78%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-8px) scale(.98)}}
+
+/* v27 special tableau cards */
+.card.specialCard:not(.faceDown){overflow:visible}
+.specialTag{
+  position:absolute;right:-5px;bottom:-5px;z-index:8;min-width:23px;height:23px;padding:0 4px;
+  display:grid;place-items:center;border-radius:12px;border:2px solid #fff;font-size:10px;font-weight:950;
+  color:#fff;background:#526b48;box-shadow:0 2px 5px #0005;white-space:nowrap;
+}
+.card.special-vine:not(.faceDown){box-shadow:inset 0 0 0 3px #5a9b4b,0 6px 12px #0004}
+.card.special-vine .specialTag{background:#4b873c}
+.card.special-crate:not(.faceDown){box-shadow:inset 0 0 0 3px #a86c35,0 6px 12px #0004}
+.card.special-crate .specialTag{background:#9a602e}
+.card.special-flower:not(.faceDown){box-shadow:inset 0 0 0 3px #ef9ec3,0 6px 12px #0004}.card.special-flower .specialTag{background:#e55b9c}
+.card.special-gold:not(.faceDown){box-shadow:inset 0 0 0 4px #f2c53c,0 0 13px #ffd84f99,0 6px 12px #0004}.card.special-gold .specialTag{background:#bd8410}
+.card.special-mud:not(.faceDown){box-shadow:inset 0 0 0 3px #76513a,0 6px 12px #0004}.card.special-mud .specialTag{background:#684331}
+.card.special-chain:not(.faceDown){box-shadow:inset 0 0 0 3px #707784,0 6px 12px #0004}.card.special-chain .specialTag{background:#555d68}
+.card.special-rainbow:not(.faceDown){box-shadow:inset 0 0 0 4px #ad68db,0 0 15px #80dfffaa,0 6px 12px #0004}.card.special-rainbow .specialTag{background:linear-gradient(90deg,#8056ca,#e45e9f,#e7b632)}
+.card.specialLocked:not(.faceDown){filter:saturate(.72) brightness(.85)}
+.card.specialLocked:not(.faceDown):after{
+  content:"LOCKED";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-9deg);
+  padding:2px 5px;border-radius:6px;background:#253028c9;color:#fff;font-size:8px;font-weight:950;letter-spacing:.6px;z-index:7;
+}
+.card.specialLocked.playable{outline:none!important}
+
+/* Garden Shears */
+.shearsHud{background:linear-gradient(#6da89d,#3a756c)!important}
+.shearsHud b{min-width:22px!important}
+.card.shearsTarget{box-shadow:0 0 0 4px #a7f1dc,0 0 22px #67e6c5,0 7px 14px #0006!important}
+
+/* Special-card legend */
+.specialLegend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:14px}
+.specialLegend span{padding:7px 8px;border-radius:10px;background:#f6f0da;border:1px solid #d5c79b;font-size:10px;color:#555242}
+
+/* pouch has eight actions now: keep a clean 4x2 grid */
+.pouchGrid{grid-template-columns:repeat(4,1fr)!important}
+
+@media(max-width:430px){
+  .levelPreview{top:69px;min-width:200px;padding:7px 10px}
+  .specialLegend{grid-template-columns:1fr}
+  .specialTag{right:-3px;bottom:-3px}
+}
+
+/* v28 Farm Regions */
+.regionNavigator{
+  display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:8px;
+  margin:10px 0 9px;padding:7px 9px;border:2px solid #d8c57d;border-radius:16px;
+  background:linear-gradient(#fff8d8,#eee0a5);box-shadow:0 3px 8px #0002;
+}
+.regionNavigator button{
+  width:40px;height:40px;min-width:40px;padding:0;border-radius:50%;font-size:27px;line-height:1;
+}
+.regionNavigatorInfo{display:flex;flex-direction:column;text-align:center;color:#46543c;min-width:0}
+.regionNavigatorInfo b{font-size:11px;line-height:1.25}
+.regionNavigatorInfo small{font-size:9px;color:#796b4d;margin-top:2px}
+.regionHint{font-size:11px;color:#716953;margin-top:-4px}
+.cropChoice.signatureCrop{border-color:#e5b539!important;background:linear-gradient(#fff9db,#f8e9a7)!important;box-shadow:inset 0 0 0 2px #f6d45c55}
+.cropChoice.signatureCrop:before{
+  content:"HOME CROP";display:inline-block;width:max-content;margin-bottom:4px;padding:2px 6px;border-radius:999px;
+  background:#d99e1f;color:white;font-size:8px;font-weight:950;letter-spacing:.5px;
+}
+.regionDecorCard{min-height:86px;background:linear-gradient(135deg,#f7edcf,#e9d8aa)!important}
+.regionDecorVisual{
+  position:absolute;right:17%;top:19%;z-index:3;font-size:33px;filter:drop-shadow(0 3px 2px #0004);
+  pointer-events:none;animation:decorBob 2.8s ease-in-out infinite alternate;
+}
+@keyframes decorBob{to{transform:translateY(-3px)}}
+
+/* Each region uses the existing CSS-drawn farm assets but changes atmosphere. */
+.farmScene.region-0{
+  background:
+    radial-gradient(circle at 18% 18%,#fff8b6 0 2%,transparent 2.5%),
+    linear-gradient(#83d5ed 0 37%,#9edb75 37% 67%,#70b94f 67% 100%)!important;
+}
+.farmScene.region-0:before{content:"🌼  🌿  🌼";position:absolute;left:6%;bottom:10%;font-size:17px;opacity:.9}
+
+.farmScene.region-1{
+  background:
+    radial-gradient(circle at 82% 16%,#fff09c 0 7%,#ffc947 7.5% 11%,transparent 11.5%),
+    linear-gradient(#79ccec 0 36%,#e7c858 36% 64%,#9fba43 64% 100%)!important;
+}
+.farmScene.region-1:before{content:"🌻  🌻  🌻  🌻";position:absolute;left:5%;bottom:9%;font-size:20px;letter-spacing:6px}
+
+.farmScene.region-2{
+  background:
+    linear-gradient(165deg,transparent 0 61%,#57b8dc 61% 70%,#8fd5e8 70% 74%,transparent 74%),
+    linear-gradient(#79cae9 0 37%,#70ba69 37% 70%,#589e4d 70% 100%)!important;
+}
+.farmScene.region-2:before{content:"💧";position:absolute;right:8%;bottom:12%;font-size:25px;opacity:.85}
+.farmScene.region-2:after{content:"🌳";position:absolute;left:7%;top:29%;font-size:33px;filter:drop-shadow(0 3px 2px #0004)}
+
+.farmScene.region-3{
+  background:
+    radial-gradient(circle at 68% 16%,#ffe5a0 0 5%,transparent 5.5%),
+    linear-gradient(#efbd83 0 36%,#d99a4a 36% 48%,#91aa55 48% 72%,#6f8c43 72% 100%)!important;
+}
+.farmScene.region-3:before{content:"🍎   🌳   🍎";position:absolute;left:5%;top:31%;font-size:27px;letter-spacing:5px}
+.farmScene.region-3:after{content:"🍂  🍂";position:absolute;right:6%;bottom:10%;font-size:17px}
+
+.farmScene.region-4{
+  background:
+    linear-gradient(145deg,transparent 0 30%,#70866c 30% 41%,transparent 41%),
+    linear-gradient(215deg,transparent 0 28%,#819777 28% 40%,transparent 40%),
+    linear-gradient(#77b6d5 0 37%,#9bac67 37% 68%,#718e4b 68% 100%)!important;
+}
+.farmScene.region-4:before{content:"⛰️";position:absolute;left:8%;top:14%;font-size:46px;opacity:.72}
+.farmScene.region-4:after{content:"🎃  🌾  🎃";position:absolute;right:5%;bottom:9%;font-size:19px;letter-spacing:4px}
+
+/* Keep pseudo scenery behind plots / Rosie. */
+.farmScene:before,.farmScene:after{z-index:1;pointer-events:none}
+.farmScene .barn,.farmScene .rosieOriginal,.farmScene .rosieName,.farmScene .plots,.farmScene .regionDecorVisual{position:absolute}
+.farmScene .plots{z-index:5}.farmScene .rosieOriginal,.farmScene .rosieName{z-index:6}.farmScene .barn{z-index:2}
+
+@media(max-width:430px){
+  .regionNavigator{grid-template-columns:36px 1fr 36px;padding:6px}
+  .regionNavigator button{width:34px;height:34px;min-width:34px;font-size:23px}
+  .regionDecorVisual{right:12%;font-size:28px}
+  .farmScene.region-1:before,.farmScene.region-3:before,.farmScene.region-4:after{letter-spacing:1px}
+}
+
+/* v29 Daily Challenge */
+.mainChoice.dailyChoice{
+  border-color:#e5c760!important;
+  background:linear-gradient(135deg,#4f4aa9,#775bc1)!important;
+  color:#fff!important;
+}
+.mainChoice.dailyChoice small{color:#efe9ff!important}
+.dailyPanel{max-width:560px!important}
+.dailyHero{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:10px;
+  border-radius:18px;background:linear-gradient(135deg,#eee9ff,#fff4d4);border:2px solid #d2c07a;
+}
+.dailyCalendar{font-size:42px;filter:drop-shadow(0 3px 3px #0002)}
+.dailyHero>div:last-child{display:flex;flex-direction:column;gap:2px}
+.dailyHero b{font-size:17px;color:#4b427a}
+.dailyHero small{font-size:11px;color:#776f65}
+.dailyStatusCard{
+  display:flex;flex-direction:column;gap:4px;padding:12px 13px;border-radius:16px;
+  background:linear-gradient(#fff7ce,#f2df91);border:2px solid #ddb84f;color:#5a4c24;
+}
+.dailyStatusCard.claimed{background:linear-gradient(#e5f5df,#cce8c1);border-color:#81b56f;color:#355f35}
+.dailyStatusCard b{font-size:14px}.dailyStatusCard small{font-size:11px;line-height:1.35}
+.dailyStreakRow{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:10px 2px;font-size:11px;font-weight:800;color:#625876}
+.dailyRules{font-size:11px;line-height:1.45;color:#696257;padding:0 3px}
+.dailyPlayBtn{width:100%;margin-top:7px!important;background:linear-gradient(#6b62d1,#4b409f)!important}
+body.reduced-motion .dailyCalendar{filter:none}
+
+/* Daily mode subtly recolors the level label through its text only; no extra HUD clutter. */
+@media(max-width:430px){
+  .dailyHero{padding:10px}.dailyCalendar{font-size:35px}
+  .dailyStreakRow{flex-direction:column;gap:4px}
+}
+
+/* v30 Rewards Shop Tier II */
+.tier2Heading{margin:18px 0 9px;color:#59478a}
+.tier2Grid{padding-top:0}
+.tier2Item{
+  border-color:#bca2df!important;
+  background:linear-gradient(135deg,#f7f0ff,#fff6d9)!important;
+}
+.tier2Item .shopIcon{font-size:26px}
+.tier2Item strong{color:#6b4eae}
+.tier2Item [id^="shop"][id$="Tier2"]{font-weight:900;color:#6a5791}
+
+/* Harvest full state is deliberately conspicuous without adding more controls. */
+#timedHarvestReady{font-weight:950}
+
+/* v31 Harvest Almanac */
+.collectionPanel{max-width:720px!important}
+.collectionSummary{padding:11px 13px;border:2px solid #d6c184;border-radius:17px;background:linear-gradient(#fff9dc,#f2e4af);color:#4e503b}
+.collectionSummary>b{font-size:15px}.collectionSummary>small{display:block;margin-top:5px;font-size:10px;color:#716b57}
+.collectionTrack{height:11px;margin-top:7px;border-radius:99px;background:#dfd2af;overflow:hidden}
+#collectionProgressBar{height:100%;width:0;background:linear-gradient(90deg,#68ad55,#e4b83e);transition:width .25s}
+.collectionTabs{display:flex;gap:5px;margin:12px 0 10px;flex-wrap:wrap}
+.collectionTab{flex:1;min-width:85px;padding:7px 8px;border-radius:12px;background:#e6ddc3;color:#554f40}
+.collectionTab.active{background:#4f8d54;color:#fff}
+.collectionGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.collectionEntry{display:grid;grid-template-columns:42px 1fr auto;gap:9px;align-items:center;padding:10px;border:2px solid #d8ca9c;border-radius:15px;background:#fffaf0;min-height:72px}
+.collectionEntry.found{background:linear-gradient(135deg,#fffdf3,#edf6df);border-color:#b8ce8c}
+.collectionEntry.hiddenEntry{filter:saturate(.35);opacity:.66}
+.collectionIcon{font-size:27px;text-align:center}.collectionEntry b{display:block;font-size:12px}.collectionEntry small{display:block;font-size:9.5px;line-height:1.3;color:#706b5c;margin-top:3px}.collectionEntry>span{font-size:13px}
+
+/* v31: seven main-menu actions still fit without scrolling on phones. */
+@media(max-width:800px){
+  .mainMenuScreen .mainMenuButtons{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+  .mainMenuScreen .mainChoice{padding:8px 9px!important;min-height:54px}
+  .mainMenuScreen .mainChoice.primaryChoice,.mainMenuScreen .mainChoice.dailyChoice{grid-column:1/-1}
+  .mainMenuScreen .mainChoice>span{font-size:22px!important}.mainMenuScreen .mainChoice b{font-size:13px!important}.mainMenuScreen .mainChoice small{font-size:9px!important}
+  .mainMenuScreen .menuFooter{margin-top:6px!important}
+}
+@media(max-width:430px){
+  .collectionGrid{grid-template-columns:1fr}
+  .collectionTabs{display:grid;grid-template-columns:repeat(3,1fr)}
+  .collectionTab{min-width:0;font-size:10px;padding:6px 4px}
+}
+@media(max-height:620px) and (max-width:800px){
+  .mainMenuScreen .mainMenuCard{justify-content:flex-start!important;padding-top:max(10px,env(safe-area-inset-top))!important}
+  .mainMenuScreen .brandMark{font-size:28px!important}.mainMenuScreen h1{font-size:22px!important;margin:1px 0!important}
+  .mainMenuScreen .mainBalances{margin:4px 0 6px!important}.mainMenuScreen .mainChoice{min-height:46px;padding:5px 7px!important}
+}
+
+/* v32 Mission Board */
+.missionPanel{max-width:620px!important}
+.missionBoardHeader{display:flex;gap:12px;align-items:center;margin-bottom:12px}.missionBoardHeader>span{font-size:38px}.missionBoardHeader h2{margin:0;color:#57452e}.missionBoardHeader small{display:block;font-size:10px;line-height:1.4;color:#766d5f;margin-top:3px}
+.missionChoices{display:grid;gap:9px}
+.missionChoice{display:grid;grid-template-columns:46px 1fr;text-align:left;gap:9px;align-items:center;padding:11px;border:2px solid #d0b873;border-radius:16px;background:linear-gradient(135deg,#fff9dc,#edf5d9);color:#4d4938}
+.missionChoice:hover,.missionChoice:active{transform:translateY(-1px);border-color:#75a85d;background:linear-gradient(135deg,#fff4bd,#e0f1cf)}
+.missionChoice>span{font-size:29px;text-align:center}.missionChoice b{display:block;font-size:13px}.missionChoice small{display:block;font-size:10px;line-height:1.3;margin:2px 0 4px;color:#716b5b}.missionChoice strong{font-size:9.5px;color:#6a548a}
+#skipMissionBtn{width:100%;margin-top:10px}
+.missionChip{position:absolute;z-index:35;left:max(8px,env(safe-area-inset-left));top:78px;display:none;align-items:center;gap:6px;max-width:185px;padding:5px 8px;border-radius:12px;background:#fff8d7e8;border:1px solid #c8aa57;box-shadow:0 2px 8px #0002;color:#50462e;pointer-events:none}
+.missionChip.show{display:flex}.missionChip>span{font-size:16px}.missionChip>div{min-width:0}.missionChip b,.missionChip small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.missionChip b{font-size:9.5px}.missionChip small{font-size:8px;color:#746b58}.missionChip.failed{background:#f7d8d3e8;border-color:#b86a62}.missionChip.failed small{color:#9d3934;font-weight:900}.missionChip.complete{background:#dff1d5ed;border-color:#71a65b}.missionChip.complete small{color:#397337;font-weight:900}
+@media(max-width:600px){.missionPanel{width:min(94vw,620px)!important}.missionChoice{padding:9px;grid-template-columns:38px 1fr}.missionChoice>span{font-size:24px}.missionChip{top:70px;max-width:145px}}
+@media(max-height:650px){.missionChoices{gap:5px}.missionChoice{padding:6px 8px}.missionBoardHeader{margin-bottom:6px}.missionBoardHeader>span{font-size:28px}.missionChoice small{font-size:9px}}
+
+/* v33 Farm Orders */
+.farmOrdersSection{margin:14px 0 16px}
+.farmOrdersHeader{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:8px}
+.farmOrdersHeader h3{margin:0}.farmOrdersHeader small{display:block;font-size:9.5px;color:#716a59;margin-top:2px}
+.inDemandBadge{padding:5px 8px;border-radius:999px;background:linear-gradient(#ffdb74,#efad36);border:2px solid #d78c24;color:#6c4214;font-size:9px;font-weight:950;white-space:nowrap}
+.farmOrdersGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.farmOrderCard{padding:9px;border:2px solid #d7c690;border-radius:14px;background:#fff9e8;min-width:0}
+.farmOrderCard.order-easy{background:linear-gradient(135deg,#eef8e5,#fffbe7);border-color:#9ec47d}
+.farmOrderCard.order-standard{background:linear-gradient(135deg,#e7f2fb,#fff8df);border-color:#86adc7}
+.farmOrderCard.order-premium{background:linear-gradient(135deg,#f7eaff,#fff2cd);border-color:#b896d2}
+.farmOrderTitle{display:grid;grid-template-columns:auto 1fr auto;gap:5px;align-items:center}.farmOrderTitle>span{font-size:17px}.farmOrderTitle b{font-size:10.5px}.farmOrderTitle strong{font-size:9px;color:#7a5d25}
+.farmOrderReqs{display:flex;flex-direction:column;gap:3px;margin:7px 0}.farmOrderReqs span{padding:3px 5px;border-radius:7px;background:#ffffffb8;font-size:9px;font-weight:800;color:#575247}.farmOrderReqs span.done{background:#dcefd0;color:#39733c;text-decoration:line-through}
+.farmOrderCard>small{display:block;font-size:8px;line-height:1.25;color:#776d5c}
+
+/* Save reset / developer tools */
+.dangerBtn{border:2px solid #9d443b!important;background:linear-gradient(#db6a5d,#b9473e)!important;color:#fff!important;border-radius:11px;padding:9px 11px;font-weight:900;cursor:pointer}
+.devInput{width:100%;box-sizing:border-box;border:2px solid #cbbb8d;border-radius:10px;padding:9px;background:#fffdf7;color:#403b30;font:inherit}
+.devError{min-height:18px;color:#ad3939;font-size:10px;font-weight:850;margin:4px 0}
+.devPanel{max-width:700px!important}
+.devGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.devGrid button{padding:9px;border-radius:11px;background:#e9e1c8;color:#4c483d;font-weight:850}
+.devLevelRow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;margin-top:12px;padding-top:10px;border-top:2px solid #ddd0a7}.devLevelRow label{font-size:10px;font-weight:850}.devLevelRow input{margin-top:4px}.devLevelRow button{height:39px}
+.devStateSummary{display:flex;flex-direction:column;gap:2px;margin-top:10px;padding:9px 10px;border-radius:12px;background:#f5efd9;border:1px solid #d3c397;font-size:10px;color:#5f5848}.devStateSummary b{font-size:11px;color:#494334}
+
+@media(max-width:600px){
+  .farmOrdersGrid{grid-template-columns:1fr}
+  .farmOrdersHeader{align-items:flex-start;flex-direction:column}
+  .inDemandBadge{white-space:normal}
+  .devGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-height:650px){
+  .farmOrderCard{padding:6px}.farmOrderReqs{margin:4px 0}.farmOrdersGrid{gap:5px}
+}
+
+/* v34 Chapters & Milestones */
+.chapterProgressCard{width:min(520px,92%);margin:5px auto 8px;padding:7px 10px;border:2px solid #d7c58e;border-radius:14px;background:linear-gradient(135deg,#fff9dd,#eef4db);box-sizing:border-box;color:#504a39}
+.chapterProgressTop{display:grid;grid-template-columns:auto 1fr auto;gap:7px;align-items:center}.chapterProgressTop>span{font-size:22px}.chapterProgressTop b,.chapterProgressTop small{display:block}.chapterProgressTop b{font-size:11px}.chapterProgressTop small{font-size:8.5px;color:#776f5e}.chapterProgressTop strong{font-size:8.5px;color:#7b6332}
+.chapterTrack{height:7px;margin-top:5px;border-radius:99px;background:#d9cfaf;overflow:hidden}.chapterTrack>div{height:100%;width:0;border-radius:inherit;transition:width .25s}
+@media(max-width:600px){.chapterProgressCard{margin:2px auto 5px;padding:5px 8px}.chapterProgressTop>span{font-size:18px}.chapterProgressTop b{font-size:10px}.chapterProgressTop strong{font-size:8px}}
+@media(max-height:650px){.chapterProgressCard{padding:3px 7px;margin:1px auto 3px}.chapterTrack{height:5px;margin-top:3px}}
+/* v35 strategic tableau mechanics */
+.special-key{border-color:#d6a42e!important}.special-barnlock{border-color:#735b45!important;box-shadow:inset 0 0 0 3px #6d574033}.special-watering{border-color:#57a9c8!important}.special-bee{border-color:#d5aa26!important}.special-harvestchain{border-color:#79a64d!important}
+.specialTag.special-key,.specialTag.special-barnlock,.specialTag.special-watering,.specialTag.special-bee,.specialTag.special-harvestchain{font-size:11px}
+.special-bee{animation:beeHover 1.6s ease-in-out infinite}.reduced-motion .special-bee{animation:none}@keyframes beeHover{50%{transform:translateY(-2px) rotate(.4deg)}}
+
+/* v36 Rosie's Adventures */
+.rosieAdventureCard{margin:12px 0;padding:11px;border:2px solid #c99b68;border-radius:16px;background:linear-gradient(135deg,#fff3d9,#eaf2d7);color:#514637}
+.rosieAdventureHead{display:flex;justify-content:space-between;gap:8px;align-items:center}.rosieAdventureHead b,.rosieAdventureHead small{display:block}.rosieAdventureHead small{font-size:9px;color:#756a59;margin-top:2px}.rosieAdventureHead strong{font-size:11px;color:#8b5e36}
+.adventureLocations,.adventureDurations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:7px}.adventureLocations{grid-template-columns:repeat(5,minmax(0,1fr))}
+.adventureLocations button,.adventureDurations button{padding:6px 4px;border:2px solid #d4c49d;border-radius:10px;background:#fffaf0;color:#514b3e;font-size:9px;font-weight:850}.adventureLocations button small,.adventureDurations button small{display:block;font-size:7px;font-weight:650;color:#786e5d;margin-top:2px}.adventureLocations button.selected,.adventureDurations button.selected{border-color:#79a85e;background:#e2f1d6}
+#rosieAdventureAction{width:100%;margin-top:7px}
+.adventureFinds{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:7px}.adventureFinds button{display:grid;grid-template-columns:auto 1fr;gap:2px 5px;text-align:left;padding:6px;border:1px solid #cdbb8d;border-radius:10px;background:#fff9e8;color:#554d3e}.adventureFinds button>span{grid-row:1/3;font-size:19px}.adventureFinds b{font-size:8px}.adventureFinds small{font-size:7px;line-height:1.2}.adventureFinds button:disabled{opacity:.5}
+#rosie.adventuring{visibility:hidden}.rosieName:has(+*){}
+@media(max-width:600px){.adventureLocations{grid-template-columns:repeat(2,minmax(0,1fr))}.adventureDurations{grid-template-columns:repeat(3,minmax(0,1fr))}.adventureFinds{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* v37 Weather & Farm Events */
+.weatherBulletin{width:min(520px,92%);box-sizing:border-box;margin:5px auto 8px;padding:8px 10px;border:2px solid #9fb8a0;border-radius:14px;background:linear-gradient(135deg,#edf6e8,#e8f2f7);color:#4d5548}.bulletinTop,.bulletinWeather{display:flex;justify-content:space-between;gap:8px;align-items:center}.bulletinTop b{font-size:9px;letter-spacing:.5px}.bulletinTop span,.bulletinNext{font-size:8px;color:#6c7469}.bulletinWeather{margin-top:4px}.bulletinWeather strong{font-size:12px}.bulletinWeather small{font-size:8px;text-align:right;max-width:65%}.bulletinEvent{margin-top:5px;padding-top:5px;border-top:1px solid #c6d5bf;font-size:8px;font-weight:750}.farmWeatherBulletin{width:100%;margin:10px 0}.farmWeatherBulletin .bulletinWeather strong{font-size:13px}@media(max-width:600px){.weatherBulletin{padding:6px 8px}.bulletinWeather small{max-width:58%}}@media(max-height:650px){.weatherBulletin{padding:4px 7px;margin:2px auto 4px}.bulletinEvent{margin-top:3px;padding-top:3px}}
+
+/* v38 Farmhouse / Trophy Room */
+.farmhousePanel{max-width:820px!important}
+.farmhouseRoom{position:relative;height:230px;overflow:hidden;border:4px solid #8a6846;border-radius:18px;background:linear-gradient(#f4dfb2 0 68%,#9b714b 68% 72%,#b98959 72%);box-shadow:inset 0 0 28px #7f5a3730}
+.houseWindow{position:absolute;right:8%;top:14px;width:64px;height:58px;display:grid;place-items:center;border:7px solid #845c38;background:linear-gradient(#83cbe5,#e4f3ea);font-size:28px;box-shadow:0 3px 6px #0003}
+.houseWindow:before,.houseWindow:after{content:"";position:absolute;background:#845c38}.houseWindow:before{width:5px;height:100%}.houseWindow:after{height:5px;width:100%}
+.chapterWall{position:absolute;left:4%;top:16px;width:53%;display:flex;gap:5px;flex-wrap:wrap}.chapterWall span{width:34px;height:30px;display:grid;place-items:center;border:3px solid #85633f;border-radius:4px;background:#c9b990;color:#746953;font-size:17px;box-shadow:0 2px 3px #0003}.chapterWall span.earned{background:#fff4cf;color:#463c2e}
+.trophyShelf{position:absolute;left:5%;top:82px;width:53%;min-height:57px;display:flex;align-items:flex-end;gap:7px;padding:0 8px 7px;border-bottom:8px solid #795336}.trophyShelf:after{content:"";position:absolute;left:0;right:0;bottom:-13px;height:5px;background:#b58455}.trophyShelf span{font-size:28px;filter:drop-shadow(0 3px 2px #0004)}.trophyShelf small{font-size:9px;color:#756754}
+.rosieCorner{position:absolute;right:4%;bottom:12px;width:31%;height:105px;padding:7px;border-radius:15px 15px 6px 6px;background:#dfc99eaa;border:2px solid #b18a5f;text-align:center}.rosieBed{font-size:39px;line-height:43px}.rosieCorner>b{display:block;font-size:9px;color:#72573d}.toyBox{display:flex;justify-content:center;gap:3px;flex-wrap:wrap;margin-top:3px}.toyBox span{width:24px;height:22px;display:grid;place-items:center;border-radius:5px;background:#8a5c38;color:#dfcfad;font-size:13px}.toyBox span.found{background:#fff1c8;color:#222}
+.harvestCabinet{position:absolute;left:5%;bottom:15px;width:48%;display:flex;gap:7px;padding:8px;border:3px solid #76543c;border-radius:6px;background:#aa8059}.harvestCabinet span{flex:1;padding:4px;border-radius:5px;background:#efe1bd;font-size:9px;text-align:center;font-weight:850}
+.farmhouseTabs{display:flex;gap:5px;flex-wrap:wrap;margin:12px 0 9px}.farmhouseTab{flex:1;min-width:110px;padding:7px;border-radius:11px;background:#e7dcc0;color:#584f3e;font-size:10px}.farmhouseTab.active{background:#7b6249;color:#fff}
+.farmhouseDetails{min-height:175px}
+.houseDetailGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.houseAchievement{display:grid;grid-template-columns:38px 1fr;gap:7px;align-items:center;padding:8px;border:1px solid #d4c39c;border-radius:12px;background:#fff9e8}.houseAchievement>span{font-size:25px;text-align:center}.houseAchievement b,.houseAchievement small,.houseAchievement strong{display:block}.houseAchievement b{font-size:10px}.houseAchievement small{font-size:8px;line-height:1.3;color:#756d5d}.houseAchievement strong{font-size:8px;margin-top:3px;color:#795c91}.houseAchievement.locked{opacity:.65;filter:saturate(.55)}.houseAchievement.earned{border-color:#91b36e;background:#eef7e4}
+.tierFamily{margin:7px 0;padding:8px;border:1px solid #d8c89d;border-radius:12px;background:#fffaf0}.tierFamily h3{margin:0 0 6px;font-size:11px}.tierFamily h3 small{float:right;color:#756b59}.tierRow{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.tierRow>div{padding:7px;border-radius:9px;background:#e5dcc5;display:flex;flex-direction:column}.tierRow>div.earned{background:#dff0d2}.tierRow b{font-size:9px}.tierRow span,.tierRow small{font-size:8px}
+.chapterKeepsakes{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.chapterKeepsakes>div{display:grid;grid-template-columns:32px 1fr;gap:5px;padding:8px;border-radius:10px;background:#f3ead4}.chapterKeepsakes>div.earned{background:#e8f3dc}.chapterKeepsakes span{font-size:22px;grid-row:1/3}.chapterKeepsakes b{font-size:9px}.chapterKeepsakes small{font-size:8px;color:#756c5d}
+.rosieJournalStats,.lifetimeGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rosieJournalStats>div,.lifetimeGrid>div{padding:9px;border-radius:11px;background:#f4ecd8;text-align:center}.rosieJournalStats b,.rosieJournalStats small,.lifetimeGrid b,.lifetimeGrid small{display:block}.rosieJournalStats b,.lifetimeGrid b{font-size:12px}.rosieJournalStats small,.lifetimeGrid small{font-size:8px;color:#756a59}.houseJournal{font-size:10px}
+.toyJournal{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.toyJournal>div{padding:8px;border-radius:10px;background:#e7dcc5;text-align:center}.toyJournal>div.found{background:#fff0bd}.toyJournal span{font-size:24px;display:block}.toyJournal b{font-size:8px}.toyJournal .locked{opacity:.55}
+@media(max-width:600px){
+ .farmhouseRoom{height:190px}.houseWindow{width:46px;height:42px;font-size:20px}.chapterWall{width:57%}.chapterWall span{width:27px;height:24px;font-size:13px}.trophyShelf{top:68px;width:55%;min-height:43px}.trophyShelf span{font-size:22px}.rosieCorner{width:31%;height:87px}.rosieBed{font-size:31px;line-height:34px}.harvestCabinet{width:52%;padding:5px}
+ .farmhouseTabs{display:grid;grid-template-columns:repeat(3,1fr)}.farmhouseTab{min-width:0;padding:6px 3px;font-size:8px}.houseDetailGrid,.chapterKeepsakes{grid-template-columns:1fr}.rosieJournalStats,.lifetimeGrid{grid-template-columns:repeat(2,1fr)}.toyJournal{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-height:650px){.farmhouseRoom{height:150px}.chapterWall{top:8px}.trophyShelf{top:54px}.rosieCorner{height:73px}.rosieBed{font-size:25px;line-height:27px}.harvestCabinet{bottom:7px;padding:3px}.farmhouseTabs{margin:6px 0}.farmhouseDetails{min-height:120px}}
+/* v39 Solitaire Evolves */
+.reserveSlot{width:72px;height:86px;border:2px dashed #c8a96c;border-radius:11px;background:linear-gradient(#fff8df,#ead9ad);color:#51452f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 3px 8px #0003}.reserveSlot small{font-size:7px;letter-spacing:.8px}.reserveSlot b{font-size:22px}.reserveSlot em{font-size:7px;font-style:normal}.reserveSlot.used{opacity:.55}.special-heavy{box-shadow:inset 0 0 0 3px #74706b!important}.special-sleeping{box-shadow:inset 0 0 0 3px #655a9b!important}.special-sunflower{box-shadow:inset 0 0 0 3px #e5ad22!important}.specialTag.special-heavy,.specialTag.special-sleeping,.specialTag.special-sunflower{font-size:7px!important}
+.previewChoiceOverlay,.challengeOfferOverlay{position:fixed;inset:0;z-index:120;display:none;place-items:center;background:#18200a99}.previewChoiceOverlay.show,.challengeOfferOverlay.show{display:grid}.previewChoiceCard,.challengeOfferCard{width:min(360px,88vw);padding:18px;border:3px solid #d2b06a;border-radius:18px;background:#fff8e6;color:#4c4437;text-align:center;box-shadow:0 12px 40px #0007}.previewChoiceCard>b{display:block;font-size:15px}.previewChoiceCard>small{display:block;margin:7px 0 12px}.previewChoiceCard>div,.challengeOfferCard>div{display:flex;gap:10px;justify-content:center}.previewChoiceCard button{min-width:100px;padding:15px;font-size:19px;border-radius:12px;background:#fff;border:2px solid #9a7c4d;color:#29241c}.challengeOfferCard>span{font-size:38px}.challengeOfferCard h2{margin:3px}.challengeOfferCard p{font-size:11px}.challengeOfferCard strong{display:block;margin:10px}.challengeOfferCard button{padding:10px 14px;border-radius:10px}.challengeOfferCard button.primary{background:#9c4d2c;color:#fff}
+@media(max-width:600px){.reserveSlot{width:59px;height:72px}.reserveSlot b{font-size:18px}.tray{gap:7px!important}}
+
+/* =====================================================================
+   v40 Stabilization / Accessibility / Mobile Polish
+   ===================================================================== */
+.optionsGrid .item{align-content:start}
+.optionSlider{display:grid;grid-template-columns:auto 1fr auto;gap:7px;align-items:center;margin-top:7px;font-size:9px;color:#665e51}
+.optionSlider input{width:100%;accent-color:#6e9e54}
+.saveDoctorCard{margin-top:10px;padding:11px;border:2px solid #86a881;border-radius:15px;background:linear-gradient(135deg,#f3faea,#fff7d9)}
+.saveDoctorCard>div:first-child b,.saveDoctorCard>div:first-child small{display:block}.saveDoctorCard small{font-size:9px;color:#65705d;margin-top:2px}.saveDoctorCard .row{margin-top:8px}
+.backupStatus{font-size:8.5px;color:#6e685b;margin-top:7px}
+.devDiagnostics{margin:14px 0;padding:10px;border:2px solid #aa9bc4;border-radius:13px;background:#f4eff9}.devDiagnostics h3{margin:0 0 7px;color:#5a4e72}.devReport{height:170px!important;margin-top:8px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:9px;white-space:pre;overflow:auto}
+
+/* First-time mechanic notice */
+.mechanicNoticePanel{max-width:390px!important;text-align:center}.mechanicNoticeIcon{font-size:50px;filter:drop-shadow(0 4px 4px #0002)}.mechanicNoticeKicker{display:block;margin-top:4px;font-size:9px;letter-spacing:1.2px;font-weight:950;color:#887136}.mechanicNoticePanel h2{margin:4px 0 7px;color:#4d503a}.mechanicNoticePanel p{font-size:12px;line-height:1.45;color:#696252;margin:0 0 13px}
+
+/* Rosie can peek onto the main menu after returning from an adventure. */
+.mainRosiePeek{display:none;position:absolute;right:12px;bottom:8px;z-index:8;grid-template-columns:auto 1fr;gap:0 6px;align-items:center;padding:7px 9px;border:2px solid #c48d61;border-radius:14px;background:linear-gradient(#fff3da,#ead2aa);color:#564332;box-shadow:0 4px 12px #0003;animation:rosiePeekIn .45s cubic-bezier(.2,.8,.2,1)}
+.mainRosiePeek.show{display:grid}.mainRosiePeek>span{grid-row:1/3;font-size:28px}.mainRosiePeek b{font-size:9px}.mainRosiePeek small{font-size:7.5px;color:#77634f}
+@keyframes rosiePeekIn{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+
+/* Rosie Rescue paw trail */
+.rosiePawTrail{position:absolute;z-index:130;font-size:25px;pointer-events:none;opacity:0;animation:rosiePaw .7s ease both;filter:drop-shadow(0 2px 2px #0004)}
+@keyframes rosiePaw{0%{opacity:0;transform:scale(.5) rotate(-15deg)}30%{opacity:1;transform:scale(1.15) rotate(8deg)}100%{opacity:0;transform:translate(25px,-20px) scale(.8)}}
+
+/* Card accessibility */
+body.high-contrast-cards .card:not(.faceDown),body.high-contrast-cards .waste{border-color:#161616!important;box-shadow:0 0 0 2px #fff,0 5px 12px #0008!important;background:#fff!important}
+body.high-contrast-cards .card.faceDown{border-color:#111!important;box-shadow:inset 0 0 0 3px #fff8,0 5px 12px #0008!important}
+body.large-card-values .card .corner{font-size:clamp(14px,2.5vw,19px)!important;font-weight:1000!important}
+body.large-card-values .card .big{font-size:clamp(27px,5vw,43px)!important}
+body.large-card-values .waste small{font-size:15px!important}
+body.large-card-values .waste span{font-size:37px!important}
+body.suit-aid .card:not(.faceDown) .corner:after,body.suit-aid .waste small:after{display:inline-grid;place-items:center;margin-left:3px;width:10px;height:10px;font-size:7px;color:#111;background:#fff;border:1px solid currentColor;border-radius:2px;vertical-align:middle}
+body.suit-aid .suit-0 .corner:after,body.suit-aid .waste.suit-0 small:after{content:"●"}
+body.suit-aid .suit-1 .corner:after,body.suit-aid .waste.suit-1 small:after{content:"◆"}
+body.suit-aid .suit-2 .corner:after,body.suit-aid .waste.suit-2 small:after{content:"♥"}
+body.suit-aid .suit-3 .corner:after,body.suit-aid .waste.suit-3 small:after{content:"▲"}
+
+/* Keyboard focus */
+.card[role="button"]:focus-visible,.waste:focus-visible,button:focus-visible{outline:3px solid #2d76d2!important;outline-offset:2px}
+
+/* Keep panels inside the viewport; scroll happens inside panels, never the document. */
+html,body{overscroll-behavior:none}
+.sectionOverlay .panel,.overlay .panel{max-height:calc(100dvh - 16px);display:flex;flex-direction:column}
+.sectionOverlay .panel>.panelBody,.overlay .panel>.panelBody{overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.mainMenuCard{max-height:100dvh;overflow:auto;overscroll-behavior:contain}
+
+/* More stable gameplay geometry across modern tall phones. */
+@media(max-width:800px){
+  #field{top:72px!important;bottom:max(208px,calc(env(safe-area-inset-bottom) + 198px))!important}
+  .bottomBar{padding-bottom:max(5px,env(safe-area-inset-bottom))!important}
+  .magicPouchPanel{max-width:min(94vw,390px)!important;max-height:min(58dvh,460px)!important;overflow:auto!important}
+}
+@media(max-width:430px){
+  #field{top:66px!important;bottom:max(194px,calc(env(safe-area-inset-bottom) + 188px))!important;left:4px!important;right:4px!important}
+  .powerShelf{bottom:calc(var(--v15-tray-h) + env(safe-area-inset-bottom) + 4px)!important}
+  .mainRosiePeek{right:7px;bottom:5px}
+}
+@media(max-height:620px) and (max-width:900px){
+  #field{top:55px!important;bottom:150px!important}
+  .hud{transform:scale(.91);transform-origin:top center}
+  .powerShelf{transform:scale(.9);transform-origin:bottom center}
+  .bottomBar{transform:scale(.94);transform-origin:bottom center}
+  .mainMenuCard{padding-top:6px!important;padding-bottom:6px!important}
+}
+@media(orientation:landscape) and (max-height:520px){
+  #field{top:50px!important;bottom:132px!important}
+  .bottomBar{height:118px!important}
+  .powerShelf{bottom:124px!important}
+}
+
+/* Reduced motion centrally disables v40 flourishes too. */
+body.reduced-motion .mainRosiePeek,body.reduced-motion .rosiePawTrail,body.reduced-motion .rewardParticle{animation:none!important;transition:none!important}
+
+/* v40 Rosie peek anchoring */
+.mainMenuCard{position:relative}
