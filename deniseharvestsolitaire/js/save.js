@@ -2,14 +2,14 @@ window.DSH=window.DSH||{};
 DSH.Save=(()=>{
  const KEY='deniseSolitaireHarvest', VERSION=40;
  function defaults(){return{
-   version:VERSION,level:1,coins:80,gems:2,bestStreak:0,harvests:0,region:0,windmills:0,
+   version:VERSION,level:1,highestLevelReached:1,coins:80,gems:2,bestStreak:0,harvests:0,region:0,windmills:0,
    timedHarvestAt:Date.now(),timedHarvestClaims:0,timedHarvestCoins:0,timedHarvestGems:0,
    harvestStreak:0,rosieHappiness:50,rosieTreats:0,lastPetAt:0,lastFarmVisitAt:0,
    farmRegionView:0,regionRewardsClaimed:{0:true},regionDecorations:{},
    farmOrders:[],farmOrderSerial:0,inDemandDate:'',inDemandCrop:'',
    milestonesCleared:{},chapterBest:{},
    rosieAdventure:null,rosieAdventureFinds:{clover:0,feather:0,star:0,cache:0},rosieAdventureHistory:{},
-   farmhouseTrophies:{},farmhouseTierClaims:{},rosieToys:{},chapterMemorabilia:{},
+   farmhouseTrophies:{},farmhouseTierClaims:{},farmhouseTrophyRewardsClaimed:{},farmhouseTierRewardsClaimed:{},rosieToys:{},chapterMemorabilia:{},
    lifetime:{coinsEarned:0,coinsSpent:0,gemsEarned:0,gemsSpent:0},_walletSnapshot:null,
    weatherOverride:'',weatherOverrideUntil:0,eventOverride:'',eventOverrideUntil:0,eventProgress:{},eventClaimed:{},
    dailyLastClaimDate:'',dailyLastWinDate:'',dailyWinStreak:0,dailyBestScore:0,dailyBestScoreDate:'',
@@ -21,7 +21,7 @@ DSH.Save=(()=>{
    stats:{levelsCompleted:0,cardsCleared:0,totalScore:0,windmillsFound:0,windmillsUsed:0,wildsPlayed:0,drawPacksBought:0,magicGatesFound:0,magicGatesUsed:0,rosieRescuesFound:0,rosieRescuesUsed:0,streakBonuses:0,streakCoins:0,streakBonusDraws:0,timedHarvestClaims:0,timedHarvestCoins:0,timedHarvestGems:0,rosieFinds:0,
    rosieTreasures:0,treatsFound:0,treatsFed:0,petRosieCount:0,harvestStreakMax:0,
    perfectClears:0,threeStarClears:0,starsEarned:0,powersUsed:0,
-   specialCardsCleared:0,flowersCleared:0,goldenCardsCleared:0,goldenGems:0,keysCleared:0,barnLocksCleared:0,wateringCansCleared:0,beeCardsCleared:0,harvestChainsCompleted:0,harvestChainCoins:0,
+   specialCardsCleared:0,flowersCleared:0,goldenCardsCleared:0,goldenGems:0,keysCleared:0,barnLocksCleared:0,wateringCansCleared:0,beeCardsCleared:0,beeBuzzes:0,harvestChainsCompleted:0,harvestChainCoins:0,
    rainbowCardsCleared:0,shearsUsed:0,shearsEarned:0,obstacleLevelsCleared:0,
    regionalCropsHarvested:0,regionRewardsClaimed:0,regionDecorationsOwned:0,applesHarvested:0,
    dailyChallengesStarted:0,dailyChallengesCompleted:0,dailyPerfectClears:0,dailyRewardsClaimed:0,
@@ -31,7 +31,7 @@ DSH.Save=(()=>{
    farmOrdersCompleted:0,farmOrderCoinsEarned:0,farmOrderGemsEarned:0,farmOrderPowersEarned:0,inDemandHarvests:0,
    milestonesCompleted:0,milestoneCoinsEarned:0,milestoneGemsEarned:0,
    rosieAdventuresCompleted:0,rosieAdventureCoins:0,rosieAdventureGems:0,rosieAdventureRareFinds:0,rosieAdventurePowers:0,rosieToysFound:0,
-   trophiesUnlocked:0,tierAchievementsUnlocked:0,reserveUses:0,challengeHandsWon:0,luckyHandsWon:0,previewChoicesUsed:0,heavyCardsCleared:0,sleepingCardsCleared:0,sunflowerCardsCleared:0,
+   trophiesUnlocked:0,tierAchievementsUnlocked:0,trophyRewardsCollected:0,tierRewardsCollected:0,farmOrdersCollected:0,reserveUses:0,challengeHandsWon:0,luckyHandsWon:0,previewChoicesUsed:0,heavyCardsCleared:0,sleepingCardsCleared:0,sunflowerCardsCleared:0,
    weatherLevels:0,eventLevels:0,festivalClaims:0,
    developerActions:0,
    achievementsUnlocked:0}
@@ -145,6 +145,21 @@ DSH.Save=(()=>{
      raw.seenMechanics=raw.seenMechanics||{};raw.saveHealth=raw.saveHealth||{lastCheckAt:0,lastRepairAt:0,lastIssueCount:0};
      raw.version=40;
    }
+   // v40.2 uses the same integer save schema. Existing v40/v40.1 trophies and
+   // achievement tiers were auto-paid, so mark those historical rewards as claimed
+   // the first time this build sees them. New unlocks will remain unclaimed.
+   if(raw.version===40){
+     if(!raw.farmhouseTrophyRewardsClaimed)raw.farmhouseTrophyRewardsClaimed={...(raw.farmhouseTrophies||{})};
+     if(!raw.farmhouseTierRewardsClaimed)raw.farmhouseTierRewardsClaimed={...(raw.farmhouseTierClaims||{})};
+   }
+   // v40.3 keeps a redundant campaign-level checkpoint so a damaged/missing
+   // level field cannot silently turn a mature farm into Level 1.
+   if(raw.version===40){
+     const starLevels=Object.keys(raw.levelStars||{}).map(Number).filter(Number.isFinite),milestoneLevels=Object.keys(raw.milestonesCleared||{}).filter(k=>raw.milestonesCleared[k]).map(Number).filter(Number.isFinite);
+     const inferred=Math.max(1,Number(raw.level)||0,(Number(raw.stats?.levelsCompleted)||0)+1,starLevels.length?Math.max(...starLevels)+1:1,milestoneLevels.length?Math.max(...milestoneLevels)+1:1);
+     raw.highestLevelReached=Math.max(Number(raw.highestLevelReached)||0,inferred);
+     if(!Number.isFinite(Number(raw.level))||Number(raw.level)<1||Number(raw.level)<raw.highestLevelReached)raw.level=raw.highestLevelReached;
+   }
    const d=defaults();
    return {...d,...raw,version:VERSION,
      upgrades:{...d.upgrades,...(raw.upgrades||{})},
@@ -158,6 +173,8 @@ DSH.Save=(()=>{
      regionDecorations:{...d.regionDecorations,...(raw.regionDecorations||{})},
      farmhouseTrophies:{...d.farmhouseTrophies,...(raw.farmhouseTrophies||{})},
      farmhouseTierClaims:{...d.farmhouseTierClaims,...(raw.farmhouseTierClaims||{})},
+     farmhouseTrophyRewardsClaimed:{...d.farmhouseTrophyRewardsClaimed,...(raw.farmhouseTrophyRewardsClaimed||{})},
+     farmhouseTierRewardsClaimed:{...d.farmhouseTierRewardsClaimed,...(raw.farmhouseTierRewardsClaimed||{})},
      rosieToys:{...d.rosieToys,...(raw.rosieToys||{})},
      chapterMemorabilia:{...d.chapterMemorabilia,...(raw.chapterMemorabilia||{})},
      lifetime:{...d.lifetime,...(raw.lifetime||{})},
@@ -181,7 +198,9 @@ DSH.Save=(()=>{
    }
    const state=migrate(source);
    const fix=(test,label,fn)=>{if(!test){issues.push(label);fn()}};
-   fix(Number.isInteger(Number(state.level))&&Number(state.level)>=1,'Invalid level',()=>state.level=Math.max(1,Math.floor(finiteNumber(state.level,1))));
+   const levelEvidence=Math.max(1,Math.floor(finiteNumber(state.highestLevelReached,1)),Math.floor(finiteNumber(state.stats?.levelsCompleted,0))+1);
+   fix(Number.isInteger(Number(state.level))&&Number(state.level)>=levelEvidence,'Invalid or regressed campaign level',()=>state.level=levelEvidence);
+   state.level=Math.max(1,Math.floor(finiteNumber(state.level,levelEvidence)));state.highestLevelReached=Math.max(levelEvidence,state.level);
    ['coins','gems','windmills','magicGates','rosieRescues','rosieTreats','harvests','bestStreak'].forEach(k=>
      fix(Number.isFinite(Number(state[k]))&&Number(state[k])>=0,`Invalid ${k}`,()=>state[k]=Math.max(0,Math.floor(finiteNumber(state[k],d[k]||0))))
    );
@@ -203,7 +222,7 @@ DSH.Save=(()=>{
      o.rewardCoins=Math.max(0,Math.floor(finiteNumber(o.rewardCoins,0)));return true
    });
    ['upgrades','settings','stats','levelStars','achievements','collection','regionRewardsClaimed','regionDecorations','milestonesCleared','chapterBest',
-    'rosieAdventureFinds','rosieAdventureHistory','farmhouseTrophies','farmhouseTierClaims','rosieToys','chapterMemorabilia','lifetime','seenMechanics','saveHealth',
+    'rosieAdventureFinds','rosieAdventureHistory','farmhouseTrophies','farmhouseTierClaims','farmhouseTrophyRewardsClaimed','farmhouseTierRewardsClaimed','rosieToys','chapterMemorabilia','lifetime','seenMechanics','saveHealth',
     'eventProgress','eventClaimed'].forEach(k=>{if(!state[k]||typeof state[k]!=='object'||Array.isArray(state[k])){issues.push(`Missing or invalid ${k}`);state[k]=JSON.parse(JSON.stringify(d[k]||{}))}});
    state.settings={...d.settings,...state.settings};
    state.settings.sfxVolume=Math.max(0,Math.min(1,finiteNumber(state.settings.sfxVolume,.65)));
@@ -254,7 +273,7 @@ DSH.Save=(()=>{
    return defaults();
  }
  function save(state,opts={}){
-   state.version=VERSION;state.lifetime=state.lifetime||{coinsEarned:0,coinsSpent:0,gemsEarned:0,gemsSpent:0};
+   state.version=VERSION;state.highestLevelReached=Math.max(Number(state.highestLevelReached)||1,Number(state.level)||1);state.lifetime=state.lifetime||{coinsEarned:0,coinsSpent:0,gemsEarned:0,gemsSpent:0};
    const snap=state._walletSnapshot;
    if(snap){
      const dc=(Number(state.coins)||0)-(Number(snap.coins)||0),dg=(Number(state.gems)||0)-(Number(snap.gems)||0);

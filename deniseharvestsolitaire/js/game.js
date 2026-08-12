@@ -1,7 +1,7 @@
 window.DSH=window.DSH||{};
 document.addEventListener('DOMContentLoaded',()=>{
  const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'],suits=['♣','♦','♥','♠'];
- let state=DSH.Save.load(),game={},history=[],lastExposed=new Set(),locked=false,handStarted=false,handComplete=false,devUnlocked=false,devTrophyChecksPaused=false,mechanicNoticeQueue=[],mechanicNoticeActive=false;
+ let state=DSH.Save.load(),game={},history=[],lastExposed=new Set(),locked=false,handStarted=false,handComplete=false,devUnlocked=false,devTrophyChecksPaused=false,mechanicNoticeQueue=[],mechanicNoticeActive=false,completionFailureCount=0,normalHandSeed=0,normalHandSeedLevel=0;
  DSH.Audio.bindState(state);DSH.Farm.bind(state,commit,msg,showRewardToast);
 
  function shuffle(a,rng=Math.random){for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -38,18 +38,28 @@ document.addEventListener('DOMContentLoaded',()=>{
  function dailyPowerLabel(power){return power==='windmill'?'1 Windmill 🌬️':power==='gate'?'1 Magic Gate 🚪':"1 Rosie Rescue 🐾"}
 
  function playable(card){return card?.wild||game.waste?.wild||Math.abs(card.r-game.waste.r)===1||Math.abs(card.r-game.waste.r)===12}
- function blocked(c){if(c.bonusUnlocked)return false;return c.blockers.some(id=>{const b=game.layout.find(x=>x.id===id);return b&&!b.removed})}
+ function blocked(c){if(c?.bonusUnlocked)return false;const blockers=Array.isArray(c?.blockers)?c.blockers:(Array.isArray(c?.coveredBy)?c.coveredBy:[]);return blockers.some(id=>{const b=game.layout?.find(x=>x.id===id);return b&&!b.removed})}
  function exposed(){return game.layout.filter(c=>!c.removed&&!blocked(c))}
  function tableauCleared(){return Array.isArray(game.layout)&&game.layout.length>0&&game.layout.every(c=>c.removed)}
  function finishIfCleared(source=''){
    if(!handStarted||handComplete||game.completing||!tableauCleared())return false;
+   const stateBackup=JSON.stringify(state),gameBackup=JSON.stringify(game),rawBackup=DSH.Save.rawPrimary?.()??null;
    game.completing=true;
-   try{win();return true}
+   try{win();completionFailureCount=0;return true}
    catch(err){
-     game.completing=false;handComplete=false;handStarted=true;
      console.error('Completion flow failed',source,err);
-     msg('The field is clear. Retrying completion…');
-     setTimeout(()=>finishIfCleared('retry'),60);
+     state=JSON.parse(stateBackup);game=JSON.parse(gameBackup);game.completing=false;handComplete=false;handStarted=true;
+     DSH.Audio.bindState(state);DSH.Farm.bind(state,commit,msg,showRewardToast);
+     try{if(rawBackup===null)localStorage.removeItem(DSH.Save.KEY);else localStorage.setItem(DSH.Save.KEY,rawBackup)}catch(e){}
+     completionFailureCount++;
+     if(completionFailureCount<=1){
+       msg('The field is clear. Retrying completion once…');
+       setTimeout(()=>finishIfCleared('retry'),60);
+     }else{
+       completionFailureCount=0;handStarted=false;handComplete=false;locked=false;game={};history=[];lastExposed=new Set();
+       document.getElementById('app').classList.add('menu-mode');close('winOverlay');close('pauseOverlay');renderAllBalances();open('mainMenuOverlay');
+       showRewardToast('Completion Recovered','The reward screen hit an error, so the level was safely rolled back instead of duplicating rewards. Your saved progress is intact.','🛠️');
+     }
      return true;
    }
  }
@@ -62,7 +72,15 @@ document.addEventListener('DOMContentLoaded',()=>{
    const req=c.specialRequires||[];
    if(c.special==='vine')return req.length?specialProgress(c)<1:false;
    if(c.special==='crate')return req.length?specialProgress(c)<Math.min(2,req.length):false;
-   if(c.special==='chain')return (game.streak||0)<DSH.Config.specialCards.chainRequiredStreak;
+   if(c.special==='chain'){
+     const need=DSH.Config.specialCards.chainRequiredStreak;
+     if(game.chainUnlocked||(game.streak||0)>=need)return false;
+     // Safety release: a Chain should be a streak challenge, never a permanent
+     // deadlock. If no OTHER exposed, non-Chain card can currently be acted on,
+     // the Chain becomes available so the hand can continue.
+     const route=game.layout.some(x=>x.id!==c.id&&!x.removed&&!blocked(x)&&x.special!=='chain'&&!specialLocked(x));
+     return route;
+   }
    if(c.special==='barnlock')return (c.specialRequires||[]).some(id=>{const k=game.layout.find(x=>x.id===id);return k&&!k.removed});
    if(c.special==='sleeping')return (game.cardsClearedThisHand||0)<DSH.Config.specialCards.sleepingClears;
    return false;
@@ -78,7 +96,10 @@ document.addEventListener('DOMContentLoaded',()=>{
  function snapshot(){
    history.push(JSON.stringify({game,state:{
      bestStreak:state.bestStreak,stats:state.stats,windmills:state.windmills,coins:state.coins,gems:state.gems,
-     magicGates:state.magicGates,rosieRescues:state.rosieRescues,rosieHappiness:state.rosieHappiness
+     magicGates:state.magicGates,rosieRescues:state.rosieRescues,rosieHappiness:state.rosieHappiness,
+     lifetime:state.lifetime,_walletSnapshot:state._walletSnapshot,
+     farmhouseTrophies:state.farmhouseTrophies,farmhouseTierClaims:state.farmhouseTierClaims,
+     farmhouseTrophyRewardsClaimed:state.farmhouseTrophyRewardsClaimed,farmhouseTierRewardsClaimed:state.farmhouseTierRewardsClaimed
    }}));
    if(history.length>15)history.shift();
  }
@@ -97,13 +118,14 @@ document.addEventListener('DOMContentLoaded',()=>{
  function prepareSpecialCards(layout){
    layout.forEach(c=>{if(c.special==='rainbow')c.card={r:null,s:null,wild:true}});
  }
+ function breakHarvestChain(){game.harvestChainGroup=null;game.harvestChainCount=0}
  function handleHarvestChain(c){
-   if(c.special!=='harvestchain'){game.harvestChainGroup=null;game.harvestChainCount=0;return}
+   if(c.special!=='harvestchain'){breakHarvestChain();return}
    if(game.harvestChainGroup===c.chainGroup)game.harvestChainCount=(game.harvestChainCount||0)+1;
    else{game.harvestChainGroup=c.chainGroup;game.harvestChainCount=1}
    const n=game.harvestChainCount,S=DSH.Config.specialCards;
    if(n===2){state.coins+=S.harvestChain2Coins;state.stats.harvestChainCoins=(state.stats.harvestChainCoins||0)+S.harvestChain2Coins;showRewardToast('Harvest Chain!',`2 linked cards • +${S.harvestChain2Coins} coins`,'🌾')}
-   if(n>=3){state.coins+=S.harvestChain3Coins;state.stats.harvestChainCoins=(state.stats.harvestChainCoins||0)+S.harvestChain3Coins;state.stats.harvestChainsCompleted=(state.stats.harvestChainsCompleted||0)+1;game.streak++;showRewardToast('Full Harvest Chain!',`3 linked cards • +${S.harvestChain3Coins} coins • +1 streak`,'🌾')}
+   if(n>=3){state.coins+=S.harvestChain3Coins;state.stats.harvestChainCoins=(state.stats.harvestChainCoins||0)+S.harvestChain3Coins;state.stats.harvestChainsCompleted=(state.stats.harvestChainsCompleted||0)+1;game.streak++;if(game.streak>=DSH.Config.specialCards.chainRequiredStreak)game.chainUnlocked=true;showRewardToast('Full Harvest Chain!',`3 linked cards • +${S.harvestChain3Coins} coins • +1 streak`,'🌾')}
  }
  function waterExposedCard(){
    const candidates=exposed().filter(x=>!x.removed&&!x.special&&!x.card?.wild);
@@ -113,8 +135,20 @@ document.addEventListener('DOMContentLoaded',()=>{
    const bees=exposed().filter(x=>x.special==='bee');if(!bees.length)return false;
    const bee=bees[Math.floor(Math.random()*bees.length)],others=exposed().filter(x=>x.id!==bee.id&&!x.special);
    if(!others.length)return false;const target=others[Math.floor(Math.random()*others.length)];
-   const bx=bee.x,by=bee.y,br=bee.row;bee.x=target.x;bee.y=target.y;bee.row=target.row;target.x=bx;target.y=by;target.row=br;
+   // Nodes are structural tableau slots: their blocker relationships belong to
+   // the position, not the card. Swap the card contents + Bee marker instead of
+   // moving node coordinates, otherwise a later reveal can appear underneath
+   // the wrong visible card.
+   const beeCard=bee.card;bee.card=target.card;target.card=beeCard;
+   delete bee.special;target.special='bee';
    state.stats.beeBuzzes=(state.stats.beeBuzzes||0)+1;return true;
+ }
+ function blockerAncestorCountForCard(card,seen=new Set()){
+   for(const id of card?.blockers||[]){
+     if(seen.has(id))continue;seen.add(id);
+     blockerAncestorCountForCard(game.layout?.find(c=>c.id===id),seen);
+   }
+   return seen.size;
  }
  function showLevelPreview(built){
    const e=document.getElementById('levelPreview');if(!e)return;
@@ -182,7 +216,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  }
  const MISSION_DEFS=[
    {id:'streak',icon:'🔥',name:'Streak Farmer',minLevel:1,desc:t=>`Build a ${t}-card streak.`,target:l=>Math.min(8,4+Math.floor(l/12)),progress:m=>Math.min(game.levelBestStreak||0,m.target),done:m=>(game.levelBestStreak||0)>=m.target},
-   {id:'stock',icon:'🃏',name:'Stock Saver',minLevel:2,desc:t=>`Finish with at least ${t} draw cards left.`,target:l=>Math.min(6,3+Math.floor(l/18)),progress:m=>Math.min(game.stock.length,m.target),done:m=>game.stock.length>=m.target},
+   {id:'stock',icon:'🃏',name:'Stock Saver',minLevel:1,desc:t=>`Finish with at least ${t} draw cards left.`,target:l=>Math.min(6,3+Math.floor(l/18)),progress:m=>Math.min(game.stock.length,m.target),done:m=>game.stock.length>=m.target},
    {id:'noPower',icon:'💪',name:'No Help Needed',minLevel:3,desc:()=>`Win without using a Magic Pouch power.`,target:()=>1,progress:m=>(game.powersUsed||0)===0?1:0,done:m=>(game.powersUsed||0)===0,failEarly:m=>(game.powersUsed||0)>0},
    {id:'noBuy',icon:'🪙',name:'Frugal Farmer',minLevel:4,desc:()=>`Win without buying extra draws.`,target:()=>1,progress:m=>(game.drawPacksBought||0)===0?1:0,done:m=>(game.drawPacksBought||0)===0,failEarly:m=>(game.drawPacksBought||0)>0},
    {id:'natural',icon:'🌿',name:'Natural Harvest',minLevel:5,desc:()=>`Clear the field without Shears, Windmills, Gates, Rosie, Dice, Seed or Sun Charm.`,target:()=>1,progress:m=>(game.powersUsed||0)===0?1:0,done:m=>(game.powersUsed||0)===0,failEarly:m=>(game.powersUsed||0)>0},
@@ -190,10 +224,10 @@ document.addEventListener('DOMContentLoaded',()=>{
    {id:'specials',icon:'✨',name:'Treasure Hunter',minLevel:8,requires:b=>(b.obstacleCount||0)>0,desc:t=>`Clear ${t} special card${t===1?'':'s'} by ordinary card play.`,target:(l,b)=>Math.min(3,Math.max(1,b.obstacleCount||1)),progress:m=>Math.min(game.missionMetrics?.naturalSpecials||0,m.target),done:m=>(game.missionMetrics?.naturalSpecials||0)>=m.target},
    {id:'efficient',icon:'🎯',name:'Clean Sweep',minLevel:6,desc:t=>`Clear the last ${t} field cards without drawing.`,target:l=>Math.min(5,3+Math.floor(l/25)),progress:m=>Math.min(game.missionMetrics?.endRun||0,m.target),done:m=>(game.missionMetrics?.endRun||0)>=m.target}
  ];
- function buildMissionChoices(level,built){
+ function buildMissionChoices(level,built,rng=Math.random){
    let pool=MISSION_DEFS.filter(d=>level>=d.minLevel&&(!d.requires||d.requires(built)));
    // Avoid redundant "no powers" missions appearing together.
-   shuffle(pool);const out=[];
+   shuffle(pool,rng);const out=[];
    for(const d of pool){
      if(out.length>=3)break;
      if((d.id==='noPower'||d.id==='natural')&&out.some(x=>x.id==='noPower'||x.id==='natural'))continue;
@@ -216,28 +250,47 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(game.dailyMode||!game.mission){chip.classList.remove('show','failed','complete');return}
    chip.classList.add('show');chip.classList.toggle('failed',!!game.missionFailed);chip.classList.toggle('complete',!!game.missionCompleted);
    setTextIfPresent('missionChipTitle',`${game.mission.icon} ${game.mission.name}`);
-   setTextIfPresent('missionChipProgress',game.missionCompleted?'COMPLETE ✓':missionProgressText());
+   setTextIfPresent('missionChipProgress',game.missionFailed?'FAILED ✕':game.missionCompleted?'COMPLETE ✓':missionProgressText());
  }
  function updateMission(){
-   if(!game.mission||game.dailyMode||game.missionCompleted||game.missionFailed)return;
-   const d=missionDef(game.mission.id);
-   if(d?.failEarly?.(game.mission)){game.missionFailed=true;renderMissionChip();showRewardToast('Mission Failed',`${game.mission.name} — you chose it, and now it's gone!`,'📋');return}
-   if(d?.done(game.mission)){game.missionCompleted=true;renderMissionChip();showRewardToast('Mission Complete!',`${game.mission.name} accomplished — finish the level to collect.`,'📋')}
-   else renderMissionChip();
+   if(!game.mission||game.dailyMode||game.missionFailed)return;
+   const d=missionDef(game.mission.id),wasComplete=!!game.missionCompleted;
+   if(d?.failEarly?.(game.mission)){game.missionFailed=true;game.missionCompleted=false;renderMissionChip();showRewardToast('Mission Failed',`${game.mission.name} — the requirement was broken.`,'📋');return}
+   const done=!!d?.done(game.mission);game.missionCompleted=done;
+   if(done&&!wasComplete)showRewardToast('Mission Complete!',`${game.mission.name} accomplished — finish the level to collect.`,'📋');
+   renderMissionChip();
  }
  function showMissionBoard(){
+   if(!handStarted||handComplete||game.dailyMode||game.missionChosen||document.getElementById('app').classList.contains('menu-mode'))return;
    const box=document.getElementById('missionChoices');if(!box)return;
    box.innerHTML=game.missionChoices.map((m,i)=>`<button class="missionChoice" data-mission-index="${i}"><span>${m.icon}</span><div><b>${m.name}</b><small>${m.desc}</small><strong>Reward: ${m.rewardCoins} coins + bonus chance</strong></div></button>`).join('');
    box.querySelectorAll('[data-mission-index]').forEach(b=>b.onclick=()=>chooseMission(Number(b.dataset.missionIndex)));
    open('missionOverlay');
  }
+ function isChallengeOfferLevel(){return !game.dailyMode&&state.level>=40&&state.level%7===0}
+ function applyChallengeMutators(){
+   game.challengeHand=true;
+   game.stock.splice(0,Math.min(2,Math.max(0,game.stock.length-18)));
+   const normal=game.layout.filter(c=>!c.special),heavy=normal[0]||null;
+   if(heavy)heavy.special='heavy';
+   const need=DSH.Config.specialCards.sleepingClears,requiredIds=new Set(game.layout.flatMap(c=>c.specialRequires||[]));
+   const sleep=normal.filter(c=>c!==heavy&&!requiredIds.has(c.id)&&blockerAncestorCountForCard(c)>=need)[0]||null;
+   if(sleep)sleep.special='sleeping';
+   [heavy,sleep].filter(Boolean).forEach(c=>state.collection.specials[c.special]=true);
+   game.obstacleLevel=game.obstacleLevel||!!heavy||!!sleep;
+ }
+ function maybeOfferChallenge(){
+   if(!isChallengeOfferLevel()||!handStarted||handComplete||!game.missionChosen||game.challengeDecisionMade||game.challengeOfferOpen)return;
+   if(mechanicNoticeActive||mechanicNoticeQueue.length)return;
+   game.challengeOfferOpen=true;setTimeout(()=>{if(handStarted&&!handComplete&&game.challengeOfferOpen&&!mechanicNoticeActive)document.getElementById('challengeOfferOverlay').classList.add('show')},90);
+ }
  function chooseMission(index){
    const m=game.missionChoices[index];if(!m)return;
    game.mission={...m};game.missionChosen=true;game.missionFailed=false;game.missionCompleted=false;
    state.stats.missionsChosen=(state.stats.missionsChosen||0)+1;DSH.Save.save(state);close('missionOverlay');renderMissionChip();
-   msg(`📋 Mission chosen: ${m.name}. ${m.desc}`);setTimeout(collectMechanicNotices,120);
+   msg(`📋 Mission chosen: ${m.name}. ${m.desc}`);setTimeout(()=>{collectMechanicNotices();maybeOfferChallenge()},120);
  }
- function skipMission(){game.mission=null;game.missionChosen=true;close('missionOverlay');renderMissionChip();msg('No mission this level — just clear the field.');setTimeout(collectMechanicNotices,120)}
+ function skipMission(){game.mission=null;game.missionChosen=true;close('missionOverlay');renderMissionChip();msg('No mission this level — just clear the field.');setTimeout(()=>{collectMechanicNotices();maybeOfferChallenge()},120)}
  function missionReward(){
    const m=game.mission;if(!m)return null;
    const d=missionDef(m.id),success=!game.missionFailed&&!!d?.done(m);
@@ -247,45 +300,75 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(Math.random()<DSH.Config.missions.gemChance){state.gems++;gems=1;state.stats.missionGemsEarned=(state.stats.missionGemsEarned||0)+1}
    if(Math.random()<DSH.Config.missions.powerChance){
      const roll=Math.floor(Math.random()*3);
-     if(roll===0){state.windmills++;power='Windmill 🌬️'}
-     else if(roll===1){state.magicGates++;power='Magic Gate 🚪'}
-     else{state.rosieRescues++;power='Rosie Rescue 🐾'}
+     if(roll===0){state.windmills++;state.stats.windmillsFound=(state.stats.windmillsFound||0)+1;power='Windmill 🌬️'}
+     else if(roll===1){state.magicGates++;state.stats.magicGatesFound=(state.stats.magicGatesFound||0)+1;power='Magic Gate 🚪'}
+     else{state.rosieRescues++;state.stats.rosieRescuesFound=(state.stats.rosieRescuesFound||0)+1;power='Rosie Rescue 🐾'}
      state.stats.missionPowersEarned=(state.stats.missionPowersEarned||0)+1;
    }
    return{success:true,name:m.name,coins,gems,power};
  }
- function startLevel(){
+ function startLevelUnsafe(restarting=false){
    document.getElementById('nextBtn').textContent='Next Level';
+   setTextIfPresent('levelNum',state.level);setTextIfPresent('formationName','Preparing field…');setTextIfPresent('stockCount','—');
    document.getElementById('app').classList.remove('menu-mode');
-   const previousMission=(game&&!game.dailyMode&&game.mission&&game.missionLevel===state.level)?{...game.mission}:null;
-   const previousChoices=(game&&!game.dailyMode&&game.missionChoices&&game.missionLevel===state.level)?game.missionChoices.map(x=>({...x})):null;
-   const d=deck(),built=DSH.Levels.build(state.level);
-   if((state.rosieAdventureFinds?.feather||0)>0){state.rosieAdventureFinds.feather--;built.stockTarget=Math.min(46,built.stockTarget+3);setTimeout(()=>msg('🪶 Curious Feather: +3 stock cards this level!'),250)}
-   const weatherFx=DSH.Weather.effects(state);built.stockTarget=Math.min(DSH.Config.difficulty.weatherCeiling,built.stockTarget+(weatherFx.extraStock||0));
-   const ordinary=built.cards.filter(c=>!c.special);if(weatherFx.goldBonus&&ordinary.length&&Math.random()<weatherFx.goldBonus)ordinary[0].special='gold';if(weatherFx.wateringBonus&&ordinary[1]&&Math.random()<weatherFx.wateringBonus)ordinary[1].special='watering';if(weatherFx.rainbowBonus&&ordinary[2]&&Math.random()<weatherFx.rainbowBonus)ordinary[2].special='rainbow';if(weatherFx.storm&&ordinary[3]&&Math.random()<.35)ordinary[3].special='mud';
-   built.cards.forEach(c=>c.card=d.pop());assignWilds(built.cards,state.level);prepareSpecialCards(built.cards);
+   const sameRetry=!!restarting&&normalHandSeedLevel===state.level&&normalHandSeed!==0;
+   if(!sameRetry){normalHandSeed=((Date.now()&0xffffffff)^Math.floor(Math.random()*0xffffffff)^Math.imul(state.level,2654435761))>>>0;if(!normalHandSeed)normalHandSeed=1;normalHandSeedLevel=state.level}
+   const rng=mulberry32(normalHandSeed);
+   const previousMissionChosen=sameRetry&&game&&!game.dailyMode&&game.missionLevel===state.level?!!game.missionChosen:false;
+   const previousMission=(previousMissionChosen&&game.mission)?{...game.mission}:null;
+   const previousChoices=(sameRetry&&game.missionChoices&&game.missionLevel===state.level)?game.missionChoices.map(x=>({...x})):null;
+   const previousChallengeDecision=sameRetry?!!game.challengeDecisionMade:false,previousChallengeHand=sameRetry?!!game.challengeHand:false;
+   const previousFeather=sameRetry?!!game.featherActive:false,previousWeatherFx=sameRetry&&game.handWeatherFx?game.handWeatherFx:null;
+   const d=deck(rng),built=DSH.Levels.buildSafe?DSH.Levels.buildSafe(state.level,rng):DSH.Levels.build(state.level,rng);
+   const featherActive=sameRetry?previousFeather:(state.rosieAdventureFinds?.feather||0)>0;
+   if(featherActive){built.stockTarget=Math.min(46,built.stockTarget+3);setTimeout(()=>msg('🪶 Curious Feather: +3 stock cards active on this hand!'),250)}
+   const weatherFx=previousWeatherFx||DSH.Weather.effects(state);built.stockTarget=Math.min(DSH.Config.difficulty.weatherCeiling,built.stockTarget+(weatherFx.extraStock||0));
+   const ordinary=built.cards.filter(c=>!c.special);if(weatherFx.goldBonus&&ordinary.length&&rng()<weatherFx.goldBonus)ordinary[0].special='gold';if(weatherFx.wateringBonus&&ordinary[1]&&rng()<weatherFx.wateringBonus)ordinary[1].special='watering';if(weatherFx.rainbowBonus&&ordinary[2]&&rng()<weatherFx.rainbowBonus)ordinary[2].special='rainbow';if(weatherFx.storm&&ordinary[3]&&rng()<.35)ordinary[3].special='mud';
+   built.cards.forEach(c=>c.card=d.pop());assignWilds(built.cards,state.level,rng);prepareSpecialCards(built.cards);
    state.collection=state.collection||{specials:{},crops:{},regions:{0:true},powers:{},rosie:{}};
    built.cards.forEach(c=>{if(c.special)state.collection.specials[c.special]=true});
    const waste=d.pop();
    const desired=built.stockTarget||DSH.Levels.stockTarget(state.level,built.cards.length);
    let stock=d.slice(-Math.min(desired,d.length));
    // If a large formation consumed too much of one deck, top up from a fresh shuffled deck.
-   if(stock.length<desired){const extra=deck();while(stock.length<desired&&extra.length)stock.unshift(extra.pop())}
-   game={layout:built.cards,formation:built.name,stock,waste,streak:0,levelBestStreak:0,score:0,moves:0,awardedMilestones:[],
+   if(stock.length<desired){const extra=deck(rng);while(stock.length<desired&&extra.length)stock.unshift(extra.pop())}
+   // Always consume the mission-choice RNG stream, even on restart where the
+   // previously chosen choices are retained. This keeps every later random
+   // outcome (Lucky Hand bonus cards, etc.) identical on a restart.
+   const generatedMissionChoices=buildMissionChoices(state.level,built,rng);
+   game={layout:built.cards,formation:built.name,stock,waste,streak:0,levelBestStreak:0,chainUnlocked:false,score:0,moves:0,awardedMilestones:[],
      diceUsed:false,diceMode:false,diceRoll:0,seedUsed:false,seedUses:0,seedMode:false,sunUsed:false,
      gateMode:false,shearsMode:false,shearsCharges:built.obstacleCount?DSH.Config.shears.startOnObstacleLevel:0,shearsMeter:0,shearsGenerated:built.obstacleCount?DSH.Config.shears.startOnObstacleLevel:0,
      powersUsed:0,drawPacksBought:0,obstacleLevel:built.obstacleCount>0,obstacleStockBonus:built.obstacleStockBonus||0,milestone:!!built.milestone,
-     reserve:null,reserveUsed:false,reserveEverUsed:false,cardsClearedThisHand:0,luckyHand:Math.random()<DSH.Config.specialCards.luckyHandChance,challengeHand:false,previewChoiceUsed:false,
-     dailyMode:false,mission:previousMission,missionChoices:previousChoices||buildMissionChoices(state.level,built),missionChosen:!!previousMission,missionFailed:false,missionCompleted:false,missionLevel:state.level,
+     reserve:null,reserveUsed:false,reserveEverUsed:false,cardsClearedThisHand:0,challengeDecisionMade:previousChallengeDecision,challengeOfferOpen:false,luckyHand:rng()<DSH.Config.specialCards.luckyHandChance,challengeHand:false,previewChoiceUsed:false,
+     previewChoiceOpen:false,handWeatherFx:weatherFx,dailyMode:false,mission:previousMission,missionChoices:previousChoices||generatedMissionChoices,missionChosen:previousMissionChosen,missionFailed:false,missionCompleted:false,missionLevel:state.level,featherActive,
      missionMetrics:{runs3:0,naturalSpecials:0,endRun:0,lastRemaining:built.cards.length}};
-   if(game.luckyHand){for(let i=0;i<3;i++)game.stock.push(makeBonusCard());const normal=game.layout.filter(c=>!c.special);if(normal.length)normal[Math.floor(Math.random()*normal.length)].card={r:null,s:null,wild:true}}
-   history=[];lastExposed=new Set(exposed().map(c=>c.id));locked=false;handStarted=true;handComplete=false;
-   close('winOverlay');close('mainMenuOverlay');render();showLevelPreview(built);
+   if(game.luckyHand){for(let i=0;i<3;i++)game.stock.push(makeBonusCard(rng));const normal=game.layout.filter(c=>!c.special);if(normal.length)normal[Math.floor(rng()*normal.length)].card={r:null,s:null,wild:true}}
+   if(previousChallengeHand)applyChallengeMutators();
+   if(featherActive&&!sameRetry)state.rosieAdventureFinds.feather--;
+   history=[];lastExposed=new Set(exposed().map(c=>c.id));locked=false;handStarted=true;handComplete=false;completionFailureCount=0;DSH.Save.save(state);
+   close('winOverlay');close('mainMenuOverlay');render();showLevelPreview(built);if(built.recovered)showRewardToast('Field Recovered',`Level ${state.level} used a safe fallback layout because the generated board failed validation.`,'🛠️');
    if(built.milestone)showRewardToast(`🏆 Level ${state.level} Milestone`,`${milestoneName(state.level)} • Bonus stock + boosted clear reward`,'🏆');
    else if(game.luckyHand)showRewardToast('✨ LUCKY HAND!','+3 stock cards and a bonus Wild are hiding in this hand.','🌟');
-   if(state.level>=40&&state.level%7===0)setTimeout(()=>document.getElementById('challengeOfferOverlay').classList.add('show'),260);
-   if(previousMission){msg(`📋 Mission retry: ${previousMission.name}. Same mission — no rerolling after choosing.`);renderMissionChip()}
-   else{msg('Choose one optional mission before the level begins.');setTimeout(showMissionBoard,180)}
+   if(previousMissionChosen){
+     msg(previousMission?`📋 Mission retry: ${previousMission.name}. Same mission — no rerolling after choosing.`:'📋 Mission retry: you skipped the Mission Board on this hand.');
+     renderMissionChip();setTimeout(maybeOfferChallenge,120)
+   }else{msg('Choose one optional mission before the level begins.');setTimeout(showMissionBoard,180)}
+ }
+ function recoverStartFailure(kind,err){
+   console.error(`${kind} start failed`,err);handStarted=false;handComplete=false;locked=false;completionFailureCount=0;game={};history=[];lastExposed=new Set();mechanicNoticeQueue=[];mechanicNoticeActive=false;
+   document.getElementById('previewChoiceOverlay').classList.remove('show');document.getElementById('challengeOfferOverlay').classList.remove('show');
+   document.getElementById('app').classList.add('menu-mode');document.querySelectorAll('.sectionOverlay').forEach(x=>x.classList.remove('open'));close('pauseOverlay');close('winOverlay');close('missionOverlay');close('mechanicNoticeOverlay');
+   renderAllBalances();open('mainMenuOverlay');showRewardToast('Field Load Recovered',`${kind} could not start, so you were returned safely to the Main Menu. Your saved progress was preserved.`,'🛠️');
+ }
+ function startLevel(restarting=false){
+   const stateBackup=JSON.stringify(state),rawBackup=DSH.Save.rawPrimary?.()??null;
+   try{return startLevelUnsafe(restarting)}
+   catch(err){
+     state=JSON.parse(stateBackup);DSH.Audio.bindState(state);DSH.Farm.bind(state,commit,msg,showRewardToast);
+     try{if(rawBackup===null)localStorage.removeItem(DSH.Save.KEY);else localStorage.setItem(DSH.Save.KEY,rawBackup)}catch(e){}
+     recoverStartFailure(`Level ${state.level}`,err);return false
+   }
  }
  function renderDailyUI(){
    const d=dailyDescriptor(),claimed=state.dailyLastClaimDate===d.key,C=DSH.Config.dailyChallenge;
@@ -299,24 +382,33 @@ document.addEventListener('DOMContentLoaded',()=>{
    const btn=document.getElementById('dailyPlayBtn');if(btn)btn.textContent=(game.dailyMode&&game.dailyKey===d.key&&handStarted&&!handComplete)?'Resume Daily Challenge':(claimed?'Replay Today’s Challenge':'Play Today’s Challenge');
    const card=document.getElementById('dailyStatusCard');if(card)card.classList.toggle('claimed',claimed);
  }
- function startDailyChallenge(){
+ function startDailyChallengeUnsafe(){
    const desc=dailyDescriptor(),C=DSH.Config.dailyChallenge,rng=mulberry32(desc.seed);
    document.getElementById('app').classList.remove('menu-mode');close('mainMenuOverlay');close('dailyOverlay');close('winOverlay');
-   const built=DSH.Levels.build(desc.level,rng),d=deck(rng);
+   const built=DSH.Levels.buildSafe?DSH.Levels.buildSafe(desc.level,rng):DSH.Levels.build(desc.level,rng),d=deck(rng);
    built.cards.forEach(c=>c.card=d.pop());assignWilds(built.cards,desc.level,rng);prepareSpecialCards(built.cards);
    state.collection=state.collection||{specials:{},crops:{},regions:{0:true},powers:{},rosie:{}};
    built.cards.forEach(c=>{if(c.special)state.collection.specials[c.special]=true});
    const waste=d.pop(),desired=Math.min(41,(built.stockTarget||DSH.Levels.stockTarget(desc.level,built.cards.length))+C.extraStock);
    let stock=d.slice(-Math.min(desired,d.length));
    if(stock.length<desired){const extra=deck(rng);while(stock.length<desired&&extra.length)stock.unshift(extra.pop())}
-   game={layout:built.cards,formation:built.name,stock,waste,streak:0,levelBestStreak:0,score:0,moves:0,awardedMilestones:[],
+   game={layout:built.cards,formation:built.name,stock,waste,streak:0,levelBestStreak:0,chainUnlocked:false,score:0,moves:0,awardedMilestones:[],
      diceUsed:false,diceMode:false,diceRoll:0,seedUsed:false,seedUses:0,seedMode:false,sunUsed:false,
      gateMode:false,shearsMode:false,shearsCharges:built.obstacleCount?DSH.Config.shears.startOnObstacleLevel:0,shearsMeter:0,shearsGenerated:built.obstacleCount?DSH.Config.shears.startOnObstacleLevel:0,
      powersUsed:0,drawPacksBought:0,obstacleLevel:built.obstacleCount>0,obstacleStockBonus:built.obstacleStockBonus||0,
-     dailyMode:true,dailyKey:desc.key,dailySeed:desc.seed,dailyChallengeLevel:desc.level,dailyRewardPower:desc.power};
-   history=[];lastExposed=new Set(exposed().map(c=>c.id));locked=false;handStarted=true;handComplete=false;
+     previewChoiceOpen:false,challengeDecisionMade:true,challengeOfferOpen:false,dailyMode:true,dailyKey:desc.key,dailySeed:desc.seed,dailyChallengeLevel:desc.level,dailyRewardPower:desc.power};
+   history=[];lastExposed=new Set(exposed().map(c=>c.id));locked=false;handStarted=true;handComplete=false;completionFailureCount=0;
    state.stats.dailyChallengesStarted=(state.stats.dailyChallengesStarted||0)+1;DSH.Save.save(state);
-   render();showLevelPreview(built);msg('📅 Daily Challenge: this board stays the same all day. Clear it to claim today’s reward.');setTimeout(collectMechanicNotices,350);
+   render();showLevelPreview(built);if(built.recovered)showRewardToast('Daily Field Recovered','Today’s generated field failed validation, so a safe deterministic fallback was used.','🛠️');msg('📅 Daily Challenge: this board stays the same all day. Clear it to claim today’s reward.');setTimeout(collectMechanicNotices,350);
+ }
+ function startDailyChallenge(){
+   const stateBackup=JSON.stringify(state),rawBackup=DSH.Save.rawPrimary?.()??null;
+   try{return startDailyChallengeUnsafe()}
+   catch(err){
+     state=JSON.parse(stateBackup);DSH.Audio.bindState(state);DSH.Farm.bind(state,commit,msg,showRewardToast);
+     try{if(rawBackup===null)localStorage.removeItem(DSH.Save.KEY);else localStorage.setItem(DSH.Save.KEY,rawBackup)}catch(e){}
+     recoverStartFailure('Daily Challenge',err);return false
+   }
  }
  function ensureDaily(){
    const d=dailyDescriptor();
@@ -325,7 +417,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    }
    startDailyChallenge();
  }
- function restartCurrent(){close('pauseOverlay');if(game.dailyMode)startDailyChallenge();else startLevel()}
+ function restartCurrent(){close('pauseOverlay');if(game.dailyMode)startDailyChallenge();else startLevel(true)}
  function grantDailyPower(power){
    if(power==='windmill'){state.windmills++;state.stats.windmillsFound=(state.stats.windmillsFound||0)+1;return'1 Windmill 🌬️'}
    if(power==='gate'){state.magicGates=(state.magicGates||0)+1;state.stats.magicGatesFound=(state.stats.magicGatesFound||0)+1;return'1 Magic Gate 🚪'}
@@ -382,11 +474,19 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(game.diceMode){useDiceOnCard(c);return}
    if(game.seedMode){useSeedOnCard(c);return}
    if(specialLocked(c)){DSH.Audio.play.bad();shakeCard(id);msg(specialLockMessage(c));return}
-   if(!playable(c.card)){DSH.Audio.play.bad();shakeCard(id);msg('That card is not one rank higher or lower.');return}
-   if(c.special==='heavy'&&(c.heavyHits||0)<1){snapshot();c.heavyHits=1;game.streak=0;game.moves++;DSH.Audio.play.crack();render(true);msg('🪨 Heavy Card cracked! Match it once more to clear it.');return}
+   if(!playable(c.card)){
+     DSH.Audio.play.bad();shakeCard(id);
+     if(game.waste?.wild)msg('🌈 The active Wild accepts any exposed card.');
+     else{
+       const lo=(game.waste.r+12)%13,hi=(game.waste.r+1)%13;
+       msg(`Need ${ranks[lo]} or ${ranks[hi]} — ${ranks[c.card.r]} cannot play on ${ranks[game.waste.r]}.`);
+     }
+     return
+   }
+   if(c.special==='heavy'&&(c.heavyHits||0)<1){snapshot();c.heavyHits=1;game.streak=0;breakHarvestChain();game.moves++;DSH.Audio.play.crack();render(true);msg('🪨 Heavy Card cracked! Match it once more to clear it.');return}
    snapshot();locked=true;
    animateCardToWaste(id,()=>{
-     c.removed=true;game.waste=c.card;game.streak++;game.moves++;
+     c.removed=true;game.waste=c.card;game.streak++;if(game.streak>=DSH.Config.specialCards.chainRequiredStreak)game.chainUnlocked=true;game.moves++;
      game.score+=100*(1+Math.floor(game.streak/4))+game.streak*15;
      state.bestStreak=Math.max(state.bestStreak,game.streak);game.levelBestStreak=Math.max(game.levelBestStreak||0,game.streak);state.stats.cardsCleared++;game.cardsClearedThisHand=(game.cardsClearedThisHand||0)+1;
      if(c.card.wild){state.stats.wildsPlayed++;DSH.Audio.play.wild()}else{DSH.Audio.play.card();if(game.streak>=3)DSH.Audio.play.streak(Math.min(game.streak,9))}
@@ -436,38 +536,78 @@ document.addEventListener('DOMContentLoaded',()=>{
      for(let i=0;i<12;i++){const c=document.createElement('span');c.className='bonusCoin';c.style.left=(45+Math.random()*10)+'%';c.style.top=(43+Math.random()*8)+'%';c.style.setProperty('--bx',((Math.random()-.5)*260)+'px');c.style.setProperty('--by',(-40-Math.random()*170)+'px');layer.appendChild(c);setTimeout(()=>c.remove(),1000)}
    }
  }
+ function stockDepthForCount(n){
+   if(n<=0)return 0;if(n===1)return 1;if(n<=4)return 2;if(n<=8)return 3;if(n<=14)return 4;return 5;
+ }
+ function animateStockDraw(done){
+   if(state.settings.reducedMotion){done();return}
+   const stock=document.querySelector('#stockWrap .stockCard'),waste=document.getElementById('waste');
+   if(!stock||!waste){done();return}
+   const a=stock.getBoundingClientRect(),b=waste.getBoundingClientRect(),ghost=document.createElement('div');
+   ghost.className='stockDrawGhost';
+   ghost.style.left=a.left+'px';ghost.style.top=a.top+'px';ghost.style.width=a.width+'px';ghost.style.height=a.height+'px';
+   ghost.style.setProperty('--draw-x',(b.left+b.width/2-(a.left+a.width/2))+'px');
+   ghost.style.setProperty('--draw-y',(b.top+b.height/2-(a.top+a.height/2))+'px');
+   (document.getElementById('app')||document.body).appendChild(ghost);
+   requestAnimationFrame(()=>ghost.classList.add('fly'));
+   setTimeout(()=>{ghost.remove();done()},260);
+ }
  function draw(){
    if(locked||handComplete)return;
+   if(game.previewChoiceOpen){msg('Choose one of the two preview cards first.');return}
    if(finishIfCleared('draw'))return;
    if(!game.stock.length){render();DSH.Audio.play.bad();msg('No cards remain in the draw pile.');return}
    if(!game.previewChoiceUsed&&game.stock.length>=2&&Math.random()<DSH.Config.specialCards.previewChoiceChance){showPreviewChoice();return}
-   snapshot();game.waste=game.stock.pop();game.streak=0;game.harvestChainGroup=null;game.harvestChainCount=0;game.moves++;if(game.missionMetrics)game.missionMetrics.endRun=0;const buzzed=buzzBee();updateMission();DSH.Audio.play.draw();render(true);msg(buzzed?'🐝 A Bee buzzed to a new field position!':'New active card.');
+   snapshot();locked=true;DSH.Audio.play.draw();
+   animateStockDraw(()=>{
+     game.waste=game.stock.pop();game.streak=0;breakHarvestChain();game.moves++;if(game.missionMetrics)game.missionMetrics.endRun=0;
+     const buzzed=buzzBee();updateMission();if(buzzed)DSH.Save.save(state);locked=false;render(true);
+     msg(buzzed?'🐝 A Bee buzzed to a new field position!':'New active card.');
+   });
  }
  function cardLabel(card){return card.wild?'🌈 WILD':`${ranks[card.r]}${suits[card.s]}`}
  function showPreviewChoice(){
+   if(game.previewChoiceOpen||game.stock.length<2)return;
    const a=game.stock[game.stock.length-1],b=game.stock[game.stock.length-2],o=document.getElementById('previewChoiceOverlay');
+   game.previewChoiceOpen=true;
    document.getElementById('previewChoiceA').textContent=cardLabel(a);document.getElementById('previewChoiceB').textContent=cardLabel(b);o.classList.add('show');
    document.getElementById('previewChoiceA').onclick=()=>choosePreview(0);document.getElementById('previewChoiceB').onclick=()=>choosePreview(1);
  }
- function choosePreview(which){snapshot();const top=game.stock.pop(),second=game.stock.pop(),chosen=which?second:top,other=which?top:second;game.stock.unshift(other);game.waste=chosen;game.previewChoiceUsed=true;state.stats.previewChoicesUsed=(state.stats.previewChoicesUsed||0)+1;game.streak=0;game.moves++;document.getElementById('previewChoiceOverlay').classList.remove('show');DSH.Audio.play.draw();render(true);msg('🔮 Preview choice used — the other card returned deeper into the stock.');}
+ function choosePreview(which){
+   if(!game.previewChoiceOpen||game.stock.length<2){game.previewChoiceOpen=false;document.getElementById('previewChoiceOverlay').classList.remove('show');return}
+   snapshot();game.previewChoiceOpen=false;document.getElementById('previewChoiceOverlay').classList.remove('show');locked=true;DSH.Audio.play.draw();
+   animateStockDraw(()=>{
+     const top=game.stock.pop(),second=game.stock.pop(),chosen=which?second:top,other=which?top:second;
+     game.stock.unshift(other);game.waste=chosen;game.previewChoiceUsed=true;state.stats.previewChoicesUsed=(state.stats.previewChoicesUsed||0)+1;
+     game.streak=0;breakHarvestChain();game.moves++;if(game.missionMetrics)game.missionMetrics.endRun=0;updateMission();DSH.Save.save(state);
+     locked=false;render(true);msg('🔮 Preview choice used — the other card returned deeper into the stock.');
+   });
+ }
  function useReserve(){
-   if(locked||!handStarted||game.dailyMode)return;if(game.reserveUsed){msg('The Reserve Slot has already been spent this level.');return}
+   if(locked||!handStarted||game.dailyMode||game.previewChoiceOpen)return;if(game.reserveUsed){msg('The Reserve Slot has already been spent this level.');return}
+   if(!game.reserve&&!game.stock.length){msg('You need at least one stock card before parking the active card in Reserve.');return}
    snapshot();
    if(!game.reserve){
-     if(!game.stock.length){msg('You need at least one stock card before parking the active card in Reserve.');return}
-     game.reserve=game.waste;game.waste=game.stock.pop();game.reserveEverUsed=true;state.stats.reserveUses=(state.stats.reserveUses||0)+1;game.streak=0;DSH.Save.save(state);render();msg('🧠 Active card parked in Reserve. Tap Reserve later to swap it back in.');return;
+     game.reserve=game.waste;game.waste=game.stock.pop();game.reserveEverUsed=true;state.stats.reserveUses=(state.stats.reserveUses||0)+1;game.streak=0;breakHarvestChain();if(game.missionMetrics)game.missionMetrics.endRun=0;updateMission();DSH.Save.save(state);render();msg('🧠 Active card parked in Reserve. Tap Reserve later to swap it back in.');return;
    }
-   const old=game.waste;game.waste=game.reserve;game.reserve=old;game.reserveUsed=true;game.reserveEverUsed=true;game.streak=0;DSH.Save.save(state);render();msg('🧠 Reserve swap complete — your saved card is active.');
+   const old=game.waste;game.waste=game.reserve;game.reserve=old;game.reserveUsed=true;game.reserveEverUsed=true;game.streak=0;breakHarvestChain();DSH.Save.save(state);render();msg('🧠 Reserve swap complete — your saved card is active.');
  }
  function undo(){
-   if(locked)return;if(!history.length){msg('Nothing to undo.');return}
+   if(locked||game.previewChoiceOpen)return;if(!history.length){msg('Nothing to undo.');return}
    const s=JSON.parse(history.pop());game=s.game;
-   ['bestStreak','stats','windmills','coins','gems','magicGates','rosieRescues','rosieHappiness'].forEach(k=>{if(s.state[k]!==undefined)state[k]=s.state[k]});
-   DSH.Save.save(state);render();msg('Move undone.');
+   ['bestStreak','stats','windmills','coins','gems','magicGates','rosieRescues','rosieHappiness','lifetime','_walletSnapshot',
+    'farmhouseTrophies','farmhouseTierClaims','farmhouseTrophyRewardsClaimed','farmhouseTierRewardsClaimed'].forEach(k=>{if(s.state[k]!==undefined)state[k]=s.state[k]});
+   DSH.Save.save(state,{skipBackup:true});render();
+   if(game.previewChoiceOpen){
+     // Choosing a Preview card is undoable. Restore the prompt as well as the
+     // stock state; otherwise Draw would be blocked by an invisible pending choice.
+     game.previewChoiceOpen=false;showPreviewChoice();
+   }
+   msg('Move undone.');
  }
- function makeBonusCard(){
+ function makeBonusCard(rng=Math.random){
    const suits=[0,1,2,3];
-   return {r:Math.floor(Math.random()*13),s:suits[Math.floor(Math.random()*4)],wild:false};
+   return {r:Math.floor(rng()*13),s:suits[Math.floor(rng()*4)],wild:false};
  }
  function buyDraws(){
    if(locked)return;const D=DSH.Config.draws;game.drawPacksBought=game.drawPacksBought||0;
@@ -475,7 +615,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    const price=drawPackPrice();if(state.coins<price){DSH.Audio.play.bad();msg(`You need ${price} coins to buy ${D.cards} extra draws.`);return}
    setPouch(false);state.coins-=price;game.drawPacksBought++;state.stats.drawPacksBought=(state.stats.drawPacksBought||0)+1;updateMission();
    for(let i=0;i<D.cards;i++)game.stock.push(makeBonusCard());
-   DSH.Save.save(state);render();DSH.Audio.play.harvest();
+   history=[];DSH.Save.save(state);render();DSH.Audio.play.harvest();
    const left=D.maxPacks-game.drawPacksBought,next=left?` Next pack costs ${drawPackPrice()} coins.`:'';
    msg(`Bought ${D.cards} extra draws for ${price} coins. ${left} pack${left===1?'':'s'} left.${next}`);
  }
@@ -488,14 +628,14 @@ document.addEventListener('DOMContentLoaded',()=>{
      return;
    }
    setPouch(false);
-   game.shearsMode=!game.shearsMode;game.gateMode=false;game.diceMode=false;game.seedMode=false;game.diceRoll=0;
+   game.shearsMode=!game.shearsMode;game.gateMode=false;game.diceMode=false;game.seedMode=false;
    render();msg(game.shearsMode?'✂️ Garden Shears ready — cut away any exposed card. This counts as an assist.':'Garden Shears cancelled.');
  }
  function useShearsOnCard(c){
    if(!game.shearsMode||!c||c.removed||blocked(c))return false;
-   snapshot();game.shearsCharges--;game.shearsMode=false;game.streak=0;game.moves++;
+   snapshot();game.shearsCharges--;game.shearsMode=false;game.streak=0;breakHarvestChain();game.moves++;
    game.powersUsed=(game.powersUsed||0)+1;state.stats.powersUsed=(state.stats.powersUsed||0)+1;updateMission();state.stats.shearsUsed=(state.stats.shearsUsed||0)+1;
-   c.removed=true;state.stats.cardsCleared++;applySpecialClear(c,true);game.score+=70;
+   c.removed=true;state.stats.cardsCleared++;game.cardsClearedThisHand=(game.cardsClearedThisHand||0)+1;applySpecialClear(c,true);game.score+=70;updateMission();
    DSH.Audio.play.flip();DSH.Save.save(state);render(true);
    msg(`✂️ Garden Shears cut away that card without changing the active card. ${game.shearsCharges} charge${game.shearsCharges===1?'':'s'} remain.`);
    finishIfCleared('shears');return true;
@@ -511,13 +651,16 @@ document.addEventListener('DOMContentLoaded',()=>{
  }
  function useGateOnCard(c){
    if(!game.gateMode||!c||c.removed||blocked(c))return false;
-   snapshot();
+   snapshot();game.streak=0;breakHarvestChain();
    state.magicGates--;
    state.stats.magicGatesUsed=(state.stats.magicGatesUsed||0)+1;game.powersUsed=(game.powersUsed||0)+1;state.stats.powersUsed=(state.stats.powersUsed||0)+1;updateMission();
-   c.removed=true;applySpecialClear(c,true);
+   c.removed=true;
+   // A gated card goes to the bottom of stock, preserving its rank/suit. Its
+   // tableau special effect is forfeited because the card was moved, not cleared.
+   // A gated Key still unlocks its Barn Lock because its tableau node is removed.
    // A gated card goes to the bottom of stock, preserving its identity.
    game.stock.unshift({...c.card});
-   game.gateMode=false;
+   game.gateMode=false;updateMission();
    DSH.Save.save(state);
    DSH.Audio.play.flip();
    render(true);
@@ -590,8 +733,8 @@ document.addEventListener('DOMContentLoaded',()=>{
      const shuffled=[...allExposed].sort(()=>Math.random()-.5);
      const qty=Math.min(shuffled.length,Math.random()<DSH.Config.rosieRescue.clearTwoChance?2:1);
      const targets=shuffled.slice(0,qty);
-     targets.forEach(c=>{c.removed=true;applySpecialClear(c,true);state.stats.cardsCleared++;game.score+=80});
-     consume();game.streak=0;
+     targets.forEach(c=>{c.removed=true;applySpecialClear(c,true);state.stats.cardsCleared++;game.cardsClearedThisHand=(game.cardsClearedThisHand||0)+1;game.score+=80});
+     consume();game.streak=0;breakHarvestChain();
      state.stats.rosieRescueClears=(state.stats.rosieRescueClears||0)+1;
      state.stats.rosieRescueCardsCleared=(state.stats.rosieRescueCardsCleared||0)+qty;
      DSH.Save.save(state);DSH.Audio.play.flip();render(true);
@@ -606,7 +749,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(playableNow.length===0&&usable.length){
      const rank=helpfulWasteRank(usable);
      game.waste={r:rank,s:Math.floor(Math.random()*4),wild:false,rosieMagic:true};
-     game.streak=0;consume();state.stats.rosieRescueSwaps=(state.stats.rosieRescueSwaps||0)+1;
+     game.streak=0;breakHarvestChain();consume();state.stats.rosieRescueSwaps=(state.stats.rosieRescueSwaps||0)+1;
      DSH.Save.save(state);DSH.Audio.play.flip();render();
      const count=usable.filter(c=>playable(c.card)).length;
      msg(`🐾 Rosie magically swapped in a ${ranks[rank]} that opens ${count} field option${count===1?'':'s'}!`);
@@ -632,7 +775,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
    // Last-resort direct clear if every exposed card is special/locked.
    const target=allExposed[Math.floor(Math.random()*allExposed.length)];
-   target.removed=true;applySpecialClear(target,true);state.stats.cardsCleared++;game.score+=80;game.streak=0;
+   target.removed=true;applySpecialClear(target,true);state.stats.cardsCleared++;game.cardsClearedThisHand=(game.cardsClearedThisHand||0)+1;game.score+=80;game.streak=0;breakHarvestChain();
    consume();state.stats.rosieRescueClears=(state.stats.rosieRescueClears||0)+1;state.stats.rosieRescueCardsCleared=(state.stats.rosieRescueCardsCleared||0)+1;
    DSH.Save.save(state);DSH.Audio.play.flip();render(true);msg('🐾 Rosie cleared a troublesome card that had nowhere else to go.');
    finishIfCleared('rosie-last-resort');
@@ -693,6 +836,13 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(game.diceUsed){msg('Magic Dice can only be used once per match.');return}
    if(!state.magicDiceUnlocked){msg('Permanently unlock Magic Dice in the Rewards Shop with gems.');return}
    setPouch(false);game.seedMode=false;game.gateMode=false;game.shearsMode=false;
+   // Once rolled, the result is committed until the Dice is actually used.
+   // Closing targeting or opening another power must not allow free rerolls.
+   if(game.diceRoll>0){
+     game.diceMode=!game.diceMode;render();
+     msg(game.diceMode?`🎲 Dice result ${game.diceRoll} is still waiting — choose ${ranks[game.diceRoll]} or ${ranks[game.diceRoll+1]}.`:'Magic Dice targeting paused. The roll is saved.');
+     return;
+   }
    const maxRoll=state.magicDiceTier2?DSH.Config.rewardShopTier2.dice.maxRoll:6,roll=1+Math.floor(Math.random()*maxRoll);
    animateDiceRoll(roll,()=>{
      game.diceRoll=roll;game.diceMode=true;render();
@@ -703,8 +853,8 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(!game.diceMode||!c||c.removed||blocked(c))return false;
    const valid=!c.card.wild&&(c.card.r+1===game.diceRoll+1||c.card.r+1===game.diceRoll+2);
    if(!valid){DSH.Audio.play.bad();msg(`The Magic Dice rolled ${game.diceRoll}; choose a card 1 or 2 ranks above it.`);return false}
-   snapshot();c.removed=true;applySpecialClear(c,true);game.diceUsed=true;game.powersUsed=(game.powersUsed||0)+1;state.stats.powersUsed=(state.stats.powersUsed||0)+1;updateMission();game.diceMode=false;game.diceRoll=0;
-   state.stats.cardsCleared++;game.score+=125;DSH.Save.save(state);DSH.Audio.play.flip();render(true);msg('🎲 Magic Dice cleared the card!');
+   snapshot();game.streak=0;breakHarvestChain();c.removed=true;applySpecialClear(c,true);game.diceUsed=true;game.powersUsed=(game.powersUsed||0)+1;state.stats.powersUsed=(state.stats.powersUsed||0)+1;updateMission();game.diceMode=false;game.diceRoll=0;
+   state.stats.cardsCleared++;game.cardsClearedThisHand=(game.cardsClearedThisHand||0)+1;game.score+=125;updateMission();DSH.Save.save(state);DSH.Audio.play.flip();render(true);msg('🎲 Magic Dice cleared the card!');
    finishIfCleared('dice');return true;
  }
  function toggleSeed(){
@@ -732,8 +882,8 @@ document.addEventListener('DOMContentLoaded',()=>{
    setPouch(false);
    const lookAhead=state.sunCharmTier2?DSH.Config.rewardShopTier2.sun.lookAhead:3,n=Math.min(lookAhead,game.stock.length),choices=game.stock.slice(-n),good=choices.filter(card=>playable(card));
    const pick=good.length?good[Math.floor(Math.random()*good.length)]:choices[Math.floor(Math.random()*choices.length)];
-   const ix=game.stock.lastIndexOf(pick);snapshot();game.stock.splice(ix,1);game.waste=pick;game.streak=0;
-   game.sunUsed=true;game.powersUsed=(game.powersUsed||0)+1;state.stats.powersUsed=(state.stats.powersUsed||0)+1;updateMission();DSH.Save.save(state);DSH.Audio.play.flip();render();
+   const ix=game.stock.lastIndexOf(pick);snapshot();game.stock.splice(ix,1);game.waste=pick;game.streak=0;breakHarvestChain();
+   game.sunUsed=true;game.powersUsed=(game.powersUsed||0)+1;state.stats.powersUsed=(state.stats.powersUsed||0)+1;if(game.missionMetrics)game.missionMetrics.endRun=0;updateMission();DSH.Save.save(state);DSH.Audio.play.flip();render();
    msg(good.length?`☀️ ${state.sunCharmTier2?'Brilliant ':''}Sun Charm found a useful card among the next ${lookAhead}!`:`☀️ No immediate match was hiding there, but the Sun Charm chose one of the next ${lookAhead} cards.`);
  }
 
@@ -744,13 +894,14 @@ document.addEventListener('DOMContentLoaded',()=>{
    snapshot();state.windmills--;state.stats.windmillsUsed++;game.powersUsed=(game.powersUsed||0)+1;state.stats.powersUsed=(state.stats.powersUsed||0)+1;updateMission();locked=true;DSH.Audio.play.windmill();gust();
    document.querySelectorAll('.card:not(.faceDown)').forEach((el,i)=>setTimeout(()=>el.classList.add('windGone'),i*25));
    setTimeout(()=>{
-     targets.forEach(c=>{c.removed=true;applySpecialClear(c,true);state.stats.cardsCleared++;game.score+=75});
-     game.streak=0;DSH.Save.save(state);locked=false;render(true);msg(`Windmill! ${targets.length} face-up cards blown away. 🌬️`);
+     targets.forEach(c=>{c.removed=true;applySpecialClear(c,true);state.stats.cardsCleared++;game.cardsClearedThisHand=(game.cardsClearedThisHand||0)+1;game.score+=75});
+     game.streak=0;breakHarvestChain();updateMission();DSH.Save.save(state);locked=false;render(true);msg(`Windmill! ${targets.length} face-up cards blown away. 🌬️`);
      finishIfCleared('windmill');
    },580);
  }
  function win(){
    if(game.dailyMode)return winDaily();
+   const walletCoinsAtWin=state.coins,walletGemsAtWin=state.gems;
    handComplete=true;handStarted=false;game.completing=false;DSH.Audio.play.win();
    const completedLevel=state.level,S=DSH.Config.scoring;
    const perfect=(game.drawPacksBought||0)===0&&(game.powersUsed||0)===0;
@@ -763,7 +914,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
    const base=150+completedLevel*28,streak=levelStreak*4,barnBonus=state.upgrades.barn?Math.round((base+streak)*.12):0;
    const starBonus=stars*S.starCoinBonus,perfectBonus=perfect?(S.perfectBase+completedLevel*S.perfectPerLevel):0;
-   let coins=Math.round((base+streak+barnBonus+starBonus+perfectBonus)*(DSH.Weather.effects(state).levelCoin||1));
+   let coins=Math.round((base+streak+barnBonus+starBonus+perfectBonus)*((game.handWeatherFx||DSH.Weather.effects(state)).levelCoin||1));
    let gems=1+(completedLevel%3===0?1:0);
    let perfectGem=0;if(perfect&&Math.random()<S.perfectGemChance){perfectGem=1;gems++}
    let shootingStarGem=0;
@@ -774,7 +925,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      const MC=DSH.Config.milestones,mc=MC.coinBase+completedLevel*MC.coinPerLevel,mg=MC.gemsBase+Math.floor(completedLevel/50);
      state.milestonesCleared[completedLevel]=true;state.stats.milestonesCompleted=(state.stats.milestonesCompleted||0)+1;
      state.stats.milestoneCoinsEarned=(state.stats.milestoneCoinsEarned||0)+mc;state.stats.milestoneGemsEarned=(state.stats.milestoneGemsEarned||0)+mg;
-     state.coins+=mc;state.gems+=mg;state.rosieRescues++;milestoneResult={coins:mc,gems:mg,name:milestoneName(completedLevel)};
+     state.coins+=mc;state.gems+=mg;state.rosieRescues++;state.stats.rosieRescuesFound=(state.stats.rosieRescuesFound||0)+1;milestoneResult={coins:mc,gems:mg,name:milestoneName(completedLevel)};
    }
    if(game.challengeHand){state.coins+=DSH.Config.specialCards.challengeCoins;state.gems+=DSH.Config.specialCards.challengeGems;state.stats.challengeHandsWon=(state.stats.challengeHandsWon||0)+1}
    if(game.luckyHand){state.stats.luckyHandsWon=(state.stats.luckyHandsWon||0)+1}
@@ -788,8 +939,9 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(state.region!==oldRegion){state.farmRegionView=state.region;DSH.Farm.claimRegionRewards()}
    DSH.Farm.grow();
    const achievements=DSH.Progress.checkAchievements(state),achievementGems=achievements.reduce((a,x)=>a+x.gems,0);
+   const displayedWinCoins=Math.max(0,state.coins-walletCoinsAtWin),displayedWinGems=Math.max(0,state.gems-walletGemsAtWin);
    DSH.Save.save(state);DSH.Farm.render();renderAllBalances();
-   setTextIfPresent('rewardCoins',coins);setTextIfPresent('rewardGems',gems+achievementGems);
+   setTextIfPresent('rewardCoins',displayedWinCoins);setTextIfPresent('rewardGems',displayedWinGems);
    setTextIfPresent('winStars','★'.repeat(stars)+'☆'.repeat(3-stars));
    document.getElementById('perfectClearBadge').classList.toggle('show',perfect);
    setTextIfPresent('winText',`Score ${game.score.toLocaleString()} • Level streak ${levelStreak}`);
@@ -892,13 +1044,18 @@ document.addEventListener('DOMContentLoaded',()=>{
    renderShop();
    renderPouch();
    renderDailyUI();
-   const adv=state.rosieAdventure,fs=document.getElementById('farmMenuStatus');
-   if(fs)fs.textContent=adv?(Date.now()>=adv.endsAt?'🐾 Rosie is home!':`🐾 Rosie exploring • ${Math.max(1,Math.ceil((adv.endsAt-Date.now())/60000))}m`):'Plant, harvest, upgrade';
+   const adv=state.rosieAdventure,fs=document.getElementById('farmMenuStatus'),readyOrders=DSH.Farm.readyOrderCount?.()||0;
+   if(fs){
+     const notices=[];
+     if(readyOrders)notices.push(`📋 ${readyOrders} order${readyOrders===1?'':'s'} ready`);
+     if(adv)notices.push(Date.now()>=adv.endsAt?'🐕 Rosie is home!':`🐾 Rosie exploring • ${Math.max(1,Math.ceil((adv.endsAt-Date.now())/60000))}m`);
+     fs.textContent=notices.length?notices.join(' • '):'Plant, harvest, upgrade';
+   }
    const peek=document.getElementById('mainRosiePeek');if(peek)peek.classList.toggle('show',!!adv&&Date.now()>=adv.endsAt);
    refreshCollectionKnowledge();
    const allCollection=['specials','crops','regions','powers','rosie','milestones'].flatMap(collectionEntries),collectionFound=allCollection.filter(x=>x.found).length;
    setTextIfPresent('collectionMenuStatus',`${collectionFound}/${allCollection.length} discoveries`);
-   const fh=document.getElementById('farmhouseMenuStatus');if(fh){const te=Object.values(state.farmhouseTrophies||{}).filter(Boolean).length,toys=Object.values(state.rosieToys||{}).filter(Boolean).length;fh.textContent=`${te}/${Object.keys(DSH.Config.farmhouse.trophies).length} trophies • ${toys}/6 toys`}
+   const fh=document.getElementById('farmhouseMenuStatus');if(fh){const te=Object.values(state.farmhouseTrophies||{}).filter(Boolean).length,toys=Object.values(state.rosieToys||{}).filter(Boolean).length,pending=farmhousePendingRewardCount();fh.textContent=pending?`🎁 ${pending} reward${pending===1?'':'s'} waiting`:`${te}/${Object.keys(DSH.Config.farmhouse.trophies).length} trophies • ${toys}/6 toys`}
  }
 
 
@@ -906,7 +1063,12 @@ document.addEventListener('DOMContentLoaded',()=>{
    applyAccessibilitySettings();renderAllBalances();
    document.getElementById('levelNum').textContent=game.dailyMode?'DAILY':state.level;document.getElementById('formationName').textContent=game.formation||'Meadow';
    const stockN=game.stock?.length||0;document.getElementById('stockCount').textContent=stockN;
-   const stockWrapEl=document.getElementById('stockWrap');if(stockWrapEl){stockWrapEl.classList.toggle('empty',stockN===0);stockWrapEl.classList.toggle('disabled',!!handComplete);stockWrapEl.setAttribute('aria-disabled',(stockN===0||handComplete)?'true':'false')}
+   const stockWrapEl=document.getElementById('stockWrap');if(stockWrapEl){
+     const depth=stockDepthForCount(stockN);stockWrapEl.dataset.depth=String(depth);
+     stockWrapEl.classList.toggle('empty',stockN===0);stockWrapEl.classList.toggle('disabled',!!handComplete);
+     stockWrapEl.setAttribute('aria-disabled',(stockN===0||handComplete)?'true':'false');
+     stockWrapEl.setAttribute('aria-label',stockN?`Draw next stock card. ${stockN} remaining.`:'Draw pile empty');
+   }
    const messageEl=document.getElementById('message');if(stockN>0&&messageEl?.textContent==='No cards remain in the draw pile.')messageEl.textContent=`${stockN} draw card${stockN===1?'':'s'} remain.`;
    document.getElementById('windmillBtn').disabled=state.windmills<=0;
    const rb=document.getElementById('rosieBtn');if(rb){rb.disabled=(state.rosieRescues||0)<=0;rb.title=(state.rosieRescues||0)>0?'Rosie Rescue — Rosie will choose the most useful kind of help':'No Rosie Rescues available'}
@@ -928,13 +1090,14 @@ document.addEventListener('DOMContentLoaded',()=>{
      const targetClass=powerTargetState(c,isBlocked);
      el.className='card '+(isBlocked?'faceDown ':c.card.wild?'wild ':'')+(red?'red ':'black ')+(!c.card.wild?`suit-${c.card.s} `:'suit-wild ')+(!isBlocked&&!specialLocked(c)&&playable(c.card)?'playable ':'')+(became?'flipIn ':'')+(targetClass?' '+targetClass+' ':'');
      const x=Math.max(4,Math.min(W-cardW-4,c.x*W-cardW/2)),y=Math.max(4,Math.min(H-cardH-4,c.y*H));
-     el.style.left=x+'px';el.style.top=y+'px';el.style.zIndex=10+c.row;el.dataset.id=c.id;el.tabIndex=isBlocked?-1:0;el.setAttribute('role','button');
+     el.style.left=x+'px';el.style.top=y+'px';el.style.zIndex=10+c.row;el.dataset.id=c.id;el.tabIndex=isBlocked?-1:0;el.setAttribute('role','button');el.style.touchAction='manipulation';
      if(!isBlocked){
        el.innerHTML=c.card.wild?'<div class="corner"><span>WILD</span></div><div class="big">🌈</div>':`<div class="corner"><span>${ranks[c.card.r]}</span><span>${suits[c.card.s]}</span></div><div class="big">${ranks[c.card.r]}</div>`;
        if(c.special){
          const tag=document.createElement('div');tag.className='specialTag special-'+c.special;
          const p=specialProgress(c),need=c.special==='vine'?1:c.special==='crate'?2:0;
-         const labels={vine:'🌿 '+Math.min(p,1)+'/1',crate:'📦 '+Math.min(p,2)+'/2',flower:'🌼',gold:'💰',mud:'🟤',chain:'⛓️ '+DSH.Config.specialCards.chainRequiredStreak,rainbow:'🌈+',key:'🔑',barnlock:specialLocked(c)?'🔒':'🔓',watering:'💧',bee:'🐝',harvestchain:'🌾 '+((c.chainIndex||0)+1)+'/'+(c.chainSize||2),heavy:(c.heavyHits?'🪨 CRACKED':'🪨 2×'),sleeping:specialLocked(c)?'🌙 Zzz':'🌙 AWAKE',sunflower:'🌻'};
+         const chainNeed=DSH.Config.specialCards.chainRequiredStreak,sleepNeed=DSH.Config.specialCards.sleepingClears;
+         const labels={vine:'🌿 '+Math.min(p,1)+'/1',crate:'📦 '+Math.min(p,2)+'/2',flower:'🌼',gold:'💰',mud:'🟤',chain:specialLocked(c)?`⛓️ ${Math.min(game.streak||0,chainNeed)}/${chainNeed}`:'⛓️ OPEN',rainbow:'🌈+',key:'🔑',barnlock:specialLocked(c)?'🔒 KEY':'🔓 OPEN',watering:'💧',bee:'🐝',harvestchain:'🌾 '+((c.chainIndex||0)+1)+'/'+(c.chainSize||2),heavy:(c.heavyHits?'🪨 CRACKED':'🪨 2×'),sleeping:specialLocked(c)?`🌙 ${Math.min(game.cardsClearedThisHand||0,sleepNeed)}/${sleepNeed}`:'🌙 AWAKE',sunflower:'🌻'};
          tag.textContent=labels[c.special]||'✨';el.appendChild(tag);
          el.classList.add('specialCard','special-'+c.special);
          if(specialLocked(c))el.classList.add('specialLocked');
@@ -943,7 +1106,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      if(!isBlocked)el.setAttribute('aria-label',c.card.wild?'Wild card':`${ranks[c.card.r]} ${['clubs','diamonds','hearts','spades'][c.card.s]}${c.special?' • '+c.special:''}`);
      el.onclick=()=>play(c.id);el.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&!isBlocked){e.preventDefault();play(c.id)}};f.appendChild(el);if(became)DSH.Audio.play.flip();
    });
-   lastExposed=now;renderMissionChip();renderPowerMode();DSH.Farm.render();renderStats();renderSettings();setTimeout(collectMechanicNotices,0);
+   lastExposed=now;renderMissionChip();renderHandStatus();renderPowerMode();DSH.Farm.render();renderStats();renderSettings();setTimeout(collectMechanicNotices,0);
    if(handStarted&&!handComplete&&tableauCleared())setTimeout(()=>finishIfCleared('render-safety-net'),0);
  }
  function animateCardToWaste(id,done){
@@ -954,6 +1117,24 @@ document.addEventListener('DOMContentLoaded',()=>{
  function shakeCard(id){const el=document.querySelector(`.card[data-id="${id}"]`);if(!el)return;el.animate([{transform:'translateX(0)'},{transform:'translateX(-7px)'},{transform:'translateX(7px)'},{transform:'translateX(0)'}],{duration:220})}
  function gust(){if(state.settings.reducedMotion)return;const g=document.createElement('div');g.className='gust';document.getElementById('gustLayer').appendChild(g);setTimeout(()=>g.remove(),700)}
  
+ function showViewportFeedback(text,icon='💬',tone='info'){
+   const e=document.getElementById('viewportFeedback');if(!e)return;
+   setTextIfPresent('viewportFeedbackText',text);setTextIfPresent('viewportFeedbackIcon',icon);
+   e.dataset.tone=tone;e.classList.remove('show');void e.offsetWidth;e.classList.add('show');clearTimeout(showViewportFeedback.t);
+   showViewportFeedback.t=setTimeout(()=>e.classList.remove('show'),2400);
+ }
+ function menuFeedbackIcon(text){
+   const s=String(text||'');
+   if(s.includes('planted')||s.includes('Plot selected'))return'🌱';
+   if(s.includes('harvest')||s.includes('Harvest'))return'🌾';
+   if(s.includes('Order')||s.includes('order'))return'📋';
+   if(s.includes('Rosie'))return'🐕';
+   if(s.includes('region')||s.includes('Region'))return'🗺️';
+   if(s.includes('coins')||s.includes('coin'))return'🪙';
+   if(s.includes('gems')||s.includes('gem'))return'💎';
+   if(s.includes('Not enough')||s.includes("can't")||s.includes('cannot')||s.includes('full'))return'⚠️';
+   return'✨';
+ }
  function showRewardToast(title,text,icon='✨'){
    const e=document.getElementById('rewardToast');if(!e)return;
    setTextIfPresent('rewardToastTitle',title);setTextIfPresent('rewardToastText',text);setTextIfPresent('rewardToastIcon',icon);
@@ -979,7 +1160,20 @@ document.addEventListener('DOMContentLoaded',()=>{
    },70);
  }
  function cancelTargetPower(){
-   game.gateMode=false;game.diceMode=false;game.seedMode=false;game.shearsMode=false;game.diceRoll=0;render();msg('Power targeting cancelled.');
+   game.gateMode=false;game.diceMode=false;game.seedMode=false;game.shearsMode=false;render();msg(game.diceRoll>0&&!game.diceUsed?'Power targeting cancelled. Your Magic Dice roll is saved.':'Power targeting cancelled.');
+ }
+ function handStatusText(){
+   const stock=game.stock?.length||0,need=DSH.Config.specialCards.chainRequiredStreak||3;
+   const sleeping=(game.layout||[]).filter(c=>!c.removed&&c.special==='sleeping'),sleepNeed=DSH.Config.specialCards.sleepingClears||4;
+   return{
+     stock:`🃏 Stock ${stock}${stock<=3?' • LOW':''}`,
+     chain:`⛓️ Chain ${game.chainUnlocked?'OPEN':Math.min(game.streak||0,need)+'/'+need}`,
+     sleep:sleeping.length?`🌙 ${Math.min(game.cardsClearedThisHand||0,sleepNeed)}/${sleepNeed}`:'🌙 —'
+   };
+ }
+ function renderHandStatus(){
+   const x=handStatusText();setTextIfPresent('stockStatus',x.stock);setTextIfPresent('chainStatus',x.chain);setTextIfPresent('sleepStatus',x.sleep);
+   const e=document.getElementById('stockStatus');if(e)e.classList.toggle('warning',(game.stock?.length||0)<=3);
  }
  function powerTargetState(c,isBlocked){
    const active=!!(game.gateMode||game.diceMode||game.seedMode||game.shearsMode);
@@ -1003,7 +1197,11 @@ document.addEventListener('DOMContentLoaded',()=>{
    else text.textContent=`🎲 Dice ${game.diceRoll}: choose ${ranks[game.diceRoll]} or ${ranks[game.diceRoll+1]}`;
  }
 
- function msg(t){const e=document.getElementById('message');e.textContent=t;e.style.opacity='1';clearTimeout(msg.t);msg.t=setTimeout(()=>e.style.opacity='.78',2600)}
+ function msg(t){
+   const app=document.getElementById('app'),menuMode=app?.classList.contains('menu-mode');
+   if(menuMode){showViewportFeedback(t,menuFeedbackIcon(t),String(t).includes('Not enough')||String(t).includes('full')?'warn':'info');return}
+   const e=document.getElementById('message');if(!e)return;e.textContent=t;e.style.opacity='1';clearTimeout(msg.t);msg.t=setTimeout(()=>e.style.opacity='.78',2600)
+ }
  const MECHANIC_NOTICES={
    reserve:{icon:'🧠',title:'Reserve Slot',text:'Once per normal level, park the active card in Reserve, draw a replacement, then swap the saved card back when it becomes useful.'},
    vine:{icon:'🌿',title:'Vine Card',text:'Clear one of its nearby requirement cards before the Vine card can be played.'},
@@ -1040,7 +1238,10 @@ document.addEventListener('DOMContentLoaded',()=>{
    mechanicNoticeActive=true;state.seenMechanics[key]=true;DSH.Save.save(state);
    setTextIfPresent('mechanicNoticeIcon',d.icon);setTextIfPresent('mechanicNoticeTitle',d.title);setTextIfPresent('mechanicNoticeText',d.text);open('mechanicNoticeOverlay');
  }
- function closeMechanicNotice(){close('mechanicNoticeOverlay');mechanicNoticeActive=false;setTimeout(maybeShowMechanicNotice,80)}
+ function closeMechanicNotice(){
+   close('mechanicNoticeOverlay');mechanicNoticeActive=false;
+   setTimeout(()=>{maybeShowMechanicNotice();if(!mechanicNoticeActive&&!mechanicNoticeQueue.length)maybeOfferChallenge()},80)
+ }
  function open(id){document.getElementById(id).classList.add('open')}function close(id){document.getElementById(id).classList.remove('open')}
 
  function toggleFullscreen(){
@@ -1059,7 +1260,12 @@ document.addEventListener('DOMContentLoaded',()=>{
    }
  }
 
- function showMain(){document.getElementById('app').classList.add('menu-mode');document.querySelectorAll('.sectionOverlay').forEach(x=>x.classList.remove('open'));close('pauseOverlay');close('winOverlay');renderAllBalances();open('mainMenuOverlay')}
+ function showMain(){
+   if(handStarted)history=[]; // Leaving the table commits moves so Farm/Main activity cannot later be erased by Undo.
+   if(game.previewChoiceOpen)game.previewChoiceOpen=false;if(game.challengeOfferOpen)game.challengeOfferOpen=false;
+   document.getElementById('previewChoiceOverlay').classList.remove('show');document.getElementById('challengeOfferOverlay').classList.remove('show');close('missionOverlay');close('mechanicNoticeOverlay');mechanicNoticeActive=false;
+   document.getElementById('app').classList.add('menu-mode');document.querySelectorAll('.sectionOverlay').forEach(x=>x.classList.remove('open'));close('pauseOverlay');close('winOverlay');renderAllBalances();open('mainMenuOverlay')
+ }
  function refreshCollectionKnowledge(){
    state.collection=state.collection||{specials:{},crops:{},regions:{0:true},powers:{},rosie:{}};
    const before=JSON.stringify(state.collection),col=state.collection;
@@ -1128,16 +1334,41 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(def.stat==='harvests')return state.harvests||0;
    return state.stats[def.stat]||0;
  }
+ function farmhousePendingRewardCount(){
+   const trophyPending=Object.keys(state.farmhouseTrophies||{}).filter(k=>state.farmhouseTrophies[k]&&!state.farmhouseTrophyRewardsClaimed?.[k]).length;
+   const tierPending=Object.keys(state.farmhouseTierClaims||{}).filter(k=>state.farmhouseTierClaims[k]&&!state.farmhouseTierRewardsClaimed?.[k]).length;
+   return trophyPending+tierPending;
+ }
+ function farmhouseRewardBurst(icon,text){
+   const b=document.createElement('div');b.className='farmhouseRewardBurst';b.innerHTML=`<span>${icon}</span><b>${text}</b>`;document.body.appendChild(b);setTimeout(()=>b.remove(),1500);
+ }
  function unlockFarmhouseTrophy(key,silent=false){
    const def=DSH.Config.farmhouse.trophies[key];if(!def||state.farmhouseTrophies[key])return false;
-   state.farmhouseTrophies[key]=true;state.stats.trophiesUnlocked=(state.stats.trophiesUnlocked||0)+1;
-   state.gems+=(def.rewardGems||0);DSH.Save.save(state);
-   if(!silent){DSH.Audio.play.achievement();showRewardToast('🏆 TROPHY UNLOCKED',`${def.name} • +${def.rewardGems||0} 💎`,def.icon)}
+   state.farmhouseTrophies[key]=true;state.stats.trophiesUnlocked=(state.stats.trophiesUnlocked||0)+1;DSH.Save.save(state);
+   if(!silent){DSH.Audio.play.achievement();showRewardToast('🏆 TROPHY EARNED',`${def.name} • reward waiting in Denise’s Farmhouse`,def.icon)}
    return true;
+ }
+ function collectTrophyReward(key){
+   const def=DSH.Config.farmhouse.trophies[key];
+   if(!def||!state.farmhouseTrophies?.[key]||state.farmhouseTrophyRewardsClaimed?.[key])return false;
+   state.farmhouseTrophyRewardsClaimed=state.farmhouseTrophyRewardsClaimed||{};
+   state.farmhouseTrophyRewardsClaimed[key]=true;state.gems+=def.rewardGems||0;state.stats.trophyRewardsCollected=(state.stats.trophyRewardsCollected||0)+1;
+   DSH.Save.save(state);DSH.Audio.play.achievement();farmhouseRewardBurst('💎',`+${def.rewardGems||0} gems`);renderAllBalances();renderFarmhouse('trophies');
+   showRewardToast('Trophy Reward Collected',`${def.name} • +${def.rewardGems||0} 💎`,def.icon);return true;
+ }
+ function collectTierReward(key,i){
+   const claim=`${key}-${i}`,def=DSH.Config.farmhouse.tiers[key],reward=i+1;
+   if(!def||!state.farmhouseTierClaims?.[claim]||state.farmhouseTierRewardsClaimed?.[claim])return false;
+   state.farmhouseTierRewardsClaimed=state.farmhouseTierRewardsClaimed||{};
+   state.farmhouseTierRewardsClaimed[claim]=true;state.gems+=reward;state.stats.tierRewardsCollected=(state.stats.tierRewardsCollected||0)+1;
+   DSH.Save.save(state);DSH.Audio.play.achievement();farmhouseRewardBurst('💎',`+${reward} gems`);renderAllBalances();renderFarmhouse('tiers');
+   showRewardToast('Achievement Reward Collected',`${def.name} ${['Bronze','Silver','Gold'][i]} • +${reward} 💎`,def.icon);return true;
  }
  function checkFarmhouseAchievements(context={}){
    if(devTrophyChecksPaused)return null;
-   state.farmhouseTrophies=state.farmhouseTrophies||{};state.farmhouseTierClaims=state.farmhouseTierClaims||{};state.chapterMemorabilia=state.chapterMemorabilia||{};
+   state.farmhouseTrophies=state.farmhouseTrophies||{};state.farmhouseTierClaims=state.farmhouseTierClaims||{};
+   state.farmhouseTrophyRewardsClaimed=state.farmhouseTrophyRewardsClaimed||{};state.farmhouseTierRewardsClaimed=state.farmhouseTierRewardsClaimed||{};
+   state.chapterMemorabilia=state.chapterMemorabilia||{};
    const threeStarLevels=Object.values(state.levelStars||{}).filter(v=>Number(v)>=3).length;
    const tests={
      meadowGate:!!state.milestonesCleared?.[10],
@@ -1158,30 +1389,30 @@ document.addEventListener('DOMContentLoaded',()=>{
    };
    let first=null;
    Object.entries(tests).forEach(([k,ok])=>{if(ok&&!state.farmhouseTrophies[k]&&unlockFarmhouseTrophy(k,!!first)){if(!first)first=k}});
-   // Chapter keepsakes appear when the chapter-ending milestone has been cleared.
    for(let level=10;level<=100;level+=10)if(state.milestonesCleared?.[level])state.chapterMemorabilia[level]=true;
-   // Bronze / Silver / Gold tier achievements. Rewards: 1 / 2 / 3 gems.
+   // Thresholds become earned immediately, but their gem rewards wait in the Farmhouse.
    Object.entries(DSH.Config.farmhouse.tiers).forEach(([key,def])=>{
      const value=farmhouseTierValue(def);
      def.values.forEach((target,i)=>{
        const claim=`${key}-${i}`;if(value>=target&&!state.farmhouseTierClaims[claim]){
-         state.farmhouseTierClaims[claim]=true;state.gems+=i+1;state.stats.tierAchievementsUnlocked=(state.stats.tierAchievementsUnlocked||0)+1;
-         DSH.Save.save(state);if(!first){first=claim;DSH.Audio.play.achievement();showRewardToast('🎖️ ACHIEVEMENT TIER',`${def.name} ${['Bronze','Silver','Gold'][i]} • +${i+1} 💎`,def.icon)}
+         state.farmhouseTierClaims[claim]=true;state.stats.tierAchievementsUnlocked=(state.stats.tierAchievementsUnlocked||0)+1;DSH.Save.save(state);
+         if(!first){first=claim;DSH.Audio.play.achievement();showRewardToast('🎖️ ACHIEVEMENT EARNED',`${def.name} ${['Bronze','Silver','Gold'][i]} • reward waiting in Denise’s Farmhouse`,def.icon)}
        }
      });
    });
    return first;
  }
  function farmhouseTrophyEntries(){
-   return Object.entries(DSH.Config.farmhouse.trophies).map(([key,d])=>({key,...d,earned:!!state.farmhouseTrophies[key]}));
+   return Object.entries(DSH.Config.farmhouse.trophies).map(([key,d])=>({key,...d,earned:!!state.farmhouseTrophies[key],claimed:!!state.farmhouseTrophyRewardsClaimed?.[key]}));
  }
  function renderFarmhouse(tab){
    checkFarmhouseAchievements();
    tab=tab||document.querySelector('.farmhouseTab.active')?.dataset.houseTab||'trophies';
    document.querySelectorAll('.farmhouseTab').forEach(b=>b.classList.toggle('active',b.dataset.houseTab===tab));
-   const trophies=farmhouseTrophyEntries(),earned=trophies.filter(x=>x.earned);
+   const trophies=farmhouseTrophyEntries(),earned=trophies.filter(x=>x.earned),pending=farmhousePendingRewardCount();
+   const notice=document.getElementById('farmhouseRewardNotice');if(notice){notice.classList.toggle('show',pending>0);notice.textContent=pending?`🎁 ${pending} Farmhouse reward${pending===1?'':'s'} waiting to be collected.`:'All earned rewards collected ✓'}
    const shelf=document.getElementById('trophyShelf');
-   if(shelf)shelf.innerHTML=earned.slice(0,8).map(t=>`<span title="${t.name}">${t.icon}</span>`).join('')||'<small>No trophies yet</small>';
+   if(shelf)shelf.innerHTML=earned.slice(0,8).map(t=>`<span class="${!t.claimed?'rewardWaiting':''}" title="${t.name}${!t.claimed?' • reward waiting':''}">${t.icon}${!t.claimed?'<i>!</i>':''}</span>`).join('')||'<small>No trophies yet</small>';
    const wall=document.getElementById('chapterWall');
    if(wall)wall.innerHTML=Array.from({length:10},(_,i)=>{const level=(i+1)*10,got=!!state.chapterMemorabilia[level],ch=chapterForLevel(level);return `<span class="${got?'earned':''}" title="${got?ch.name:'Locked chapter keepsake'}">${got?ch.icon:'▧'}</span>`}).join('');
    const toys=document.getElementById('toyBox'),toyDefs=DSH.Config.farmhouse.toys;
@@ -1190,13 +1421,19 @@ document.addEventListener('DOMContentLoaded',()=>{
    const box=document.getElementById('farmhouseDetails');if(!box)return;
    if(tab==='trophies'){
      box.innerHTML=`<div class="houseDetailGrid">${trophies.map(t=>{
-       const hidden=t.secret&&!t.earned;return `<div class="houseAchievement ${t.earned?'earned':'locked'}"><span>${t.earned?t.icon:hidden?'❔':'🔒'}</span><div><b>${t.earned?t.name:hidden?'Secret Trophy':t.name}</b><small>${t.earned||!hidden?t.desc:'Requirement hidden.'}</small><strong>${t.earned?'Earned ✓':`Reward: ${t.rewardGems} 💎`}</strong></div></div>`
+       const hidden=t.secret&&!t.earned,pendingReward=t.earned&&!t.claimed;
+       return `<div class="houseAchievement ${t.earned?'earned':'locked'}${pendingReward?' reward-pending':''}"><span>${t.earned?t.icon:hidden?'❔':'🔒'}</span><div><b>${t.earned?t.name:hidden?'Secret Trophy':t.name}${pendingReward?' • NEW!':''}</b><small>${t.earned||!hidden?t.desc:'Requirement hidden.'}</small><strong>${!t.earned?`Reward: ${t.rewardGems} 💎`:t.claimed?'Reward collected ✓':`Reward waiting: ${t.rewardGems} 💎`}</strong>${pendingReward?`<button class="collectHouseReward" data-trophy-reward="${t.key}">🎁 COLLECT ${t.rewardGems} 💎</button>`:''}</div></div>`
      }).join('')}</div>`;
+     box.querySelectorAll('[data-trophy-reward]').forEach(b=>b.onclick=()=>collectTrophyReward(b.dataset.trophyReward));
    }else if(tab==='tiers'){
      const medals=['🥉','🥈','🥇'],names=['Bronze','Silver','Gold'];
      box.innerHTML=Object.entries(DSH.Config.farmhouse.tiers).map(([key,d])=>{
-       const value=farmhouseTierValue(d);return `<section class="tierFamily"><h3>${d.icon} ${d.name} <small>${value.toLocaleString()}</small></h3><div class="tierRow">${d.values.map((v,i)=>`<div class="${state.farmhouseTierClaims[`${key}-${i}`]?'earned':''}"><b>${medals[i]} ${names[i]}</b><span>${Math.min(value,v).toLocaleString()}/${v.toLocaleString()}</span><small>${state.farmhouseTierClaims[`${key}-${i}`]?'Claimed ✓':`+${i+1} 💎`}</small></div>`).join('')}</div></section>`
+       const value=farmhouseTierValue(d);return `<section class="tierFamily"><h3>${d.icon} ${d.name} <small>${value.toLocaleString()}</small></h3><div class="tierRow">${d.values.map((v,i)=>{
+         const claim=`${key}-${i}`,earned=!!state.farmhouseTierClaims[claim],claimed=!!state.farmhouseTierRewardsClaimed?.[claim];
+         return `<div class="${earned?'earned':''}${earned&&!claimed?' reward-pending':''}"><b>${medals[i]} ${names[i]}</b><span>${Math.min(value,v).toLocaleString()}/${v.toLocaleString()}</span><small>${!earned?`Reward: +${i+1} 💎`:claimed?'Reward collected ✓':`Reward waiting: +${i+1} 💎`}</small>${earned&&!claimed?`<button class="collectHouseReward" data-tier-key="${key}" data-tier-index="${i}">🎁 COLLECT</button>`:''}</div>`
+       }).join('')}</div></section>`
      }).join('');
+     box.querySelectorAll('[data-tier-key]').forEach(b=>b.onclick=()=>collectTierReward(b.dataset.tierKey,+b.dataset.tierIndex));
    }else if(tab==='chapters'){
      box.innerHTML=`<div class="chapterKeepsakes">${Array.from({length:10},(_,i)=>{const level=(i+1)*10,ch=chapterForLevel(level),got=!!state.chapterMemorabilia[level];const keeps=['🌱 Pressed Clover','🌻 Sunflower Painting','🐾 Muddy Pawprint','🍎 Golden Apple','⛰️ Mountain Plaque','🍂 Autumn Wreath','🌙 Moon Lantern','❄️ Crystal Snowflake','🌷 Spring Bouquet','👑 Centennial Crown'][i];return `<div class="${got?'earned':'locked'}"><span>${got?keeps.split(' ')[0]:'🔒'}</span><b>${got?keeps.substring(keeps.indexOf(' ')+1):ch.name}</b><small>${got?`Earned by clearing Level ${level}.`:`Clear Level ${level} to place this keepsake.`}</small></div>`}).join('')}</div>`;
    }else if(tab==='rosie'){
@@ -1204,10 +1441,12 @@ document.addEventListener('DOMContentLoaded',()=>{
      box.innerHTML=`<div class="rosieJournalStats"><div>🐾 <b>${state.stats.rosieAdventuresCompleted||0}</b><small>Adventures</small></div><div>🪙 <b>${(state.stats.rosieAdventureCoins||0).toLocaleString()}</b><small>Coins Found</small></div><div>💎 <b>${state.stats.rosieAdventureGems||0}</b><small>Gems Found</small></div><div>🎁 <b>${state.stats.rosieAdventureRareFinds||0}</b><small>Rare Finds</small></div></div><p class="houseJournal">Favorite destination: <b>${fav}</b></p><h3>Rosie's Toy Box</h3><div class="toyJournal">${Object.entries(toyDefs).map(([k,d])=>`<div class="${state.rosieToys?.[k]?'found':'locked'}"><span>${state.rosieToys?.[k]?d.icon:'❔'}</span><b>${state.rosieToys?.[k]?d.name:'Undiscovered Toy'}</b></div>`).join('')}</div>`;
    }else{
      const L=state.lifetime||{};
-     box.innerHTML=`<div class="lifetimeGrid"><div>🪙<b>${(L.coinsEarned||0).toLocaleString()}</b><small>Coins earned since v38</small></div><div>🛒<b>${(L.coinsSpent||0).toLocaleString()}</b><small>Coins spent since v38</small></div><div>💎<b>${(L.gemsEarned||0).toLocaleString()}</b><small>Gems earned since v38</small></div><div>✨<b>${(L.gemsSpent||0).toLocaleString()}</b><small>Gems spent since v38</small></div><div>🃏<b>${(state.stats.cardsCleared||0).toLocaleString()}</b><small>Cards cleared</small></div><div>🌾<b>${(state.harvests||0).toLocaleString()}</b><small>Crops harvested</small></div><div>📋<b>${state.stats.farmOrdersCompleted||0}</b><small>Farm orders</small></div><div>🐕<b>${state.stats.rosieAdventuresCompleted||0}</b><small>Rosie adventures</small></div></div>`;
+     box.innerHTML=`<div class="lifetimeGrid"><div>🪙<b>${(L.coinsEarned||0).toLocaleString()}</b><small>Coins earned since v38</small></div><div>🛒<b>${(L.coinsSpent||0).toLocaleString()}</b><small>Coins spent since v38</small></div><div>💎<b>${(L.gemsEarned||0).toLocaleString()}</b><small>Gems earned since v38</small></div><div>✨<b>${(L.gemsSpent||0).toLocaleString()}</b><small>Gems spent since v38</small></div><div>🃏<b>${(state.stats.cardsCleared||0).toLocaleString()}</b><small>Cards cleared</small></div><div>🌾<b>${(state.harvests||0).toLocaleString()}</b><small>Crops harvested</small></div><div>📋<b>${state.stats.farmOrdersCompleted||0}</b><small>Orders collected</small></div><div>🐕<b>${state.stats.rosieAdventuresCompleted||0}</b><small>Rosie adventures</small></div></div>`;
    }
-   setTextIfPresent('farmhouseMenuStatus',`${earned.length}/${trophies.length} trophies • ${Object.values(state.rosieToys||{}).filter(Boolean).length}/6 toys`);
+   const toysFound=Object.values(state.rosieToys||{}).filter(Boolean).length;
+   setTextIfPresent('farmhouseMenuStatus',pending?`🎁 ${pending} reward${pending===1?'':'s'} waiting`:`${earned.length}/${trophies.length} trophies • ${toysFound}/6 toys`);
  }
+
  function openSection(id){
    renderAllBalances();
    if(id==='farmOverlay'){DSH.Farm.visit();DSH.Farm.render()}
@@ -1382,6 +1621,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    }
    if(action==='almanac'){revealAlmanac();afterDev('Harvest Almanac fully revealed');return}
    if(action==='orders'){DSH.Farm.ensureOrders(true);afterDev('Farm Orders regenerated');return}
+   if(action==='completeOrders'){DSH.Farm.ensureOrders();(state.farmOrders||[]).forEach(o=>{Object.keys(o.requirements||{}).forEach(k=>o.progress[k]=o.requirements[k]);o.ready=true;o.readyCoinBase=o.rewardCoins;o.completedAt=Date.now()});afterDev('All Farm Orders marked ready for manual collection');return}
    if(action==='daily'){state.dailyLastClaimDate='';state.dailyLastWinDate='';renderDailyUI();afterDev('Daily Challenge claim/streak cleared');return}
    if(action==='finishAdventure'){if(state.rosieAdventure)state.rosieAdventure.endsAt=Date.now()-1;afterDev('Rosie Adventure finished instantly');return}
    if(action==='toy'){
@@ -1389,6 +1629,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      state.rosieToys[k]=true;state.stats.rosieToysFound=Math.max(state.stats.rosieToysFound||0,Object.values(state.rosieToys).filter(Boolean).length);afterDev(`Gave Rosie toy: ${DSH.Config.farmhouse.toys[k].name}`);return
    }
    if(action==='trophy'){unlockFarmhouseTrophy('unbroken');afterDev('Unlocked test trophy: Unbroken');return}
+   if(action==='unclaimTrophy'){state.farmhouseTrophies.unbroken=true;state.farmhouseTrophyRewardsClaimed=state.farmhouseTrophyRewardsClaimed||{};delete state.farmhouseTrophyRewardsClaimed.unbroken;afterDev('Unbroken trophy reward marked unclaimed for testing');return}
    if(action==='tierProgress'){state.harvests=Math.max(state.harvests||0,100);state.stats.levelsCompleted=Math.max(state.stats.levelsCompleted||0,100);state.stats.rosieAdventuresCompleted=Math.max(state.stats.rosieAdventuresCompleted||0,50);checkFarmhouseAchievements();afterDev('Added achievement-tier progress');return}
    if(action==='chapterKeepsakes'){for(let n=10;n<=100;n+=10){state.milestonesCleared[n]=true;state.chapterMemorabilia[n]=true}afterDev('Completed all Chapter Wall keepsakes');return}
    if(action==='resetTrophies'){devTrophyChecksPaused=true;state.farmhouseTrophies={};state.farmhouseTierClaims={};state.stats.trophiesUnlocked=0;state.stats.tierAchievementsUnlocked=0;DSH.Save.save(state);renderDevSummary();showRewardToast('Developer Tool','Trophy/tier flags reset and automatic trophy checks paused for this session. Previous rewards were not removed.','🛠️');return}
@@ -1404,7 +1645,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  function devSetLevel(){
    if(!devUnlocked)return openDeveloperMenu();
    const n=Math.max(1,Math.min(9999,parseInt(document.getElementById('devLevelInput').value,10)||1));
-   state.level=n;state.region=Math.min(DSH.Config.farmRegions.length-1,Math.floor((n-1)/4));state.farmRegionView=state.region;
+   state.level=n;state.highestLevelReached=n;state.region=Math.min(DSH.Config.farmRegions.length-1,Math.floor((n-1)/4));state.farmRegionView=state.region;
    handStarted=false;handComplete=false;game={};afterDev(`Level set to ${n}`);
  }
 
@@ -1418,10 +1659,14 @@ document.addEventListener('DOMContentLoaded',()=>{
  document.getElementById('shearsBtn').onclick=toggleShearsMode;
  document.getElementById('diceBtn').onclick=toggleDice;document.getElementById('seedBtn').onclick=toggleSeed;document.getElementById('sunBtn').onclick=useSunCharm;
  document.querySelectorAll('[data-shop]').forEach(b=>b.onclick=()=>buyShopItem(b.dataset.shop));document.querySelectorAll('[data-shop-tier2]').forEach(b=>b.onclick=()=>buyTier2(b.dataset.shopTier2));document.getElementById('buyDrawsBtn').onclick=buyDraws;document.getElementById('gateBtn').onclick=toggleGateMode;document.getElementById('rosieBtn').onclick=useRosieRescue;
- document.getElementById('challengeNormalBtn').onclick=()=>{document.getElementById('challengeOfferOverlay').classList.remove('show');setTimeout(collectMechanicNotices,100)};
- document.getElementById('challengeAcceptBtn').onclick=()=>{game.challengeHand=true;game.stock.splice(0,Math.min(2,Math.max(0,game.stock.length-18)));const candidates=game.layout.filter(c=>!c.special);candidates.slice(0,2).forEach((c,i)=>c.special=i?'heavy':'sleeping');document.getElementById('challengeOfferOverlay').classList.remove('show');render(true);showRewardToast('🔥 Challenge Accepted',`Win for +${DSH.Config.specialCards.challengeCoins} coins +${DSH.Config.specialCards.challengeGems} 💎`,'🔥')};
+ document.getElementById('challengeNormalBtn').onclick=()=>{game.challengeDecisionMade=true;game.challengeOfferOpen=false;document.getElementById('challengeOfferOverlay').classList.remove('show');setTimeout(collectMechanicNotices,100)};
+ document.getElementById('challengeAcceptBtn').onclick=()=>{
+   if(!game.challengeOfferOpen&&!document.getElementById('challengeOfferOverlay').classList.contains('show'))return;
+   game.challengeDecisionMade=true;game.challengeOfferOpen=false;applyChallengeMutators();
+   document.getElementById('challengeOfferOverlay').classList.remove('show');render(true);showRewardToast('🔥 Challenge Accepted',`Win for +${DSH.Config.specialCards.challengeCoins} coins +${DSH.Config.specialCards.challengeGems} 💎`,'🔥')
+ };
  document.getElementById('fullscreenBtn').onclick=toggleFullscreen;
- document.getElementById('homeBtn').onclick=()=>open('pauseOverlay');document.getElementById('resumeBtn').onclick=()=>close('pauseOverlay');
+ document.getElementById('homeBtn').onclick=()=>{if(locked){msg('Finish the current card animation first.');return}open('pauseOverlay')};document.getElementById('resumeBtn').onclick=()=>close('pauseOverlay');
  document.getElementById('restartBtn').onclick=restartCurrent;document.getElementById('pauseMainMenuBtn').onclick=showMain;
  document.getElementById('playBtn').onclick=ensureHand;
  document.getElementById('mainDailyBtn').onclick=()=>openSection('dailyOverlay');
@@ -1469,7 +1714,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  document.getElementById('tutorialToggle').onclick=()=>{state.settings.tutorialNotices=!state.settings.tutorialNotices;if(!state.settings.tutorialNotices){mechanicNoticeQueue=[];if(mechanicNoticeActive)closeMechanicNotice()}DSH.Save.save(state);renderSettings()};
  document.addEventListener('keydown',e=>{
    if(['INPUT','TEXTAREA','SELECT'].includes(e.target?.tagName)||e.ctrlKey||e.metaKey||e.altKey)return;
-   if(!handStarted||document.querySelector('.overlay.open'))return;
+   if(!handStarted||document.querySelector('.overlay.open')||document.getElementById('previewChoiceOverlay').classList.contains('show')||document.getElementById('challengeOfferOverlay').classList.contains('show'))return;
    const k=e.key.toLowerCase();
    if(k==='d'){e.preventDefault();draw()}
    else if(k==='r'){e.preventDefault();useReserve()}

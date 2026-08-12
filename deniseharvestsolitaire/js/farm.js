@@ -38,22 +38,35 @@ DSH.Farm=(()=>{
    if(!Array.isArray(state.farmOrders))state.farmOrders=[];
    const slots=C.farmOrders.slots;
    // Repair/migrate malformed orders and always maintain exactly one of each tier.
-   state.farmOrders=state.farmOrders.filter(o=>o&&o.tier&&o.requirements&&o.progress);
+   state.farmOrders=state.farmOrders.filter(o=>o&&o.tier&&o.requirements&&o.progress&&C.farmOrders.tiers[o.tier]);
    const next=[];
    slots.forEach(tier=>{
      let o=state.farmOrders.find(x=>x.tier===tier);
      if(!o)o=makeOrder(tier);
+     if(orderComplete(o)){
+       o.ready=true;
+       if(!Number.isFinite(Number(o.readyCoinBase)))o.readyCoinBase=Math.round(o.rewardCoins*(DSH.Weather?.effects(state).orderCoin||1));
+       o.completedAt=Number(o.completedAt)||Date.now();
+     }
      next.push(o);
    });
    state.farmOrders=next;
    if(force||JSON.stringify(state.farmOrders)!==before)DSH.Save.save(state);
  }
  function orderComplete(o){return Object.entries(o.requirements).every(([k,q])=>(o.progress[k]||0)>=q)}
- function awardOrder(o){
+ function readyOrderCount(){if(!state)return 0;ensureOrders();return (state.farmOrders||[]).filter(o=>o&&(o.ready||orderComplete(o))).length}
+ function collectOrder(id){
+   ensureOrders();
+   const o=state.farmOrders.find(x=>x.id===id);
+   if(!o||!(o.ready||orderComplete(o))){onMessage('That Farm Order is not ready yet.');return false}
    const T=C.farmOrders.tiers[o.tier],h=DSH.Progress.clampHappiness(state);
-   let gems=0,power='',coins=Math.round(o.rewardCoins*(DSH.Weather?.effects(state).orderCoin||1));
-   if((state.rosieAdventureFinds?.clover||0)>0){state.rosieAdventureFinds.clover--;coins*=2;onMessage('🍀 Lucky Clover! This Farm Order pays double coins.')}
-   state.coins+=coins;state.stats.farmOrdersCompleted=(state.stats.farmOrdersCompleted||0)+1;
+   let gems=0,power='',clover=false,coins=Math.max(0,Math.round(Number(o.readyCoinBase)||o.rewardCoins));
+   if((state.rosieAdventureFinds?.clover||0)>0){
+     state.rosieAdventureFinds.clover--;coins*=2;clover=true;
+   }
+   state.coins+=coins;
+   state.stats.farmOrdersCompleted=(state.stats.farmOrdersCompleted||0)+1;
+   state.stats.farmOrdersCollected=(state.stats.farmOrdersCollected||0)+1;
    state.stats.farmOrderCoinsEarned=(state.stats.farmOrderCoinsEarned||0)+coins;
    const happinessBonus=Math.min(.10,h/1000);
    if(Math.random()<T.gemChance+happinessBonus){state.gems++;gems=1;state.stats.farmOrderGemsEarned=(state.stats.farmOrderGemsEarned||0)+1}
@@ -67,38 +80,51 @@ DSH.Farm=(()=>{
    }
    const idx=state.farmOrders.findIndex(x=>x.id===o.id);
    if(idx>=0)state.farmOrders[idx]=makeOrder(o.tier);
-   onReward?.(`${T.icon} ${T.label} Order Complete!`,`${coins} coins${gems?' • +1 💎':''}${power?' • '+power:''}`,T.icon);
+   onChange();render();flashFarmBalance();
+   onReward?.(`${T.icon} ${T.label} Order Collected!`,`${coins} coins${clover?' • 🍀 Lucky Clover 2×':''}${gems?' • +1 💎':''}${power?' • '+power:''}`,T.icon);
+   return true;
  }
  function advanceOrders(cropKey){
    ensureOrders();
-   let advanced=0,completed=[];
+   let advanced=0,becameReady=0,progress=[];
    state.farmOrders.forEach(o=>{
+     if(o.ready||orderComplete(o)){o.ready=true;return}
      if(o.requirements[cropKey]&&((o.progress[cropKey]||0)<o.requirements[cropKey])){
-       o.progress[cropKey]=(o.progress[cropKey]||0)+1;advanced++;
-       if(orderComplete(o))completed.push(o);
+       const before=o.progress[cropKey]||0;
+       o.progress[cropKey]=before+1;advanced++;
+       const ready=orderComplete(o);
+       if(ready){
+         o.ready=true;o.completedAt=Date.now();
+         o.readyCoinBase=Math.round(o.rewardCoins*(DSH.Weather?.effects(state).orderCoin||1));
+         becameReady++;
+       }
+       progress.push({id:o.id,tier:o.tier,cropKey,before,after:o.progress[cropKey],target:o.requirements[cropKey],ready});
      }
    });
-   completed.forEach(awardOrder);
-   if(advanced||completed.length)onChange();
-   return{advanced,completed:completed.length};
+   if(advanced)onChange();
+   return{advanced,completed:becameReady,becameReady,progress};
  }
  function renderOrders(){
    const box=document.getElementById('farmOrdersGrid');if(!box||!state)return;
    ensureOrders();ensureInDemand();
-   const demand=cropDefs[state.inDemandCrop];
+   const demand=cropDefs[state.inDemandCrop],readyCount=readyOrderCount(),clover=(state.rosieAdventureFinds?.clover||0)>0;
    const badge=document.getElementById('inDemandBadge');
-   if(badge)badge.textContent=demand?`🔥 In Demand: ${demand.icon} ${demand.name} +25% harvest coins`:'🔥 In Demand: —';
+   if(badge)badge.textContent=`${readyCount?`📋 ${readyCount} reward${readyCount===1?'':'s'} waiting! • `:''}${demand?`🔥 In Demand: ${demand.icon} ${demand.name} +25%`:'🔥 In Demand: —'}`;
    box.innerHTML=state.farmOrders.map(o=>{
-     const T=C.farmOrders.tiers[o.tier],parts=Object.entries(o.requirements).map(([k,q])=>{
+     const T=C.farmOrders.tiers[o.tier],ready=!!o.ready||orderComplete(o),parts=Object.entries(o.requirements).map(([k,q])=>{
        const d=cropDefs[k],p=Math.min(q,o.progress[k]||0);
        return `<span class="${p>=q?'done':''}">${d.icon} ${d.name} ${p}/${q}</span>`;
      }).join('');
-     return `<div class="farmOrderCard order-${o.tier}">
-       <div class="farmOrderTitle"><span>${T.icon}</span><b>${T.label} Order</b><strong>${o.rewardCoins} 🪙</strong></div>
+     const base=Math.max(0,Math.round(Number(o.readyCoinBase)||o.rewardCoins)),shown=ready&&clover?base*2:base;
+     return `<div class="farmOrderCard order-${o.tier}${ready?' order-ready':''}" data-order-id="${o.id}">
+       <div class="farmOrderTitle"><span>${T.icon}</span><b>${T.label} Order${ready?' • READY!':''}</b><strong>${shown} 🪙</strong></div>
        <div class="farmOrderReqs">${parts}</div>
-       <small>${o.tier==='premium'?'Best bonus odds':'Bonus gem/power chance'} • Rosie Happiness slightly improves bonuses</small>
+       ${ready
+         ?`<small>${clover?'🍀 Lucky Clover available — collect this order for 2× coins.':'Reward is waiting. Harvests no longer advance this order until collected.'}</small><button class="collectOrderBtn" data-collect-order="${o.id}">🎁 COLLECT REWARD</button>`
+         :`<small>${o.tier==='premium'?'Best bonus odds':'Bonus gem/power chance'} • Rosie Happiness slightly improves bonuses</small>`}
      </div>`;
    }).join('');
+   box.querySelectorAll('[data-collect-order]').forEach(b=>b.onclick=()=>collectOrder(b.dataset.collectOrder));
  }
  function unlockedRegionIndex(){return Math.max(0,Math.min(Number(state?.region)||0,regionDefs.length-1))}
  function activeRegionIndex(){
@@ -218,6 +244,7 @@ DSH.Farm=(()=>{
    }
  }
  function petRosie(){
+   if(state.rosieAdventure){onMessage(Date.now()>=state.rosieAdventure.endsAt?'Welcome Rosie home and collect her Adventure rewards first.':'Rosie is out exploring right now. 🐾');return}
    const now=Date.now(),last=Number(state.lastPetAt)||0,wait=C.happiness.petCooldownMs-(now-last);
    if(wait>0){onMessage(`Rosie can be petted again in ${formatTime(wait)}.`);return}
    state.lastPetAt=now;state.stats.petRosieCount=(state.stats.petRosieCount||0)+1;state.collection=state.collection||{specials:{},crops:{},regions:{0:true},powers:{},rosie:{}};state.collection.rosie.petted=true;
@@ -225,6 +252,7 @@ DSH.Farm=(()=>{
    onChange();render();onReward?.('Rosie loved that!',`+${C.happiness.pet} Happiness ❤️`,'💗');
  }
  function feedTreat(){
+   if(state.rosieAdventure){onMessage(Date.now()>=state.rosieAdventure.endsAt?'Welcome Rosie home before giving her a treat.':'Rosie is out exploring right now. Save the treat for when she gets home. 🐾');return}
    if((state.rosieTreats||0)<=0){onMessage("Rosie doesn't have any treats right now.");return}
    state.rosieTreats--;state.stats.treatsFed=(state.stats.treatsFed||0)+1;
    addHappy(C.happiness.treat,'Treat time!');
@@ -306,20 +334,42 @@ DSH.Farm=(()=>{
  }
  function setText(id,v){const e=document.getElementById(id);if(e)e.textContent=v}
 
+ function flashFarmBalance(id='farmCoins'){
+   setTimeout(()=>{const el=document.getElementById(id);if(!el)return;el.classList.remove('balanceGain');void el.offsetWidth;el.classList.add('balanceGain');setTimeout(()=>el.classList.remove('balanceGain'),700)},30);
+ }
+ function showPlotFeedback(i,items,kind=''){
+   const fire=()=>{
+     const plot=document.querySelector(`.plot[data-plot-index="${i}"]`);if(!plot)return;
+     const box=document.createElement('div');box.className='plotFeedback '+kind;
+     box.innerHTML=items.map((x,n)=>`<span style="--feedback-order:${n}">${x}</span>`).join('');
+     plot.appendChild(box);setTimeout(()=>box.remove(),1900);
+   };
+   setTimeout(fire,25);
+ }
+ function pulseOrderProgress(result){
+   if(!result?.progress?.length)return;
+   setTimeout(()=>result.progress.forEach(p=>{
+     const card=document.querySelector(`.farmOrderCard[data-order-id="${p.id}"]`);if(!card)return;
+     card.classList.add(p.ready?'order-just-ready':'order-progressed');
+     setTimeout(()=>card.classList.remove('order-progressed','order-just-ready'),1300);
+   }),40);
+ }
  function plant(type){
    const d=cropDefs[type],region=activeRegionIndex(),i=Number.isInteger(chosenPlot)?chosenPlot:state.plots.findIndex(x=>!x);
    if(!d||(state.region||0)<d.minRegion){onMessage('That crop has not been unlocked yet.');return}
-   if(i<0||state.plots[i]){onMessage('Select an empty plot first.');return}
+   if(i<0||state.plots[i]){onMessage(state.plots.every(Boolean)?'All six crop fields are full. Harvest something before planting again.':'Select an empty plot first.');return}
    if(state.coins<d.cost){onMessage('Not enough coins.');return}
-   state.coins-=d.cost;state.plots[i]={type,age:0,region};chosenPlot=null;onChange();
+   state.coins-=d.cost;state.plots[i]={type,age:0,region};chosenPlot=null;onChange();render();
+   showPlotFeedback(i,[`${d.icon} ${d.name}`,'PLANTED!'],'plantedFeedback');
    onMessage(`${d.icon} ${d.name} planted${d.homeRegion===region?' in its home region!':'.'}`);
  }
  function harvest(i){
    const p=state.plots[i],d=p&&cropDefs[p.type];if(!p||p.age<d.grow)return;
    const plantedRegion=Number.isInteger(p.region)?p.region:Math.min(d.homeRegion||0,state.region||0);
    ensureInDemand();
+   const homeBonus=d.homeRegion===plantedRegion;
    let pay=Math.round(d.payout*regionalCropMultiplier(plantedRegion,p.type));
-   const weatherFx=DSH.Weather?.effects(state)||{};pay=Math.round(pay*(weatherFx.cropCoin||1));if(weatherFx.bumper===p.type)pay*=2;
+   const weatherFx=DSH.Weather?.effects(state)||{};pay=Math.round(pay*(weatherFx.cropCoin||1));const bumper=weatherFx.bumper===p.type;if(bumper)pay*=2;
    const inDemand=p.type===state.inDemandCrop;if(inDemand){pay=Math.round(pay*C.farmOrders.inDemandMultiplier);state.stats.inDemandHarvests=(state.stats.inDemandHarvests||0)+1}
    if(state.upgrades.butterfly)pay=Math.round(pay*C.cropRewards.butterflyMultiplier);
    state.coins+=pay;state.harvests++;state.stats.regionalCropsHarvested=(state.stats.regionalCropsHarvested||0)+1;if(p.type==='apple')state.stats.applesHarvested=(state.stats.applesHarvested||0)+1;
@@ -336,7 +386,6 @@ DSH.Farm=(()=>{
      gates=Math.random()<C.cropRewards.gateDoubleChance?2:1;
      state.magicGates=(state.magicGates||0)+gates;state.stats.magicGatesFound+=gates;
    }
-   // The pink bandana improves Rosie's direct farm finds; happiness also raises the chance.
    if(state.upgrades.bandana&&Math.random()<Math.min(.80,cropRescueChance())){
      rescues=Math.random()<C.cropRewards.rescueDoubleChance?2:1;
      state.rosieRescues=(state.rosieRescues||0)+rescues;state.stats.rosieRescuesFound+=rescues;
@@ -344,10 +393,17 @@ DSH.Farm=(()=>{
    }
    const orderResult=advanceOrders(p.type);
    announceAchievements();DSH.Audio.play.harvest();onChange();render();
-   let extras=[];if(wind)extras.push(`🌬️ ×${wind}`);if(gates)extras.push(`🚪 ×${gates}`);if(rescues)extras.push(`🐾 ×${rescues}`);if(treats)extras.push(`🦴 ×${treats}`);
-   onReward?.(`${d.icon} Crop Harvest!`,`${pay} coins${inDemand?' • 🔥 In Demand':''}${orderResult.advanced?' • 📋 Order progress':''}${extras.length?' • '+extras.join(' '):''}`,d.icon);
-   if(rescues)onReward?.('ROSIE FOUND SOMETHING!',`Rosie Rescue ×${rescues}`,'🐕');
-   onMessage(`${d.icon} Harvested for ${pay} coins${extras.length?' with bonuses!':'.'}`);
+   const feedback=[`${d.icon} +${pay} 🪙`,`+${C.happiness.cropHarvest} ❤️`];
+   if(homeBonus)feedback.push('🏡 HOME +15%');
+   if(inDemand)feedback.push('🔥 IN DEMAND +25%');
+   if(bumper)feedback.push('🌻 BUMPER 2×');
+   if(wind)feedback.push(`🌬️ +${wind}`);
+   if(gates)feedback.push(`🚪 +${gates}`);
+   if(rescues)feedback.push(`🐾 +${rescues}`);
+   if(treats)feedback.push(`🦴 +${treats}`);
+   if(orderResult.advanced)feedback.push(orderResult.becameReady?'📋 ORDER READY!':`📋 +${orderResult.advanced}`);
+   showPlotFeedback(i,feedback,'harvestFeedback');pulseOrderProgress(orderResult);flashFarmBalance();
+   onMessage(`${d.icon} Harvested for ${pay} coins${orderResult.becameReady?' • Farm Order ready to collect!':orderResult.advanced?' • Farm Order progress!':''}`);
  }
  function grow(){const extra=DSH.Weather?.effects(state).extraGrowth||0;state.plots=state.plots.map(p=>p?{...p,age:p.age+1+extra}:p)}
  function upgrade(k){
@@ -384,6 +440,19 @@ DSH.Farm=(()=>{
    if(r===2){state.rosieRescues++;state.stats.rosieRescuesFound++;return'🐾 Rosie Rescue'}
    state.rosieTreats++;state.stats.treatsFound++;return'🦴 Rosie Treat';
  }
+ function showAdventureRewardPopup(data){
+   const overlay=document.getElementById('rosieRewardOverlay'),grid=document.getElementById('rosieRewardGrid');
+   if(!overlay||!grid){onReward?.('Welcome home, Rosie! 🐕',data.summary,'🐾');return}
+   setText('rosieRewardTrip',`${data.region} • ${data.duration}`);
+   const items=[{icon:'🪙',label:'Coins',value:`+${data.coins}`}];
+   if(data.gems)items.push({icon:'💎',label:'Gems',value:`+${data.gems}`});
+   if(data.power)items.push({icon:data.power.includes('Windmill')?'🌬️':data.power.includes('Gate')?'🚪':data.power.includes('Rescue')?'🐾':'🦴',label:'Farm Find',value:data.power.replace(/[🌬️🚪🐾🦴]/g,'').trim()});
+   if(data.rare)items.push({icon:data.rare.icon,label:'Rare Find',value:data.rare.name});
+   if(data.toy)items.push({icon:data.toy.icon,label:'NEW TOY!',value:data.toy.name,newItem:true});
+   grid.innerHTML=items.map((x,i)=>`<div class="rosieRewardItem${x.newItem?' newRewardItem':''}" style="--reward-order:${i}"><span>${x.icon}</span><small>${x.label}</small><b>${x.value}</b></div>`).join('');
+   overlay.classList.add('open');
+   const done=document.getElementById('rosieRewardDone');if(done)done.onclick=()=>overlay.classList.remove('open');
+ }
  function claimAdventure(forceRare=false){
    const a=state.rosieAdventure;if(!a)return;
    if(Date.now()<a.endsAt&&!forceRare){onMessage('Rosie is still exploring.');return}
@@ -405,9 +474,11 @@ DSH.Farm=(()=>{
    }
    state.stats.rosieAdventuresCompleted++;state.stats.rosieAdventureCoins+=coins;state.stats.rosieAdventureGems+=gems;if(power)state.stats.rosieAdventurePowers++;
    const hist=state.rosieAdventureHistory;hist[a.region]=(hist[a.region]||0)+1;
-   state.rosieAdventure=null;onChange();render();
    const rd=rare?C.rosieAdventures.rareFinds[rare]:null,td=toy?C.farmhouse.toys[toy]:null;
-   onReward?.('Welcome home, Rosie! 🐕',`${coins} coins${gems?' • +1 💎':''}${power?' • '+power:''}${rd?' • '+rd.icon+' '+rd.name:''}${td?' • '+td.icon+' '+td.name+' TOY!':''}`,'🐾');
+   const reward={coins,gems,power,rare:rd,toy:td,region:regions[a.region],duration:d.name,
+     summary:`${coins} coins${gems?' • +1 💎':''}${power?' • '+power:''}${rd?' • '+rd.icon+' '+rd.name:''}${td?' • '+td.icon+' '+td.name+' TOY!':''}`};
+   state.rosieAdventure=null;onChange();render();showAdventureRewardPopup(reward);
+   onMessage('🐕 Rosie is home! Adventure rewards collected.');
  }
  function useAdventureFind(key){
    const n=state.rosieAdventureFinds[key]||0;if(n<=0)return;
@@ -440,17 +511,22 @@ DSH.Farm=(()=>{
    const finds=document.getElementById('adventureFinds');
    if(finds)finds.innerHTML=Object.entries(C.rosieAdventures.rareFinds).map(([k,d])=>`<button data-find="${k}" ${(state.rosieAdventureFinds[k]||0)<=0?'disabled':''}><span>${d.icon}</span><b>${d.name} ×${state.rosieAdventureFinds[k]||0}</b><small>${d.desc}</small></button>`).join('');
    finds?.querySelectorAll('[data-find]').forEach(b=>b.onclick=()=>useAdventureFind(b.dataset.find));
-   const rosie=document.getElementById('rosie');if(rosie)rosie.classList.toggle('adventuring',!!a&&now<a.endsAt);
+   const rosie=document.getElementById('rosie');if(rosie){
+     const returned=!!a&&now>=a.endsAt;rosie.classList.toggle('adventuring',!!a&&!returned);rosie.classList.toggle('returnedHome',returned);
+     rosie.onclick=returned?()=>claimAdventure():a?null:()=>petRosie();
+     rosie.title=returned?'Rosie is home — tap to reveal her Adventure rewards':a?'Rosie is out exploring':'Pet Rosie';
+   }
  }
  function renderHappiness(){
    const h=DSH.Progress.clampHappiness(state),bar=document.getElementById('rosieHappinessBar');
    setText('rosieHappinessText',`${h}/100 ❤️`);if(bar)bar.style.width=h+'%';
    setText('rosieTreatCount',state.rosieTreats||0);
    setText('rosieTreasureStatus',h>=100?'🎁 Treasure ready on next harvest!':`Treasure at 100 • Find bonus +${Math.round(DSH.Progress.happinessFindBonus(state)*100)}%`);
-   const now=Date.now(),wait=Math.max(0,C.happiness.petCooldownMs-(now-(Number(state.lastPetAt)||0)));
-   setText('petRosieCooldown',wait?`Pet again in ${formatTime(wait)}`:'Petting ready');
+   const now=Date.now(),wait=Math.max(0,C.happiness.petCooldownMs-(now-(Number(state.lastPetAt)||0))),away=!!state.rosieAdventure,returned=away&&now>=state.rosieAdventure.endsAt;
+   setText('petRosieCooldown',away?(returned?'🐕 Welcome Rosie home first':'🐾 Rosie is exploring…'):(wait?`Pet again in ${formatTime(wait)}`:'Petting ready'));
    const pet=document.getElementById('petRosieBtn'),feed=document.getElementById('feedTreatBtn');
-   if(pet)pet.disabled=wait>0;if(feed)feed.disabled=(state.rosieTreats||0)<=0||h>=100;
+   if(pet){pet.disabled=away||wait>0;pet.title=away?(returned?'Collect Rosie’s Adventure rewards first.':'Rosie is currently away on an Adventure.'):'Pet Rosie'}
+   if(feed){feed.disabled=away||(state.rosieTreats||0)<=0||h>=100;feed.title=away?(returned?'Collect Rosie’s Adventure rewards first.':'Rosie is currently away on an Adventure.'):'Give Rosie a treat'}
  }
  function render(){
    if(!state)return;renderTimedHarvest();renderHappiness();renderOrders();renderAdventure();
@@ -463,9 +539,20 @@ DSH.Farm=(()=>{
    setText('nextRegionUnlock',atMax?'All farm regions unlocked':`Next: ${nextDef.name} at Level ${nextDef.unlockLevel}`);
    const prog=document.getElementById('regionProgress');if(prog)prog.style.width=atMax?'100%':Math.min(100,Math.max(0,(state.level-(regionDefs[state.region]?.unlockLevel||1))/(nextDef.unlockLevel-(regionDefs[state.region]?.unlockLevel||1))*100))+'%';
    const p=document.getElementById('plots');if(p){p.innerHTML='';state.plots.forEach((plot,i)=>{
-     const el=document.createElement('div');el.className='plot';
-     if(!plot){el.textContent='+';el.onclick=()=>{chosenPlot=i;onMessage('Plot selected. Choose a crop.')}}
-     else{const d=cropDefs[plot.type],ready=plot.age>=d.grow;el.textContent=ready?d.icon:'🌱';if(ready)el.classList.add('ready');el.onclick=()=>harvest(i)}
+     const el=document.createElement('div');el.className='plot';el.dataset.plotIndex=i;
+     if(!plot){
+       el.innerHTML='<span class="emptyPlotPlus">＋</span>';
+       if(chosenPlot===i)el.classList.add('selectedPlot');
+       el.onclick=()=>{chosenPlot=i;render();onMessage('Plot selected. Choose a crop.')}
+     }else{
+       const d=cropDefs[plot.type],ready=plot.age>=d.grow;
+       el.innerHTML=ready
+         ?`<span class="matureCrop">${d.icon}</span><small class="plotCropLabel">${d.name}</small>`
+         :`<span class="seedlingCrop">🌱</span><span class="cropIdentity">${d.icon}</span><small class="plotCropLabel">${d.name}</small>`;
+       if(ready){el.classList.add('ready');el.title=`${d.name} ready to harvest`}
+       else el.title=`Growing ${d.name} • ${Math.min(plot.age,d.grow)}/${d.grow}`;
+       el.onclick=()=>harvest(i)
+     }
      p.appendChild(el);
    })}
    const scene=document.getElementById('farmScene');if(scene){
@@ -475,13 +562,14 @@ DSH.Farm=(()=>{
    const decor=document.getElementById('regionDecorVisual');if(decor){decor.textContent=ownsDecor(r.decor.key)?r.decor.icon:'';decor.title=ownsDecor(r.decor.key)?r.decor.name:''}
    const rosie=document.getElementById('rosie');if(rosie)rosie.classList.toggle('bandanaOn',!!state.upgrades.bandana);
    const cropBox=document.getElementById('cropChoices');if(cropBox){
-     cropBox.innerHTML='';
+     cropBox.innerHTML='';const fieldsFull=state.plots.every(Boolean);
+     const fullNote=document.getElementById('fieldsFullNotice');if(fullNote){fullNote.classList.toggle('show',fieldsFull);fullNote.textContent=fieldsFull?'🌱 All six fields are full — harvest a crop to plant more.':''}
      Object.entries(cropDefs).forEach(([key,d])=>{
        if(d.minRegion>state.region)return;
-       const item=document.createElement('div');item.className='item cropChoice'+(d.homeRegion===ri?' signatureCrop':'');
+       const item=document.createElement('div');item.className='item cropChoice'+(d.homeRegion===ri?' signatureCrop':'')+(fieldsFull?' fieldsFull':'');
        const home=regionDefs[d.homeRegion]?.name||'Farm';
-       item.innerHTML=`<b>${d.icon} ${d.name} — ${d.cost} coins</b><small>${d.grow} clear${d.grow===1?'':'s'} • pays ${d.payout} base • Home: ${home}${d.homeRegion===ri?' • +15% home bonus':''}</small><button data-crop="${key}">Plant</button>`;
-       const b=item.querySelector('button');b.disabled=state.coins<d.cost;b.onclick=()=>plant(key);cropBox.appendChild(item);
+       item.innerHTML=`<b>${d.icon} ${d.name} — ${d.cost} coins</b><small>${d.grow} clear${d.grow===1?'':'s'} • pays ${d.payout} base • Home: ${home}${d.homeRegion===ri?' • +15% home bonus':''}</small><button data-crop="${key}">${fieldsFull?'Fields Full':'Plant'}</button>`;
+       const b=item.querySelector('button');b.disabled=fieldsFull||state.coins<d.cost;b.title=fieldsFull?'Harvest a crop before planting another.':state.coins<d.cost?'Not enough coins.':`Plant ${d.name}`;b.onclick=()=>plant(key);cropBox.appendChild(item);
      });
    }
    const rd=document.getElementById('regionDecorCard');if(rd){
@@ -490,6 +578,6 @@ DSH.Farm=(()=>{
    }
    document.querySelectorAll('[data-upgrade]').forEach(b=>{const k=b.dataset.upgrade;b.disabled=!!state.upgrades[k];if(state.upgrades[k])b.textContent='Owned ✓'});
  }
- return{bind,plant,harvest,grow,upgrade,render,visit,petRosie,feedTreat,claimTimedHarvest,renderTimedHarvest,renderHappiness,timedStatus,setRegion,claimRegionRewards,buyRegionDecor,ensureOrders,renderOrders,advanceOrders,
+ return{bind,plant,harvest,grow,upgrade,render,visit,petRosie,feedTreat,claimTimedHarvest,renderTimedHarvest,renderHappiness,timedStatus,setRegion,claimRegionRewards,buyRegionDecor,ensureOrders,renderOrders,advanceOrders,collectOrder,readyOrderCount,
  startAdventure,claimAdventure,renderAdventure,useAdventureFind,cropDefs,regions,regionDefs};
 })();

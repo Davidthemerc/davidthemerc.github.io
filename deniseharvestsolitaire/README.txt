@@ -474,3 +474,208 @@ v40.1 bug-fix / general error pass
 - Added cache-busting ?v=40.1 asset URLs so GitHub Pages/mobile Chrome is less likely to mix old JS/CSS with the new index after deployment.
 - General static error pass: TypeScript checkJs high-signal undefined-name scan is clean across all JS files.
 - Runtime smoke tests now cover Farm rendering, Daily completion, Shooting Star preservation in Daily, Shooting Star consumption on normal clears, and stock-count/message synchronization.
+
+v40.2 Farm Feedback & Active Collection
+---------------------------------------
+- Farm Orders no longer auto-pay or instantly replace themselves when completed.
+- A completed Easy/Standard/Premium Farm Order freezes in a READY state until the player taps COLLECT REWARD.
+- Harvests made while an order is waiting do not secretly count toward its replacement.
+- Collecting the reward generates that tier's replacement order.
+- Lucky Clover is now consumed when the player chooses which completed order to collect; it doubles that collected order's coins.
+- Farm Order cards visibly pulse when matching harvest progress is made and get a stronger READY state when completed.
+- Main Menu Farm status and the Farm Orders header show when order rewards are waiting.
+- Planting now gives plot-local feedback showing exactly which crop was planted.
+- Growing plots retain a visible crop identity icon/name instead of showing only a generic seedling.
+- Mature crops have a clearer ready-to-harvest animation.
+- When all six plots are occupied, every Plant button visibly grays out and reads Fields Full until a plot is harvested.
+- Crop harvesting now uses local floating feedback instead of an interrupting popup: coins, Rosie Happiness, Home bonus, In Demand bonus, Bumper bonus, Windmills, Gates, Rescues, Treats, and Farm Order progress can all appear directly above the harvested field.
+- The farm coin balance pulses when harvest/order coins arrive.
+- Rosie Adventure homecoming now has a dedicated reward reveal popup with individual cards for coins, gems, powers, rare finds, and newly discovered toys.
+- While Rosie is away, Pet Rosie and Treat are disabled and grayed out. They remain disabled after she returns until her Adventure homecoming/reward collection is acknowledged.
+- Returned Rosie is visible and can be tapped directly to reveal/collect her Adventure rewards.
+- Farmhouse trophies now unlock separately from their rewards. Newly earned trophy rewards wait in Denise's Farmhouse for manual collection.
+- Bronze/Silver/Gold achievement-tier rewards likewise wait for manual collection.
+- Main Menu Farmhouse status and the Farmhouse itself show how many rewards are waiting.
+- Existing v40/v40.1 saves are protected from duplicate rewards: trophies and tier achievements that were already auto-paid are automatically marked as previously collected.
+- Added Developer Menu helpers to complete Farm Orders and mark the test trophy reward unclaimed.
+- Build marker/cache-busting updated to 40.2; integer save schema remains v40 for full v40/v40.1 compatibility.
+
+v40.3 Milestone / Blank-Hand Recovery
+-------------------------------------
+- Fixed the Level 10/20/30/etc. Milestone Ridge generator using an obsolete card relationship format. Milestone cards now use the same blockers array and normalized 0-1 coordinates as every other formation.
+- This fixes the blank-tableau / apparent Level 1 screen seen when starting Level 30. The save itself was not necessarily reset; the old build crashed before replacing the HTML placeholder HUD.
+- blocked() now defensively accepts legacy coveredBy relationships instead of crashing on a missing blockers array.
+- Added board-data validation for card IDs, blocker arrays/references, normalized coordinates, exposed starting cards, and stock targets.
+- Normal and Daily level starts use buildSafe(); any future malformed generated board falls back to a healthy Recovery Meadow instead of leaving the game screen blank.
+- Level HUD now displays the actual campaign level immediately while a field is being prepared, so a build failure can no longer masquerade as Level 1.
+- Added highestLevelReached as a redundant campaign checkpoint. If a save's level field is missing/regressed, v40.3 reconstructs it from the checkpoint and completed-level evidence rather than silently defaulting to Level 1.
+- Developer Set Level updates the redundant checkpoint too.
+- Developer level diagnostics now run the same structural board validator that gameplay uses.
+- Build marker/cache-busting updated to 40.3; save schema remains v40.
+
+v40.4 Broad-Spectrum Solitaire QA / Reliability Pass
+----------------------------------------------------
+This patch is intentionally system-heavy rather than feature-heavy. The main Solitaire
+engine was exercised through generator simulation, full level clears, randomized action
+fuzzing, targeted fault injection, Daily/Challenge/Restart tests, and save regressions.
+
+Generator / special-card safety
+- Fixed real circular-dependency deadlocks involving Vine and Crate requirements.
+  Requirement selection now traverses both physical blockers and other special
+  requirements before adding an unlock dependency.
+- Added structural solvability validation to generated boards.
+- Sleeping Cards can no longer spawn in positions that can become reachable before the
+  required four prior clears.
+- Chain Cards are placed later in the dependency graph and now permanently unlock once a
+  3-card streak has been achieved during the hand.
+- Added a Chain safety release: if locked Chain Cards become the only actionable tableau
+  route, they release rather than forcing the player to spend a power.
+- 50,000 seeded boards across Levels 1-500 passed the final structural validator with
+  zero fallback/recovery boards.
+
+Restart / hand consistency
+- Normal Restart now replays the same generated deal instead of rerolling the field.
+- The selected Mission Board choice remains selected on Restart.
+- Skipping the Mission Board remains skipped on Restart.
+- An accepted or declined Challenge Hand decision remains the same on Restart.
+- Lucky Hand status remains the same on Restart.
+- Curious Feather's +3 starting stock persists on Restart but the Feather is consumed
+  only once, rather than once per retry.
+- The hand's weather effects are frozen with the deal so crossing a weather-period
+  boundary cannot change the board/reward conditions on Restart.
+
+Completion / transition reliability
+- Completion is now transactional. If the reward/win flow throws after partially changing
+  coins, gems, stats, level, or the local save, those changes are rolled back before one
+  controlled retry.
+- A persistent completion error can no longer enter a rapid retry loop and repeatedly
+  duplicate rewards; after one failed retry the player is returned safely to Main Menu.
+- Normal and Daily level startup are likewise transactional so a startup exception cannot
+  consume a Curious Feather or partially mutate persistent state.
+- Start-failure recovery now clears Mission, Challenge, Preview Choice, and mechanic
+  overlays instead of allowing a stale modal to survive on Main Menu.
+- Explicit regression coverage was added for the reported path: Level 29, zero stock,
+  purchase +5 Draws, clear the last card, press Next Level, successfully enter Milestone
+  Ridge 30.
+
+Undo / economic integrity
+- Undo snapshots now include lifetime currency accounting and Farmhouse trophy/tier
+  earned/claimed state.
+- Undoing an immediate Golden/Rainbow/etc. reward no longer creates fake lifetime
+  "earned then spent" totals or leaves an achievement earned from a move that no longer
+  happened.
+- Leaving the Solitaire table for Main Menu commits the current Undo history so an old
+  Solitaire snapshot cannot erase later Farm/Farmhouse currency activity.
+- Buying a +5 Draw pack is now an economic commit boundary. An older card-move Undo can
+  no longer refund the pack or restore the pre-purchase stock.
+- Preview Choice can be undone safely; Undo restores both its stock state and the visible
+  choice prompt instead of leaving an invisible pending-choice soft lock.
+- Attempting Reserve with zero stock no longer creates a useless Undo snapshot.
+
+Powers / special interactions
+- Magic Dice rolls are committed once rolled. Cancelling targeting or switching powers
+  can no longer reroll the Dice for free; reopening Dice resumes the saved result.
+- Assisted clears (Shears, Dice, Windmill, Rosie direct clears) now count toward Sleeping
+  Card wake progress.
+- Draws, Preview Choice, Reserve draws, Heavy cracking, Shears, Gate, Dice, Rosie active
+  card changes/direct clears, Sun Charm, and Windmill correctly break an in-progress
+  Harvest Chain where appropriate.
+- Magic Gate now behaves as a MOVE rather than a clear: moving a Golden/Flower/Watering/
+  Rainbow special into stock no longer incorrectly grants that card's clear reward or
+  cleared-special statistics.
+- Bee movement now swaps the Bee/card contents between exposed structural slots rather
+  than moving tableau node coordinates away from their blocker graph.
+- Mission state is re-evaluated after assisted clears and stock-changing special effects.
+
+Mission / modal reliability
+- Reversible mission states (Stock Saver, Frugal Farmer, No Help Needed, Clean Sweep)
+  can no longer remain visually stuck on COMPLETE after their condition is broken.
+- Failed missions explicitly display FAILED in the gameplay chip.
+- Preview Choice, Reserve draw, and Sun Charm now update stock-sensitive mission state
+  consistently.
+- Challenge Hand offers wait until the Mission Board has actually been chosen/skipped.
+- Challenge offers also wait until first-time mechanic notices are dismissed, preventing
+  stacked modal dialogs.
+- Challenge-added Sleeping Cards avoid existing special requirement targets and are
+  placed only where enough prerequisite clears exist.
+- The delayed Mission Board callback now verifies the player is still at the table before
+  opening, preventing it from popping up after a fast return to Main Menu.
+- Stock Saver is now a legitimate Level 1 mission so the Mission Board no longer fills its
+  third Level 1 slot with a mission whose minimum level had not been reached.
+
+Other fixes found during the sweep
+- Farm-render regression fixed: tapping Rosie at home once again pets her after normal
+  Farm re-renders; returned Rosie still opens her Adventure homecoming rewards.
+- Mission/milestone-awarded farm powers now increment their corresponding "found" stats.
+- Added explicit beeBuzzes default statistic.
+- Normal win reward counters now display the total coins/gems actually granted by the
+  completion flow, including mission/milestone/challenge/achievement/region bonuses,
+  instead of only the base reward subset.
+- Pause/Main navigation is blocked during in-flight card/Windmill animations to prevent
+  asynchronous completion from racing navigation.
+
+QA performed for v40.4
+- 50,000 generated boards across Levels 1-500: zero structural validation failures and
+  zero Recovery Meadow fallbacks.
+- Full runtime autoplay clear of every Level 1-500 through real play/special/win logic.
+- 500 randomized hands / over 23,000 mixed gameplay actions including Draw, Preview,
+  Reserve, Undo, +5 Draws, Rosie, Gate, Seed, Sun Charm, Dice, Shears, and Windmill.
+- All 66 Challenge-offer levels from 42 through 500 tested for sequencing and safe
+  dynamic obstacles.
+- Daily Challenge deterministic retry and completion regressions.
+- Exact normal-hand Restart signature tests including accepted Challenge, Weather,
+  Mission selection/skip, Lucky state, and Curious Feather.
+- Save migration/repair/checksum/backup recovery and Level-30 inference regression.
+- v30 3/3 timed-harvest cap regression retained.
+- JavaScript syntax, literal HTML ID references, and high-signal undefined-name/type
+  checks clean across the project.
+- Build marker/cache-busting updated to 40.4. Integer save schema remains v40.
+
+
+v40.5 Solitaire Gameplay Polish
+-------------------------------
+- Added a compact in-hand status strip for remaining Stock, Chain unlock progress, and
+  Sleeping Card wake progress. It automatically hides on very short displays.
+- Low stock is visually flagged at three cards or fewer.
+- Playable exposed cards now receive a clearer highlight.
+- Power targeting is substantially clearer: eligible cards pulse/highlight and invalid
+  Lucky Seed / Magic Dice targets are visually subdued.
+- Locked special cards have stronger visual differentiation.
+- Chain Card labels now show live streak progress and OPEN status.
+- Sleeping Card labels now show live clear progress and AWAKE status.
+- Barn Locks explicitly show KEY / OPEN state.
+- Invalid ordinary card taps now explain exactly which two ranks are playable from the
+  current active card instead of only saying the selected card is invalid.
+- Updated the Magic Pouch tooltip to correctly say +5 Draws.
+- Retained the v40.4 reliability architecture and save schema v40.
+
+
+v40.5.1 Viewport Feedback / Indicator Audit
+-------------------------------------------
+- Added a global viewport-safe feedback layer for scrolling menu screens.
+- Farm messages that previously used the gameplay message bar now appear fixed to the visible viewport while Farm/Farmhouse/menu screens are open.
+- This makes planting confirmation, plot selection, full-field warnings, insufficient-funds messages, harvest summaries, Farm Order notices, Rosie status messages, and similar Farm feedback visible regardless of scroll position.
+- Existing plot-local planting/harvest animations remain in place when the plot itself is visible, so local feedback is preserved rather than replaced.
+- Farmhouse reward burst now attaches to the viewport instead of the scrolled Farmhouse panel.
+- Rosie-is-home Main Menu peek is now viewport-fixed so it cannot sit below the visible portion of a scrolling Main Menu.
+- Generic rewardToast was audited and retained as viewport-fixed; Timed Harvest, Farm Orders, Farm upgrades, Rosie finds/cache, region rewards, and trophy/tier collection already route through this fixed reward system.
+- Rosie Adventure homecoming and mechanic/mission dialogs remain modal overlays and are already viewport-safe.
+- Solitaire-only feedback (message bar, streak bonus, level preview, mission chip, power-target bar) remains table-relative/fixed because Solitaire itself does not page-scroll.
+- Build/cache marker updated to 40.5.1. Save schema remains v40.
+- Overlay stacking was audited as part of v40.5.1: true modal overlays now sit above scrolling section screens, fixing cases such as Rosie Adventure homecoming/confirmation dialogs potentially rendering behind the Farm/Options panel.
+- rewardToast now has an explicit viewport-level z-index above scrolling Farm/Farmhouse sections.
+
+
+v40.5.2 Draw & Touch Interaction Polish
+---------------------------------------
+- Added an animated card-back travel from the Stock pile to the active/waste card on a normal Draw.
+- Preview Choice selections use the same Stock-to-active-card draw animation.
+- Reduced Motion bypasses the travel animation while preserving the same gameplay timing/state.
+- The Stock graphic now visibly thins as cards are consumed instead of always looking like a full five-card stack.
+  Five visual depth states step down through the hand, with a single card shown as a single card and an empty pile strongly faded.
+- Stock ARIA text now reports the live number of cards remaining.
+- Expanded the invisible tap area around exposed tableau cards on touch/mobile without enlarging their visible artwork.
+- Expanded the Stock pile tap target beyond the visible card-back stack.
+- Explicitly enabled touch-action: manipulation and removed mobile tap-highlight/selection behavior on tableau cards and Stock.
+- Added subtle touch-down feedback and disabled sticky hover lifting on coarse-touch devices.
+- Save schema remains v40; all v40.x saves remain compatible.

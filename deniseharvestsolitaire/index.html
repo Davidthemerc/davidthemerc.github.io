@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Denise's Solitaire Harvest</title>
-<link rel="stylesheet" href="css/game.css?v=40.1">
+<link rel="stylesheet" href="css/game.css?v=40.5.2">
 </head>
 <body>
 <div id="app">
@@ -39,6 +39,11 @@
     <small id="levelPreviewStock"></small>
   </div>
   <div class="missionChip" id="missionChip"><span>📋</span><div><b id="missionChipTitle">Mission</b><small id="missionChipProgress">Choose before playing</small></div></div>
+  <div class="handStatus" id="handStatus" aria-live="polite">
+    <span class="handStatusItem" id="stockStatus">🃏 Stock 0</span>
+    <span class="handStatusItem" id="chainStatus">⛓️ Chain 0/3</span>
+    <span class="handStatusItem" id="sleepStatus">🌙 Awake</span>
+  </div>
   <main id="field"></main>
 
   <div class="powerModeBar" id="powerModeBar">
@@ -47,7 +52,7 @@
   </div>
   <div class="powerShelf" id="powerShelf" aria-label="Special powers">
     <div class="powerShelfInner">
-      <button class="magicPouchBtn" id="magicPouchBtn" title="Open Magic Pouch — powers and +3 draws">
+      <button class="magicPouchBtn" id="magicPouchBtn" title="Open Magic Pouch — powers and +5 draws">
         <span class="pouchIcon">👝</span>
         <span class="pouchText"><b>Magic Pouch</b><small id="pouchSummary">Open powers & draws</small></span>
         <span class="pouchBadge" id="pouchBadge">0</span>
@@ -84,6 +89,7 @@
   <div class="challengeOfferOverlay" id="challengeOfferOverlay"><div class="challengeOfferCard"><span>🔥</span><h2>Challenge Hand</h2><p>Tougher tableau, extra obstacles and fewer safety margins.</p><strong>Win bonus: +750 🪙 +2 💎</strong><div><button id="challengeNormalBtn">Normal Hand</button><button class="primary" id="challengeAcceptBtn">Accept Challenge</button></div></div></div>
   <div class="diceRollOverlay" id="diceRollOverlay"><div class="diceRollCard"><span>MAGIC DICE</span><b id="diceRollValue">🎲</b></div></div>
   <div class="rewardToast" id="rewardToast"><span id="rewardToastIcon">✨</span><div><b id="rewardToastTitle">Reward!</b><small id="rewardToastText"></small></div></div>
+  <div class="viewportFeedback" id="viewportFeedback" aria-live="polite"><span id="viewportFeedbackIcon">🌱</span><b id="viewportFeedbackText"></b></div>
   <div id="gustLayer"></div>
   <div id="particleLayer"></div>
   <div id="bonusToast" class="bonusToast">
@@ -191,6 +197,7 @@
           <div class="rosieCorner"><div class="rosieBed">🐕</div><b>Rosie's Corner</b><div class="toyBox" id="toyBox"></div></div>
           <div class="harvestCabinet" id="harvestCabinet"></div>
         </div>
+        <div class="farmhouseRewardNotice" id="farmhouseRewardNotice"></div>
         <div class="farmhouseTabs">
           <button class="farmhouseTab active" data-house-tab="trophies">🏆 Trophies</button>
           <button class="farmhouseTab" data-house-tab="tiers">🎖️ Achievement Tiers</button>
@@ -294,11 +301,13 @@
           <button data-dev="unlockFarm">Unlock All Farm Content</button>
           <button data-dev="almanac">Reveal Almanac</button>
           <button data-dev="orders">Regenerate Farm Orders</button>
+          <button data-dev="completeOrders">Complete Farm Orders</button>
           <button data-dev="daily">Clear Daily Claim</button>
           <button data-dev="finishAdventure">Finish Rosie Adventure</button>
           <button data-dev="rareAdventure">Force Rare Rosie Find</button>
           <button data-dev="toy">Give Random Rosie Toy</button>
           <button data-dev="trophy">Unlock Test Trophy</button>
+          <button data-dev="unclaimTrophy">Mark Test Trophy Reward Unclaimed</button>
           <button data-dev="tierProgress">Add Achievement Progress</button>
           <button data-dev="chapterKeepsakes">Complete Chapter Keepsakes</button>
           <button data-dev="resetTrophies">Reset Trophy Flags (Testing)</button>
@@ -472,12 +481,13 @@
         <div class="progress"><div id="regionProgress"></div></div>
         <section class="farmOrdersSection">
           <div class="farmOrdersHeader">
-            <div><h3>📋 Farm Orders</h3><small>Every harvested crop advances all matching orders.</small></div>
+            <div><h3>📋 Farm Orders</h3><small>Harvest matching crops, then collect completed orders yourself. Completed orders freeze until collected.</small></div>
             <div class="inDemandBadge" id="inDemandBadge">🔥 In Demand: —</div>
           </div>
           <div class="farmOrdersGrid" id="farmOrdersGrid"></div>
         </section>
         <h3>Crops</h3>
+        <div class="fieldsFullNotice" id="fieldsFullNotice"></div>
         <p class="regionHint">Crops unlock with farm regions. Growing a crop in its home region gives <b>+15% payout</b>.</p>
         <div class="grid" id="cropChoices"></div>
         <h3>Regional Decoration</h3>
@@ -489,6 +499,19 @@
           <div class="item"><b>🛖 Bigger Barn</b><small>Boosts Solitaire rewards and timed harvest payouts.</small><button data-upgrade="barn">8 Gems</button></div>
           <div class="item"><b>🎀 Rosie's Pink Bandana</b><small>Decoration • boosts Rosie's crop-harvest Rescue finds.</small><button data-upgrade="bandana">4 Gems</button></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="rosieRewardOverlay">
+    <div class="panel rosieRewardPanel">
+      <div class="panelBody">
+        <div class="rosieRewardHero">🐕</div>
+        <small class="rosieRewardKicker">ROSIE IS HOME!</small>
+        <h2>Adventure Haul</h2>
+        <p id="rosieRewardTrip">Farm Patrol</p>
+        <div class="rosieRewardGrid" id="rosieRewardGrid"></div>
+        <button class="primary" id="rosieRewardDone">Welcome Home, Rosie!</button>
       </div>
     </div>
   </div>
@@ -525,13 +548,13 @@
   </div>
 </div>
 
-<script src="js/config.js?v=40.1" defer></script>
-<script src="js/save.js?v=40.1" defer></script>
-<script src="js/audio.js?v=40.1" defer></script>
-<script src="js/levels.js?v=40.1" defer></script>
-<script src="js/farm.js?v=40.1" defer></script>
-<script src="js/weather.js?v=40.1" defer></script>
-<script src="js/diagnostics.js?v=40.1" defer></script>
-<script src="js/game.js?v=40.1" defer></script>
+<script src="js/config.js?v=40.5.2" defer></script>
+<script src="js/save.js?v=40.5.2" defer></script>
+<script src="js/audio.js?v=40.5.2" defer></script>
+<script src="js/levels.js?v=40.5.2" defer></script>
+<script src="js/farm.js?v=40.5.2" defer></script>
+<script src="js/weather.js?v=40.5.2" defer></script>
+<script src="js/diagnostics.js?v=40.5.2" defer></script>
+<script src="js/game.js?v=40.5.2" defer></script>
 </body>
 </html>

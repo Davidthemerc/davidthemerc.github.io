@@ -1693,3 +1693,264 @@ body.reduced-motion .mainRosiePeek,body.reduced-motion .rosiePawTrail,body.reduc
 .stockWrap.empty .stockCard{opacity:.16;filter:grayscale(1);box-shadow:none!important}
 .stockWrap.empty .stockCount{background:#6e726c!important;color:#fff!important}
 .stockWrap.disabled{pointer-events:none}
+
+/* =====================================================================
+   v40.2 Farm Feedback / Manual Collection / Rosie Homecoming
+   ===================================================================== */
+
+/* Plot identity and local feedback */
+.plot{overflow:visible!important;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px}
+.plot .emptyPlotPlus{font-size:24px;opacity:.65}
+.plot.selectedPlot{box-shadow:0 0 0 4px #f5dc6c inset,0 0 0 2px #7ba95f!important;filter:brightness(1.08)}
+.plot .seedlingCrop{font-size:25px;line-height:1}
+.plot .cropIdentity{position:absolute;right:4px;top:3px;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#fff6cf;border:2px solid #b88b55;font-size:14px;box-shadow:0 2px 4px #0002}
+.plot .matureCrop{font-size:32px;line-height:1;filter:drop-shadow(0 3px 2px #0003)}
+.plot .plotCropLabel{max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:7.5px;font-weight:900;color:#493c2d;background:#fff8d9cc;border-radius:5px;padding:1px 4px}
+.plot.ready{cursor:pointer}
+.plot.ready .matureCrop{animation:cropReadyBounce 1.15s ease-in-out infinite}
+@keyframes cropReadyBounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.08)}}
+
+.plotFeedback{position:absolute;left:50%;bottom:70%;z-index:80;min-width:115px;pointer-events:none;transform:translateX(-50%);text-align:center}
+.plotFeedback span{display:block;margin:2px auto;padding:3px 7px;width:max-content;max-width:150px;border-radius:999px;background:#fff9dfed;border:1px solid #c7a96c;color:#4b4030;font-size:9px;font-weight:950;box-shadow:0 3px 8px #0003;opacity:0;animation:plotRewardFloat 1.55s ease-out forwards;animation-delay:calc(var(--feedback-order) * .09s)}
+.plotFeedback.harvestFeedback span:first-child{background:#fff1a8;border-color:#d29c2a;font-size:11px}
+.plotFeedback.plantedFeedback span:first-child{background:#e9f6d7;border-color:#83ad5f;font-size:11px}
+@keyframes plotRewardFloat{0%{opacity:0;transform:translateY(8px) scale(.8)}18%{opacity:1;transform:translateY(0) scale(1.06)}70%{opacity:1}100%{opacity:0;transform:translateY(-44px) scale(.96)}}
+
+.fieldsFullNotice{display:none;margin:5px 0 8px;padding:7px 9px;border:2px solid #ba9d6d;border-radius:10px;background:#eee7d8;color:#685d4a;font-size:9px;font-weight:900}
+.fieldsFullNotice.show{display:block}
+.cropChoice.fieldsFull{filter:saturate(.35);opacity:.72}
+.cropChoice button:disabled{background:#a9aaa5!important;color:#eee!important;cursor:not-allowed!important;box-shadow:none!important}
+
+/* Farm Orders now require active collection. */
+.farmOrderCard{position:relative;transition:transform .18s,box-shadow .18s,background .18s}
+.farmOrderCard.order-ready{border-color:#d69a24!important;background:linear-gradient(135deg,#fff8cc,#eef5da)!important;box-shadow:0 0 0 2px #f5cf5a66 inset}
+.farmOrderCard.order-ready:before{content:"!";position:absolute;right:5px;top:5px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#c98118;color:#fff;font-size:12px;font-weight:1000}
+.collectOrderBtn{width:100%;margin-top:6px!important;background:#b97816!important;color:#fff!important;animation:collectReadyPulse 1.3s ease-in-out infinite}
+.farmOrderCard.order-progressed{animation:orderProgressFlash .8s ease}
+.farmOrderCard.order-just-ready{animation:orderReadyPop 1s ease}
+@keyframes orderProgressFlash{0%,100%{transform:none}35%{transform:scale(1.025);box-shadow:0 0 0 4px #7fb45b55}}
+@keyframes orderReadyPop{0%{transform:scale(.96)}35%{transform:scale(1.045);box-shadow:0 0 0 5px #e5b33b66}100%{transform:none}}
+@keyframes collectReadyPulse{50%{filter:brightness(1.14);transform:translateY(-1px)}}
+
+/* Dedicated Rosie Adventure reveal */
+.rosieRewardPanel{max-width:430px!important;text-align:center;overflow:visible!important}
+.rosieRewardHero{font-size:58px;line-height:1;animation:rosieHomeBounce .7s cubic-bezier(.2,.8,.2,1)}
+.rosieRewardKicker{display:block;margin-top:4px;color:#9a6b36;font-size:9px;font-weight:1000;letter-spacing:1.4px}
+.rosieRewardPanel h2{margin:3px 0;color:#514737}
+.rosieRewardPanel>div>p{margin:2px 0 11px;color:#766959;font-size:10px}
+.rosieRewardGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0 12px}
+.rosieRewardItem{display:grid;grid-template-columns:34px 1fr;gap:1px 7px;align-items:center;padding:9px;border:2px solid #d4c292;border-radius:12px;background:#fff9e7;text-align:left;opacity:0;animation:rosieRewardReveal .45s ease forwards;animation-delay:calc(var(--reward-order) * .14s)}
+.rosieRewardItem>span{grid-row:1/3;font-size:27px;text-align:center}.rosieRewardItem small{font-size:7.5px;color:#766c5d;font-weight:850}.rosieRewardItem b{font-size:10px;color:#493f31}
+.rosieRewardItem.newRewardItem{border-color:#cf9830;background:#fff0b3;box-shadow:0 0 0 3px #ffe98e66}
+#rosieRewardDone{width:100%}
+@keyframes rosieRewardReveal{from{opacity:0;transform:translateY(9px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes rosieHomeBounce{0%{transform:translateY(25px) scale(.7);opacity:0}60%{transform:translateY(-5px) scale(1.08);opacity:1}100%{transform:none}}
+
+/* Farmhouse rewards wait for the player. */
+.farmhouseRewardNotice{display:none;margin:8px 0;padding:8px 10px;border:2px solid #d4a23d;border-radius:11px;background:#fff1b8;color:#6c501a;font-size:9px;font-weight:950;text-align:center}
+.farmhouseRewardNotice.show{display:block;animation:rewardNoticePulse 1.35s ease-in-out infinite}
+.trophyShelf span{position:relative}
+.trophyShelf span.rewardWaiting{filter:drop-shadow(0 0 5px #f6bd35)}
+.trophyShelf span.rewardWaiting i{position:absolute;right:-4px;top:-4px;display:grid;place-items:center;width:14px;height:14px;border-radius:50%;background:#d38219;color:#fff;font:1000 9px/1 sans-serif;font-style:normal}
+.houseAchievement.reward-pending,.tierRow>div.reward-pending{border-color:#dda536!important;background:#fff3c2!important;box-shadow:0 0 0 2px #f4cf6866 inset}
+.collectHouseReward{margin-top:6px!important;padding:6px 8px!important;background:#a6751e!important;color:#fff!important;width:100%}
+.farmhouseRewardBurst{position:absolute;left:50%;top:38%;z-index:500;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:#fff1a9;border:2px solid #c49128;color:#57400d;box-shadow:0 5px 18px #0004;transform:translate(-50%,-50%);pointer-events:none;animation:houseRewardBurst 1.35s ease forwards}
+.farmhouseRewardBurst span{font-size:25px}.farmhouseRewardBurst b{font-size:11px}
+@keyframes houseRewardBurst{0%{opacity:0;transform:translate(-50%,-20%) scale(.7)}25%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-90%) scale(.95)}}
+@keyframes rewardNoticePulse{50%{filter:brightness(1.08)}}
+
+/* Rosie is not interactable while physically away / waiting for homecoming. */
+#petRosieBtn:disabled,#feedTreatBtn:disabled{filter:grayscale(.75);opacity:.52;cursor:not-allowed}
+
+body.reduced-motion .plot.ready .matureCrop,
+body.reduced-motion .plotFeedback span,
+body.reduced-motion .farmOrderCard.order-progressed,
+body.reduced-motion .farmOrderCard.order-just-ready,
+body.reduced-motion .collectOrderBtn,
+body.reduced-motion .rosieRewardHero,
+body.reduced-motion .rosieRewardItem,
+body.reduced-motion .farmhouseRewardNotice,
+body.reduced-motion .farmhouseRewardBurst{animation:none!important;opacity:1!important;transform:none!important}
+
+@media(max-width:600px){
+  .rosieRewardGrid{grid-template-columns:1fr}
+  .plotFeedback{min-width:95px}
+  .plotFeedback span{font-size:8px;max-width:125px}
+  .plot .plotCropLabel{font-size:6.5px}
+}
+
+#rosie.returnedHome{cursor:pointer;animation:rosieReturnedWiggle 1.15s ease-in-out infinite}
+@keyframes rosieReturnedWiggle{0%,100%{transform:rotate(0)}35%{transform:rotate(-3deg) scale(1.04)}70%{transform:rotate(3deg) scale(1.04)}}
+body.reduced-motion #rosie.returnedHome{animation:none!important}
+
+.balanceGain{animation:balanceGainPulse .65s ease!important}
+@keyframes balanceGainPulse{30%{color:#b57916;transform:scale(1.18)}100%{transform:none}}
+body.reduced-motion .balanceGain{animation:none!important}
+
+/* v40.5 — Solitaire gameplay polish */
+.handStatus{
+  position:absolute;z-index:61;top:126px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;align-items:center;justify-content:center;pointer-events:none;
+  max-width:92vw;
+}
+.handStatusItem{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:25px;padding:3px 9px;border-radius:999px;
+  background:rgba(13,91,65,.82);border:1px solid rgba(255,231,111,.55);
+  color:#fff;font-size:11px;font-weight:800;letter-spacing:.15px;
+  box-shadow:0 2px 7px rgba(0,0,0,.16);white-space:nowrap;
+}
+.handStatusItem.warning{background:rgba(145,69,26,.9);animation:stockPulse 1.35s ease-in-out infinite}
+@keyframes stockPulse{50%{transform:scale(1.045)}}
+.card.playable:not(.faceDown){
+  box-shadow:0 0 0 3px rgba(255,224,77,.72),0 5px 11px rgba(0,0,0,.23);
+}
+.card.specialLocked:not(.faceDown){
+  filter:saturate(.72) brightness(.92);
+}
+.card.powerEligible:not(.faceDown){
+  outline:4px solid rgba(255,236,85,.95);outline-offset:2px;
+  animation:powerTargetPulse 1s ease-in-out infinite;
+}
+.card.powerIneligible:not(.faceDown){opacity:.48;filter:grayscale(.38)}
+@keyframes powerTargetPulse{50%{transform:translateY(-2px) scale(1.025)}}
+.stockWrap.empty{filter:saturate(.55);opacity:.68}
+.stockWrap:not(.empty) #stockCount{transition:transform .18s ease}
+@media(max-width:800px){
+  .handStatus{top:118px;gap:4px}
+  .handStatusItem{font-size:10px;min-height:22px;padding:2px 7px}
+}
+@media(max-width:430px){
+  .handStatus{top:116px;width:96vw}
+  .handStatusItem{font-size:9px;padding:2px 6px}
+}
+@media(max-height:700px){
+  .handStatus{display:none}
+}
+
+
+/* v40.5.1 — viewport-safe feedback for scrolling Farm/Farmhouse screens */
+.viewportFeedback{
+  position:fixed;left:50%;bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));z-index:320;
+  display:flex;align-items:center;gap:8px;max-width:min(92vw,430px);padding:9px 13px;
+  border:2px solid #d3b34f;border-radius:16px;background:linear-gradient(#fff8d7,#efe2aa);
+  color:#51462f;box-shadow:0 7px 22px #0005;opacity:0;pointer-events:none;
+  transform:translate(-50%,18px) scale(.97);font-size:11px;font-weight:850;
+}
+.viewportFeedback>span{font-size:22px;flex:0 0 auto}.viewportFeedback>b{line-height:1.25}
+.viewportFeedback[data-tone="warn"]{background:linear-gradient(#ffe5d3,#f1c9a7);border-color:#c77f48;color:#693c25}
+.viewportFeedback.show{animation:viewportFeedbackPop 2.4s ease both}
+@keyframes viewportFeedbackPop{0%{opacity:0;transform:translate(-50%,18px) scale(.96)}12%,78%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-8px) scale(.98)}}
+/* Rosie returning is actionable information, so keep it visible even if the main menu card scrolls. */
+.mainRosiePeek{position:fixed!important;right:max(10px,env(safe-area-inset-right))!important;bottom:max(12px,calc(env(safe-area-inset-bottom) + 8px))!important;z-index:300!important}
+/* Farmhouse collection burst must not be anchored to a scrolled panel. */
+.farmhouseRewardBurst{position:fixed!important;left:50%!important;top:50%!important;z-index:330!important}
+body.reduced-motion .viewportFeedback{animation:none!important;opacity:1!important;transform:translate(-50%,0)!important}
+@media(max-width:600px){.viewportFeedback{font-size:10px;bottom:max(10px,calc(env(safe-area-inset-bottom) + 6px));padding:8px 10px}.viewportFeedback>span{font-size:20px}}
+/* v40.5.1 overlay stacking audit: section screens scroll at z160; true modals and feedback must sit above them. */
+.overlay:not(.mainMenuOverlay):not(.sectionOverlay){z-index:340}
+.rewardToast{z-index:310!important}
+
+/* v40.5.2 — stock animation, depletion depth, and mobile tap reliability */
+
+/* Cards are visually large enough, but this expands the actual touch target slightly
+   without changing layout. On overlapping cards, normal z-index still decides which
+   exposed card receives the tap. */
+.card:not(.faceDown){
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.card:not(.faceDown)::before{
+  content:"";
+  position:absolute;
+  inset:-7px;
+  border-radius:15px;
+  z-index:0;
+}
+#field{touch-action:manipulation}
+
+/* The draw pile's clickable region is intentionally larger than its visible card stack. */
+.stockWrap{
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.stockWrap::before{
+  content:"";
+  position:absolute;
+  inset:-11px -10px;
+  border-radius:16px;
+}
+
+/* Dynamic stack thickness. The old graphic always showed the same five-card stack,
+   which made a nearly-empty stock look full. */
+.stockWrap .stockCard{
+  transition:box-shadow .18s ease,transform .18s ease,opacity .18s ease;
+}
+.stockWrap[data-depth="5"] .stockCard{
+  box-shadow:-5px 0 0 #148ed1,-10px 0 0 white,-15px 0 0 #148ed1,-20px 0 0 white,-25px 0 0 #148ed1;
+}
+.stockWrap[data-depth="4"] .stockCard{
+  box-shadow:-5px 0 0 #148ed1,-10px 0 0 white,-15px 0 0 #148ed1,-20px 0 0 white;
+}
+.stockWrap[data-depth="3"] .stockCard{
+  box-shadow:-5px 0 0 #148ed1,-10px 0 0 white,-15px 0 0 #148ed1;
+}
+.stockWrap[data-depth="2"] .stockCard{
+  box-shadow:-5px 0 0 #148ed1,-10px 0 0 white;
+}
+.stockWrap[data-depth="1"] .stockCard{
+  box-shadow:none;
+  transform:translateX(4px);
+}
+.stockWrap[data-depth="0"] .stockCard{
+  box-shadow:none;
+  opacity:.10!important;
+  transform:translateX(8px) scale(.96);
+}
+.stockWrap[data-depth="1"] .stockCount{background:#a65f1e}
+.stockWrap[data-depth="0"] .stockCount{background:#62685f}
+
+/* A temporary card-back ghost flies from Stock to the active/waste card. */
+.stockDrawGhost{
+  position:fixed;
+  z-index:500;
+  border-radius:8px;
+  background:linear-gradient(135deg,#1ca9ef,#097bc3);
+  border:3px solid white;
+  box-shadow:-4px 0 0 #148ed1,-8px 0 0 white;
+  pointer-events:none;
+  transform-origin:center;
+  will-change:transform,opacity;
+}
+.stockDrawGhost.fly{
+  animation:stockDrawFly .25s cubic-bezier(.22,.8,.32,1) forwards;
+}
+@keyframes stockDrawFly{
+  0%{transform:translate(0,0) rotate(0) scale(1);opacity:1}
+  72%{opacity:1}
+  100%{transform:translate(var(--draw-x),var(--draw-y)) rotate(9deg) scale(.84);opacity:.12}
+}
+
+/* Slightly more forgiving mobile targets without enlarging the visible cards. */
+@media(max-width:800px){
+  .card:not(.faceDown)::before{inset:-9px}
+  .stockWrap::before{inset:-14px -12px}
+  .stockWrap{min-height:92px}
+}
+@media(max-width:430px){
+  .card:not(.faceDown)::before{inset:-10px}
+  .stockWrap::before{inset:-16px -14px}
+}
+
+/* Reduced Motion preserves functionality but removes the travel animation. */
+body.reduced-motion .stockDrawGhost{display:none!important}
+
+@media(hover:none) and (pointer:coarse){
+  .card:hover{transform:none}
+  .card:not(.faceDown):active{transform:scale(.97)}
+  .stockWrap:active .stockCard{filter:brightness(.92)}
+}

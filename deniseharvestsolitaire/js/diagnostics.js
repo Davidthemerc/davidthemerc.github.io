@@ -14,6 +14,7 @@ DSH.Diagnostics=(()=>{
        if(b.stockTarget<24)warnings.push(`Level ${level}: stock below floor (${b.stockTarget})`);
        if(b.stockTarget>48)warnings.push(`Level ${level}: stock above ceiling (${b.stockTarget})`);
        if(b.cards.length>34)warnings.push(`Level ${level}: tableau unusually large (${b.cards.length})`);
+       (DSH.Levels.validateBoardData?.(b)||[]).forEach(msg=>warnings.push(`Level ${level}: ${msg}`));
        const locks=b.cards.filter(c=>c.special==='barnlock');
        for(const lock of locks){
          const key=b.cards.find(c=>c.keyPair&&c.keyPair===lock.keyPair&&c.special==='key');
