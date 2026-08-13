@@ -252,11 +252,16 @@ document.addEventListener('DOMContentLoaded',()=>{
    setTextIfPresent('missionChipTitle',`${game.mission.icon} ${game.mission.name}`);
    setTextIfPresent('missionChipProgress',game.missionFailed?'FAILED ✕':game.missionCompleted?'COMPLETE ✓':missionProgressText());
  }
+ function missionRequiresWin(id){return ['stock','noPower','noBuy','natural'].includes(id)}
  function updateMission(){
    if(!game.mission||game.dailyMode||game.missionFailed)return;
    const d=missionDef(game.mission.id),wasComplete=!!game.missionCompleted;
    if(d?.failEarly?.(game.mission)){game.missionFailed=true;game.missionCompleted=false;renderMissionChip();showRewardToast('Mission Failed',`${game.mission.name} — the requirement was broken.`,'📋');return}
-   const done=!!d?.done(game.mission);game.missionCompleted=done;
+   // Some missions describe a condition that must STILL be true when the hand is won.
+   // Their raw predicate is naturally true at the start of a level, so do not call
+   // them complete merely because the first move caused a mission-state refresh.
+   const terminalReady=!missionRequiresWin(game.mission.id)||tableauCleared();
+   const done=terminalReady&&!!d?.done(game.mission);game.missionCompleted=done;
    if(done&&!wasComplete)showRewardToast('Mission Complete!',`${game.mission.name} accomplished — finish the level to collect.`,'📋');
    renderMissionChip();
  }
@@ -1031,6 +1036,39 @@ document.addEventListener('DOMContentLoaded',()=>{
    let eventText='No special farm event today.';if(b.e){eventText=`${b.e.icon} ${b.e.name} • ${b.e.desc} • ${b.eventRemaining} left`;if(b.e.key==='bumper'&&crop)eventText+=` Featured: ${crop.icon} ${crop.name}`;if(b.e.key==='festival'){const dk=DSH.Weather.dayKey(),n=Math.min(3,state.eventProgress[dk]||0);eventText+=` Progress ${n}/3${state.eventClaimed[dk]?' ✓':''}`}}
    setTextIfPresent('farmEventLine',eventText);setTextIfPresent('farmEventDetail',eventText);
  }
+ function formatApproxMinutes(ms){
+   const mins=Math.max(0,Math.ceil(ms/60000));
+   if(mins<=1)return'about 1 min';
+   if(mins<60)return`about ${mins} min`;
+   const hours=Math.floor(mins/60),rem=mins%60;
+   return rem?`about ${hours}h ${rem}m`:`about ${hours}h`;
+ }
+ function renderMainRosieStatus(){
+   const adv=state.rosieAdventure,now=Date.now(),peek=document.getElementById('mainRosiePeek'),fs=document.getElementById('farmMenuStatus');
+   const footer=document.getElementById('mainRosieFooter'),title=document.getElementById('mainRosiePeekTitle'),detail=document.getElementById('mainRosiePeekDetail');
+   const readyOrders=DSH.Farm.readyOrderCount?.()||0,notices=[];
+   if(readyOrders)notices.push(`📋 ${readyOrders} order${readyOrders===1?'':'s'} ready`);
+   if(!adv){
+     if(footer)footer.textContent='Rosie is home at the farm. 🐾';
+     if(peek){peek.classList.remove('show','away');peek.setAttribute('aria-label','Rosie is home at the farm')}
+   }else{
+     const ready=now>=adv.endsAt,remaining=Math.max(0,adv.endsAt-now),region=DSH.Farm.regions?.[adv.region]||'the farm';
+     if(ready){
+       notices.push('🐕 Rosie is home!');
+       if(footer)footer.textContent='Rosie is back from her adventure! 🐕';
+       if(title)title.textContent='Rosie is home!';
+       if(detail)detail.textContent='Tap to welcome her back';
+       if(peek){peek.classList.add('show');peek.classList.remove('away');peek.setAttribute('aria-label','Rosie is home from her adventure. Tap to welcome her back.')}
+     }else{
+       const eta=formatApproxMinutes(remaining);notices.push(`🐾 Rosie exploring • ${eta}`);
+       if(footer)footer.textContent=`Rosie is exploring ${region} • ${eta} left 🐾`;
+       if(title)title.textContent='Rosie is adventuring';
+       if(detail)detail.textContent=`${region} • ${eta} left`;
+       if(peek){peek.classList.add('show','away');peek.setAttribute('aria-label',`Rosie is adventuring in ${region}. ${eta} until return.`)}
+     }
+   }
+   if(fs)fs.textContent=notices.length?notices.join(' • '):'Plant, harvest, upgrade';
+ }
  function renderAllBalances(){
    checkFarmhouseAchievements();
    const hud=document.getElementById('hudCoins');
@@ -1044,14 +1082,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    renderShop();
    renderPouch();
    renderDailyUI();
-   const adv=state.rosieAdventure,fs=document.getElementById('farmMenuStatus'),readyOrders=DSH.Farm.readyOrderCount?.()||0;
-   if(fs){
-     const notices=[];
-     if(readyOrders)notices.push(`📋 ${readyOrders} order${readyOrders===1?'':'s'} ready`);
-     if(adv)notices.push(Date.now()>=adv.endsAt?'🐕 Rosie is home!':`🐾 Rosie exploring • ${Math.max(1,Math.ceil((adv.endsAt-Date.now())/60000))}m`);
-     fs.textContent=notices.length?notices.join(' • '):'Plant, harvest, upgrade';
-   }
-   const peek=document.getElementById('mainRosiePeek');if(peek)peek.classList.toggle('show',!!adv&&Date.now()>=adv.endsAt);
+   renderMainRosieStatus();
    refreshCollectionKnowledge();
    const allCollection=['specials','crops','regions','powers','rosie','milestones'].flatMap(collectionEntries),collectionFound=allCollection.filter(x=>x.found).length;
    setTextIfPresent('collectionMenuStatus',`${collectionFound}/${allCollection.length} discoveries`);
@@ -1082,7 +1113,9 @@ document.addEventListener('DOMContentLoaded',()=>{
    const w=document.getElementById('waste');
    if(game.waste?.wild){w.className='waste wildWaste suit-wild';w.innerHTML='<small>WILD</small><span>🌈</span>'}
    else if(game.waste){const red=game.waste.s===1||game.waste.s===2;w.className='waste '+(red?'red ':'black ')+`suit-${game.waste.s}`;w.innerHTML=`<small>${ranks[game.waste.r]}${suits[game.waste.s]}</small><span>${ranks[game.waste.r]}</span>`}
-   const dots=document.getElementById('streakDots');dots.innerHTML='';for(let i=1;i<=5;i++){const d=document.createElement('span');d.className='streakDot '+((game.streak||0)%5>=i||((game.streak||0)>0&&(game.streak||0)%5===0)?'on':'');dots.appendChild(d)}
+   const streakNow=game.streak||0,streakPhase=streakNow%5,streakDisplay=streakNow===0?0:(streakPhase||5);
+   setTextIfPresent('streakFraction',`${streakDisplay}/5`);
+   const dots=document.getElementById('streakDots');dots.innerHTML='';for(let i=1;i<=5;i++){const d=document.createElement('span');d.className='streakDot '+(streakPhase>=i||(streakNow>0&&streakPhase===0)?'on':'');dots.appendChild(d)}
    const f=document.getElementById('field'),prev=lastExposed;f.innerHTML='';const W=Math.max(f.clientWidth||0,320),H=Math.max(f.clientHeight||0,260),cardW=Math.min(Math.max(W*.073,56),88),cardH=cardW/.70;
    const now=new Set(exposed().map(c=>c.id));
    game.layout?.forEach(c=>{
@@ -1648,6 +1681,8 @@ document.addEventListener('DOMContentLoaded',()=>{
    state.level=n;state.highestLevelReached=n;state.region=Math.min(DSH.Config.farmRegions.length-1,Math.floor((n-1)/4));state.farmRegionView=state.region;
    handStarted=false;handComplete=false;game={};afterDev(`Level set to ${n}`);
  }
+
+ setInterval(renderMainRosieStatus,15000);
 
  const stockWrap=document.getElementById('stockWrap');stockWrap.onclick=draw;stockWrap.tabIndex=0;stockWrap.setAttribute('role','button');stockWrap.setAttribute('aria-label','Draw next stock card');stockWrap.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();draw()}};
  document.getElementById('reserveBtn').onclick=useReserve;document.getElementById('undoBtn').onclick=undo;const pouchTrigger=document.getElementById('magicPouchBtn');

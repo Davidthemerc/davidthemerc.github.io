@@ -1954,3 +1954,10 @@ body.reduced-motion .stockDrawGhost{display:none!important}
   .card:not(.faceDown):active{transform:scale(.97)}
   .stockWrap:active .stockCard{filter:brightness(.92)}
 }
+
+/* v40.5.4 Rosie main-menu quick status */
+.mainRosiePeek.away{
+  border-color:#7ca3c7!important;
+  background:linear-gradient(#e9f5ff,#cfe5f4)!important;
+}
+.mainRosiePeek.away>span{filter:saturate(.85)}

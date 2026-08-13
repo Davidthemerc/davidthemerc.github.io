@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Denise's Solitaire Harvest</title>
-<link rel="stylesheet" href="css/game.css?v=40.5.2">
+<link rel="stylesheet" href="css/game.css?v=40.5.4">
 </head>
 <body>
 <div id="app">
@@ -122,8 +122,8 @@
         <button class="mainChoice" id="mainOptionsBtn"><span>⚙️</span><div><b>Options</b><small>Sound, accessibility & saves</small></div></button>
         <button class="mainChoice" id="mainStatsBtn"><span>📊</span><div><b>Stats</b><small>Progress and records</small></div></button>
       </div>
-      <div class="menuFooter">Rosie is waiting at the farm. 🐾</div>
-      <button class="mainRosiePeek" id="mainRosiePeek" aria-label="Rosie is home"><span>🐕</span><b>Rosie is home!</b><small>Tap to welcome her back</small></button>
+      <div class="menuFooter" id="mainRosieFooter">Rosie is home at the farm. 🐾</div>
+      <button class="mainRosiePeek" id="mainRosiePeek" aria-label="Rosie is home"><span>🐕</span><b id="mainRosiePeekTitle">Rosie is home!</b><small id="mainRosiePeekDetail">Tap to welcome her back</small></button>
     </div>
   </div>
 
@@ -466,7 +466,7 @@
           <button class="primary" id="rosieAdventureAction">Choose an adventure</button>
           <div class="adventureFinds" id="adventureFinds"></div>
         </section>
-        <p>Rosie is supervising. Crops gain one growth step whenever a solitaire level is completed.</p>
+        <p id="farmRosieSupervisionText">Rosie is supervising. Crops gain one growth step whenever a solitaire level is completed.</p>
         <section class="weatherBulletin farmWeatherBulletin"><div class="bulletinTop"><b>🌦️ Farm Weather & Events</b><span id="farmWeatherRemaining"></span></div><div class="bulletinWeather"><strong id="farmWeatherNow">—</strong><small id="farmWeatherDesc"></small></div><div class="bulletinNext" id="farmWeatherNext">Next: —</div><div class="bulletinEvent" id="farmEventDetail"></div></section>
         <section class="timedHarvest" id="timedHarvestBox">
           <div class="timedHarvestIcon">🌾</div>
@@ -548,13 +548,13 @@
   </div>
 </div>
 
-<script src="js/config.js?v=40.5.2" defer></script>
-<script src="js/save.js?v=40.5.2" defer></script>
-<script src="js/audio.js?v=40.5.2" defer></script>
-<script src="js/levels.js?v=40.5.2" defer></script>
-<script src="js/farm.js?v=40.5.2" defer></script>
-<script src="js/weather.js?v=40.5.2" defer></script>
-<script src="js/diagnostics.js?v=40.5.2" defer></script>
-<script src="js/game.js?v=40.5.2" defer></script>
+<script src="js/config.js?v=40.5.4" defer></script>
+<script src="js/save.js?v=40.5.4" defer></script>
+<script src="js/audio.js?v=40.5.4" defer></script>
+<script src="js/levels.js?v=40.5.4" defer></script>
+<script src="js/farm.js?v=40.5.4" defer></script>
+<script src="js/weather.js?v=40.5.4" defer></script>
+<script src="js/diagnostics.js?v=40.5.4" defer></script>
+<script src="js/game.js?v=40.5.4" defer></script>
 </body>
 </html>

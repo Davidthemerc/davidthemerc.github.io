@@ -679,3 +679,51 @@ v40.5.2 Draw & Touch Interaction Polish
 - Explicitly enabled touch-action: manipulation and removed mobile tap-highlight/selection behavior on tableau cards and Stock.
 - Added subtle touch-down feedback and disabled sticky hover lifting on coarse-touch devices.
 - Save schema remains v40; all v40.x saves remain compatible.
+
+
+v40.5.3 Mission Completion Hotfix
+---------------------------------
+- Fixed Stock Saver announcing COMPLETE on the first card simply because the starting stock already met its end-of-hand target.
+- Fixed Frugal Farmer announcing COMPLETE on the first card simply because no draw pack had been purchased yet.
+- Applied the same terminal-condition correction to No Help Needed and Natural Harvest.
+- These missions now display Still on track during play, fail immediately if their rule is broken, and become COMPLETE only after the tableau is actually cleared.
+- Mid-hand accomplishment missions such as Streak Farmer, Rosie's Route, Treasure Hunter, and Clean Sweep still complete as soon as their actual target is reached.
+- Save schema remains v40.
+
+
+v40.5.4 HUD / Rosie Status / UI State Sweep
+-------------------------------------------
+- Fixed the top Solitaire STREAK fraction, which had stopped updating even though the
+  streak dots and internal streak value were still changing.
+- The fraction now follows the five-dot streak phase: 1/5 through 5/5, then starts the
+  next five-card phase while the full streak itself continues internally.
+- Main Menu Rosie status is now derived from the live Adventure state instead of static
+  copy. While Rosie is away it shows that she is adventuring, her destination, and a
+  brief approximate time remaining.
+- The Farm menu subtitle also includes Rosie's approximate return time and refreshes
+  automatically while the Main Menu remains open.
+- Once Rosie's Adventure timer expires, the Main Menu automatically changes to the
+  returned/home state and offers the quick route to welcome her back.
+- When Rosie is simply home and not awaiting Adventure rewards, the special quick-return
+  card is hidden rather than falsely implying that she just returned.
+- Fixed another stale Rosie indicator discovered in the sweep: the Farm description no
+  longer says "Rosie is supervising" while she is away. It now reflects exploring,
+  returned, or normal-at-home state.
+- Planting feedback now reports remaining field capacity after every planting, e.g.
+  "5 crop spaces left", and explicitly says "Fields full" after the sixth plot is filled.
+- Retained the v40.5.3 terminal-mission fix for Stock Saver, Frugal Farmer, No Help
+  Needed, and Natural Harvest.
+
+QA for v40.5.4
+- Runtime regression for live streak update/reset.
+- Runtime Rosie Main Menu away/ETA/returned/home-state tests.
+- Runtime crop-capacity feedback test including the sixth/full field.
+- Runtime Farm Rosie descriptive-state test.
+- Terminal-mission regression for all four finish-condition missions.
+- Full runtime clear of every Level 1-500.
+- 300 randomized hands / 19,643 play-draw actions with streak-HUD invariants.
+- 10,000 generated boards across Levels 1-500: zero validation failures or fallbacks.
+- Save migrations/Level-30 recovery retained.
+- JavaScript syntax/high-signal name checks, literal HTML ID wiring, button wiring,
+  and dynamic-label wiring audits clean.
+- Save schema remains v40.

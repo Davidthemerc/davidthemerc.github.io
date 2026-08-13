@@ -360,8 +360,9 @@ DSH.Farm=(()=>{
    if(i<0||state.plots[i]){onMessage(state.plots.every(Boolean)?'All six crop fields are full. Harvest something before planting again.':'Select an empty plot first.');return}
    if(state.coins<d.cost){onMessage('Not enough coins.');return}
    state.coins-=d.cost;state.plots[i]={type,age:0,region};chosenPlot=null;onChange();render();
-   showPlotFeedback(i,[`${d.icon} ${d.name}`,'PLANTED!'],'plantedFeedback');
-   onMessage(`${d.icon} ${d.name} planted${d.homeRegion===region?' in its home region!':'.'}`);
+   const spacesLeft=state.plots.filter(x=>!x).length,spaceText=spacesLeft===0?'FIELDS FULL':`${spacesLeft} crop space${spacesLeft===1?'':'s'} left`;
+   showPlotFeedback(i,[`${d.icon} ${d.name}`,'PLANTED!',spaceText],'plantedFeedback');
+   onMessage(`${d.icon} ${d.name} planted${d.homeRegion===region?' in its home region!':'.'} ${spacesLeft===0?'Fields full.':`${spacesLeft} crop space${spacesLeft===1?'':'s'} left.`}`);
  }
  function harvest(i){
    const p=state.plots[i],d=p&&cropDefs[p.type];if(!p||p.age<d.grow)return;
@@ -494,6 +495,12 @@ DSH.Farm=(()=>{
    const a=state.rosieAdventure,now=Date.now(),max=unlockedRegionIndex();
    selectedAdventureRegion=Math.min(selectedAdventureRegion,max);
    const loc=document.getElementById('adventureLocations'),dur=document.getElementById('adventureDurations'),btn=document.getElementById('rosieAdventureAction');
+   const supervision=document.getElementById('farmRosieSupervisionText');
+   if(supervision){
+     if(!a)supervision.textContent='Rosie is supervising. Crops gain one growth step whenever a solitaire level is completed.';
+     else if(now>=a.endsAt)supervision.textContent='Rosie is back from her adventure! Welcome her home to reveal what she found.';
+     else supervision.textContent=`Rosie is exploring ${regions[a.region]||'the farm'}. Crops still gain one growth step whenever a solitaire level is completed.`;
+   }
    if(a){
      const ready=now>=a.endsAt,remaining=Math.max(0,a.endsAt-now),d=adventureDuration(a.duration);
      setText('rosieAdventureStatus',ready?`Rosie is back from ${regions[a.region]}!`:`Exploring ${regions[a.region]} • ${d.name}`);
