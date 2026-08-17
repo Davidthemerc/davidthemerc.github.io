@@ -727,3 +727,17 @@ QA for v40.5.4
 - JavaScript syntax/high-signal name checks, literal HTML ID wiring, button wiring,
   and dynamic-label wiring audits clean.
 - Save schema remains v40.
+
+
+v40.5.5 Fresh-Save Farm Upgrade Reset Fix
+-----------------------------------------
+- Fixed Permanent Farm Upgrade buttons remaining visually stuck on "Owned ✓" after
+  resetting the entire save. The save data itself was resetting correctly; the Farm
+  renderer only had a one-way owned-state text update.
+- Farm upgrade buttons now render their complete state every time:
+  Cozy Fence 3 Gems, Butterfly Garden 5 Gems, Bigger Barn 8 Gems, Pink Bandana 4 Gems,
+  or Owned ✓ when actually purchased.
+- Affordability is recalculated every render, so a fresh 0-gem save shows the correct
+  prices while disabling purchase buttons until enough gems are available.
+- Fixed tapping an already-owned Farm Upgrade incorrectly reporting "Not enough gems."
+- Save schema remains v40.
