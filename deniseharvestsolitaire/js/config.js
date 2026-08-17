@@ -1,6 +1,6 @@
 window.DSH=window.DSH||{};
 DSH.Config={
-  build:'40.5.4',
+  build:'40.5.5',
   draws:{cards:5,maxPacks:3,prices:[175,275,400],levelSurchargeEvery:10,levelSurcharge:50},
   difficulty:{stockFloor:24,stockCeiling:44,weatherCeiling:48,tableauCeiling:30,simulationMaxLevel:500},
   crops:{

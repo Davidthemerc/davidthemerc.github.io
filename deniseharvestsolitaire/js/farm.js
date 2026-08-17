@@ -408,10 +408,12 @@ DSH.Farm=(()=>{
  }
  function grow(){const extra=DSH.Weather?.effects(state).extraGrowth||0;state.plots=state.plots.map(p=>p?{...p,age:p.age+1+extra}:p)}
  function upgrade(k){
-   const costs={fence:3,butterfly:5,barn:8,bandana:4};
-   if(state.upgrades[k]||state.gems<costs[k]){onMessage('Not enough gems.');return}
+   const costs={fence:3,butterfly:5,barn:8,bandana:4},names={fence:'Cozy Fence',butterfly:'Butterfly Garden',barn:'Bigger Barn',bandana:"Rosie's Pink Bandana"};
+   if(!Object.prototype.hasOwnProperty.call(costs,k))return;
+   if(state.upgrades[k]){onMessage(`${names[k]} is already owned.`);return}
+   if(state.gems<costs[k]){onMessage(`You need ${costs[k]} gems for ${names[k]}.`);return}
    state.gems-=costs[k];state.upgrades[k]=true;addHappy(C.happiness.decoration);
-   announceAchievements();onChange();render();onReward?.('Farm Upgrade!',`+${C.happiness.decoration} Rosie Happiness ❤️`,'✨');
+   announceAchievements();onChange();render();onReward?.('Farm Upgrade!',`${names[k]} is now permanent • +${C.happiness.decoration} Rosie Happiness ❤️`,'✨');
  }
  let selectedAdventureRegion=0,selectedAdventureDuration='sniff';
  function adventureDuration(key){return C.rosieAdventures.durations.find(x=>x.key===key)||C.rosieAdventures.durations[0]}
@@ -583,7 +585,14 @@ DSH.Farm=(()=>{
      const d=r.decor,owned=ownsDecor(d.key);rd.innerHTML=`<b>${d.icon} ${d.name}</b><small>${d.desc}</small><button id="buyRegionDecorBtn">${owned?'Owned ✓':d.cost+' Gems'}</button>`;
      const b=rd.querySelector('button');b.disabled=owned||state.gems<d.cost;b.onclick=buyRegionDecor;
    }
-   document.querySelectorAll('[data-upgrade]').forEach(b=>{const k=b.dataset.upgrade;b.disabled=!!state.upgrades[k];if(state.upgrades[k])b.textContent='Owned ✓'});
+   const upgradeCosts={fence:3,butterfly:5,barn:8,bandana:4};
+   document.querySelectorAll('[data-upgrade]').forEach(b=>{
+     const k=b.dataset.upgrade,cost=upgradeCosts[k],owned=!!state.upgrades[k];
+     b.textContent=owned?'Owned ✓':`${cost} Gems`;
+     b.disabled=owned||state.gems<cost;
+     b.title=owned?'Permanent farm upgrade owned':state.gems<cost?`Need ${cost} gems`:`Buy for ${cost} gems`;
+     b.classList.toggle('owned',owned);
+   });
  }
  return{bind,plant,harvest,grow,upgrade,render,visit,petRosie,feedTreat,claimTimedHarvest,renderTimedHarvest,renderHappiness,timedStatus,setRegion,claimRegionRewards,buyRegionDecor,ensureOrders,renderOrders,advanceOrders,collectOrder,readyOrderCount,
  startAdventure,claimAdventure,renderAdventure,useAdventureFind,cropDefs,regions,regionDefs};
