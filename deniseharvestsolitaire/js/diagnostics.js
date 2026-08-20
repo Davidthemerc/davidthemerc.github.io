@@ -1,7 +1,7 @@
 window.DSH=window.DSH||{};
 DSH.Diagnostics=(()=>{
  function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
- function levelAudit(from=1,to=500,samples=8){
+ function levelAudit(from=1,to=1000,samples=8){
    from=Math.max(1,Math.floor(from));to=Math.max(from,Math.floor(to));samples=Math.max(1,Math.min(50,Math.floor(samples)));
    const rows=[],specialTotals={},warnings=[];let total=0,stockMin=999,stockMax=0,cardsMin=999,cardsMax=0,bonusMax=0;
    for(let level=from;level<=to;level++){
@@ -45,7 +45,7 @@ DSH.Diagnostics=(()=>{
    const r=DSH.Save.doctor(state),backups=DSH.Save.backupInfo();
    return{healthy:r.healthy,issues:r.issues,version:DSH.Save.VERSION,level:r.state.level,coins:r.state.coins,gems:r.state.gems,rosieHappiness:r.state.rosieHappiness,backups};
  }
- function textReport(state,range={from:1,to:500,samples:6}){
+ function textReport(state,range={from:1,to:1000,samples:6}){
    const save=saveReport(state),levels=levelAudit(range.from,range.to,range.samples),eco=economySnapshot(state);
    return[
      `Denise's Solitaire Harvest build ${DSH.Config.build||DSH.Save.VERSION} • save schema v${DSH.Save.VERSION} Diagnostics`,

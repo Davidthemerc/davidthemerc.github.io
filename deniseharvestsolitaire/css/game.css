@@ -1961,3 +1961,101 @@ body.reduced-motion .stockDrawGhost{display:none!important}
   background:linear-gradient(#e9f5ff,#cfe5f4)!important;
 }
 .mainRosiePeek.away>span{filter:saturate(.85)}
+
+/* v41.1 Farm batch harvest */
+.cropSectionHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}
+.cropSectionHeader h3{margin:0}
+.harvestAllBtn{
+  width:auto!important;min-width:0!important;padding:6px 10px!important;margin:0!important;
+  border-radius:999px!important;font-size:10px!important;font-weight:900!important;
+  background:linear-gradient(#f5d96e,#d5a933)!important;border:1px solid #b78f27!important;color:#594416!important;
+  box-shadow:0 2px 5px #0002!important;
+}
+.harvestAllBtn:disabled{opacity:.45!important;filter:grayscale(.5);cursor:default}
+@media(max-width:430px){.harvestAllBtn{font-size:9px!important;padding:5px 8px!important}}
+
+/* v41.3 compact batch crop actions */
+.cropBatchActions{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.cropBatchActions .harvestAllBtn{white-space:nowrap}
+@media(max-width:520px){.cropBatchActions{gap:4px}.cropBatchActions .harvestAllBtn{padding:7px 9px;font-size:.78rem}}
+
+/* v41.4 Rosie Adventure expansion */
+.adventureJournal{
+  display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;padding-top:8px;
+  border-top:1px dashed rgba(64,99,62,.22);
+}
+.adventureJournal span{
+  display:inline-flex;align-items:center;min-height:23px;padding:3px 7px;border-radius:999px;
+  background:rgba(255,255,255,.62);border:1px solid rgba(86,117,75,.18);
+  font-size:10px;font-weight:800;color:#53634c;
+}
+@media(max-width:430px){.adventureJournal span{font-size:9px;padding:3px 6px}}
+
+/* v41.5 long-game campaign presentation */
+.campaignHorizonCard{
+  display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;
+  padding:8px 10px;margin:7px 0;border-radius:12px;
+  background:linear-gradient(135deg,rgba(255,248,211,.94),rgba(238,221,158,.88));
+  border:1px solid rgba(154,119,35,.28);
+}
+.campaignHorizonCard>div:first-child{display:flex;flex-direction:column;min-width:0}
+.campaignHorizonCard b{font-size:11px}.campaignHorizonCard small{font-size:9px;opacity:.78}
+.campaignHorizonCard>strong{font-size:10px;white-space:nowrap}
+.campaignHorizonTrack{grid-column:1/-1;height:5px;border-radius:999px;background:#00000014;overflow:hidden}
+#campaignHorizonBar{height:100%;width:0;background:linear-gradient(90deg,#8ab65f,#dbad36,#b67a24);transition:width .3s ease}
+.landmarkCelebration{
+  display:none;align-items:center;gap:10px;text-align:left;margin:8px 0;padding:10px 12px;border-radius:13px;
+  background:linear-gradient(135deg,#fff4bc,#f4c95e);border:2px solid #c89b2f;box-shadow:0 3px 10px #0002;
+}
+.landmarkCelebration.show{display:flex;animation:landmarkPop .35s ease-out}
+.landmarkCelebration>span{font-size:28px}.landmarkCelebration>div{display:flex;flex-direction:column}
+.landmarkCelebration b{font-size:14px}.landmarkCelebration small{font-size:10px;line-height:1.25}
+.chapterWall .landmarkKeepsake{outline:2px solid #d3a73d;outline-offset:1px}
+@keyframes landmarkPop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+@media(max-width:430px){
+  .campaignHorizonCard{padding:7px 8px;margin:5px 0}
+  .campaignHorizonCard b{font-size:10px}.campaignHorizonCard small{font-size:8px}
+}
+
+
+/* v42.0 — Farm Seasons */
+.seasonCard,.farmSeasonCard{border:1px solid rgba(82,105,61,.24);border-radius:12px;background:rgba(255,255,255,.72);box-shadow:0 2px 7px #00000012}
+.seasonCard{padding:8px 10px;margin:7px 0;text-align:left}
+.seasonCardTop{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}.seasonCardTop>span{font-size:24px}.seasonCardTop>div{display:flex;flex-direction:column;min-width:0}.seasonCardTop b{font-size:11px}.seasonCardTop small{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.seasonCardTop strong{font-size:10px}
+.seasonTrack,.farmSeasonTrack{height:5px;border-radius:999px;background:#00000014;overflow:hidden}.seasonTrack{margin:6px 0 4px}.seasonTrack>div,.farmSeasonTrack>div{height:100%;width:0;transition:width .25s ease;background:linear-gradient(90deg,#82bd65,#e1b143)}.seasonRewardPreview{font-size:8px;opacity:.78}
+.seasonCard[data-season="spring"],.farmSeasonCard[data-season="spring"]{background:linear-gradient(135deg,#f5ffe8,#e9f7d4)}
+.seasonCard[data-season="summer"],.farmSeasonCard[data-season="summer"]{background:linear-gradient(135deg,#fff6c9,#ffe29b)}
+.seasonCard[data-season="autumn"],.farmSeasonCard[data-season="autumn"]{background:linear-gradient(135deg,#fff0d7,#e9c28f)}
+.seasonCard[data-season="winter"],.farmSeasonCard[data-season="winter"]{background:linear-gradient(135deg,#eef8ff,#dcecf8)}
+.farmSeasonCard{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;padding:7px 9px;margin:7px 0}.farmSeasonCard>div:first-child{display:flex;flex-direction:column}.farmSeasonCard b{font-size:10px}.farmSeasonCard small{font-size:8px;line-height:1.25}.farmSeasonCard strong{font-size:10px}.farmSeasonTrack{grid-column:1/-1}
+.farmScene.season-spring{box-shadow:inset 0 0 0 999px rgba(199,255,172,.055)}.farmScene.season-summer{box-shadow:inset 0 0 0 999px rgba(255,218,92,.06)}.farmScene.season-autumn{box-shadow:inset 0 0 0 999px rgba(181,101,43,.085)}.farmScene.season-winter{box-shadow:inset 0 0 0 999px rgba(226,244,255,.13)}
+.seasonHouseSummary{display:flex;flex-direction:column;gap:4px;padding:10px;margin-bottom:8px;border-radius:11px;background:#f5edd8}.seasonHouseSummary b{font-size:12px}.seasonHouseSummary span{font-size:10px;font-weight:800}.seasonHouseSummary small{font-size:8px;color:#71695b}
+.seasonKeepsakes{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.seasonKeepsakes>div{display:grid;grid-template-columns:34px 1fr;gap:5px;padding:9px;border-radius:10px;background:#eee6d4}.seasonKeepsakes>div.earned{background:#e6f2d9}.seasonKeepsakes span{font-size:24px;grid-row:1/3}.seasonKeepsakes b{font-size:9px}.seasonKeepsakes small{font-size:8px;color:#756c5d}
+@media(max-width:430px){.seasonCard{padding:6px 8px}.seasonCardTop>span{font-size:20px}.seasonCardTop b{font-size:10px}.seasonCardTop small,.seasonRewardPreview{font-size:7px}.seasonKeepsakes{grid-template-columns:1fr}.farmSeasonCard{padding:6px 8px}}
+
+/* v42.1 — season focus polish */
+.seasonVariant{display:block;font-size:8px;font-weight:800;color:#526b46;margin-top:2px}
+.farmOrderCard.seasonal-order{box-shadow:inset 0 0 0 2px rgba(179,132,47,.14)}
+.seasonOrderNote{display:block!important;margin-top:4px;padding:3px 5px;border-radius:7px;background:rgba(243,212,130,.24);font-weight:800!important;color:#755d27!important}
+.orderPayoutWhy{display:block!important;margin-top:3px;color:#75694d!important;font-size:7px!important}
+.seasonHistory{display:flex;flex-direction:column;gap:4px;margin-top:9px;padding:9px;border-radius:10px;background:#f5edd8}
+.seasonHistory>b{font-size:10px}.seasonHistory>span{font-size:8px;color:#6f6657}
+@media(max-width:430px){.seasonVariant{font-size:7px}.seasonHistory>span{font-size:7px}}
+
+/* v42.2 — Seasonal Rosie */
+.rosieAdventureSeasonHint{
+  display:block;margin:6px 0 8px;padding:6px 8px;border-radius:9px;
+  background:rgba(255,255,255,.55);border:1px dashed rgba(76,109,68,.26);
+  color:#59644f;font-size:9px;line-height:1.3
+}
+.rosieSeasonJournal{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:12px}
+.rosieSeasonJournal>div{
+  display:grid;grid-template-columns:30px 1fr;gap:3px 7px;padding:8px;border-radius:11px;
+  background:#f3ead5;border:1px solid #ddcfac
+}
+.rosieSeasonJournal>div>span{grid-row:1/4;font-size:23px;align-self:center}
+.rosieSeasonJournal b{font-size:9px}.rosieSeasonJournal small{font-size:8px;color:#716858}
+.rosieSeasonJournal em{font-size:8px;font-style:normal;color:#54704e}
+.rosieSeasonJournal .emptySeasonJournal{opacity:.62}
+.toyJournal>div.seasonalToy{box-shadow:inset 0 0 0 1px rgba(184,137,45,.28)}
+@media(max-width:520px){.rosieSeasonJournal{grid-template-columns:1fr}.rosieAdventureSeasonHint{font-size:8px}}

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Denise's Solitaire Harvest</title>
-<link rel="stylesheet" href="css/game.css?v=40.5.4">
+<link rel="stylesheet" href="css/game.css?v=42.2">
 </head>
 <body>
 <div id="app">
@@ -86,7 +86,7 @@
   </div>
 
   <div class="previewChoiceOverlay" id="previewChoiceOverlay"><div class="previewChoiceCard"><b>🔮 PREVIEW CHOICE</b><small>Choose the next active card. The other goes deeper into the stock.</small><div><button id="previewChoiceA"></button><button id="previewChoiceB"></button></div></div></div>
-  <div class="challengeOfferOverlay" id="challengeOfferOverlay"><div class="challengeOfferCard"><span>🔥</span><h2>Challenge Hand</h2><p>Tougher tableau, extra obstacles and fewer safety margins.</p><strong>Win bonus: +750 🪙 +2 💎</strong><div><button id="challengeNormalBtn">Normal Hand</button><button class="primary" id="challengeAcceptBtn">Accept Challenge</button></div></div></div>
+  <div class="challengeOfferOverlay" id="challengeOfferOverlay"><div class="challengeOfferCard"><span>🔥</span><h2 id="challengeVariantTitle">Challenge Hand</h2><p id="challengeVariantDesc">Tougher tableau, extra obstacles and fewer safety margins.</p><strong id="challengeVariantBonus">Win bonus: +750 🪙 +2 💎</strong><div><button id="challengeNormalBtn">Normal Hand</button><button class="primary" id="challengeAcceptBtn">Accept Challenge</button></div></div></div>
   <div class="diceRollOverlay" id="diceRollOverlay"><div class="diceRollCard"><span>MAGIC DICE</span><b id="diceRollValue">🎲</b></div></div>
   <div class="rewardToast" id="rewardToast"><span id="rewardToastIcon">✨</span><div><b id="rewardToastTitle">Reward!</b><small id="rewardToastText"></small></div></div>
   <div class="viewportFeedback" id="viewportFeedback" aria-live="polite"><span id="viewportFeedbackIcon">🌱</span><b id="viewportFeedbackText"></b></div>
@@ -106,6 +106,17 @@
         <div class="chapterProgressTop"><span id="chapterIcon">🌱</span><div><b id="chapterName">Meadow Beginnings</b><small id="chapterLevelText">Level 1 of 10</small></div><strong id="nextMilestoneText">Milestone 10</strong></div>
         <div class="chapterTrack"><div id="chapterProgressBar"></div></div>
       </div>
+      <div class="campaignHorizonCard">
+        <div><b>🏆 Road to Ultra Harvest</b><small id="campaignHorizonText">Authored campaign • 0/1000 levels complete</small></div>
+        <strong id="campaignHorizonBadge">0%</strong>
+        <div class="campaignHorizonTrack"><div id="campaignHorizonBar"></div></div>
+      </div>
+      <section class="seasonCard" id="seasonCard" data-season="spring">
+        <div class="seasonCardTop"><span id="seasonIcon">🌷</span><div><b id="seasonName">Spring Bloom • Year 1</b><small id="seasonLevels">Levels 1–10</small></div><strong id="seasonPoints">0/18</strong></div>
+        <div class="seasonTrack"><div id="seasonProgressBar"></div></div>
+        <small class="seasonVariant" id="seasonVariant">🌼 Seasonal focus</small>
+        <small class="seasonRewardPreview" id="seasonRewardPreview">Basket reward</small>
+      </section>
       <section class="weatherBulletin" id="weatherBulletin"><div class="bulletinTop"><b>🌦️ FARM BULLETIN</b><span id="weatherRemaining"></span></div><div class="bulletinWeather"><strong id="weatherNow">—</strong><small id="weatherDesc"></small></div><div class="bulletinNext" id="weatherNext">Next: —</div><div class="bulletinEvent" id="farmEventLine"></div></section>
       <div class="mainBalances">
         <span><i class="miniCoin"></i> <b id="menuCoins">0</b></span>
@@ -179,7 +190,7 @@
       <div class="panelBody">
         <div class="grid">
           <div class="item"><b>Resume</b><small>Return to the current hand.</small><button id="resumeBtn">Resume</button></div>
-          <div class="item"><b>Restart Level</b><small>Deal a new formation for this level.</small><button id="restartBtn">Restart</button></div>
+          <div class="item"><b>Restart Level</b><small>Replay this exact hand from the beginning.</small><button id="restartBtn">Restart</button></div>
           <div class="item"><b>Main Menu</b><small>Your farm progress is already saved.</small><button id="pauseMainMenuBtn">Main Menu</button></div>
         </div>
       </div>
@@ -202,6 +213,7 @@
           <button class="farmhouseTab active" data-house-tab="trophies">🏆 Trophies</button>
           <button class="farmhouseTab" data-house-tab="tiers">🎖️ Achievement Tiers</button>
           <button class="farmhouseTab" data-house-tab="chapters">🖼️ Chapter Wall</button>
+          <button class="farmhouseTab" data-house-tab="seasons">🍂 Seasons</button>
           <button class="farmhouseTab" data-house-tab="rosie">🐾 Rosie's Journal</button>
           <button class="farmhouseTab" data-house-tab="lifetime">📊 Lifetime</button>
         </div>
@@ -319,8 +331,8 @@
         <div class="devDiagnostics">
           <h3>Diagnostics</h3>
           <div class="devGrid">
-            <button data-dev="levelAudit">Run Level 1–500 Audit</button>
-            <button data-dev="sampleLevels">Sample Levels 1/50/100/500</button>
+            <button data-dev="levelAudit">Run Level 1–1000 Audit</button>
+            <button data-dev="sampleLevels">Sample Levels through 1000</button>
             <button data-dev="economy">Economy Snapshot</button>
             <button data-dev="validateSave">Validate Save</button>
             <button data-dev="repairTest">Run Corruption/Repair Test</button>
@@ -346,6 +358,8 @@
         <div class="grid">
           <div class="statBox">Best Streak: <span id="statBest">0</span></div>
           <div class="statBox">Levels Completed: <span id="statLevels">0</span></div>
+          <div class="statBox">Authored Campaign: <span id="statCampaign">0/1000</span></div>
+          <div class="statBox">Highest Level Reached: <span id="statHighestLevel">1</span></div>
           <div class="statBox">Total Cards Cleared: <span id="statCards">0</span></div>
           <div class="statBox">Farm Harvests: <span id="statHarvests">0</span></div>
           <div class="statBox">Windmills Found: <span id="statWindmills">0</span></div>
@@ -366,6 +380,15 @@
           <div class="statBox">Special Cards Cleared: <span id="statSpecialCards">0</span></div>
           <div class="statBox">Golden Cards: <span id="statGoldenCards">0</span></div>
           <div class="statBox">Golden Gems: <span id="statGoldenGems">0</span></div>
+          <div class="statBox">Flower Cards Cleared: <span id="statFlowers">0</span></div>
+          <div class="statBox">Rainbow Cards Cleared: <span id="statRainbows">0</span></div>
+          <div class="statBox">Barn Keys / Locks: <span id="statKeysLocks">0 / 0</span></div>
+          <div class="statBox">Watering Cans Cleared: <span id="statWatering">0</span></div>
+          <div class="statBox">Bee Cards / Buzzes: <span id="statBees">0 / 0</span></div>
+          <div class="statBox">Harvest Chains Completed: <span id="statHarvestChains">0</span></div>
+          <div class="statBox">Heavy Cards Cleared: <span id="statHeavy">0</span></div>
+          <div class="statBox">Sleeping Cards Cleared: <span id="statSleeping">0</span></div>
+          <div class="statBox">Sunflower Cards Cleared: <span id="statSunflowers">0</span></div>
           <div class="statBox">Garden Shears Used: <span id="statShearsUsed">0</span></div>
           <div class="statBox">Obstacle Levels Cleared: <span id="statObstacleLevels">0</span></div>
           <div class="statBox">Farm Regions Unlocked: <span id="statRegionsUnlocked">1</span>/5</div>
@@ -388,11 +411,18 @@
           <div class="statBox">Milestones Completed: <span id="statMilestones">0</span></div>
           <div class="statBox">Milestone Coins Earned: <span id="statMilestoneCoins">0</span></div>
           <div class="statBox">Milestone Gems Earned: <span id="statMilestoneGems">0</span></div>
+          <div class="statBox">Season Baskets Completed: <span id="statSeasonBaskets">0</span></div>
+          <div class="statBox">Season Points Earned: <span id="statSeasonPoints">0</span></div>
+          <div class="statBox">Season Keepsakes: <span id="statSeasonKeepsakes">0</span>/4</div>
           <div class="statBox">Rosie Adventures: <span id="statRosieAdventures">0</span></div>
           <div class="statBox">Adventure Coins: <span id="statAdventureCoins">0</span></div>
           <div class="statBox">Adventure Gems: <span id="statAdventureGems">0</span></div>
           <div class="statBox">Rare Adventure Finds: <span id="statAdventureRare">0</span></div>
-          <div class="statBox">Rosie Toys Found: <span id="statRosieToys">0</span>/6</div>
+          <div class="statBox">Seasonal Adventure Events: <span id="statSeasonAdventureEvents">0</span></div>
+          <div class="statBox">Seasonal Mementos: <span id="statSeasonMementos">0</span>/4</div>
+          <div class="statBox">Seasonal Toys Found: <span id="statSeasonToys">0</span></div>
+          <div class="statBox">Rosie's Favorite Season: <span id="statRosieFavoriteSeason">—</span></div>
+          <div class="statBox">Rosie Toys Found: <span id="statRosieToys">0</span>/<span id="statToyTotal">14</span></div>
           <div class="statBox">Trophies Unlocked: <span id="statTrophies">0</span></div>
           <div class="statBox">Reserve Uses: <span id="statReserveUses">0</span></div>
           <div class="statBox">Challenge Wins: <span id="statChallengeWins">0</span></div>
@@ -404,12 +434,19 @@
         <h3>Special Cards</h3>
         <div class="specialLegend">
           <span>🌿 Vines — clear a nearby card</span>
-          <span>📦 Crate — clear two nearby cards</span>
-          <span>🌼 Flower — +1 draw</span>
+          <span>📦 Crate — clear nearby requirements</span>
+          <span>🌼 Flower — adds a draw</span>
           <span>💰 Gold — bonus coins / rare gem</span>
           <span>🟤 Mud — cannot be Lucky Seeded</span>
           <span>⛓️ Chain — requires a 3-card streak</span>
           <span>🌈 Rainbow — Wild + bonus reward</span>
+          <span>🔑 Key / 🔒 Barn Lock — linked pair</span>
+          <span>💧 Watering Can — blooms an exposed card Wild</span>
+          <span>🐝 Bee — can buzz when drawing</span>
+          <span>🌾 Harvest Chain — clear linked cards consecutively</span>
+          <span>🪨 Heavy — requires two valid plays</span>
+          <span>🌙 Sleeping — wakes after enough clears</span>
+          <span>🌻 Sunflower — opens a hidden field card</span>
           <span>✂️ Shears — cut one exposed card</span>
         </div>
         <h3>Achievements</h3>
@@ -439,6 +476,10 @@
           </div>
           <button id="nextRegionBtn" aria-label="Next farm region">›</button>
         </section>
+        <section class="farmSeasonCard" id="farmSeasonCard" data-season="spring">
+          <div><b id="farmSeasonName">🌷 Spring Bloom • Year 1</b><small id="farmSeasonEffect">Season effect</small></div><strong id="farmSeasonPoints">0/18</strong>
+          <div class="farmSeasonTrack"><div id="farmSeasonBar"></div></div>
+        </section>
         <div class="farmScene" id="farmScene">
           <div class="barn"></div>
           <div class="regionDecorVisual" id="regionDecorVisual"></div>
@@ -461,10 +502,12 @@
 
         <section class="rosieAdventureCard" id="rosieAdventureCard">
           <div class="rosieAdventureHead"><div><b>🐾 Rosie's Adventures</b><small id="rosieAdventureStatus">Rosie is ready to explore!</small></div><strong id="rosieAdventureTimer"></strong></div>
+          <small class="rosieAdventureSeasonHint" id="rosieAdventureSeasonHint">Seasonal trail bonuses are active.</small>
           <div class="adventureLocations" id="adventureLocations"></div>
           <div class="adventureDurations" id="adventureDurations"></div>
           <button class="primary" id="rosieAdventureAction">Choose an adventure</button>
           <div class="adventureFinds" id="adventureFinds"></div>
+          <div class="adventureJournal" id="adventureJournal"></div>
         </section>
         <p id="farmRosieSupervisionText">Rosie is supervising. Crops gain one growth step whenever a solitaire level is completed.</p>
         <section class="weatherBulletin farmWeatherBulletin"><div class="bulletinTop"><b>🌦️ Farm Weather & Events</b><span id="farmWeatherRemaining"></span></div><div class="bulletinWeather"><strong id="farmWeatherNow">—</strong><small id="farmWeatherDesc"></small></div><div class="bulletinNext" id="farmWeatherNext">Next: —</div><div class="bulletinEvent" id="farmEventDetail"></div></section>
@@ -486,7 +529,7 @@
           </div>
           <div class="farmOrdersGrid" id="farmOrdersGrid"></div>
         </section>
-        <h3>Crops</h3>
+        <div class="cropSectionHeader"><h3>Crops</h3><div class="cropBatchActions"><button class="harvestAllBtn" id="harvestAllBtn" disabled>🌾 Harvest All</button><button class="harvestAllBtn" id="replantBtn" disabled>🌱 Replant</button></div></div>
         <div class="fieldsFullNotice" id="fieldsFullNotice"></div>
         <p class="regionHint">Crops unlock with farm regions. Growing a crop in its home region gives <b>+15% payout</b>.</p>
         <div class="grid" id="cropChoices"></div>
@@ -498,6 +541,8 @@
           <div class="item"><b>🦋 Butterfly Garden</b><small>+20% crop payouts.</small><button data-upgrade="butterfly">5 Gems</button></div>
           <div class="item"><b>🛖 Bigger Barn</b><small>Boosts Solitaire rewards and timed harvest payouts.</small><button data-upgrade="barn">8 Gems</button></div>
           <div class="item"><b>🎀 Rosie's Pink Bandana</b><small>Decoration • boosts Rosie's crop-harvest Rescue finds.</small><button data-upgrade="bandana">4 Gems</button></div>
+          <div class="item"><b>🌟 Golden Silo</b><small>Late-farm upgrade • +10% coins from individual crop harvests.</small><button data-upgrade="silo">10 Gems</button></div>
+          <div class="item"><b>🪧 Farmstand Sign</b><small>Late-farm upgrade • +15% coins when collecting Farm Orders.</small><button data-upgrade="market">12 Gems</button></div>
         </div>
       </div>
     </div>
@@ -539,6 +584,10 @@
       <h2>Harvest Complete! 🌾</h2>
       <div class="winStars" id="winStars">★☆☆</div>
       <div class="perfectBadge" id="perfectClearBadge">✨ PERFECT CLEAR ✨</div>
+      <div class="landmarkCelebration" id="landmarkCelebration">
+        <span id="landmarkIcon">🏆</span>
+        <div><b id="landmarkTitle"></b><small id="landmarkDesc"></small></div>
+      </div>
       <div id="winText"></div>
       <div class="winBonusText" id="winBonusText"></div>
       <div class="rewards"><span class="miniCoin"></span> +<span id="rewardCoins">0</span> &nbsp; 💎 +<span id="rewardGems">0</span></div>
@@ -548,13 +597,14 @@
   </div>
 </div>
 
-<script src="js/config.js?v=40.5.4" defer></script>
-<script src="js/save.js?v=40.5.4" defer></script>
-<script src="js/audio.js?v=40.5.4" defer></script>
-<script src="js/levels.js?v=40.5.4" defer></script>
-<script src="js/farm.js?v=40.5.4" defer></script>
-<script src="js/weather.js?v=40.5.4" defer></script>
-<script src="js/diagnostics.js?v=40.5.4" defer></script>
-<script src="js/game.js?v=40.5.4" defer></script>
+<script src="js/config.js?v=42.2" defer></script>
+<script src="js/seasons.js?v=42.2" defer></script>
+<script src="js/save.js?v=42.2" defer></script>
+<script src="js/audio.js?v=42.2" defer></script>
+<script src="js/levels.js?v=42.2" defer></script>
+<script src="js/farm.js?v=42.2" defer></script>
+<script src="js/weather.js?v=42.2" defer></script>
+<script src="js/diagnostics.js?v=42.2" defer></script>
+<script src="js/game.js?v=42.2" defer></script>
 </body>
 </html>

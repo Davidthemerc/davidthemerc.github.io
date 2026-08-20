@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <rect width="640" height="360" rx="24" fill="#edf3f5"/>
+  <rect x="20" y="20" width="600" height="320" rx="18" fill="none" stroke="#8aa2ac" stroke-width="4" stroke-dasharray="12 10"/>
+  <text x="320" y="170" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#265d72">Chameleon Picnic</text>
+  <text x="320" y="208" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#66757f">Optional replacement artwork / sprite sheet</text>
+</svg>

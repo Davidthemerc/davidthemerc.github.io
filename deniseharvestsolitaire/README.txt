@@ -727,3 +727,587 @@ QA for v40.5.4
 - JavaScript syntax/high-signal name checks, literal HTML ID wiring, button wiring,
   and dynamic-label wiring audits clean.
 - Save schema remains v40.
+
+
+v40.5.5 Fresh-Save Farm Upgrade Reset Fix
+-----------------------------------------
+- Fixed Permanent Farm Upgrade buttons remaining visually stuck on "Owned ✓" after
+  resetting the entire save. The save data itself was resetting correctly; the Farm
+  renderer only had a one-way owned-state text update.
+- Farm upgrade buttons now render their complete state every time:
+  Cozy Fence 3 Gems, Butterfly Garden 5 Gems, Bigger Barn 8 Gems, Pink Bandana 4 Gems,
+  or Owned ✓ when actually purchased.
+- Affordability is recalculated every render, so a fresh 0-gem save shows the correct
+  prices while disabling purchase buttons until enough gems are available.
+- Fixed tapping an already-owned Farm Upgrade incorrectly reporting "Not enough gems."
+- Save schema remains v40.
+
+
+v41.0 More Solitaire — Formation Expansion / 1000-Level Foundation
+------------------------------------------------------------------
+Solitaire variety
+- Added 10 new procedural tableau families:
+  Clover Cross, Market Stalls, River Bend, Barn Rafters, Sunburst,
+  Orchard Ladder, Lantern Rows, Rosie Paths, Harvest Crown, and Grand Terrace.
+- New families enter gradually from Level 40 through Level 260 instead of dumping
+  every formation into the early campaign.
+- Existing formations remain in rotation, preserving familiar hands alongside the
+  new layouts.
+- Milestone hands no longer reuse one ridge silhouette every ten levels. They now
+  rotate among five distinct normalized layouts:
+  Milestone Ridge, Festival Crown, Sunwheel Summit, Grand Garden Gate, and
+  Harvest Terrace.
+- All new formations still obey the 30-tableau-card ceiling. Difficulty continues
+  to grow through mechanic combinations and layout variety rather than endless
+  raw card-count inflation.
+
+Levels 101–1000
+- The supported/tested campaign horizon is now Level 1000
+  (`campaignMaxLevel` / `simulationMaxLevel` = 1000).
+- Post-100 progression now uses named 100-level eras, each split into ten
+  ten-level chapters:
+  101–200 Second Spring
+  201–300 Orchard Trails
+  301–400 Lantern Harvest
+  401–500 Golden Seasons
+  501–600 Far Meadow
+  601–700 Moon Valley
+  701–800 Frost & Bloom
+  801–900 Rosie's Road
+  901–1000 Ultra Harvest
+- Century milestones have unique names through Level 1000, ending the supported
+  campaign horizon with Level 1000: Ultra Harvest Finale.
+- The underlying endless generator is intentionally retained beyond 1000, so
+  reaching the supported horizon never bricks an existing save.
+
+Developer / QA
+- Developer Level Audit now covers Levels 1–1000.
+- Sample-level diagnostics include 1, 50, 100, 250, 500, 750, and 1000.
+- 50,000 deterministic generated boards across Levels 1–1000:
+  zero validation failures and zero Recovery Meadow fallbacks.
+- 28 distinct normal/milestone formation families observed in the structural sweep.
+- Runtime autoplay cleared every Level 1–1000 through actual play, special-card,
+  completion, reward, and level-advance paths: 1,000/1,000 wins, 30,560 card plays.
+- Level 1000 advances safely to 1001; 1000 is a supported campaign horizon, not a
+  destructive hard stop.
+- Save schema remains v40 and existing v40.x saves remain compatible.
+
+
+v41.1 Harvest Convenience / Challenge & Lucky Variety
+-----------------------------------------------------
+Campaign naming
+- Renamed the Levels 901–1000 era to Ultra Harvest.
+- Level 1000 is now the Ultra Harvest Finale.
+
+Farm
+- Added a compact Harvest All button beside the Crops heading so it stays available
+  without adding another large Farm panel or HUD control.
+- The button only activates when at least one planted crop is mature and shows the
+  number ready in parentheses.
+- Harvest All collects every currently mature crop while leaving growing crops alone.
+- All normal crop logic still applies independently to every harvested plot: regional
+  bonuses, weather, Bumper Crop, In Demand bonuses, Butterfly Garden, Rosie finds,
+  Windmills, Magic Gates, Rescues, Treats, happiness, collections, achievements, and
+  Farm Order progress.
+- Batch harvesting ends with one consolidated visible reward summary instead of a stack
+  of six competing crop messages.
+- If nothing is mature, the control is disabled and its tooltip explains why.
+
+Challenge Hand variety
+- Challenge Hands now rotate deterministically among four variants so retrying a level
+  cannot reroll into an easier challenge:
+  • Rugged Field: -2 stock, Heavy + Sleeping pressure.
+  • Heavy Harvest: -1 stock, up to two Heavy cards.
+  • Sleeping Meadow: -2 stock, up to two structurally-safe Sleeping cards.
+  • Lean Stock: -4 stock, one Heavy card.
+- The Challenge offer now names the exact variant and tells the player what it changes.
+- Existing Challenge reward remains unchanged.
+
+Lucky Hand variety
+- Lucky Hands now have three deterministic variants:
+  • Bountiful: the original +3 stock and one bonus Wild.
+  • Wildflower: +2 stock and two bonus Wild tableau cards.
+  • Golden: +2 stock and one bonus Golden Card.
+- Restarting the same hand preserves the same Lucky variant because it remains inside
+  the seeded hand-generation stream.
+
+Compatibility
+- Save schema remains v40. Existing v40.x and v41.0 saves remain compatible.
+
+
+v41.2 Solitaire Variety
+-----------------------
+Late-game formations
+- Added 8 additional tableau families specifically weighted into the later campaign:
+  Moonlit Arches (320+), Apple Baskets (380+), Festival Flags (450+),
+  Meadow Wings (520+), Frosted Pines (610+), Rosie Run (700+),
+  Star Orchard (790+), and Ultra Crown (900+).
+- The normal formation pool now contains 31 named families in total.
+- Milestone levels now rotate through 9 special silhouettes instead of 5, adding
+  Moonlit Arches, Meadow Wings, Frosted Pines, and Ultra Crown to the milestone set.
+- The 30-card tableau ceiling remains intact; variety increases through geometry,
+  blocker relationships, and mechanic combinations rather than raw card inflation.
+
+Challenge Hands
+- Added Stone & Slumber: -3 stock, one Heavy card and up to two safe Sleeping cards.
+- Added Iron Row: -2 stock and up to three Heavy cards.
+- Challenge rotation now contains 6 variants.
+
+Lucky Hands
+- Added Deep Stock: +5 stock cards with no extra tableau modifier.
+- Added Treasure Patch: +2 stock and two bonus Golden Cards.
+- Lucky Hand rotation now contains 5 variants, all deterministic across Restart.
+
+Mission Board
+- Added Hot Hand for higher-level streak play.
+- Added Packed Pantry, a tougher late-game stock-preservation mission.
+- Added Obstacle Course for hands containing multiple special cards.
+- Packed Pantry uses the same terminal-only completion protection as Stock Saver,
+  preventing it from falsely completing early in a hand.
+
+Compatibility
+- Save schema remains v40. Existing v40.x/v41.x saves remain compatible.
+
+
+v41.3 Farm Depth & Convenience
+------------------------------
+Crop workflow
+- Added a compact Replant button beside Harvest All.
+- Harvest All remembers exactly which mature plots it collected. Replant restores
+  those same crop types to those same plots with one tap while preserving their
+  planted farm regions.
+- Replant never overwrites another crop. If coins run short it plants only the
+  affordable portion of the remembered harvest and reports what happened.
+- The remembered pattern is intentionally session-only: it is a convenience for
+  the harvest the player just performed, not hidden permanent save data.
+
+Late-game Farm Orders
+- Once the campaign passes Level 500, newly generated Farm Orders gradually request
+  larger quantities at three late-game thresholds.
+- Rewards scale upward with the extra quantities, including an additional late-game
+  reward multiplier, so harder orders are not simply more grind.
+- Existing active/ready orders are never rewritten; scaling applies when a new order
+  is generated.
+
+Permanent upgrades
+- Golden Silo (10 Gems): permanent +10% crop-harvest coin payout.
+- Farmstand Sign (12 Gems): permanent +15% coins when collecting Farm Orders.
+- Both are included in defaults/sanitization, so old saves correctly see them as
+  unowned rather than inheriting accidental ownership.
+
+Compatibility
+- Save schema remains v40 and v40.x/v41.x saves remain compatible.
+
+
+v41.4 Yay Rosie! — Adventure Expansion
+--------------------------------------
+Adventure events
+- Rosie can now encounter a small event while an Adventure is underway. Higher
+  happiness slightly increases the chance of an event.
+- Friendly Neighbor: +25% Adventure coin payout.
+- Squirrel Chase: substantially improves the Adventure's power-find chance.
+- Creekside Sparkle: substantially improves the rare-find chance.
+- Secret Shortcut: shortens that Adventure's actual return timer by 15%.
+- The selected event is stored with the active Adventure, appears in the Farm status,
+  and is shown as part of Rosie's homecoming reward popup.
+
+Rosie Happiness
+- Happiness now has a more visible Adventure payoff in addition to the existing find
+  bonuses. At 75+ happiness Rosie receives +10% Adventure coins.
+- At 100 happiness the Best Friend bonus increases to +20% Adventure coins and the
+  Adventure-event chance receives its largest bonus.
+- The Happiness card now tells the player when these bonuses are active.
+
+New Adventure Finds
+- Lucky Pawprint: automatically adds one extra Wild card to the next normal Solitaire
+  tableau. It is consumed only when a new hand starts and survives Restart exactly,
+  just like Curious Feather.
+- Trail Snack Bag: manually open it for 2–4 Rosie Treats.
+- Existing Clover, Feather, Shooting Star and Rosie Cache finds remain unchanged.
+
+More Rosie collectibles
+- Four new Adventure toys can come home with Rosie: Red Frisbee, Absolutely Not
+  Denise's Sock, Perfect Adventure Stick, and Squeaky Carrot.
+- They integrate into the existing Farmhouse toy collection automatically.
+
+Adventure Journal
+- Rosie's Adventure card now includes a compact journal strip showing total trips,
+  toy collection progress, and her most-visited/favorite trail.
+- Region trip history already stored in the save is used, so existing players receive
+  journal credit retroactively.
+
+Compatibility
+- New Adventure-find counters and event statistics are merged into old saves by the
+  existing save sanitizer.
+- Save schema remains v40; all existing v40.x/v41.x saves remain compatible.
+
+
+v41.4.1 Farm Order Crop Accounting Fix
+--------------------------------------
+- Fixed a Farm Order accounting bug where one harvested crop could advance every
+  active order that requested that crop at the same time.
+- Each harvested crop now contributes exactly one unit of progress to at most one
+  Farm Order.
+- Allocation is deterministic in board order: Easy, then Standard, then Premium.
+  Once an earlier eligible order no longer needs that crop, subsequent harvests
+  spill into the next eligible order.
+- Ready/completed orders remain frozen and do not consume future harvested crops.
+- Exact regression: three Clover orders requiring 2 + 2 + 3 (7 total), followed by
+  Harvest All on six Clover plots, now produces 2/2, 2/2, and 2/3. Only two orders
+  are collectible. The seventh Clover completes the third order.
+- Mixed-crop orders were also tested so a single crop cannot be duplicated across
+  multiple partially-complete orders.
+- 500 randomized crop/demand conservation tests passed: total Farm Order progress
+  never exceeds the number of crops actually harvested.
+- Save schema remains v40. Existing saves remain compatible. Already-inflated order
+  progress from an older build is not destructively rewritten because the game
+  cannot reliably infer which historical crops should have belonged to which order.
+
+
+v41.5 Long-Game Progression / Ultra Harvest Finale
+--------------------------------------------------
+Authored campaign landmarks
+- Levels 250, 500, 750, and 1000 are now major authored landmarks rather than
+  ordinary every-10-level milestones.
+- Each landmark has a stable named tableau:
+  • 250 — Quarter Harvest Crown
+  • 500 — Golden Seasons Terrace
+  • 750 — Rosie's Star Orchard
+  • 1000 — Ultra Harvest Crown
+- Landmark hands receive a larger stock cushion and a celebratory mix of reward-style
+  special cards. The 30-card tableau ceiling remains unchanged.
+- Landmark clear rewards are upgraded substantially:
+  • 250 — 5,000 coins, 8 gems, 2 Rosie Rescues, 1 Treat
+  • 500 — 9,000 coins, 14 gems, 2 Rescues, 1 Magic Gate
+  • 750 — 13,000 coins, 20 gems, 3 Rescues, 1 Windmill
+  • 1000 — 20,000 coins, 30 gems, 3 Rescues, 2 Magic Gates, 2 Treats
+- The win screen gets a dedicated landmark celebration card explaining what was
+  reached instead of treating these clears like an ordinary milestone.
+- Clearing Level 1000 labels the continuation button "Continue to Endless Harvest."
+
+Campaign horizon / Endless Harvest
+- The Main Menu now includes a compact Road to Ultra Harvest progress meter showing
+  authored campaign completion out of 1000.
+- Stats now show authored-campaign progress and highest level reached.
+- After Level 1000, the authored campaign is explicitly marked COMPLETE and the
+  chapter presentation switches to Endless Harvest 1, 2, 3... rather than pretending
+  later levels are still part of Ultra Harvest.
+- The procedural generator remains open-ended; no save is hard-stopped at 1000.
+
+Late-game Challenges
+- Long-Haul Harvest joins the Challenge pool at Level 600+: -3 stock, two Heavy and
+  one structurally-safe Sleeping card.
+- Ultra Night Run joins at Level 800+: -4 stock, two Heavy and up to two safe
+  Sleeping cards.
+- Earlier Challenge variants remain available, so the late game gains variety rather
+  than replacing the existing pool.
+
+Farmhouse long-game rewards
+- New trophy goals: Quarter Harvest (250), Halfway Home (500), Rosie's Long Road
+  (750), Ultra Harvester (1000), and Rosie the Explorer (100 Adventures).
+- The Chapter Wall now includes four special landmark keepsakes at 250/500/750/1000.
+- Corrected old 6-toy display counts to use the actual current Rosie toy collection
+  total dynamically (10 in v41.5).
+
+QA
+- 50,000 deterministic generated boards across Levels 1–1000: zero validation
+  failures and zero Recovery Meadow fallbacks.
+- Runtime autoplay cleared all 1,000 levels while accepting every offered Challenge:
+  1,000/1,000 wins, 137 Challenge Hands, all 8 Challenge variants observed.
+- Exact landmark formation/reward/trophy tests passed for 250/500/750/1000.
+- Level 1000 advances safely to Level 1001 / Endless Harvest 1.
+- Save schema remains v40 and all v40.x/v41.x saves remain compatible.
+
+
+v41.5.1 Whole-Game Reliability & Bug-Fixing Sweep
+--------------------------------------------------
+This release is intentionally a reliability pass rather than a content update. The
+Solitaire campaign, Farm, Farm Orders, Rosie, save system, collection UI, statistics,
+and long-game progression were audited together for broken, stale, missing, trapping,
+or corrupt-state behavior.
+
+Save / recovery hardening
+- Fixed a Save Doctor type hole where values such as `null` could pass numeric checks
+  through JavaScript coercion while remaining null in the repaired live state.
+- Numeric save fields are now normalized to actual non-negative numbers/integers;
+  numeric strings remain import-compatible, while null/boolean/array corruption falls
+  back safely.
+- Extended normalization to timed-harvest counters, timestamps, farm-order serials,
+  weather/event timers, daily counters, and legacy power counters.
+- All defined statistic fields are normalized; missing Replant statistics
+  (`batchReplants` / `cropsReplanted`) are now explicit save defaults.
+- Permanent Rewards Shop unlocks, Tier II flags, Farm upgrades, settings, achievement
+  maps, milestone maps, trophy/claim maps, Rosie toys, collection discovery maps, and
+  other boolean maps are normalized so strings such as "false" cannot act truthy.
+- Level Stars clamp to 0–3; Adventure history, event progress, chapter-best data, and
+  save-health counters are repaired to safe numeric values.
+- Historic toy/trophy counters are reconciled upward from the actual collection maps.
+- Rosie Adventure timestamps normalize to numbers and invalid event keys are cleared.
+
+Farm Orders
+- Retained v41.4.1's one-crop/one-order accounting guarantee and stress-tested it.
+- Save repair now DERIVES an Order's ready state from its actual requirements/progress;
+  corrupt/imported `ready:true` can no longer make an incomplete Order collectible.
+- Complete imported Orders receive a safe frozen reward value when needed.
+- Missing or duplicate Farm Order IDs are repaired, preventing the wrong Order card
+  from being collected.
+- `farmOrderSerial` catches up to the largest surviving `order-N` ID so newly generated
+  Orders cannot collide with repaired/imported IDs.
+- Farmstand Sign's +15% Order coin bonus is now reflected in the visible ready-Order
+  payout, including the Lucky Clover 2x preview, instead of appearing only after Collect.
+
+Farm convenience
+- Fixed a Replant edge case where an expensive first crop could stop the entire batch
+  even when a cheaper crop later in the remembered Harvest All pattern was affordable.
+  Replant now skips unaffordable entries and continues with crops the player can buy.
+
+Campaign / Farmhouse / collection UI
+- Road to Ultra Harvest no longer rounds to 100% before Level 1000. Levels before the
+  Finale cap at 99%; Level 1000 displays the explicit Finale badge; Level 1001+ shows
+  Endless Harvest.
+- Fixed the detailed Farmhouse Chapter Wall tab omitting the Level 250/500/750/1000
+  landmark keepsakes even though the room wall already knew about them.
+- Fixed the Harvest Almanac Milestones collection stopping at Level 100. It now includes
+  Quarter Harvest, Golden Seasons Summit, Rosie's Long Road, and Ultra Harvest Finale.
+- Rosie toy and trophy Stats now derive from the actual collection maps, avoiding stale
+  historic counters on imported/older saves.
+- The physical Farmhouse trophy shelf still displays a compact maximum, but now puts
+  unclaimed rewards first so a new late-game trophy cannot be hidden behind old trophies.
+- Pause-screen Restart copy now correctly says it replays the exact hand; Restart does
+  not reroll the formation/deal.
+- Added missing current special-card statistics to Stats: Flowers, Rainbows, Keys/Locks,
+  Watering Cans, Bees/Buzzes, Harvest Chains, Heavy, Sleeping, and Sunflower Cards.
+- Updated the Stats special-card legend to describe all current mechanics rather than
+  only the older subset.
+
+Large-scale QA performed
+- 100,000 deterministic generated boards across Levels 1–1000: zero validation
+  failures and zero Recovery Meadow fallbacks; max tableau 30, max stock 48.
+- 20,000 additional generated Endless Harvest boards across Levels 1001–2000:
+  zero validation failures and zero fallbacks.
+- Full runtime autoplay Levels 1–1000 while accepting every Challenge Hand:
+  1,000/1,000 wins, 137 Challenges, all 8 variants, 30,635 card plays, Level 1001 reached.
+- 500 randomized Solitaire hands / 26,994 mixed actions, including 8,940 power actions
+  and 1,049 Undo attempts, with wallet/inventory/layout invariants checked continuously.
+- 20,000 generated Mission Board sets across Levels 1–1000: three unique valid choices
+  every time, with unlock/requirement/redundancy constraints checked.
+- Exact Restart regression at 12 representative campaign levels, including Adventure
+  Feather/Pawprint and Challenge state; all five Lucky variants retain exact Restart.
+- Daily first-claim/replay/deterministic-board tests, including protection of normal-hand
+  Rosie consumables.
+- Targeted Chain, Sleeping, Key/Lock, Magic Gate/Gold, Dice commitment, Preview Undo,
+  and exact Level 29 -> +5 Draws -> Level 30 regressions passed.
+- 5,000 randomized Farm actions plus 1,000 randomized Farm Order crop-conservation cases.
+- 1,000 corrupted-save Doctor fuzz cases, representative schema migrations, checksum
+  tamper detection, rotating-backup restore, reset/backup cleanup, and order-ID repair.
+- HTML parses cleanly, CSS parses cleanly, all JavaScript passes syntax checks, literal
+  DOM-ID wiring has no missing/duplicate IDs, and `.powerShelf` remains free of
+  `contain: paint` clipping.
+- Save schema remains v40. Existing v40.x/v41.x saves remain compatible.
+
+
+v42.0 Farm Seasons
+------------------
+Campaign-driven seasons
+- Added a four-season Farm Year that advances every 10 normal campaign levels:
+  Spring Bloom, Summer Sun, Autumn Market, and Winter Trails. Four seasons make one
+  Farm Year; seasons continue naturally into Endless Harvest beyond Level 1000.
+- Seasons are based on campaign progress, not the real-world calendar, so no player
+  has to wait months for a season to return.
+
+Season effects
+- Spring Bloom: +1 extra crop growth step after each normal level clear and +8% crop coins.
+- Summer Sun: +12% crop coins and +10% normal level-clear coins.
+- Autumn Market: +20% Farm Order coins and +35% Harvest Chain coin rewards.
+- Winter Trails: +2 normal Solitaire starting stock, Adventures 10% shorter, and
+  +12% Rosie Adventure rare-find chance.
+- Season effects stack deliberately with Weather, regional bonuses, and permanent
+  Farm upgrades. Daily Challenge boards/rewards remain season-neutral.
+
+Season Basket
+- Every 10-level season has one 18-point Basket. It fills from ordinary play instead
+  of requiring a separate grind screen:
+  • normal level clear +2
+  • crop harvest +1
+  • collected Farm Order +3
+  • Rosie Adventure completed +4
+  • timed Farm Harvest +1 per stored harvest claimed
+- A player who only plays Solitaire can still finish the Basket within nine clears;
+  Farm/Rosie activity simply completes it sooner.
+- Existing v41 saves receive conservative retroactive credit for levels already
+  cleared in their current 10-level season, but are left one normal clear short of
+  an automatic payout so updating the game never silently changes the wallet.
+
+Season rewards / keepsakes
+- Each completed Basket grants a themed coin/gem bundle plus one Farm consumable.
+  Coin/gem rewards gradually scale across later Farm Years without exploding the
+  economy.
+- The first completed Basket of each season awards one permanent Farmhouse keepsake:
+  Pressed Spring Blossom, Golden Sun Ribbon, Harvest Leaf Medallion, and Crystal Snow Bell.
+- Added a Seasons tab to Denise's Farmhouse and season statistics to Stats.
+
+Presentation
+- Added compact season cards to Main Menu and Farm with current Farm Year, level
+  range, active effect, Basket progress, and reward preview.
+- Farm scenery receives a subtle seasonal palette shift without replacing the
+  existing region visuals or Rosie's original browser graphic.
+
+Compatibility
+- Save schema remains v40. New season state, keepsakes, and statistics are merged and
+  sanitized into existing v40/v41 saves. Season state is deterministic from current
+  campaign level and remains open-ended beyond Level 1000.
+
+
+v42.1 Seasons Polish & Variety
+------------------------------
+Seasonal Focus variants
+- Each Spring, Summer, Autumn and Winter now chooses one of three deterministic
+  Seasonal Focus variants for that Farm Year. The same level/year always receives
+  the same Focus across reloads and Restarts.
+- Focus effects layer multiplicatively/additively onto the base season rather than
+  replacing it. The Main Menu and Farm display both the current Focus and the final
+  combined effects, so payout changes are explainable rather than hidden.
+- Added twelve Focus variants total: Wildflower Week, Gentle Rain, Busy Bees,
+  Golden Hour, Berry Picnic, Long Evening, Market Rush, Orchard Fair, Windfall,
+  Clear Frost, Cozy Trails, and Snowdrift.
+
+Season-flavored Solitaire
+- Normal hands now snapshot their complete Season + Focus effects at hand creation.
+  Restart reuses that snapshot exactly; Daily Challenge explicitly receives no
+  seasonal hand modifiers.
+- Lucky Hands receive one deterministic seasonal favor: an extra Flower/Golden
+  card or one extra stock card depending on the current Focus.
+- Challenge offers now show the current seasonal Focus and add a modest Focus-based
+  Challenge coin bonus. The accepted hand stores that bonus so transitions cannot
+  change its reward mid-hand.
+- Harvest Chain and starting-stock seasonal effects now read the frozen hand-season
+  snapshot rather than the live campaign level.
+
+Seasonal Farm Orders
+- New Farm Orders are biased toward crops associated with the current Seasonal
+  Focus when those crops are unlocked. The order can still use every unlocked crop.
+- Orders that include a Seasonal Focus crop receive +10% base order value and are
+  visibly tagged as Seasonal Requests.
+- Order cards now explain season, Farmstand and Lucky Clover payout multipliers so
+  the displayed reward matches the reason for the payout. Once an Order becomes READY,
+  its seasonal payout multiplier and source Season/Focus are frozen so crossing a
+  season boundary cannot change or mislabel a reward that is already waiting.
+
+Farm / payout clarity
+- Individual crop-harvest messages now identify the active seasonal crop multiplier.
+- Autumn Windfall's crop Windmill bonus is wired into the harvest-find calculation.
+- Level-clear details identify season-based level-coin bonuses when active.
+- The final level of each 10-level season announces the next Season and Focus on the
+  win screen.
+
+Season transition reliability
+- The previous Season Basket is archived before a new season initializes. Farmhouse
+  > Seasons now shows recent season history alongside the four permanent keepsakes.
+- Season history is capped to the most recent 24 seasons and sanitized on load.
+- Existing v42.0/v41.x saves remain compatible; save schema remains v40.
+
+v42.1 QA summary
+----------------
+- Full instrumented campaign runtime: Levels 1-1000 cleared successfully while every
+  offered Challenge Hand was accepted (137 Challenges; all 8 Challenge variants).
+- All 12 Seasonal Focus variants appeared during the campaign; 100/100 Season
+  Baskets completed and transition to Level 1001 remained intact.
+- Exact Restart verified for Lucky Hands across all 12 Seasonal Focus variants;
+  Flower, Gold and Stock seasonal favors all appeared and remained deterministic.
+- Daily Challenge verified to receive no seasonal hand modifiers and no Season Basket
+  progress from Daily clears.
+- Farm regression tests cover seasonal Order generation, seasonal-request tagging,
+  frozen ready-order payouts across season changes, payout explanation text, and the
+  six-Clovers/seven-demand Farm Order accounting regression.
+- Save Doctor/migration coverage includes 1,000 malformed v40-style saves and
+  representative older versions; new Season history and frozen Order metadata repair.
+- Board generator: 50,000 campaign boards (1-1000) plus 20,000 Endless Harvest boards
+  (1001-2000), zero validation failures and zero recovery fallbacks.
+
+
+v42.2 Seasonal Rosie
+--------------------
+Season-aware Adventures
+- Every Rosie Adventure snapshots the Farm Season at departure. If the campaign
+  crosses into a new season while Rosie is away, the trip keeps the bonuses,
+  event theme, and seasonal collectibles from the season in which it began.
+- Spring Trails: slightly more events, rare finds, and toy opportunities.
+- Summer Rambles: +10% seasonal Adventure coins with a smaller toy/find bump.
+- Autumn Sniffari: better farm-power finds with a modest seasonal coin/find bump.
+- Winter Tracks: stronger rare-find and toy odds, layered on top of Winter Trails'
+  existing season bonuses.
+- The Adventure card now explains the current seasonal trail profile and Focus.
+  Active trips show the season under which that trip was started.
+
+Eight seasonal Adventure events
+- Spring: Butterfly Parade, Muddy Pawprints.
+- Summer: Picnic Patrol, Sprinkler Dash.
+- Autumn: Leaf-Pile Investigation, Pumpkin Cart Escort.
+- Winter: Tracks in the Snow, Warm Porch Stop.
+- Normal Adventure events remain possible. Matching seasonal events are weighted
+  more heavily, but they are never allowed to appear during the wrong season.
+- Some seasonal events add toy/rare/power odds, coins, shorter travel, or a Rosie
+  Treat. Homecoming rewards identify seasonal events separately.
+
+Seasonal Adventure mementos
+- Rosie can discover one permanent memento in each season:
+  Spring — Pressed Paw Blossom
+  Summer — Sun-Warmed Tag
+  Autumn — Perfect Red Leaf
+  Winter — Tiny Snow Bell
+- Memento odds scale with Adventure duration, with small help from Happiness and
+  rare-find events.
+- Mementos are permanent collection discoveries, not consumables.
+- The Harvest Almanac's Rosie collection now includes all four mementos.
+- Finding all four earns the new Seasonal Sniffer Farmhouse trophy (+6 Gems).
+
+Four seasonal Rosie toys
+- Spring — Rosie's Blossom Crown
+- Summer — Sunshine Squeaker
+- Autumn — Crunchy Leaf Scarf
+- Winter — Tiny Snow-Pup Plush
+- Seasonal toys can only be discovered during their matching season and are
+  weighted more heavily than ordinary toys while eligible.
+- Rosie's Toy Box now contains 14 possible toys in total; all counts remain dynamic.
+
+Rosie's Favorite Season / journal expansion
+- Adventure results are now recorded separately for Spring, Summer, Autumn, and
+  Winter: trips, coins, gems, powers, rare finds, toys, mementos, events, and a
+  normalized Adventure-performance score.
+- Rosie's Favorite Season is calculated from average Adventure performance per
+  trip, with trip count used as a tie-breaker.
+- The compact Farm Adventure Journal now shows favorite destination, favorite
+  season, toy progress, and seasonal-memento progress.
+- Denise's Farmhouse -> Rosie's Journal now includes a four-season Adventure
+  performance panel and displays each seasonal memento.
+- Stats now show Seasonal Adventure Events, Seasonal Mementos, Seasonal Toys, and
+  Rosie's Favorite Season.
+
+Compatibility / safeguards
+- Existing active Adventures without seasonal metadata remain valid and fall back
+  safely to the current campaign season.
+- New seasonal Rosie state is merged/sanitized into existing v40-schema saves.
+- Save schema remains v40; existing v40.x/v41.x/v42.0/v42.1 saves stay compatible.
+
+v42.2 QA summary
+- Full Levels 1–1000 runtime clear passed: 1,000/1,000 wins, 137 Challenge Hands,
+  all 8 Challenge variants, all 12 Seasonal Focus variants, 100 Season Baskets,
+  and successful Level 1000 -> Endless Harvest transition.
+- 50,000 generated campaign boards (Levels 1–1000): 0 validation failures,
+  0 recovery fallbacks.
+- 20,000 generated Endless Harvest boards (Levels 1001–2000): 0 failures/fallbacks.
+- 1,600 randomized Seasonal Rosie Adventures: all 8 seasonal events observed,
+  no event ever appeared in the wrong season, and all 4 seasonal toys appeared
+  only in their matching season.
+- Explicit cross-season Adventure test confirmed Spring trip identity remains
+  Spring after the campaign moves into Summer, while Basket progress correctly
+  applies to the current Summer Basket.
+- All four mementos/toys, Favorite Season calculation, Seasonal Sniffer trophy,
+  Farmhouse journal, Stats, and Almanac entries tested.
+- v42.1 seasonal Order accounting/frozen payout, six-Clover conservation,
+  seasonal-focus coverage, exact Restart, and Daily isolation regressions passed.
+- 1,000 malformed-save repair cases plus dedicated seasonal-Rosie migration/
+  normalization cases passed.
+- JS syntax, high-signal name/call checks, literal DOM ID audit, duplicate ID audit,
+  HTML/CSS parsing, local asset checks, build/cache marker, and powerShelf clipping
+  regression audit all passed.

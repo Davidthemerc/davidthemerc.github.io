@@ -3,9 +3,16 @@ DSH.Farm=(()=>{
  const C=DSH.Config, cropDefs=C.crops;
  const regionDefs=C.farmRegions,regions=regionDefs.map(r=>r.name);
  let state,onChange,onMessage,onReward,chosenPlot=null;
+ let lastHarvestPattern=null;
  const TIMED_MS=C.timedHarvest.ms,TIMED_CAP=C.timedHarvest.cap;
 
  function bind(s,change,message,reward){state=s;onChange=change;onMessage=message;onReward=reward}
+ function seasonRewardText(r){return DSH.Seasons?.rewardText?DSH.Seasons.rewardText(r):''}
+ function announceSeasonResult(result){
+   if(!result?.completed)return;
+   const extra=result.firstKeepsake?` • New keepsake: ${result.info.icon} ${result.info.keepsake}`:'';
+   onReward?.(`${result.info.icon} ${result.info.name} Basket Complete!`,`${seasonRewardText(result.reward)}${extra}`,result.info.icon);
+ }
  function orderDateKey(d=new Date()){
    const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
    return `${y}-${m}-${day}`;
@@ -24,12 +31,19 @@ DSH.Farm=(()=>{
  function makeOrder(tier){
    const T=C.farmOrders.tiers[tier],unlocked=unlockedCropKeys();
    const typeCount=Math.min(unlocked.length,randomInt(T.types[0],T.types[1]));
-   const pool=[...unlocked].sort(()=>Math.random()-.5).slice(0,typeCount),req={},progress={};
-   pool.forEach(k=>{req[k]=randomInt(T.qty[0],T.qty[1]);progress[k]=0});
-   const rawValue=pool.reduce((sum,k)=>sum+(cropDefs[k].payout||30)*req[k],0);
-   const coins=Math.max(80,Math.round(rawValue*T.rewardMult));
+   const seasonOrder=DSH.Seasons?.orderFavors(state.level)||{info:null,crops:[]},favored=(seasonOrder.crops||[]).filter(k=>unlocked.includes(k));
+   const shuffled=[...unlocked].sort(()=>Math.random()-.5);let pool=[];
+   if(favored.length&&Math.random()<.72){const pick=favored[Math.floor(Math.random()*favored.length)];pool=[pick,...shuffled.filter(k=>k!==pick)].slice(0,typeCount)}
+   else pool=shuffled.slice(0,typeCount);
+   const req={},progress={};pool.forEach(k=>{req[k]=randomInt(T.qty[0],T.qty[1]);progress[k]=0});
+   // Once the full farm is unlocked, orders slowly mature with campaign progress:
+   // larger late-game requests, but with proportional rewards rather than grind for its own sake.
+   const late=Math.max(0,Math.min(3,Math.floor(((state.level||1)-500)/175)));
+   if(late>0)pool.forEach(k=>{req[k]+=late;progress[k]=0});
+   const rawValue=pool.reduce((sum,k)=>sum+(cropDefs[k].payout||30)*req[k],0),seasonalFocus=!!favored.length&&pool.some(k=>favored.includes(k));
+   const lateReward=1+late*.12,seasonalValue=seasonalFocus?1.10:1,coins=Math.max(80,Math.round(rawValue*T.rewardMult*lateReward*seasonalValue));
    const serial=++state.farmOrderSerial;
-   return{id:`order-${serial}`,tier,requirements:req,progress,rewardCoins:coins,createdAt:Date.now()};
+   return{id:`order-${serial}`,tier,requirements:req,progress,rewardCoins:coins,createdAt:Date.now(),seasonalFocus,seasonKey:seasonOrder.info?.key||'',seasonVariant:seasonOrder.info?.variant?.key||'',readySeasonMult:0,readySeasonKey:''};
  }
  function ensureOrders(force=false){
    ensureInDemand();
@@ -46,6 +60,7 @@ DSH.Farm=(()=>{
      if(orderComplete(o)){
        o.ready=true;
        if(!Number.isFinite(Number(o.readyCoinBase)))o.readyCoinBase=Math.round(o.rewardCoins*(DSH.Weather?.effects(state).orderCoin||1));
+       if(!Number.isFinite(Number(o.readySeasonMult))||Number(o.readySeasonMult)<=0){o.readySeasonMult=DSH.Seasons?.effects(state).orderCoin||1;o.readySeasonKey=DSH.Seasons?.info(state.level)?.key||''}
        o.completedAt=Number(o.completedAt)||Date.now();
      }
      next.push(o);
@@ -60,7 +75,8 @@ DSH.Farm=(()=>{
    const o=state.farmOrders.find(x=>x.id===id);
    if(!o||!(o.ready||orderComplete(o))){onMessage('That Farm Order is not ready yet.');return false}
    const T=C.farmOrders.tiers[o.tier],h=DSH.Progress.clampHappiness(state);
-   let gems=0,power='',clover=false,coins=Math.max(0,Math.round(Number(o.readyCoinBase)||o.rewardCoins));
+   const frozenSeasonMult=Number(o.readySeasonMult)>0?Number(o.readySeasonMult):(DSH.Seasons?.effects(state).orderCoin||1);
+   let gems=0,power='',clover=false,coins=Math.max(0,Math.round(Number(o.readyCoinBase)||o.rewardCoins));coins=Math.round(coins*frozenSeasonMult);if(state.upgrades.market)coins=Math.round(coins*1.15);
    if((state.rosieAdventureFinds?.clover||0)>0){
      state.rosieAdventureFinds.clover--;coins*=2;clover=true;
    }
@@ -80,34 +96,41 @@ DSH.Farm=(()=>{
    }
    const idx=state.farmOrders.findIndex(x=>x.id===o.id);
    if(idx>=0)state.farmOrders[idx]=makeOrder(o.tier);
-   onChange();render();flashFarmBalance();
+   const seasonResult=DSH.Seasons?.addProgress(state,'order',1,state.level);
+   onChange();render();flashFarmBalance();announceSeasonResult(seasonResult);
    onReward?.(`${T.icon} ${T.label} Order Collected!`,`${coins} coins${clover?' • 🍀 Lucky Clover 2×':''}${gems?' • +1 💎':''}${power?' • '+power:''}`,T.icon);
    return true;
  }
- function advanceOrders(cropKey){
+ function advanceOrders(cropKey,opts={}){
    ensureOrders();
+   // One harvested crop is one physical crop. It may satisfy at most ONE Farm Order.
+   // Orders are considered in board order (Easy -> Standard -> Premium), so progress
+   // finishes the earliest eligible order before spilling into the next one.
    let advanced=0,becameReady=0,progress=[];
-   state.farmOrders.forEach(o=>{
-     if(o.ready||orderComplete(o)){o.ready=true;return}
-     if(o.requirements[cropKey]&&((o.progress[cropKey]||0)<o.requirements[cropKey])){
-       const before=o.progress[cropKey]||0;
-       o.progress[cropKey]=before+1;advanced++;
-       const ready=orderComplete(o);
-       if(ready){
-         o.ready=true;o.completedAt=Date.now();
-         o.readyCoinBase=Math.round(o.rewardCoins*(DSH.Weather?.effects(state).orderCoin||1));
-         becameReady++;
-       }
-       progress.push({id:o.id,tier:o.tier,cropKey,before,after:o.progress[cropKey],target:o.requirements[cropKey],ready});
-     }
+   const eligible=state.farmOrders.find(o=>{
+     if(!o)return false;
+     if(o.ready||orderComplete(o)){o.ready=true;return false}
+     return !!o.requirements[cropKey]&&((o.progress[cropKey]||0)<o.requirements[cropKey]);
    });
-   if(advanced)onChange();
+   if(eligible){
+     const o=eligible,before=o.progress[cropKey]||0;
+     o.progress[cropKey]=before+1;advanced=1;
+     const ready=orderComplete(o);
+     if(ready){
+       o.ready=true;o.completedAt=Date.now();
+       o.readyCoinBase=Math.round(o.rewardCoins*(DSH.Weather?.effects(state).orderCoin||1));
+       o.readySeasonMult=DSH.Seasons?.effects(state).orderCoin||1;o.readySeasonKey=DSH.Seasons?.info(state.level)?.key||'';
+       becameReady=1;
+     }
+     progress.push({id:o.id,tier:o.tier,cropKey,before,after:o.progress[cropKey],target:o.requirements[cropKey],ready});
+   }
+   if(advanced&&!opts.silent)onChange();
    return{advanced,completed:becameReady,becameReady,progress};
  }
  function renderOrders(){
    const box=document.getElementById('farmOrdersGrid');if(!box||!state)return;
    ensureOrders();ensureInDemand();
-   const demand=cropDefs[state.inDemandCrop],readyCount=readyOrderCount(),clover=(state.rosieAdventureFinds?.clover||0)>0;
+   const demand=cropDefs[state.inDemandCrop],readyCount=readyOrderCount(),clover=(state.rosieAdventureFinds?.clover||0)>0,seasonInfo=DSH.Seasons?.info(state.level),seasonFx=DSH.Seasons?.effects(state)||{};
    const badge=document.getElementById('inDemandBadge');
    if(badge)badge.textContent=`${readyCount?`📋 ${readyCount} reward${readyCount===1?'':'s'} waiting! • `:''}${demand?`🔥 In Demand: ${demand.icon} ${demand.name} +25%`:'🔥 In Demand: —'}`;
    box.innerHTML=state.farmOrders.map(o=>{
@@ -115,10 +138,14 @@ DSH.Farm=(()=>{
        const d=cropDefs[k],p=Math.min(q,o.progress[k]||0);
        return `<span class="${p>=q?'done':''}">${d.icon} ${d.name} ${p}/${q}</span>`;
      }).join('');
-     const base=Math.max(0,Math.round(Number(o.readyCoinBase)||o.rewardCoins)),shown=ready&&clover?base*2:base;
-     return `<div class="farmOrderCard order-${o.tier}${ready?' order-ready':''}" data-order-id="${o.id}">
+     const base=Math.max(0,Math.round(Number(o.readyCoinBase)||o.rewardCoins)),orderSeasonMult=ready&&Number(o.readySeasonMult)>0?Number(o.readySeasonMult):(seasonFx.orderCoin||1),seasonBase=Math.round(base*orderSeasonMult),marketBase=state.upgrades.market?Math.round(seasonBase*1.15):seasonBase,shown=ready&&clover?marketBase*2:marketBase;
+     const orderOrigin=DSH.Seasons?.byKey(o.seasonKey)||seasonInfo,readyOrigin=DSH.Seasons?.byKey(o.readySeasonKey)||seasonInfo,originFavors=orderOrigin?.variant?.orderCrops||[];
+     const payoutBits=[];if(orderSeasonMult!==1)payoutBits.push(`${readyOrigin?.icon||'🍂'} ${readyOrigin?.variant?.name||readyOrigin?.name||'season'} ×${orderSeasonMult.toFixed(2)}${ready?' (locked)':''}`);if(state.upgrades.market)payoutBits.push('🪧 Farmstand ×1.15');if(ready&&clover)payoutBits.push('🍀 Clover ×2');
+     const seasonalRequest=o.seasonalFocus?`<small class="seasonOrderNote">${orderOrigin?.icon||'🌾'} ${orderOrigin?.variant?.name||'Seasonal'} Request +10% base value${originFavors.length?` • favors ${originFavors.map(k=>cropDefs[k]?.icon||'').join(' ')}`:''}</small>`:'';
+     return `<div class="farmOrderCard order-${o.tier}${ready?' order-ready':''}${o.seasonalFocus?' seasonal-order':''}" data-order-id="${o.id}">
        <div class="farmOrderTitle"><span>${T.icon}</span><b>${T.label} Order${ready?' • READY!':''}</b><strong>${shown} 🪙</strong></div>
-       <div class="farmOrderReqs">${parts}</div>
+       <div class="farmOrderReqs">${parts}</div>${seasonalRequest}
+       ${payoutBits.length?`<small class="orderPayoutWhy">Payout modifiers: ${payoutBits.join(' • ')}</small>`:''}
        ${ready
          ?`<small>${clover?'🍀 Lucky Clover available — collect this order for 2× coins.':'Reward is waiting. Harvests no longer advance this order until collected.'}</small><button class="collectOrderBtn" data-collect-order="${o.id}">🎁 COLLECT REWARD</button>`
          :`<small>${o.tier==='premium'?'Best bonus odds':'Bonus gem/power chance'} • Rosie Happiness slightly improves bonuses</small>`}
@@ -310,8 +337,8 @@ DSH.Farm=(()=>{
    // If storage reached the 3-charge cap, all excess offline time is intentionally discarded.
    // This prevents the same old elapsed time from immediately producing another 3/3 batch.
    state.timedHarvestAt=st.full?now:(st.base+count*TIMED_MS);
-   const treasure=awardRosieTreasure();
-   DSH.Audio.play.harvest();announceAchievements();onChange();render();
+   const treasure=awardRosieTreasure(),seasonResult=DSH.Seasons?.addProgress(state,'timed',count,state.level);
+   DSH.Audio.play.harvest();announceAchievements();onChange();render();announceSeasonResult(seasonResult);
    let parts=[`${coins} coins`];
    if(gems)parts.push(`${gems} gem${gems===1?'':'s'}`);
    if(rosie)parts.push(`Rosie found ${gates+rescues} power${gates+rescues===1?'':'s'}`);
@@ -364,21 +391,21 @@ DSH.Farm=(()=>{
    showPlotFeedback(i,[`${d.icon} ${d.name}`,'PLANTED!',spaceText],'plantedFeedback');
    onMessage(`${d.icon} ${d.name} planted${d.homeRegion===region?' in its home region!':'.'} ${spacesLeft===0?'Fields full.':`${spacesLeft} crop space${spacesLeft===1?'':'s'} left.`}`);
  }
- function harvest(i){
-   const p=state.plots[i],d=p&&cropDefs[p.type];if(!p||p.age<d.grow)return;
+ function harvest(i,opts={}){
+   const p=state.plots[i],d=p&&cropDefs[p.type];if(!p||p.age<d.grow)return null;
    const plantedRegion=Number.isInteger(p.region)?p.region:Math.min(d.homeRegion||0,state.region||0);
    ensureInDemand();
    const homeBonus=d.homeRegion===plantedRegion;
    let pay=Math.round(d.payout*regionalCropMultiplier(plantedRegion,p.type));
-   const weatherFx=DSH.Weather?.effects(state)||{};pay=Math.round(pay*(weatherFx.cropCoin||1));const bumper=weatherFx.bumper===p.type;if(bumper)pay*=2;
+   const weatherFx=DSH.Weather?.effects(state)||{},seasonFx=DSH.Seasons?.effects(state)||{};pay=Math.round(pay*(weatherFx.cropCoin||1)*(seasonFx.cropCoin||1));const bumper=weatherFx.bumper===p.type;if(bumper)pay*=2;
    const inDemand=p.type===state.inDemandCrop;if(inDemand){pay=Math.round(pay*C.farmOrders.inDemandMultiplier);state.stats.inDemandHarvests=(state.stats.inDemandHarvests||0)+1}
-   if(state.upgrades.butterfly)pay=Math.round(pay*C.cropRewards.butterflyMultiplier);
+   if(state.upgrades.butterfly)pay=Math.round(pay*C.cropRewards.butterflyMultiplier);if(state.upgrades.silo)pay=Math.round(pay*1.10);
    state.coins+=pay;state.harvests++;state.stats.regionalCropsHarvested=(state.stats.regionalCropsHarvested||0)+1;if(p.type==='apple')state.stats.applesHarvested=(state.stats.applesHarvested||0)+1;
    state.collection=state.collection||{specials:{},crops:{},regions:{0:true},powers:{},rosie:{}};
    state.collection.crops[p.type]=true;state.collection.regions[plantedRegion]=true;
    state.plots[i]=null;addHappy(C.happiness.cropHarvest);
    let wind=0,gates=0,rescues=0,treats=maybeTreat();
-   const plantedRegionDef=regionDefs[plantedRegion]||regionDefs[0],windChance=Math.min(.85,d.wind+(plantedRegionDef.windBonus||0)+(weatherFx.windBonus||0));
+   const plantedRegionDef=regionDefs[plantedRegion]||regionDefs[0],windChance=Math.min(.85,d.wind+(plantedRegionDef.windBonus||0)+(weatherFx.windBonus||0)+(seasonFx.windBonus||0));
    if(Math.random()<windChance){
      wind=Math.random()<.12?3:(Math.random()<.38?2:1);
      state.windmills+=wind;state.stats.windmillsFound+=wind;
@@ -392,8 +419,8 @@ DSH.Farm=(()=>{
      state.rosieRescues=(state.rosieRescues||0)+rescues;state.stats.rosieRescuesFound+=rescues;
      state.stats.rosieFinds=(state.stats.rosieFinds||0)+1;addHappy(C.happiness.rosieFind);
    }
-   const orderResult=advanceOrders(p.type);
-   announceAchievements();DSH.Audio.play.harvest();onChange();render();
+   const orderResult=advanceOrders(p.type,{silent:!!opts.silent}),seasonResult=DSH.Seasons?.addProgress(state,'crop',1,state.level);
+   announceAchievements();if(!opts.silent){DSH.Audio.play.harvest();onChange();render()}
    const feedback=[`${d.icon} +${pay} 🪙`,`+${C.happiness.cropHarvest} ❤️`];
    if(homeBonus)feedback.push('🏡 HOME +15%');
    if(inDemand)feedback.push('🔥 IN DEMAND +25%');
@@ -403,15 +430,56 @@ DSH.Farm=(()=>{
    if(rescues)feedback.push(`🐾 +${rescues}`);
    if(treats)feedback.push(`🦴 +${treats}`);
    if(orderResult.advanced)feedback.push(orderResult.becameReady?'📋 ORDER READY!':`📋 +${orderResult.advanced}`);
-   showPlotFeedback(i,feedback,'harvestFeedback');pulseOrderProgress(orderResult);flashFarmBalance();
-   onMessage(`${d.icon} Harvested for ${pay} coins${orderResult.becameReady?' • Farm Order ready to collect!':orderResult.advanced?' • Farm Order progress!':''}`);
+   if(!opts.silent){
+     showPlotFeedback(i,feedback,'harvestFeedback');pulseOrderProgress(orderResult);flashFarmBalance();
+     const seasonPay=(seasonFx.cropCoin||1)!==1?` • ${DSH.Seasons.info(state.level).icon} season ${Math.round(((seasonFx.cropCoin||1)-1)*100)>=0?'+':''}${Math.round(((seasonFx.cropCoin||1)-1)*100)}% crops`:'';
+     onMessage(`${d.icon} Harvested for ${pay} coins${seasonPay}${orderResult.becameReady?' • Farm Order ready to collect!':orderResult.advanced?' • Farm Order progress!':''}`);announceSeasonResult(seasonResult);
+   }
+   return{pay,wind,gates,rescues,treats,orderResult,seasonResult,type:p.type,icon:d.icon};
  }
- function grow(){const extra=DSH.Weather?.effects(state).extraGrowth||0;state.plots=state.plots.map(p=>p?{...p,age:p.age+1+extra}:p)}
+ function harvestAll(){
+   const ready=state.plots.map((p,i)=>({p,i})).filter(x=>x.p&&cropDefs[x.p.type]&&x.p.age>=cropDefs[x.p.type].grow).map(x=>x.i);
+   if(!ready.length){onMessage('No crops are ready to harvest yet.');return}
+   lastHarvestPattern=ready.map(i=>({i,type:state.plots[i].type,region:Number.isInteger(state.plots[i].region)?state.plots[i].region:activeRegionIndex()}));
+   const before={coins:state.coins,windmills:state.windmills||0,gates:state.magicGates||0,rescues:state.rosieRescues||0,treats:state.rosieTreats||0,happiness:state.rosieHappiness||0,orders:readyOrderCount()};
+   let harvested=0,seasonResult=null;ready.forEach(i=>{const r=harvest(i,{silent:true});if(r){harvested++;if(r.seasonResult?.completed)seasonResult=r.seasonResult}});
+   const after={coins:state.coins,windmills:state.windmills||0,gates:state.magicGates||0,rescues:state.rosieRescues||0,treats:state.rosieTreats||0,happiness:state.rosieHappiness||0,orders:readyOrderCount()};
+   onChange();render();flashFarmBalance();DSH.Audio.play.harvest();
+   const bits=[`${harvested} crop${harvested===1?'':'s'}`,`+${after.coins-before.coins} 🪙`];
+   if(after.windmills>before.windmills)bits.push(`+${after.windmills-before.windmills} 🌬️`);
+   if(after.gates>before.gates)bits.push(`+${after.gates-before.gates} 🚪`);
+   if(after.rescues>before.rescues)bits.push(`+${after.rescues-before.rescues} 🐾`);
+   if(after.treats>before.treats)bits.push(`+${after.treats-before.treats} 🦴`);
+   if(after.happiness>before.happiness)bits.push(`+${after.happiness-before.happiness} ❤️`);
+   if(after.orders>before.orders)bits.push(`📋 ${after.orders-before.orders} order${after.orders-before.orders===1?'':'s'} ready`);
+   onReward?.('🌾 Harvest All',bits.join(' • '),'🌾');announceSeasonResult(seasonResult);
+   onMessage(`Harvested ${harvested} ready crop${harvested===1?'':'s'} • ${after.coins-before.coins} coins total.`);
+ }
+ function replantLastHarvest(){
+   if(!Array.isArray(lastHarvestPattern)||!lastHarvestPattern.length){onMessage('Use Harvest All first, then you can replant that harvest with one tap.');return false}
+   const open=lastHarvestPattern.filter(x=>!state.plots[x.i]&&cropDefs[x.type]&&(state.region||0)>=cropDefs[x.type].minRegion);
+   if(!open.length){onMessage('There are no matching empty fields to replant.');return false}
+   const affordable=[];let cost=0;
+   // Skip crops that are currently too expensive instead of stopping at the first
+   // one; a cheap Clover later in the remembered pattern should still be replanted.
+   for(const x of open){const price=cropDefs[x.type].cost;if(cost+price<=state.coins){cost+=price;affordable.push(x)}}
+   if(!affordable.length){onMessage('Not enough coins to replant any of the last harvest.');return false}
+   affordable.forEach(x=>{state.plots[x.i]={type:x.type,age:0,region:Math.min(x.region,state.region||0)}});
+   state.coins-=cost;state.stats.batchReplants=(state.stats.batchReplants||0)+1;state.stats.cropsReplanted=(state.stats.cropsReplanted||0)+affordable.length;
+   onChange();render();flashFarmBalance();
+   const remaining=state.plots.filter(x=>!x).length;
+   onReward?.('🌱 Replanted!',`${affordable.length} crop${affordable.length===1?'':'s'} replanted • ${cost} 🪙${affordable.length<open.length?' • stopped when coins ran out':''}`,'🌱');
+   onMessage(`Replanted ${affordable.length} of the last harvested crop${affordable.length===1?'':'s'}. ${remaining} field${remaining===1?'':'s'} empty.`);
+   return true;
+ }
+ function grow(level=state.level){const extra=(DSH.Weather?.effects(state).extraGrowth||0)+(DSH.Seasons?.effects(state,level).extraGrowth||0);state.plots=state.plots.map(p=>p?{...p,age:p.age+1+extra}:p)}
  function upgrade(k){
-   const costs={fence:3,butterfly:5,barn:8,bandana:4};
-   if(state.upgrades[k]||state.gems<costs[k]){onMessage('Not enough gems.');return}
+   const costs={fence:3,butterfly:5,barn:8,bandana:4,silo:10,market:12},names={fence:'Cozy Fence',butterfly:'Butterfly Garden',barn:'Bigger Barn',bandana:"Rosie's Pink Bandana",silo:'Golden Silo',market:'Farmstand Sign'};
+   if(!Object.prototype.hasOwnProperty.call(costs,k))return;
+   if(state.upgrades[k]){onMessage(`${names[k]} is already owned.`);return}
+   if(state.gems<costs[k]){onMessage(`You need ${costs[k]} gems for ${names[k]}.`);return}
    state.gems-=costs[k];state.upgrades[k]=true;addHappy(C.happiness.decoration);
-   announceAchievements();onChange();render();onReward?.('Farm Upgrade!',`+${C.happiness.decoration} Rosie Happiness ❤️`,'✨');
+   announceAchievements();onChange();render();onReward?.('Farm Upgrade!',`${names[k]} is now permanent • +${C.happiness.decoration} Rosie Happiness ❤️`,'✨');
  }
  let selectedAdventureRegion=0,selectedAdventureDuration='sniff';
  function adventureDuration(key){return C.rosieAdventures.durations.find(x=>x.key===key)||C.rosieAdventures.durations[0]}
@@ -424,15 +492,45 @@ DSH.Farm=(()=>{
      {label:'Rare Finds',coin:1,gem:.02,power:0,rare:.05}
    ][i%5];
  }
+ function adventureSeason(level=state?.level||1){
+   const info=DSH.Seasons?.info(level)||null,key=info?.key?info.key.split('-').slice(1).join('-'):'spring';
+   return{info,key,profile:C.rosieAdventures.seasonal?.[key]||{}};
+ }
+ function chooseAdventureEvent(seasonKey){
+   const entries=Object.entries(C.rosieAdventures.events||{}),pool=[],preferred=C.rosieAdventures.seasonal?.[seasonKey]?.preferredEvents||[];
+   entries.forEach(([key,d])=>{
+     if(Array.isArray(d.seasons)&&!d.seasons.includes(seasonKey))return;
+     const seasonal=Array.isArray(d.seasons)&&d.seasons.includes(seasonKey),weight=preferred.includes(key)?4:seasonal?3:1;
+     for(let i=0;i<weight;i++)pool.push(key);
+   });
+   return pool.length?pool[Math.floor(Math.random()*pool.length)]:'';
+ }
+ function favoriteAdventureSeason(){
+   const stats=state?.rosieSeasonStats||{},defs=DSH.Config.seasons?.definitions||[];
+   let best=null;
+   Object.entries(stats).forEach(([key,x])=>{
+     const trips=Math.max(0,Number(x?.trips)||0);if(!trips)return;
+     const avg=(Number(x?.score)||0)/trips,def=defs.find(d=>d.key===key);
+     const candidate={key,trips,avg,def};
+     if(!best||candidate.avg>best.avg||candidate.avg===best.avg&&candidate.trips>best.trips)best=candidate;
+   });
+   return best;
+ }
  function startAdventure(){
    if(state.rosieAdventure){
      if(Date.now()>=state.rosieAdventure.endsAt)return claimAdventure();
      onMessage('Rosie is already out exploring.');return;
    }
    const max=unlockedRegionIndex();selectedAdventureRegion=Math.min(selectedAdventureRegion,max);
-   const d=adventureDuration(selectedAdventureDuration);
-   state.rosieAdventure={region:selectedAdventureRegion,duration:d.key,startedAt:Date.now(),endsAt:Date.now()+Math.round(d.ms*(DSH.Weather?.effects(state).adventureTime||1))};
-   onChange();renderAdventure();onReward?.('Rosie is off! 🐾',`${regions[selectedAdventureRegion]} • ${d.name}`,'🐕');
+   const d=adventureDuration(selectedAdventureDuration),happy=DSH.Progress.clampHappiness(state),seasonLevel=Math.max(1,state.level||1),season=adventureSeason(seasonLevel);
+   const eventChance=.22+(happy>=75?.08:0)+(happy>=100?.08:0)+(season.profile.eventBonus||0);
+   const eventKey=Math.random()<Math.min(.85,eventChance)?chooseAdventureEvent(season.key):'',event=C.rosieAdventures.events?.[eventKey]||null;
+   const timeMult=(DSH.Weather?.effects(state).adventureTime||1)*(DSH.Seasons?.effects(state,seasonLevel).adventureTime||1)*(event?.timeMult||1);
+   state.rosieAdventure={region:selectedAdventureRegion,duration:d.key,event:eventKey,seasonLevel,startedAt:Date.now(),endsAt:Date.now()+Math.round(d.ms*timeMult)};
+   onChange();renderAdventure();
+   const friend=happy>=100?' • ❤️ Best Friend bonus active':happy>=75?' • 💕 Happy Rosie bonus active':'';
+   const seasonal=season.info?` • ${season.info.icon} ${season.info.variant?.name||season.info.name}`:'';
+   onReward?.('Rosie is off! 🐾',`${regions[selectedAdventureRegion]} • ${d.name}${seasonal}${event?` • ${event.icon} ${event.name}`:''}${friend}`,'🐕');
  }
  function weightedPower(){
    const r=Math.floor(Math.random()*4);
@@ -448,8 +546,14 @@ DSH.Farm=(()=>{
    const items=[{icon:'🪙',label:'Coins',value:`+${data.coins}`}];
    if(data.gems)items.push({icon:'💎',label:'Gems',value:`+${data.gems}`});
    if(data.power)items.push({icon:data.power.includes('Windmill')?'🌬️':data.power.includes('Gate')?'🚪':data.power.includes('Rescue')?'🐾':'🦴',label:'Farm Find',value:data.power.replace(/[🌬️🚪🐾🦴]/g,'').trim()});
+   if(data.season)items.push({icon:data.season.icon,label:'Seasonal Trail',value:`${data.season.name}${data.season.variant?` • ${data.season.variant.icon} ${data.season.variant.name}`:''}`});
    if(data.rare)items.push({icon:data.rare.icon,label:'Rare Find',value:data.rare.name});
-   if(data.toy)items.push({icon:data.toy.icon,label:'NEW TOY!',value:data.toy.name,newItem:true});
+   if(data.event)items.push({icon:data.event.icon,label:data.event.seasons?'Season Event':'Adventure Event',value:data.event.name});
+   if(data.bonusTreats)items.push({icon:'🦴',label:'Adventure Treat',value:`+${data.bonusTreats} Rosie Treat${data.bonusTreats===1?'':'s'}`});
+   if(data.memento)items.push({icon:data.memento.icon,label:'SEASON MEMENTO!',value:data.memento.name,newItem:true});
+   if(data.toy)items.push({icon:data.toy.icon,label:data.toy.season?'SEASON TOY!':'NEW TOY!',value:data.toy.name,newItem:true});
+   if(data.friendBonus)items.push({icon:'❤️',label:'Best Friend Bonus',value:data.friendBonus});
+   if(data.seasonResult?.completed)items.push({icon:data.seasonResult.info.icon,label:'SEASON BASKET!',value:`${seasonRewardText(data.seasonResult.reward)}${data.seasonResult.firstKeepsake?' • '+data.seasonResult.info.keepsake:''}`,newItem:true});
    grid.innerHTML=items.map((x,i)=>`<div class="rosieRewardItem${x.newItem?' newRewardItem':''}" style="--reward-order:${i}"><span>${x.icon}</span><small>${x.label}</small><b>${x.value}</b></div>`).join('');
    overlay.classList.add('open');
    const done=document.getElementById('rosieRewardDone');if(done)done.onclick=()=>overlay.classList.remove('open');
@@ -457,29 +561,45 @@ DSH.Farm=(()=>{
  function claimAdventure(forceRare=false){
    const a=state.rosieAdventure;if(!a)return;
    if(Date.now()<a.endsAt&&!forceRare){onMessage('Rosie is still exploring.');return}
-   const d=adventureDuration(a.duration),bias=adventureRegionBias(a.region),happy=DSH.Progress.clampHappiness(state);
-   const luck=happy/1000,lo=d.coin[0],hi=d.coin[1],coins=Math.round((lo+Math.random()*(hi-lo))*bias.coin*(DSH.Weather?.effects(state).rosieCoin||1));
-   let gems=0,power='',rare='',toy='';
+   const d=adventureDuration(a.duration),bias=adventureRegionBias(a.region),happy=DSH.Progress.clampHappiness(state),event=C.rosieAdventures.events?.[a.event]||null;
+   const season=adventureSeason(a.seasonLevel||state.level),seasonEffects=DSH.Seasons?.effects(state,a.seasonLevel||state.level)||{},profile=season.profile||{};
+   const luck=happy/1000,friendCoin=happy>=100?1.20:happy>=75?1.10:1,lo=d.coin[0],hi=d.coin[1];
+   const coins=Math.round((lo+Math.random()*(hi-lo))*bias.coin*(event?.coinMult||1)*(profile.coinMult||1)*friendCoin*(DSH.Weather?.effects(state).rosieCoin||1));
+   let gems=0,power='',rare='',toy='',memento='',bonusTreats=Math.max(0,Math.floor(Number(event?.bonusTreats)||0));
    state.coins+=coins;
    if(Math.random()<d.gemChance+bias.gem+luck+(DSH.Weather?.effects(state).gemBonus||0)){gems=1;state.gems++}
-   if(Math.random()<d.powerChance+bias.power+luck)power=weightedPower();
-   const rareChance=d.rareChance+bias.rare+luck+(DSH.Weather?.effects(state).rosieRareBonus||0);
+   if(Math.random()<d.powerChance+bias.power+luck+(profile.powerBonus||0)+(event?.powerBonus||0))power=weightedPower();
+   const rareChance=d.rareChance+bias.rare+luck+(profile.rareBonus||0)+(event?.rareBonus||0)+(DSH.Weather?.effects(state).rosieRareBonus||0)+(seasonEffects.rosieRareBonus||0);
    if(forceRare||Math.random()<rareChance){
      const keys=Object.keys(C.rosieAdventures.rareFinds),key=keys[Math.floor(Math.random()*keys.length)];
      state.rosieAdventureFinds[key]=(state.rosieAdventureFinds[key]||0)+1;state.collection.powers['adventure-'+key]=true;rare=key;state.stats.rosieAdventureRareFinds++;
    }
-   state.rosieToys=state.rosieToys||{};
-   const availableToys=Object.keys(C.farmhouse.toys).filter(k=>!state.rosieToys[k]);
-   if(availableToys.length&&Math.random()<(d.toyChance||0)+luck*.35){
-     toy=availableToys[Math.floor(Math.random()*availableToys.length)];state.rosieToys[toy]=true;state.stats.rosieToysFound=(state.stats.rosieToysFound||0)+1;
+   state.rosieSeasonalFinds=state.rosieSeasonalFinds||{spring:false,summer:false,autumn:false,winter:false};
+   const mem=C.rosieAdventures.seasonal?.[season.key]?.memento,mementoChance=(d.mementoChance||0)+luck*.12+(event?.rareBonus||0)*.12;
+   if(mem&&!state.rosieSeasonalFinds[season.key]&&(forceRare||Math.random()<mementoChance)){
+     state.rosieSeasonalFinds[season.key]=true;memento=season.key;state.stats.rosieSeasonalMementos=(state.stats.rosieSeasonalMementos||0)+1;
    }
+   state.rosieToys=state.rosieToys||{};
+   const availableToys=Object.keys(C.farmhouse.toys).filter(k=>!state.rosieToys[k]&&(!C.farmhouse.toys[k].season||C.farmhouse.toys[k].season===season.key));
+   const weightedToys=[];availableToys.forEach(k=>{const seasonal=C.farmhouse.toys[k].season===season.key;for(let i=0;i<(seasonal?3:1);i++)weightedToys.push(k)});
+   if(weightedToys.length&&Math.random()<(d.toyChance||0)+luck*.35+(profile.toyBonus||0)+(event?.toyBonus||0)){
+     toy=weightedToys[Math.floor(Math.random()*weightedToys.length)];state.rosieToys[toy]=true;state.stats.rosieToysFound=(state.stats.rosieToysFound||0)+1;
+     if(C.farmhouse.toys[toy]?.season)state.stats.rosieSeasonalToys=(state.stats.rosieSeasonalToys||0)+1;
+   }
+   if(bonusTreats){state.rosieTreats=(state.rosieTreats||0)+bonusTreats;state.stats.treatsFound=(state.stats.treatsFound||0)+bonusTreats}
    state.stats.rosieAdventuresCompleted++;state.stats.rosieAdventureCoins+=coins;state.stats.rosieAdventureGems+=gems;if(power)state.stats.rosieAdventurePowers++;
+   if(event){state.stats.rosieAdventureEvents=(state.stats.rosieAdventureEvents||0)+1;if(Array.isArray(event.seasons))state.stats.rosieSeasonalEvents=(state.stats.rosieSeasonalEvents||0)+1}
    const hist=state.rosieAdventureHistory;hist[a.region]=(hist[a.region]||0)+1;
-   const rd=rare?C.rosieAdventures.rareFinds[rare]:null,td=toy?C.farmhouse.toys[toy]:null;
-   const reward={coins,gems,power,rare:rd,toy:td,region:regions[a.region],duration:d.name,
-     summary:`${coins} coins${gems?' • +1 💎':''}${power?' • '+power:''}${rd?' • '+rd.icon+' '+rd.name:''}${td?' • '+td.icon+' '+td.name+' TOY!':''}`};
+   state.rosieSeasonStats=state.rosieSeasonStats||{};const ss=state.rosieSeasonStats[season.key]||(state.rosieSeasonStats[season.key]={trips:0,coins:0,gems:0,powers:0,rares:0,toys:0,mementos:0,events:0,score:0});
+   const outcomeScore=coins+gems*180+(power?120:0)+(rare?160:0)+(toy?250:0)+(memento?300:0)+(event?40:0)+bonusTreats*35;
+   ss.trips++;ss.coins+=coins;ss.gems+=gems;if(power)ss.powers++;if(rare)ss.rares++;if(toy)ss.toys++;if(memento)ss.mementos++;if(event)ss.events++;ss.score+=outcomeScore;
+   const rd=rare?C.rosieAdventures.rareFinds[rare]:null,td=toy?C.farmhouse.toys[toy]:null,md=memento?C.rosieAdventures.seasonal?.[memento]?.memento:null;
+   const friendBonus=happy>=100?'+20% Adventure coins':happy>=75?'+10% Adventure coins':'';
+   const reward={coins,gems,power,rare:rd,toy:td,memento:md,event,bonusTreats,season:season.info,friendBonus,region:regions[a.region],duration:d.name,
+     summary:`${coins} coins${gems?' • +1 💎':''}${power?' • '+power:''}${rd?' • '+rd.icon+' '+rd.name:''}${event?' • '+event.icon+' '+event.name:''}${bonusTreats?' • +'+bonusTreats+' 🦴':''}${md?' • '+md.icon+' '+md.name:''}${td?' • '+td.icon+' '+td.name+' TOY!':''}${friendBonus?' • ❤️ '+friendBonus:''}`};
+   const seasonResult=DSH.Seasons?.addProgress(state,'adventure',1,state.level);reward.seasonResult=seasonResult;
    state.rosieAdventure=null;onChange();render();showAdventureRewardPopup(reward);
-   onMessage('🐕 Rosie is home! Adventure rewards collected.');
+   onMessage(`🐕 Rosie is home from ${season.info?.name||'her seasonal trail'}! Adventure rewards collected.`);
  }
  function useAdventureFind(key){
    const n=state.rosieAdventureFinds[key]||0;if(n<=0)return;
@@ -488,27 +608,34 @@ DSH.Farm=(()=>{
      let extra='';if(Math.random()<.45){state.gems++;extra=' +1 💎'}else extra=' '+weightedPower();
      onChange();render();onReward?.('Rosie Cache Opened! 🎁',`${coins} coins •${extra}`,'🎁');return;
    }
+   if(key==='snacks'){
+     state.rosieAdventureFinds.snacks--;const treats=2+Math.floor(Math.random()*3);state.rosieTreats=(state.rosieTreats||0)+treats;state.stats.treatsFound=(state.stats.treatsFound||0)+treats;
+     onChange();render();onReward?.('Trail Snack Bag Opened! 👜',`+${treats} Rosie Treats 🦴`,'👜');return;
+   }
    onMessage(`${C.rosieAdventures.rareFinds[key].name} activates automatically when its condition is met.`);
  }
  function renderAdventure(){
    const card=document.getElementById('rosieAdventureCard');if(!card||!state)return;
-   const a=state.rosieAdventure,now=Date.now(),max=unlockedRegionIndex();
+   const a=state.rosieAdventure,now=Date.now(),max=unlockedRegionIndex(),currentSeason=adventureSeason(state.level);
    selectedAdventureRegion=Math.min(selectedAdventureRegion,max);
-   const loc=document.getElementById('adventureLocations'),dur=document.getElementById('adventureDurations'),btn=document.getElementById('rosieAdventureAction');
+   const loc=document.getElementById('adventureLocations'),dur=document.getElementById('adventureDurations'),btn=document.getElementById('rosieAdventureAction'),seasonHint=document.getElementById('rosieAdventureSeasonHint');
    const supervision=document.getElementById('farmRosieSupervisionText');
    if(supervision){
-     if(!a)supervision.textContent='Rosie is supervising. Crops gain one growth step whenever a solitaire level is completed.';
+     const growth=1+(DSH.Seasons?.effects(state,state.level).extraGrowth||0),growthText=`${growth} growth step${growth===1?'':'s'}`;
+     if(!a)supervision.textContent=`Rosie is supervising. Crops gain ${growthText} whenever a normal Solitaire level is completed.`;
      else if(now>=a.endsAt)supervision.textContent='Rosie is back from her adventure! Welcome her home to reveal what she found.';
-     else supervision.textContent=`Rosie is exploring ${regions[a.region]||'the farm'}. Crops still gain one growth step whenever a solitaire level is completed.`;
+     else supervision.textContent=`Rosie is exploring ${regions[a.region]||'the farm'}. Crops still gain ${growthText} whenever a normal Solitaire level is completed.`;
    }
    if(a){
-     const ready=now>=a.endsAt,remaining=Math.max(0,a.endsAt-now),d=adventureDuration(a.duration);
-     setText('rosieAdventureStatus',ready?`Rosie is back from ${regions[a.region]}!`:`Exploring ${regions[a.region]} • ${d.name}`);
+     const ready=now>=a.endsAt,remaining=Math.max(0,a.endsAt-now),d=adventureDuration(a.duration),ev=C.rosieAdventures.events?.[a.event],tripSeason=adventureSeason(a.seasonLevel||state.level);
+     setText('rosieAdventureStatus',ready?`Rosie is back from ${regions[a.region]}!`:`Exploring ${regions[a.region]} • ${d.name} • ${tripSeason.info?.icon||'🍂'} ${tripSeason.info?.name||'Seasonal Trail'}${ev?` • ${ev.icon} ${ev.name}`:''}`);
+     if(seasonHint)seasonHint.textContent=`This trip started during ${tripSeason.info?.name||'the season'}${tripSeason.info?.variant?` • ${tripSeason.info.variant.icon} ${tripSeason.info.variant.name}`:''}. Its Adventure bonuses stay locked for the trip.`;
      setText('rosieAdventureTimer',ready?'HOME!':formatTime(remaining));
      if(loc)loc.innerHTML='';if(dur)dur.innerHTML='';
      if(btn){btn.textContent=ready?'🐾 Welcome Rosie Home':'Rosie is exploring…';btn.disabled=!ready;btn.onclick=()=>claimAdventure()}
    }else{
      setText('rosieAdventureStatus','Choose a destination and how long Rosie should explore.');setText('rosieAdventureTimer','');
+     if(seasonHint)seasonHint.textContent=`${currentSeason.info?.icon||'🍂'} ${currentSeason.profile.name||currentSeason.info?.name||'Seasonal Trail'} • ${currentSeason.profile.desc||'Seasonal Adventure bonuses are active.'}${currentSeason.info?.variant?` • Focus: ${currentSeason.info.variant.icon} ${currentSeason.info.variant.name}`:''}`;
      if(loc)loc.innerHTML=regions.slice(0,max+1).map((name,i)=>{const b=adventureRegionBias(i);return`<button class="${i===selectedAdventureRegion?'selected':''}" data-ar="${i}">${regionDefs[i].icon} ${name}<small>Favors ${b.label}</small></button>`}).join('');
      if(dur)dur.innerHTML=C.rosieAdventures.durations.map(d=>`<button class="${d.key===selectedAdventureDuration?'selected':''}" data-ad="${d.key}">${d.icon} ${d.name}<small>${Math.round(d.ms/60000)} min</small></button>`).join('');
      loc?.querySelectorAll('[data-ar]').forEach(b=>b.onclick=()=>{selectedAdventureRegion=+b.dataset.ar;renderAdventure()});
@@ -518,6 +645,13 @@ DSH.Farm=(()=>{
    const finds=document.getElementById('adventureFinds');
    if(finds)finds.innerHTML=Object.entries(C.rosieAdventures.rareFinds).map(([k,d])=>`<button data-find="${k}" ${(state.rosieAdventureFinds[k]||0)<=0?'disabled':''}><span>${d.icon}</span><b>${d.name} ×${state.rosieAdventureFinds[k]||0}</b><small>${d.desc}</small></button>`).join('');
    finds?.querySelectorAll('[data-find]').forEach(b=>b.onclick=()=>useAdventureFind(b.dataset.find));
+   const journal=document.getElementById('adventureJournal');if(journal){
+     const trips=state.stats.rosieAdventuresCompleted||0,toys=Object.values(state.rosieToys||{}).filter(Boolean).length,totalToys=Object.keys(C.farmhouse.toys||{}).length;
+     const favorite=Object.entries(state.rosieAdventureHistory||{}).sort((a,b)=>b[1]-a[1])[0],favoriteText=favorite&&favorite[1]>0?`${regions[+favorite[0]]} ×${favorite[1]}`:'No favorite trail yet';
+     const favSeason=favoriteAdventureSeason(),favSeasonText=favSeason?`${favSeason.def?.icon||'🍂'} ${favSeason.def?.name||favSeason.key}`:'No favorite season yet';
+     const mementos=Object.values(state.rosieSeasonalFinds||{}).filter(Boolean).length;
+     journal.innerHTML=`<span>🗺️ ${trips} trip${trips===1?'':'s'}</span><span>🧸 Toys ${toys}/${totalToys}</span><span>🐾 ${favoriteText}</span><span>❤️ ${favSeasonText}</span><span>✨ Mementos ${mementos}/4</span>`;
+   }
    const rosie=document.getElementById('rosie');if(rosie){
      const returned=!!a&&now>=a.endsAt;rosie.classList.toggle('adventuring',!!a&&!returned);rosie.classList.toggle('returnedHome',returned);
      rosie.onclick=returned?()=>claimAdventure():a?null:()=>petRosie();
@@ -528,7 +662,7 @@ DSH.Farm=(()=>{
    const h=DSH.Progress.clampHappiness(state),bar=document.getElementById('rosieHappinessBar');
    setText('rosieHappinessText',`${h}/100 ❤️`);if(bar)bar.style.width=h+'%';
    setText('rosieTreatCount',state.rosieTreats||0);
-   setText('rosieTreasureStatus',h>=100?'🎁 Treasure ready on next harvest!':`Treasure at 100 • Find bonus +${Math.round(DSH.Progress.happinessFindBonus(state)*100)}%`);
+   setText('rosieTreasureStatus',h>=100?'🎁 Treasure ready • Best Friend: +20% Adventure coins & better events':h>=75?`💕 Happy Rosie: +10% Adventure coins • Find bonus +${Math.round(DSH.Progress.happinessFindBonus(state)*100)}%`:`Treasure at 100 • Find bonus +${Math.round(DSH.Progress.happinessFindBonus(state)*100)}%`);
    const now=Date.now(),wait=Math.max(0,C.happiness.petCooldownMs-(now-(Number(state.lastPetAt)||0))),away=!!state.rosieAdventure,returned=away&&now>=state.rosieAdventure.endsAt;
    setText('petRosieCooldown',away?(returned?'🐕 Welcome Rosie home first':'🐾 Rosie is exploring…'):(wait?`Pet again in ${formatTime(wait)}`:'Petting ready'));
    const pet=document.getElementById('petRosieBtn'),feed=document.getElementById('feedTreatBtn');
@@ -537,6 +671,8 @@ DSH.Farm=(()=>{
  }
  function render(){
    if(!state)return;renderTimedHarvest();renderHappiness();renderOrders();renderAdventure();
+   const seasonInfo=DSH.Seasons?.ensure(state,state.level),ss=state.seasonState||{};
+   if(seasonInfo){setText('farmSeasonName',`${seasonInfo.icon} ${seasonInfo.name} • Year ${seasonInfo.year}`);setText('farmSeasonEffect',`${DSH.Seasons.variantText(seasonInfo)} • ${DSH.Seasons.effectText(seasonInfo)}`);setText('farmSeasonPoints',ss.claimed?'Basket complete ✓':`${ss.points||0}/${seasonInfo.goal}`);const sb=document.getElementById('farmSeasonBar');if(sb)sb.style.width=`${Math.min(100,(ss.points||0)/seasonInfo.goal*100)}%`;const sc=document.getElementById('farmSeasonCard');if(sc){sc.dataset.season=seasonInfo.key.split('-').slice(1).join('-')}}
    const ri=activeRegionIndex(),r=activeRegion();
    setText('gems',state.gems);setText('farmCoins',state.coins.toLocaleString());setText('farmWindmills',state.windmills);setText('regionName',r.name);
    setText('farmGates',state.magicGates||0);setText('regionBonusText',r.bonus);
@@ -564,10 +700,22 @@ DSH.Farm=(()=>{
    })}
    const scene=document.getElementById('farmScene');if(scene){
      scene.classList.toggle('hasCozyFence',!!state.upgrades.fence);scene.classList.remove('hasPinkCollar');
-     for(let n=0;n<regionDefs.length;n++)scene.classList.toggle(`region-${n}`,n===ri);
+     for(let n=0;n<regionDefs.length;n++)scene.classList.toggle(`region-${n}`,n===ri);['spring','summer','autumn','winter'].forEach(k=>scene.classList.toggle(`season-${k}`,seasonInfo?.key.endsWith('-'+k)));
    }
    const decor=document.getElementById('regionDecorVisual');if(decor){decor.textContent=ownsDecor(r.decor.key)?r.decor.icon:'';decor.title=ownsDecor(r.decor.key)?r.decor.name:''}
    const rosie=document.getElementById('rosie');if(rosie)rosie.classList.toggle('bandanaOn',!!state.upgrades.bandana);
+   const harvestAllBtn=document.getElementById('harvestAllBtn');if(harvestAllBtn){
+     const readyCount=state.plots.filter(p=>p&&cropDefs[p.type]&&p.age>=cropDefs[p.type].grow).length;
+     harvestAllBtn.disabled=readyCount===0;harvestAllBtn.textContent=readyCount?`🌾 Harvest All (${readyCount})`:'🌾 Harvest All';
+     harvestAllBtn.title=readyCount?`Harvest all ${readyCount} ready crop${readyCount===1?'':'s'}`:'No crops are ready yet';
+   }
+   const replantBtn=document.getElementById('replantBtn');if(replantBtn){
+     const matches=Array.isArray(lastHarvestPattern)?lastHarvestPattern.filter(x=>!state.plots[x.i]&&cropDefs[x.type]):[];
+     const total=matches.reduce((sum,x)=>sum+cropDefs[x.type].cost,0);
+     replantBtn.disabled=!matches.length||state.coins<Math.min(...matches.map(x=>cropDefs[x.type].cost),Infinity);
+     replantBtn.textContent=matches.length?`🌱 Replant (${matches.length})`:'🌱 Replant';
+     replantBtn.title=matches.length?`Replant the last Harvest All pattern • up to ${total} coins`:'Harvest All first to remember a crop pattern';
+   }
    const cropBox=document.getElementById('cropChoices');if(cropBox){
      cropBox.innerHTML='';const fieldsFull=state.plots.every(Boolean);
      const fullNote=document.getElementById('fieldsFullNotice');if(fullNote){fullNote.classList.toggle('show',fieldsFull);fullNote.textContent=fieldsFull?'🌱 All six fields are full — harvest a crop to plant more.':''}
@@ -583,8 +731,15 @@ DSH.Farm=(()=>{
      const d=r.decor,owned=ownsDecor(d.key);rd.innerHTML=`<b>${d.icon} ${d.name}</b><small>${d.desc}</small><button id="buyRegionDecorBtn">${owned?'Owned ✓':d.cost+' Gems'}</button>`;
      const b=rd.querySelector('button');b.disabled=owned||state.gems<d.cost;b.onclick=buyRegionDecor;
    }
-   document.querySelectorAll('[data-upgrade]').forEach(b=>{const k=b.dataset.upgrade;b.disabled=!!state.upgrades[k];if(state.upgrades[k])b.textContent='Owned ✓'});
+   const upgradeCosts={fence:3,butterfly:5,barn:8,bandana:4,silo:10,market:12};
+   document.querySelectorAll('[data-upgrade]').forEach(b=>{
+     const k=b.dataset.upgrade,cost=upgradeCosts[k],owned=!!state.upgrades[k];
+     b.textContent=owned?'Owned ✓':`${cost} Gems`;
+     b.disabled=owned||state.gems<cost;
+     b.title=owned?'Permanent farm upgrade owned':state.gems<cost?`Need ${cost} gems`:`Buy for ${cost} gems`;
+     b.classList.toggle('owned',owned);
+   });
  }
- return{bind,plant,harvest,grow,upgrade,render,visit,petRosie,feedTreat,claimTimedHarvest,renderTimedHarvest,renderHappiness,timedStatus,setRegion,claimRegionRewards,buyRegionDecor,ensureOrders,renderOrders,advanceOrders,collectOrder,readyOrderCount,
+ return{bind,plant,harvest,harvestAll,replantLastHarvest,grow,upgrade,render,favoriteAdventureSeason,visit,petRosie,feedTreat,claimTimedHarvest,renderTimedHarvest,renderHappiness,timedStatus,setRegion,claimRegionRewards,buyRegionDecor,ensureOrders,renderOrders,advanceOrders,collectOrder,readyOrderCount,
  startAdventure,claimAdventure,renderAdventure,useAdventureFind,cropDefs,regions,regionDefs};
 })();

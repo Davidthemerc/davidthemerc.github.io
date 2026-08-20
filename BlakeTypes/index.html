@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="description"
+    content="Blake Breacher Teaches Typing — an original browser typing-game suite inspired by classic educational typing software."
+  />
+  <title>Blake Breacher Teaches Typing</title>
+  <link rel="stylesheet" href="./styles/main.css" />
+</head>
+<body>
+  <div class="app-shell retro-app-shell">
+    <div class="app-window">
+    <header class="topbar">
+      <button class="brand-button" id="brandButton" type="button" aria-label="Go to title screen">
+        <span class="brand-mark">HB</span>
+        <span>
+          <strong>HyperSoft</strong>
+          <small>Typing Division</small>
+        </span>
+      </button>
+
+      <div class="menu-strip" aria-hidden="true">File &nbsp; Edit &nbsp; Blake &nbsp; Profiles &nbsp; Lessons &nbsp; Games &nbsp; Progress &nbsp; Achievements &nbsp; Reports &nbsp; Help</div>
+      <button class="profile-quick" id="profileQuickButton" type="button" aria-label="Open profiles"><span id="profileQuickAvatar">P1</span><strong id="profileQuickName">Player 1</strong></button>
+      <nav class="topnav" aria-label="Main navigation">
+        <button data-nav="title" type="button">Home</button>
+        <button data-nav="office" type="button">Blake</button>
+        <button data-nav="profiles" type="button">Profiles</button>
+        <button data-nav="lessons" type="button">Lessons</button>
+        <button data-nav="menu" type="button">Games</button>
+        <button data-nav="progress" type="button">Progress</button>
+        <button data-nav="achievements" type="button">Achievements</button>
+        <button data-nav="reports" type="button">Reports</button>
+        <button data-nav="scoreboard" type="button">Scoreboard</button>
+        <button data-nav="settings" type="button">Settings</button>
+      </nav>
+    </header>
+
+    <main id="appMain">
+      <section class="screen title-screen is-active" id="titleScreen" aria-labelledby="gameTitle">
+        <div class="title-card retro-card">
+          <div class="title-copy">
+            <span class="eyebrow">HyperSoft proudly presents</span>
+            <div class="deluxe-ribbon">Deluxe Training Suite</div>
+            <h1 id="gameTitle">Blake Breacher<br />Teaches Typing</h1>
+            <div class="title-subbrand">Classic Office Keyboarding System</div>
+            <p class="title-lede">
+              The office's fastest typist. The office's least reliable custodian of unattended workstations.
+            </p>
+            <div class="blake-quote" id="titleQuote">
+              “Lock my computer? I was only gone for forty-five minutes.”
+            </div>
+            <button class="active-profile-banner" id="activeProfileBanner" type="button"></button>
+            <div class="personality-home-grid">
+              <article class="personality-card blake-tip-home">
+                <div class="personality-card-heading"><span>Blake's Productivity Tip</span><button class="tiny-retro-button" id="newHomeTipButton" type="button">Another</button></div>
+                <p id="homeBlakeTip"></p>
+                <div class="compliance-rebuttal"><strong>HyperSoft Compliance:</strong><span id="homeComplianceReply"></span></div>
+              </article>
+              <article class="personality-card corporate-notice-home">
+                <div class="personality-card-heading"><span>Corporate Bulletin</span><button class="tiny-retro-button" id="newHomeNoticeButton" type="button">Next</button></div>
+                <strong id="homeNoticeTitle"></strong>
+                <p id="homeNoticeBody"></p>
+                <small id="homeNoticeDepartment"></small>
+              </article>
+            </div>
+            <div class="backup-reminder" id="backupReminderBanner" hidden>
+              <div><strong>HyperSoft Backup Reminder</strong><span>Your learner file has enough progress to be worth backing up.</span></div>
+              <button class="small-action" id="backupReminderButton" type="button">Back Up Profile</button>
+            </div>
+            <div class="feature-pill-row">
+              <span class="retro-pill">14 Lessons + 8 Smart Drills + 8 Games</span>
+              <span class="retro-pill">Typing Progress</span>
+              <span class="retro-pill">Achievements</span>
+              <span class="retro-pill">Certificates &amp; Reports</span>
+              <span class="retro-pill">Blake Guidance</span>
+              <span class="retro-pill">Compliance Rebuttals</span>
+            </div>
+            <div class="button-row">
+              <button class="primary" id="startSuiteButton" type="button">Start Lessons</button>
+              <button class="secondary" data-nav="menu" type="button">Typing Games</button>
+              <button class="secondary" data-nav="progress" type="button">View Progress</button>
+              <button class="secondary" data-nav="achievements" type="button">Achievements</button>
+              <button class="secondary" data-nav="reports" type="button">Certificates &amp; Reports</button>
+              <button class="secondary" data-nav="office" type="button">Blake's Office</button>
+              <button class="secondary" data-nav="profiles" type="button">Profiles</button>
+              <button class="secondary" data-nav="scoreboard" type="button">View Scores</button>
+            </div>
+          </div>
+
+          <div class="blake-panel" aria-label="Blake">
+            <div class="portrait-frame">
+              <img src="./assets/common/blake.png" alt="Blake, HyperSoft's typing champion" />
+            </div>
+            <div class="portrait-caption">Meet Blake: smug, fast, and profoundly unsafe around unattended records.</div>
+            <div class="employee-badge">
+              <strong>BLAKE</strong>
+              <span>Typing Champion</span>
+              <span class="warning">Security training overdue</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <section class="screen" id="officeScreen" aria-labelledby="officeHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">HyperSoft employee feature • v0.12</span>
+            <div class="section-banner">Typing champion, productivity theorist, recurring compliance topic</div>
+            <h2 id="officeHeading">Blake's Office</h2>
+            <p class="lesson-framework-note">A completely unnecessary archive of Blake advice, HyperSoft corrections, corporate notices, and selected entries from a fictional incident file.</p>
+          </div>
+          <button class="secondary" id="officeShuffleButton" type="button">Shuffle Blake's Desk</button>
+        </div>
+        <div id="officeContent"></div>
+      </section>
+
+      <section class="screen" id="profilesScreen" aria-labelledby="profilesHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">Local learner profiles • v0.12</span>
+            <div class="section-banner">Separate progress, records, adaptive data, and preferences</div>
+            <h2 id="profilesHeading">Profiles</h2>
+            <p class="lesson-framework-note">Each learner keeps an independent local training record. Guest mode is temporary and is discarded when you switch away or reload the page.</p>
+          </div>
+          <div class="profile-toolbar">
+            <button class="primary" id="createProfileButton" type="button">New Profile</button>
+            <button class="secondary" id="guestProfileButton" type="button">Use Guest Mode</button>
+          </div>
+        </div>
+        <div class="profile-migration-note" id="profileMigrationNote"></div>
+        <div class="profile-grid" id="profileGrid"></div>
+
+        <section class="backup-panel" aria-labelledby="backupHeading">
+          <div class="backup-panel-heading">
+            <div>
+              <span class="eyebrow">Save management • v0.12</span>
+              <h3 id="backupHeading">Backup &amp; Restore</h3>
+              <p>Export portable JSON learner files before moving browsers, clearing site data, or trusting Blake with a laptop.</p>
+            </div>
+            <div class="backup-format-badge">HyperSoft Save v1</div>
+          </div>
+
+          <div class="backup-action-grid">
+            <article>
+              <h4>Current Profile</h4>
+              <p>Back up or import one learner without affecting anyone else on this computer.</p>
+              <div class="button-row compact">
+                <button class="primary" id="exportProfileButton" type="button">Export Current Profile</button>
+                <button class="secondary" id="importProfileButton" type="button">Import Profile</button>
+              </div>
+            </article>
+            <article>
+              <h4>All Profiles</h4>
+              <p>Create one complete backup, or restore a complete HyperSoft backup over this installation.</p>
+              <div class="button-row compact">
+                <button class="secondary" id="exportAllProfilesButton" type="button">Export All Profiles</button>
+                <button class="secondary" id="restoreBackupButton" type="button">Restore Full Backup</button>
+              </div>
+            </article>
+            <article class="backup-danger-zone">
+              <h4>Reset Data</h4>
+              <p>Reset only the current learner, or erase every Blake Breacher local save from this browser.</p>
+              <div class="button-row compact">
+                <button class="danger-ghost" id="resetProfileDataButton" type="button">Reset Current Profile</button>
+                <button class="danger-ghost" id="resetAllDataButton" type="button">Reset All Local Data</button>
+              </div>
+            </article>
+          </div>
+          <div class="backup-status" id="backupStatus" role="status" aria-live="polite"></div>
+          <input id="profileImportInput" type="file" accept=".json,application/json" hidden />
+          <input id="backupImportInput" type="file" accept=".json,application/json" hidden />
+        </section>
+      </section>
+
+      <section class="screen" id="lessonsScreen" aria-labelledby="lessonSelectHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">Typing instruction • v0.12</span>
+            <div class="section-banner">Full keyboard curriculum + smart adaptive practice</div>
+            <h2 id="lessonSelectHeading">Choose a typing lesson</h2>
+            <p class="lesson-framework-note">Work from home row through the full keyboard, then use Smart Practice and Weak-Key Workshop to target keyboard geometry, weak keys, and troublesome transitions.</p>
+          </div>
+          <div class="difficulty-chip" id="lessonDifficultyChip">Normal</div>
+        </div>
+        <div class="weak-key-summary" id="weakKeySummary"></div>
+        <div id="smartPracticeLab"></div>
+        <div class="lesson-grid" id="lessonGrid"></div>
+      </section>
+
+      <section class="screen" id="menuScreen" aria-labelledby="gameSelectHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">Training arcade • v0.12</span>
+            <div class="section-banner">Games, records, random challenges, and HyperSoft tournaments</div>
+            <h2 id="gameSelectHeading">Typing Arcade</h2>
+            <p class="lesson-framework-note">Play any game normally, take a randomized challenge, or chain several games together in a Typing Tournament. Arcade records are tracked separately for each mode and difficulty.</p>
+          </div>
+          <div class="difficulty-chip" id="menuDifficultyChip">Normal</div>
+        </div>
+
+        <div class="arcade-dashboard" id="arcadeDashboard"></div>
+        <div class="game-grid" id="gameGrid"></div>
+      </section>
+
+      <section class="screen" id="gameScreen" aria-labelledby="activeGameTitle">
+        <div class="game-header">
+          <div>
+            <button class="text-button" id="backToGamesButton" type="button">← Back to games</button>
+            <h2 id="activeGameTitle">Game</h2>
+            <p id="activeGameSubtitle"></p>
+          </div>
+          <button class="guide-link" id="guidedLinkButton" type="button">Guided Link: mode notes</button>
+        </div>
+
+        <div class="hud" aria-label="Typing statistics">
+          <div class="hud-item"><span>WPM</span><strong id="hudWpm">0</strong></div>
+          <div class="hud-item"><span>Accuracy</span><strong id="hudAccuracy">100%</strong></div>
+          <div class="hud-item"><span>Time</span><strong id="hudTimer">0:00</strong></div>
+          <div class="hud-item"><span>Score</span><strong id="hudScore">0</strong></div>
+        </div>
+
+        <div class="game-stage" id="gameStage" tabindex="-1"></div>
+      </section>
+
+
+      <section class="screen" id="progressScreen" aria-labelledby="progressHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">HyperSoft learner record • v0.12</span>
+            <div class="section-banner">Graphs, trends, lesson mastery, and adaptive typing analysis</div>
+            <h2 id="progressHeading">Typing Progress</h2>
+            <p class="lesson-framework-note">The active profile’s training history stays in this browser. Long-term graphs, mastery records, difficulty statistics, personal-best history, and the keyboard accuracy heatmap remain available in v0.12.</p>
+          </div>
+          <button class="secondary" id="progressLessonsButton" type="button">Continue Lessons</button>
+        </div>
+        <div id="progressContent"></div>
+      </section>
+
+
+      <section class="screen" id="achievementsScreen" aria-labelledby="achievementsHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">HyperSoft recognition cabinet • v0.12</span>
+            <div class="section-banner">Profile-specific achievements and long-term milestones</div>
+            <h2 id="achievementsHeading">Achievements</h2>
+            <p class="lesson-framework-note">Achievements belong to the active learner profile. Previously earned milestones are retained even if scoreboard records are later cleared.</p>
+          </div>
+          <div class="profile-toolbar">
+            <button class="secondary" id="achievementLessonsButton" type="button">Continue Lessons</button>
+            <button class="secondary" id="achievementGamesButton" type="button">Typing Games</button>
+          </div>
+        </div>
+        <div id="achievementsContent"></div>
+      </section>
+
+
+
+      <section class="screen" id="reportsScreen" aria-labelledby="reportsHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">HyperSoft document center • v0.12</span>
+            <div class="section-banner">Printable certificates, assessments, and progress summaries</div>
+            <h2 id="reportsHeading">Certificates &amp; Reports</h2>
+            <p class="lesson-framework-note">Generate documents from the active learner profile. Use your browser's Print command to print them or choose “Save as PDF.” Nothing is uploaded anywhere.</p>
+          </div>
+          <button class="secondary" id="reportsLessonsButton" type="button">Continue Lessons</button>
+        </div>
+        <div id="reportsContent"></div>
+
+        <section class="report-preview-shell" id="reportPreviewShell" hidden aria-live="polite">
+          <div class="report-preview-toolbar no-print">
+            <div><strong id="reportPreviewLabel">Document Preview</strong><span>Browser Print can also save this document as a PDF.</span></div>
+            <div class="button-row compact">
+              <button class="primary" id="printReportButton" type="button">Print / Save PDF</button>
+              <button class="secondary" id="closeReportPreviewButton" type="button">Close Preview</button>
+            </div>
+          </div>
+          <article class="print-document" id="reportPreview"></article>
+        </section>
+      </section>
+
+      <section class="screen" id="scoreboardScreen" aria-labelledby="scoreboardHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">Local records</span>
+            <div class="section-banner">Saved on this computer</div>
+            <h2 id="scoreboardHeading">Scoreboard</h2>
+          </div>
+          <button class="danger-ghost" id="clearScoresButton" type="button">Clear scores</button>
+        </div>
+        <div class="scoreboard-card" id="scoreboardContent"></div>
+      </section>
+
+      <section class="screen" id="settingsScreen" aria-labelledby="settingsHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">Training preferences</span>
+            <div class="section-banner">Customize the lab</div>
+            <h2 id="settingsHeading">Settings</h2>
+            <p class="settings-profile-context" id="settingsProfileContext"></p>
+          </div>
+        </div>
+
+        <form class="settings-card" id="settingsForm">
+          <label>
+            <span>Difficulty</span>
+            <select id="difficultySelect" name="difficulty">
+              <option value="novice">Novice</option>
+              <option value="easy">Easy</option>
+              <option value="normal">Normal</option>
+              <option value="challenging">Challenging</option>
+              <option value="hard">Hard</option>
+              <option value="expert">Expert</option>
+            </select>
+            <small>Controls word length, movement speed, timing tolerance, and numeric length.</small>
+          </label>
+
+          <label>
+            <span>Word list</span>
+            <select id="wordListSelect" name="wordList">
+              <option value="general">General</option>
+              <option value="office">Office</option>
+              <option value="technical">Technical</option>
+            </select>
+            <small>Some modes use specialized prefixes, suffixes, letters, or numbers instead.</small>
+          </label>
+
+          <label>
+            <span>Interface theme</span>
+            <select id="themeSelect" name="theme">
+              <option value="classic">Classic Blue</option>
+              <option value="teal98">Teal 98</option>
+              <option value="officeBeige">Office Beige</option>
+              <option value="midnight">Midnight Terminal</option>
+              <option value="plumDeluxe">Plum Deluxe</option>
+            </select>
+            <small>Changes the full HyperSoft shell, menus, panels, buttons, and game chrome.</small>
+          </label>
+
+          <label class="toggle-row">
+            <span>
+              <strong>Sound effects</strong>
+              <small>Simple browser-generated tones. No external audio files.</small>
+            </span>
+            <input id="soundToggle" name="sound" type="checkbox" />
+          </label>
+
+          <label class="toggle-row">
+            <span>
+              <strong>Backup reminders</strong>
+              <small>After meaningful progress accumulates, occasionally remind this profile to export a portable save.</small>
+            </span>
+            <input id="backupReminderToggle" name="backupReminder" type="checkbox" />
+          </label>
+
+          <div class="settings-preview" id="difficultyPreview"></div>
+
+          <div class="button-row">
+            <button class="primary" type="submit">Save Settings</button>
+            <button class="secondary" id="resetSettingsButton" type="button">Reset defaults</button>
+            <button class="secondary" id="resetAdaptiveButton" type="button">Reset adaptive profile</button>
+          </div>
+        </form>
+      </section>
+    </main>
+    <footer class="status-bar">
+      <span>HyperSoft Learning Suite • v0.12 Smart Typing Edition</span>
+      <span id="activeProfileStatus">Profile: Player 1</span>
+      <span>Blake Breacher Teaches Typing v0.12 • Smart Content + Adaptive Vocabulary</span>
+    </footer>
+    </div>
+  </div>
+
+
+  <dialog class="modal profile-dialog" id="profileDialog">
+    <form class="modal-inner profile-editor" id="profileForm">
+      <div class="modal-header">
+        <div>
+          <span class="eyebrow">HyperSoft learner file</span>
+          <h2 id="profileDialogTitle">Create Profile</h2>
+        </div>
+        <button class="icon-button" id="profileDialogClose" type="button" aria-label="Close profile editor">×</button>
+      </div>
+      <label>
+        <span>Profile name</span>
+        <input id="profileNameInput" type="text" maxlength="28" autocomplete="off" required />
+        <small>Stored only in this browser.</small>
+      </label>
+      <label>
+        <span>Profile icon</span>
+        <select id="profileAvatarSelect">
+          <option value="initials">Initials</option>
+          <option value="keyboard">Keyboard</option>
+          <option value="star">Typing Star</option>
+          <option value="briefcase">Office Pro</option>
+          <option value="diamond">Deluxe Diamond</option>
+          <option value="bolt">Speed Bolt</option>
+        </select>
+      </label>
+      <div class="profile-editor-note" id="profileEditorNote">A new profile starts with fresh scores and adaptive data.</div>
+      <div class="button-row">
+        <button class="primary" id="profileSaveButton" type="submit">Create Profile</button>
+        <button class="secondary" id="profileCancelButton" type="button">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal tournament-dialog" id="tournamentDialog">
+    <div class="modal-inner tournament-modal-inner">
+      <div class="modal-header">
+        <div>
+          <span class="eyebrow">HyperSoft Typing Arcade</span>
+          <h2>Typing Tournament</h2>
+        </div>
+        <button class="icon-button" id="tournamentDialogClose" type="button" aria-label="Close tournament setup">×</button>
+      </div>
+      <div class="tournament-blake-setup">
+        <img src="./assets/common/blake.png" alt="Blake" />
+        <div><strong>Blake's tournament rules</strong><p>Several arcade games, one continuous competition, randomized game variants, and a scoring formula carefully designed so I can claim it resembles professional athletics.</p></div>
+      </div>
+      <div class="host-option-grid tournament-option-grid">
+        <label><span>Tournament format</span><select id="tournamentFormatSelect">
+          <option value="quick">Quick Cup — 3 games</option>
+          <option value="standard" selected>Standard Cup — 5 games</option>
+          <option value="grand">Grand Tour — all 8 games</option>
+        </select><small>Longer formats include more unique arcade modes.</small></label>
+        <label><span>Game order</span><select id="tournamentOrderSelect">
+          <option value="random" selected>Random Order</option>
+          <option value="classic">Classic Arcade Order</option>
+        </select><small>Game variants are randomized either way; marathon/endurance options are avoided so cups stay reasonable.</small></label>
+      </div>
+      <div class="tournament-scoring-note"><strong>HyperSoft Cup Points</strong><span>Each round combines completion, WPM, accuracy, and a capped portion of the game's raw score. Winning the mechanic matters, but one unusually high-scoring game cannot dominate the whole cup.</span></div>
+      <div class="button-row">
+        <button class="primary" id="startTournamentButton" type="button">Start Tournament</button>
+        <button class="secondary" id="cancelTournamentButton" type="button">Not Yet</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal host-dialog" id="hostDialog">
+    <div class="modal-inner host-modal-inner">
+      <div class="host-dialog-grid">
+        <div class="host-portrait-frame">
+          <img src="./assets/common/blake.png" alt="Blake, your HyperSoft typing instructor" />
+        </div>
+        <div>
+          <span class="eyebrow" id="hostEyebrow">A word from Blake</span>
+          <h2 id="hostTitle">Lesson briefing</h2>
+          <p class="host-message" id="hostMessage"></p>
+          <div class="host-targets" id="hostTargets"></div>
+          <div class="host-options" id="hostOptions" hidden></div>
+          <div class="host-compliance-note" id="hostComplianceNote"><strong>HyperSoft Compliance</strong><span id="hostComplianceMessage"></span></div>
+          <div class="button-row">
+            <button class="primary" id="hostStartButton" type="button">Start Lesson</button>
+            <button class="secondary" id="hostCancelButton" type="button">Not Yet</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="guideDialog">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <div>
+          <span class="eyebrow">Guided Link</span>
+          <h2 id="guideTitle">Mode notes</h2>
+        </div>
+        <button class="icon-button" id="closeGuideButton" type="button" aria-label="Close guide">×</button>
+      </div>
+      <div id="guideBody"></div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="resultDialog">
+    <div class="modal-inner result-modal">
+      <span class="eyebrow">Training complete</span>
+      <h2 id="resultTitle">Session complete</h2>
+      <p id="resultMessage"></p>
+      <div class="result-host-panel" id="resultHostPanel" hidden>
+        <img src="./assets/common/blake.png" alt="Blake" />
+        <div>
+          <span>Blake's assessment</span>
+          <p id="resultHostMessage"></p>
+          <div class="result-compliance-note"><strong>Compliance:</strong><span id="resultComplianceMessage"></span></div>
+        </div>
+      </div>
+
+      <div class="achievement-unlock-panel" id="achievementUnlockPanel" hidden>
+        <div class="achievement-unlock-heading"><span>★</span><strong>Achievement unlocked</strong></div>
+        <div id="achievementUnlockList"></div>
+      </div>
+      <div class="result-grid" id="resultStats"></div>
+      <div class="button-row">
+        <button class="primary" id="playAgainButton" type="button">Play Again</button>
+        <button class="secondary" id="resultHomeButton" type="button">Game Select</button>
+        <button class="secondary" id="resultReportsButton" type="button">Reports</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="loading-overlay" id="loadingOverlay" hidden aria-live="polite" aria-busy="true">
+    <div class="loading-card">
+      <div class="loading-brand"><span class="brand-mark">HB</span><div><strong>HyperSoft</strong><small>Deluxe Training Suite v0.12</small></div></div>
+      <div class="loading-progress" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <h2 id="loadingTitle">Preparing Training Activity</h2>
+      <p id="loadingMessage">Calibrating keyboard velocity...</p>
+      <div class="loading-tip"><strong>Blake says:</strong><span id="loadingTip"></span></div>
+      <div class="loading-compliance"><strong>Compliance:</strong><span id="loadingCompliance"></span></div>
+    </div>
+  </div>
+
+  <script type="module" src="./scripts/core/gameManager.js"></script>
+</body>
+</html>

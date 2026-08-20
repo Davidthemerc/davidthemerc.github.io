@@ -14,7 +14,25 @@ DSH.Levels=(()=>{
   {name:'Trellis',min:16,build:trellis},
   {name:'Creek Crossing',min:20,build:creek},
   {name:'Harvest Spiral',min:24,build:spiral},
-  {name:'Windmill Ring',min:30,build:ring}
+  {name:'Windmill Ring',min:30,build:ring},
+  {name:'Clover Cross',min:40,build:cloverCross},
+  {name:'Market Stalls',min:48,build:marketStalls},
+  {name:'River Bend',min:56,build:riverBend},
+  {name:'Barn Rafters',min:70,build:barnRafters},
+  {name:'Sunburst',min:85,build:sunburst},
+  {name:'Orchard Ladder',min:105,build:orchardLadder},
+  {name:'Lantern Rows',min:130,build:lanternRows},
+  {name:'Rosie Paths',min:160,build:rosiePaths},
+  {name:'Harvest Crown',min:200,build:harvestCrown},
+  {name:'Grand Terrace',min:260,build:grandTerrace},
+  {name:'Moonlit Arches',min:320,build:moonlitArches},
+  {name:'Apple Baskets',min:380,build:appleBaskets},
+  {name:'Festival Flags',min:450,build:festivalFlags},
+  {name:'Meadow Wings',min:520,build:meadowWings},
+  {name:'Frosted Pines',min:610,build:frostedPines},
+  {name:'Rosie Run',min:700,build:rosieRun},
+  {name:'Star Orchard',min:790,build:starOrchard},
+  {name:'Ultra Crown',min:900,build:ultraCrown}
  ];
  function node(x,y,row){return{x,y,row,removed:false,blockers:[]}}
  function autoBlock(cards,dx=.115,depth=2){
@@ -55,6 +73,116 @@ DSH.Levels=(()=>{
  function ring(count){
    let a=[];const rows=5;for(let r=0;r<rows;r++){const n=5+r;for(let i=0;i<n;i++){const ang=(i/n)*Math.PI*2+(r%2)*.25,rad=.15+r*.055;a.push(node(.5+Math.cos(ang)*rad,.38+Math.sin(ang)*rad*.7,r))}}
    return autoBlock(trim(a,count),.08,2)
+ }
+
+ function cloverCross(count){
+   let a=[];for(let r=0;r<5;r++){for(let i=0;i<7;i++){
+     const keep=(r===2||i===3)||(r%2===1&&i>=1&&i<=5)||(r===0&&[2,3,4].includes(i))||(r===4&&[1,2,3,4,5].includes(i));
+     if(keep)a.push(node(.14+i*.12,.05+r*.16,r))
+   }}
+   return autoBlock(trim(a,count),.10,2)
+ }
+ function marketStalls(count){
+   let a=[];for(let r=0;r<5;r++){const n=r%2?8:6;for(let i=0;i<n;i++){
+     const gap=(i===Math.floor(n/2)-1||i===Math.floor(n/2))&&r<3;if(gap)continue;
+     a.push(node((i+.5)/n,.05+r*.16,r))
+   }}
+   return autoBlock(trim(a,count),.085,2)
+ }
+ function riverBend(count){
+   let a=[];for(let r=0;r<5;r++){const n=6;for(let i=0;i<n;i++){
+     const x=.10+i*.16+Math.sin(r*1.2+i*.55)*.035;
+     a.push(node(Math.max(.06,Math.min(.94,x)),.05+r*.16,r))
+   }}
+   return autoBlock(trim(a,count),.09,1)
+ }
+ function barnRafters(count){
+   let a=[];for(let r=0;r<5;r++){const n=4+r;for(let i=0;i<n;i++){
+     const span=.70-r*.025,x=.5+(i-(n-1)/2)*(span/Math.max(1,n-1));
+     a.push(node(x,.045+r*.16,r))
+   }}
+   return autoBlock(trim(a,count),.09,2)
+ }
+ function sunburst(count){
+   let a=[];const rows=5;for(let r=0;r<rows;r++){const n=4+r;for(let i=0;i<n;i++){
+     const ang=(i/n)*Math.PI*2+(r*.35),rad=.11+r*.065;
+     a.push(node(.5+Math.cos(ang)*rad,.38+Math.sin(ang)*rad*.78,r))
+   }}
+   return autoBlock(trim(a,count),.085,2)
+ }
+ function orchardLadder(count){
+   let a=[];for(let r=0;r<6;r++){const n=5;for(let i=0;i<n;i++){
+     const x=.18+i*.16+(r%2?.035:-.035);a.push(node(x,.035+r*.13,r))
+   }}
+   return autoBlock(trim(a,count),.085,2)
+ }
+ function lanternRows(count){
+   let a=[];for(let r=0;r<5;r++){const n=6;for(let i=0;i<n;i++){
+     const drop=(i%2)*.035;a.push(node(.10+i*.16,.04+r*.16+drop,r))
+   }}
+   return autoBlock(trim(a,count),.09,2)
+ }
+ function rosiePaths(count){
+   let a=[];for(let r=0;r<5;r++){const n=6;for(let i=0;i<n;i++){
+     const wave=Math.sin((i*1.35)+(r*.8))*.04;a.push(node(.10+i*.16+wave,.05+r*.16,r))
+   }}
+   return autoBlock(trim(a,count),.085,1)
+ }
+ function harvestCrown(count){
+   let a=[];const rowCounts=[5,7,6,7,5];for(let r=0;r<rowCounts.length;r++){const n=rowCounts[r];for(let i=0;i<n;i++){
+     let y=.05+r*.16;if(r===0&&i%2===0)y+=.035;
+     a.push(node(.5+(i-(n-1)/2)*(.72/Math.max(1,n-1)),y,r))
+   }}
+   return autoBlock(trim(a,count),.095,2)
+ }
+ function grandTerrace(count){
+   let a=[];for(let r=0;r<5;r++){const n=6;for(let i=0;i<n;i++){
+     const inset=r*.018;a.push(node(.10+inset+i*((.80-inset*2)/5),.045+r*.16,r))
+   }}
+   return autoBlock(trim(a,count),.095,2)
+ }
+
+ function moonlitArches(count){
+   let a=[];for(let r=0;r<5;r++){const n=6;for(let i=0;i<n;i++){
+     const arch=Math.abs(i-2.5)*.018;a.push(node(.10+i*.16,.07+r*.155+arch*(r%2?1:-1),r))
+   }}return autoBlock(trim(a,count),.09,2)
+ }
+ function appleBaskets(count){
+   let a=[];for(let r=0;r<5;r++){const n=3+r%2;[.28,.72].forEach(cx=>{for(let i=0;i<n;i++)
+     a.push(node(cx+(i-(n-1)/2)*.075,.045+r*.16,r))
+   })}return autoBlock(trim(a,count),.082,2)
+ }
+ function festivalFlags(count){
+   let a=[];for(let r=0;r<5;r++){const n=6;for(let i=0;i<n;i++){
+     const y=.045+r*.16+((i+r)%2?-.025:.025);a.push(node(.10+i*.16,y,r))
+   }}return autoBlock(trim(a,count),.088,2)
+ }
+ function meadowWings(count){
+   let a=[];for(let r=0;r<5;r++){const n=3+r;for(let side of [-1,1])for(let i=0;i<n;i++){
+     const spread=.08+i*.045+r*.015;a.push(node(.5+side*spread,.045+r*.16,r))
+   }}return autoBlock(trim(a,count),.075,2)
+ }
+ function frostedPines(count){
+   let a=[];for(let r=0;r<6;r++){const n=2+Math.floor(r*.9);for(let i=0;i<n;i++){
+     a.push(node(.5+(i-(n-1)/2)*(.58/Math.max(1,n-1)),.025+r*.13,r))
+   }}return autoBlock(trim(a,count),.10,2)
+ }
+ function rosieRun(count){
+   let a=[];for(let r=0;r<5;r++){for(let i=0;i<6;i++){
+     const shift=Math.sin((r*2+i)*.9)*.055;a.push(node(.10+i*.16+shift,.045+r*.16,r))
+   }}return autoBlock(trim(a,count),.078,1)
+ }
+ function starOrchard(count){
+   let a=[];for(let r=0;r<5;r++){const n=5+r;for(let i=0;i<n;i++){
+     const ang=(i/n)*Math.PI*2+(r%2)*.42,rad=.10+r*.065;
+     a.push(node(.5+Math.cos(ang)*rad,.38+Math.sin(ang)*rad*.72,r))
+   }}return autoBlock(trim(a,count),.075,2)
+ }
+ function ultraCrown(count){
+   let a=[];const rows=[5,7,5,8,5];rows.forEach((n,r)=>{for(let i=0;i<n;i++){
+     const peak=(r===0&&i%2===0)?-.035:0;
+     a.push(node(.5+(i-(n-1)/2)*(.78/Math.max(1,n-1)),.055+r*.155+peak,r))
+   }});return autoBlock(trim(a,count),.09,2)
  }
 
  function targetCount(level){
@@ -152,11 +280,23 @@ DSH.Levels=(()=>{
    return{counts,obstacleCount,stockBonus,labels};
  }
  function milestoneFormation(level){
+   // Authored long-game landmarks keep a stable, recognizable silhouette.
+   if(level===250)return harvestCrown(30);
+   if(level===500)return grandTerrace(30);
+   if(level===750)return starOrchard(30);
+   if(level===1000)return ultraCrown(30);
+   const style=Math.floor(level/10)%9;
+   if(style===1)return harvestCrown(30);
+   if(style===2)return sunburst(30);
+   if(style===3)return gardenGate(30);
+   if(style===4)return grandTerrace(30);
+   if(style===5)return moonlitArches(30);
+   if(style===6)return meadowWings(30);
+   if(style===7)return frostedPines(30);
+   if(style===8)return ultraCrown(30);
+
    const chapter=Math.max(1,Math.ceil(level/10)),rows=Math.min(5,3+Math.floor(chapter/3));
    const cards=[],cols=Math.min(8,5+Math.floor(chapter/2));
-   // v40.3: milestone boards now use the SAME normalized node/blocker model as every
-   // other formation. Older milestone code used x/y percentages plus coveredBy arrays,
-   // which could crash blocked() and push every card off-screen.
    for(let row=0;row<rows;row++){
      const count=Math.max(3,cols-row),span=Math.min(.80,.18+(count-1)*.12),left=.5-span/2;
      for(let col=0;col<count;col++)cards.push(node(count===1?.5:left+(col/(count-1))*span,.07+row*(.70/(rows-1||1)),row));
@@ -166,11 +306,13 @@ DSH.Levels=(()=>{
      if(c.row>=rows-1)return;
      const next=cards.filter(n=>n.row===c.row+1),threshold=.13;
      next.filter(n=>Math.abs(n.x-c.x)<threshold).forEach(n=>{if(!c.blockers.includes(n.id))c.blockers.push(n.id)});
-     // Guarantee every covered row card has at least one blocker so the ridge reveals
-     // progressively rather than accidentally exposing isolated lower cards.
      if(!c.blockers.length&&next.length){const nearest=[...next].sort((a,b)=>Math.abs(a.x-c.x)-Math.abs(b.x-c.x))[0];c.blockers.push(nearest.id)}
    });
    return cards;
+ }
+ function milestoneFormationName(level){
+   const landmarkNames={250:'Quarter Harvest Crown',500:'Golden Seasons Terrace',750:"Rosie's Star Orchard",1000:'Ultra Harvest Crown'};
+   return landmarkNames[level]||['Milestone Ridge','Festival Crown','Sunwheel Summit','Grand Garden Gate','Harvest Terrace','Moonlit Arches','Meadow Wings','Frosted Pines','Ultra Crown'][Math.floor(level/10)%9];
  }
  function validateBoardData(built){
    const errors=[],cards=built?.cards;
@@ -238,11 +380,20 @@ DSH.Levels=(()=>{
        }});
        specials=summarizeSpecials(cards);
      }
-     const milestoneBonus=milestone?4:0;
+     const landmark=DSH.Config?.milestones?.landmarks?.[level]||null;
+     // Landmark hands are celebratory but distinctive: extra visible reward cards,
+     // accompanied by a larger stock cushion rather than arbitrary raw difficulty.
+     if(landmark){
+       const celebratory=cards.filter(c=>!c.special);
+       const extras=level===1000?['gold','rainbow','sunflower','gold']:level>=750?['gold','rainbow','sunflower']:['gold','rainbow'];
+       extras.forEach((type,i)=>{const c=celebratory[(i*5+level)%Math.max(1,celebratory.length)];if(c&&!c.special)c.special=type});
+       specials=summarizeSpecials(cards);
+     }
+     const milestoneBonus=milestone?(landmark?.stockBonus||DSH.Config?.milestones?.stockBonus||4):0;
      const baseStock=stockTarget(level,cards.length);
      return{
-       name:milestone?`Milestone Ridge ${level}`:f.name,cards,count:cards.length,milestone,
-       stockTarget:Math.max(DSH.Config?.difficulty?.stockFloor||24,Math.min(DSH.Config?.difficulty?.stockCeiling||44,baseStock+specials.stockBonus+milestoneBonus)),
+       name:milestone?`${milestoneFormationName(level)} ${level}`:f.name,cards,count:cards.length,milestone,landmark:!!landmark,
+       stockTarget:Math.max(DSH.Config?.difficulty?.stockFloor||24,Math.min(DSH.Config?.difficulty?.weatherCeiling||48,baseStock+specials.stockBonus+milestoneBonus)),
        baseStockTarget:baseStock,obstacleStockBonus:specials.stockBonus+milestoneBonus,
        obstacleCount:specials.obstacleCount,specialCounts:specials.counts,specialLabels:specials.labels
      };

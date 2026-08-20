@@ -1,0 +1,320 @@
+export const LESSON_METADATA = [
+  {
+    id: "homeRowKeys",
+    number: "Lesson 1",
+    category: "Keyboard Foundations",
+    title: "Home Row Keys",
+    subtitle: "Anchor your hands on ASDF and JKL; with short, repeatable home-row patterns.",
+    tags: ["Foundation", "Home Row", "Key Patterns"],
+    source: "patterns",
+    keys: "asdfghjkl;",
+    patternMin: 2,
+    patternMax: 4,
+    baseWords: 54,
+    targetWpm: 16,
+    targetAccuracy: 90,
+    guide: [
+      "Keep your index fingers near F and J and return to the home row after each reach.",
+      "The tokens are intentionally not real words; the goal is finger location and rhythm.",
+      "Type the highlighted pattern exactly, then press Space to advance.",
+      "The lesson captures typing globally, so no input box needs focus.",
+      "Mistakes are recorded by expected key and help power the Adaptive Workshop later."
+    ]
+  },
+  {
+    id: "homeRowWarmup",
+    number: "Lesson 2",
+    category: "Keyboard Foundations",
+    title: "Home Row Words",
+    subtitle: "Turn home-row reach into recognizable short words and continuous rhythm.",
+    tags: ["Foundation", "Home Row", "Continuous"],
+    source: "custom",
+    tokens: [
+      "sad", "dad", "fad", "add", "all", "fall", "gall", "hall", "hash", "sash",
+      "flask", "glass", "glad", "slag", "shall", "dash", "lash", "half", "jag", "gag",
+      "hag", "has", "had", "gas", "flag", "ask", "lad", "lass", "salad", "flash",
+      "shall", "falls", "flags", "asks", "glass", "flasks", "salsa", "dada", "gala"
+    ],
+    baseWords: 58,
+    targetWpm: 20,
+    targetAccuracy: 92,
+    guide: [
+      "Keep a light, steady rhythm rather than attacking each word separately.",
+      "The stream scrolls automatically as each token is completed.",
+      "Use Space only after the highlighted word is fully typed.",
+      "Errors do not advance the stream; type the expected key and continue.",
+      "Accuracy data from this lesson contributes to your weak-key profile."
+    ]
+  },
+  {
+    id: "topRowReach",
+    number: "Lesson 3",
+    category: "Keyboard Expansion",
+    title: "Top Row Reach",
+    subtitle: "Practice reaching upward to QWERTYUIOP and returning cleanly to home position.",
+    tags: ["Top Row", "Reach", "Patterns"],
+    source: "patterns",
+    keys: "qwertyuiop",
+    supportKeys: "asdfghjkl",
+    supportChance: 0.32,
+    patternMin: 2,
+    patternMax: 5,
+    baseWords: 60,
+    targetWpm: 20,
+    targetAccuracy: 92,
+    guide: [
+      "Reach upward from the home row instead of moving your entire hand.",
+      "Some tokens mix a top-row key with a home-row support key so you practice returning home.",
+      "Read one or two tokens ahead while keeping the current token accurate.",
+      "Higher difficulty lengthens patterns rather than changing the underlying key set.",
+      "The lesson records which top-row keys cause the most errors."
+    ]
+  },
+  {
+    id: "topHomeWords",
+    number: "Lesson 4",
+    category: "Keyboard Expansion",
+    title: "Top + Home Words",
+    subtitle: "Blend the top and home rows into real-word typing without using the bottom row yet.",
+    tags: ["Top Row", "Home Row", "Words"],
+    source: "custom",
+    tokens: [
+      "were", "tree", "type", "quiet", "write", "writer", "route", "tower", "water", "paper",
+      "read", "rate", "seat", "great", "trade", "earth", "heart", "there", "their", "share",
+      "raise", "stare", "stair", "shirt", "short", "sort", "port", "report", "order", "period",
+      "require", "request", "reply", "draft", "audit", "data", "file", "files", "desk", "staff",
+      "shift", "start", "state", "store", "story", "street", "treat", "trust", "user", "issue"
+    ],
+    baseWords: 66,
+    targetWpm: 25,
+    targetAccuracy: 93,
+    guide: [
+      "This lesson turns isolated reach practice into flowing word entry.",
+      "Do not pause to reset between words; Space is part of the rhythm.",
+      "Keep the current word centered in your attention while visually scanning the next few words.",
+      "If a word feels awkward, slow down enough to preserve finger placement.",
+      "The adaptive system will remember repeated problem keys."
+    ]
+  },
+  {
+    id: "bottomRowReach",
+    number: "Lesson 5",
+    category: "Keyboard Expansion",
+    title: "Bottom Row Reach",
+    subtitle: "Reach downward to ZXCVBNM while keeping your hands anchored to the home row.",
+    tags: ["Bottom Row", "Reach", "Patterns"],
+    source: "patterns",
+    keys: "zxcvbnm",
+    supportKeys: "asdfghjkl",
+    supportChance: 0.38,
+    patternMin: 2,
+    patternMax: 5,
+    baseWords: 62,
+    targetWpm: 20,
+    targetAccuracy: 92,
+    guide: [
+      "Reach downward with the appropriate finger, then come back to home position.",
+      "Mixed tokens force a down-and-back motion instead of letting your hands drift.",
+      "Accuracy is more important than speed while the bottom row becomes familiar.",
+      "Patterns grow slightly longer with difficulty and exercise progress.",
+      "Your errors are saved into the same adaptive key profile as the other lessons."
+    ]
+  },
+  {
+    id: "fullAlphabetFlow",
+    number: "Lesson 6",
+    category: "Keyboard Expansion",
+    title: "Full Alphabet Flow",
+    subtitle: "Use all three letter rows in a long run-on stream of ordinary words.",
+    tags: ["All Letters", "Flow", "Words"],
+    source: "wordList",
+    wordList: "general",
+    minLength: 3,
+    maxLength: 9,
+    baseWords: 78,
+    targetWpm: 30,
+    targetAccuracy: 94,
+    guide: [
+      "This is the first unrestricted alphabet lesson in the curriculum.",
+      "The stream is intentionally meaningless so attention stays on keyboarding rather than sentence comprehension.",
+      "Type continuously and let the ribbon move with you.",
+      "Try to maintain the same hand position even as the vocabulary becomes more varied.",
+      "Repeated misses now become useful input for Adaptive Weak-Key Workshop."
+    ]
+  },
+  {
+    id: "shiftCapitals",
+    number: "Lesson 7",
+    category: "Full Keyboard Skills",
+    title: "Shift & Capital Letters",
+    subtitle: "Add deliberate Shift-key use with capitalized words and short all-caps bursts.",
+    tags: ["Shift", "Capitalization", "Accuracy"],
+    source: "capitalized",
+    wordList: "general",
+    minLength: 3,
+    maxLength: 10,
+    baseWords: 70,
+    targetWpm: 26,
+    targetAccuracy: 94,
+    guide: [
+      "Capital letters must be typed with the correct case; lowercase will not count as correct.",
+      "Use the opposite hand's Shift key when practical so the letter hand can keep its position.",
+      "Some higher-difficulty tokens appear in full capitals for a brief Shift workout.",
+      "The typing engine tracks uppercase misses separately from lowercase misses.",
+      "Do not race through Shift combinations at the expense of accuracy."
+    ]
+  },
+  {
+    id: "numberRow",
+    number: "Lesson 8",
+    category: "Full Keyboard Skills",
+    title: "Number Row",
+    subtitle: "Build number-row accuracy with grouped digits that grow longer as the lesson progresses.",
+    tags: ["Numbers", "Number Row", "Accuracy"],
+    source: "numbers",
+    numberMin: 2,
+    numberMax: 7,
+    baseWords: 64,
+    targetWpm: 22,
+    targetAccuracy: 93,
+    guide: [
+      "Type the displayed number group exactly and press Space between groups.",
+      "Return your hands to the home row after each reach instead of hovering over the numbers.",
+      "Number length scales with both selected difficulty and progress through the lesson.",
+      "This drill uses the main number row; Check-Out Time remains the dedicated 10-key arcade mode.",
+      "Digit-specific errors are saved for adaptive practice."
+    ]
+  },
+  {
+    id: "punctuationBasics",
+    number: "Lesson 9",
+    category: "Full Keyboard Skills",
+    title: "Punctuation Basics",
+    subtitle: "Type commas, periods, apostrophes, question marks, semicolons, colons, and quotation marks in context.",
+    tags: ["Punctuation", "Shift", "Words"],
+    source: "punctuation",
+    wordList: "general",
+    minLength: 3,
+    maxLength: 9,
+    baseWords: 72,
+    targetWpm: 24,
+    targetAccuracy: 94,
+    guide: [
+      "Punctuation is part of the highlighted token and must be entered before Space.",
+      "Some punctuation marks require Shift; type the exact symbol shown.",
+      "Quoted and parenthesized tokens train opening and closing punctuation within one unit.",
+      "Apostrophe contractions are included as dedicated tokens.",
+      "The adaptive profile tracks punctuation symbols just like letters and numbers."
+    ]
+  },
+  {
+    id: "commonWordsStream",
+    number: "Lesson 10",
+    category: "Speed & Endurance",
+    title: "Common Words Stream",
+    subtitle: "Type a long, deliberately meaningless stream of everyday words without stopping.",
+    tags: ["Words", "Flow", "Run-On"],
+    source: "wordList",
+    wordList: "general",
+    minLength: 3,
+    maxLength: 9,
+    baseWords: 90,
+    targetWpm: 34,
+    targetAccuracy: 94,
+    guide: [
+      "This is the classic continuous word-salad exercise: long, fast, and intentionally nonsensical.",
+      "Keep your eyes slightly ahead of the highlighted word while your hands finish the current word.",
+      "Completed words fade behind you and upcoming words remain visible.",
+      "Difficulty changes both total exercise length and generated word length.",
+      "Aim for a consistent pace rather than sprinting and stopping."
+    ]
+  },
+  {
+    id: "officeWordSalad",
+    number: "Lesson 11",
+    category: "Speed & Endurance",
+    title: "Office Word Salad",
+    subtitle: "A sustained stream of office vocabulary with no requirement to form a coherent thought.",
+    tags: ["Office", "Vocabulary", "Endurance"],
+    source: "wordList",
+    wordList: "office",
+    minLength: 4,
+    maxLength: 12,
+    baseWords: 98,
+    targetWpm: 38,
+    targetAccuracy: 95,
+    guide: [
+      "Office Word Salad uses the office vocabulary pool and a longer continuous ribbon.",
+      "The words remain intentionally unrelated; this is a keyboarding drill rather than prose comprehension.",
+      "Read ahead enough to avoid a pause at every word boundary.",
+      "Try to keep accuracy stable as unfamiliar administrative terms appear.",
+      "Blake considers this lesson realistic because many of his emails also lack a discernible thesis."
+    ]
+  },
+  {
+    id: "longWordEndurance",
+    number: "Lesson 12",
+    category: "Speed & Endurance",
+    title: "Long-Word Endurance",
+    subtitle: "Stay accurate through an extended ribbon of larger technical and administrative words.",
+    tags: ["Long Words", "Technical", "Accuracy"],
+    source: "wordList",
+    wordList: "technical",
+    minLength: 7,
+    maxLength: 16,
+    baseWords: 104,
+    targetWpm: 40,
+    targetAccuracy: 95,
+    guide: [
+      "Long-Word Endurance increases visual and motor load without adding arcade hazards.",
+      "Type exactly what is highlighted and use Space between words.",
+      "The ribbon continuously repositions the active word while preserving several words of look-ahead.",
+      "Accuracy matters more than raw speed when unfamiliar long words appear.",
+      "This lesson is useful before moving into the full mixed-keyboard drill."
+    ]
+  },
+  {
+    id: "fullKeyboardMix",
+    number: "Lesson 13",
+    category: "Speed & Endurance",
+    title: "Full Keyboard Mix",
+    subtitle: "Mix words, capitals, numbers, and punctuation into one sustained typing stream.",
+    tags: ["Mixed", "Numbers", "Punctuation"],
+    source: "mixed",
+    wordList: "general",
+    minLength: 3,
+    maxLength: 11,
+    baseWords: 108,
+    targetWpm: 36,
+    targetAccuracy: 95,
+    guide: [
+      "This drill deliberately changes character types from token to token.",
+      "Expect lowercase words, capitalization, number groups, and punctuation in the same ribbon.",
+      "Do not let a numeric or punctuation token break your overall rhythm.",
+      "Higher difficulty increases the frequency of shifted and non-letter characters.",
+      "Every expected character contributes to your adaptive key profile."
+    ]
+  },
+  {
+    id: "adaptiveWorkshop",
+    number: "Adaptive",
+    category: "Adaptive Practice",
+    title: "Weak-Key Workshop",
+    subtitle: "HyperSoft builds a custom stream around the keys you have missed most often in lessons.",
+    tags: ["Adaptive", "Weak Keys", "Personalized"],
+    source: "adaptive",
+    wordList: "general",
+    minLength: 3,
+    maxLength: 11,
+    baseWords: 84,
+    targetWpm: 30,
+    targetAccuracy: 95,
+    guide: [
+      "The workshop reads your locally stored lesson key statistics and emphasizes your weakest keys.",
+      "A key needs several recorded attempts before HyperSoft treats it as a meaningful weakness.",
+      "If you do not have enough lesson history yet, the workshop falls back to a broad full-keyboard mix.",
+      "Letters, capitals, digits, and punctuation can all become adaptive targets.",
+      "Nothing is uploaded; the adaptive profile remains in this browser's local storage."
+    ]
+  }
+];

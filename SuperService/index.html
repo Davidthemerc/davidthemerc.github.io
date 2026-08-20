@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<!-- SuperService v1.1 modular GitHub Pages build -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SuperService v1.1 — IT Service Desk Career Simulator</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+
+</head>
+<body>
+<a class="skip-link" href="#workspaceMain">Skip to service desk workspace</a>
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><div class="logo" title="SuperService"></div><div><strong>SuperService</strong><small>Service Management</small></div></div>
+    <label class="sr-only" for="globalSearch">Search tickets</label>
+    <input id="globalSearch" class="global-search" type="search" placeholder="Search tickets, users, IDs..." aria-label="Search tickets, users, and IDs">
+    <div class="topmeta" role="status" aria-label="Current shift status">
+      <span class="pill" id="shiftLabel">No active shift</span>
+      <span class="pill" id="clockLabel">08:00</span>
+      <span class="pill" id="ticketCountLabel">0 tickets</span>
+      <span class="pill topscore" id="scoreLabel">Score —</span>
+      <span class="pill conduct-pill" id="conductLabel">Conduct clear</span>
+      <span class="pill conduct-pill" id="performanceLabel">Closures clear</span>
+      <span class="pill conduct-pill" id="supervisorLabel">Good standing</span>
+      <span class="pill conduct-pill" id="worldLabel">Ops normal</span>
+    </div>
+    <button class="iconbtn" id="newShiftBtn" type="button" aria-label="Start a new shift">New Shift</button>
+    <button class="iconbtn" id="settingsBtn" type="button" aria-label="Open settings">Settings</button>
+  </header>
+
+  <main class="workspace" id="workspaceMain" tabindex="-1">
+    <nav class="rail" aria-label="Service desk navigation">
+      <button class="railbtn active" id="railTickets" type="button" title="Tickets" aria-label="Tickets">▤</button>
+      <button class="railbtn" id="railKB" type="button" title="Knowledge Base" aria-label="Knowledge Base">?</button>
+      <button class="railbtn" id="railReports" type="button" title="Shift / Career" aria-label="Career Center">▥</button>
+      <button class="railbtn" id="railPeople" type="button" title="Employee Directory" aria-label="Employee Directory">◫</button>
+      <button class="railbtn" id="railTeams" type="button" title="Specialist Queues" aria-label="Specialist Queues">⇄</button>
+      <button class="railbtn" id="railCatalog" type="button" title="Service Catalog" aria-label="Service Catalog">▦</button>
+      <button class="railbtn" id="railWorld" type="button" title="Operations Board" aria-label="Operations Board">◎</button>
+      <div class="railspacer"></div>
+      <button class="railbtn" id="railHelp" type="button" title="Help" aria-label="Help and keyboard shortcuts">i</button>
+      <button class="railbtn" id="railSettings" type="button" title="Settings" aria-label="Settings">⚙</button>
+    </nav>
+    <section class="panel queue" aria-labelledby="queueHeading">
+      <div class="panelhead"><h2 id="queueHeading">Ticket Queue</h2><span class="small" id="queueSummary" role="status">Idle</span></div>
+      <div class="ticketlist" id="ticketList" role="listbox" aria-label="Ticket queue" tabindex="0"></div>
+    </section>
+
+    <section class="panel center" aria-label="Selected ticket conversation">
+      <div class="ticketdetail" id="ticketDetail" aria-live="polite"></div>
+      <div class="conversation" id="conversation" role="log" aria-live="off" aria-label="Ticket conversation"></div>
+      <div class="sr-only" id="liveAnnouncer" role="status" aria-live="polite" aria-atomic="true"></div>
+      <div class="composer" id="composer">
+        <div class="quickactions" id="quickActions" role="group" aria-label="Suggested ticket actions"></div>
+        <div class="composegrid">
+          <label class="sr-only" for="publicReply">Public reply to requester</label>
+          <textarea id="publicReply" rows="2" placeholder="Public reply — the user will see this" aria-label="Public reply to requester" aria-describedby="composerHint"></textarea>
+          <button class="primary" id="sendReplyBtn" type="button">Send Reply</button>
+        </div>
+        <div class="composehint" id="composerHint"><span>Enter sends · Shift+Enter adds a line</span><span class="keyboardhint">Ctrl/⌘+Enter also sends</span></div>
+      </div>
+    </section>
+
+    <section class="panel right">
+      <div class="tabs" role="tablist" aria-label="Ticket workspace tabs">
+        <button class="tab active" data-tab="tools" id="tab-tools" role="tab" type="button" aria-controls="tabBody" aria-selected="true" tabindex="0">Tools</button>
+        <button class="tab" data-tab="kb" id="tab-kb" role="tab" type="button" aria-controls="tabBody" aria-selected="false" tabindex="-1">KB</button>
+        <button class="tab" data-tab="notes" id="tab-notes" role="tab" type="button" aria-controls="tabBody" aria-selected="false" tabindex="-1">Notes</button>
+        <button class="tab" data-tab="context" id="tab-context" role="tab" type="button" aria-controls="tabBody" aria-selected="false" tabindex="-1">Context</button>
+        <button class="tab" data-tab="request" id="tab-request" role="tab" type="button" aria-controls="tabBody" aria-selected="false" tabindex="-1">Request</button>
+        <button class="tab" data-tab="approvals" id="tab-approvals" role="tab" type="button" aria-controls="tabBody" aria-selected="false" tabindex="-1">Approvals</button>
+        <button class="tab" data-tab="teams" id="tab-teams" role="tab" type="button" aria-controls="tabBody" aria-selected="false" tabindex="-1">Teams</button>
+        <button class="tab" data-tab="world" id="tab-world" role="tab" type="button" aria-controls="tabBody" aria-selected="false" tabindex="-1">World</button>
+        <button class="tab" data-tab="status" id="tab-status" role="tab" type="button" aria-controls="tabBody" aria-selected="false" tabindex="-1">Status</button>
+      </div>
+      <div class="tabbody" id="tabBody" role="tabpanel" aria-live="polite" tabindex="0" aria-labelledby="tab-tools"></div>
+    </section>
+  </main>
+
+  <footer class="footer"><span>Simulation only — no real systems are accessed.</span><span class="keyboardfooter">/ Search · Esc Close dialog</span><span id="saveState" role="status">Local save ready</span></footer>
+</div>
+
+<div class="modalback" id="startModal" role="dialog" aria-modal="true" aria-labelledby="startModalTitle">
+  <div class="modal" tabindex="-1">
+    <div class="mh"><h2 id="startModalTitle">Start a SuperService Shift</h2></div>
+    <div class="mb">
+      <div class="hero"><h3>Welcome to the desk.</h3><p>Work the queue like a real service agent: ask useful questions, use tools, document your work, protect security, and escalate when the issue genuinely belongs elsewhere.</p></div>
+      <div class="formgrid">
+        <div class="field"><label for="difficultySelect">Difficulty</label><select id="difficultySelect"><option>Trainee</option><option selected>Service Agent</option><option>Senior Agent</option><option>Chaos Desk</option></select><div class="small" style="margin-top:5px">Higher difficulties favor more complex tickets, stricter efficiency, and heavier operational pressure.</div></div>
+        <div class="field"><label for="sessionSelect">Session</label><select id="sessionSelect"><option value="5">Quick Shift — 5 tickets</option><option value="10" selected>Standard Shift — 10 tickets</option><option value="20">Full Shift — 20 tickets</option><option value="endless">Endless Desk</option></select></div>
+      </div>
+    </div>
+    <div class="mf"><button class="primary" id="startShiftBtn">Clock In</button></div>
+  </div>
+</div>
+
+<div class="modalback hidden" id="genericModal" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal" id="genericModalCard" tabindex="-1"></div></div>
+<div class="toast hidden" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script src="assets/js/app.js"></script>
+
+</body>
+</html>
