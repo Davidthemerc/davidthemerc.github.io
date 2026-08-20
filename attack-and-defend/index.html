@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<title>Attack and Defend</title>
+<style>
+:root{
+  --felt:#0b563f; --felt2:#083d31; --gold:#f2c35b; --cream:#fff8e9; --ink:#17201d;
+  --red:#c9343a; --blue:#4aa3ff; --panel:rgba(5,27,22,.88); --line:rgba(255,255,255,.12);
+  --cardW:clamp(58px,9.5vw,88px); --cardH:calc(var(--cardW)*1.42);
+}
+*{box-sizing:border-box} html,body{margin:0;min-height:100%;background:#062b22;color:#fff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow-x:hidden}
+body{min-height:100dvh;background:radial-gradient(circle at 50% 35%,#147154 0,#0b563f 35%,#073a2e 72%,#05291f 100%)}
+button{font:inherit}.app{min-height:100dvh;display:flex;flex-direction:column}.topbar{height:58px;display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:linear-gradient(#071e19e8,#071e19c7);border-bottom:1px solid var(--line);gap:10px;position:relative;z-index:20}.brand{font-weight:900;letter-spacing:.5px}.brand span{color:var(--gold)}.power-badge{display:flex;align-items:center;gap:6px;background:#0003;border:1px solid #ffffff24;border-radius:10px;padding:6px 9px;font-size:12px;font-weight:900;white-space:nowrap}.power-badge .power-suit{font-size:20px;line-height:1}.power-badge.red .power-suit{color:#ff6870}.power-badge.black .power-suit{color:#fff}.status-top{font-size:13px;opacity:.9;text-align:center;flex:1}.top-actions{display:flex;gap:8px}.iconbtn,.actionbtn{border:1px solid rgba(255,255,255,.18);background:#ffffff12;color:#fff;border-radius:10px;padding:8px 11px;cursor:pointer}.iconbtn:hover,.actionbtn:hover{background:#ffffff20}.board{position:relative;flex:1;min-height:620px;max-width:1180px;width:100%;margin:0 auto;padding:12px 10px 188px}
+.seat{position:absolute;background:linear-gradient(180deg,rgba(7,29,24,.90),rgba(3,18,15,.88));border:1px solid var(--line);border-radius:14px;padding:8px 10px;box-shadow:0 8px 24px #0005;z-index:4}.seat .name{font-weight:800;font-size:14px}.seat .meta{font-size:12px;opacity:.78;margin-top:2px}.seat.active{outline:2px solid var(--gold);box-shadow:0 0 0 4px #f2c35b22,0 8px 24px #0006}.seat.defender{outline:2px solid #64cbff}.seat.skipped{opacity:.62}.seat.north{top:18px;left:50%;transform:translateX(-50%);min-width:170px;text-align:center}.seat.west{left:10px;top:42%;transform:translateY(-50%);width:142px}.seat.east{right:10px;top:42%;transform:translateY(-50%);width:142px;text-align:right}.seat.south{display:none}
+.cpu-hand{display:flex;justify-content:center;margin-top:7px;height:28px}.mini-back{width:18px;height:26px;border-radius:3px;border:1px solid #e6e6e6;background:repeating-linear-gradient(45deg,#244a7d 0 3px,#e6edf9 3px 6px);margin-left:-10px}.mini-back:first-child{margin-left:0}
+.center{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:min(72vw,650px);min-height:320px;display:flex;align-items:center;justify-content:center;z-index:2}.table-area{width:100%;min-height:290px;border-radius:50%;border:2px solid rgba(255,255,255,.09);box-shadow:inset 0 0 80px #0002;position:relative;display:flex;align-items:center;justify-content:center}.battle{display:flex;gap:16px 12px;flex-wrap:wrap;align-items:center;justify-content:center;max-width:560px;padding:38px 24px}.pair{position:relative;width:calc(var(--cardW) + 26px);height:calc(var(--cardH) + 28px)}
+.card{width:var(--cardW);height:var(--cardH);border-radius:8px;background:linear-gradient(145deg,#fff,#f4efe5);color:#151515;border:1px solid #d5d1c6;box-shadow:0 5px 10px #0004;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:5px;user-select:none;transition:transform .16s ease,box-shadow .16s ease,opacity .16s}.card.red{color:#c52a31}.card .corner{font-weight:900;font-size:clamp(15px,2.5vw,21px);line-height:.9}.card .suit-big{font-size:clamp(25px,4.8vw,42px);align-self:center;margin:auto}.card.defense{position:absolute;left:24px;top:22px;transform:rotate(8deg);z-index:2}.card.attack{position:absolute;left:0;top:0;transform:rotate(-5deg)}.card.selectable{cursor:pointer}.card.selectable:hover{transform:translateY(-7px)}.card.selected{transform:translateY(-14px)!important;box-shadow:0 0 0 3px var(--gold),0 10px 18px #0006}.card.disabled{opacity:.5;filter:saturate(.55)}
+.deckzone{position:absolute;left:6px;bottom:2px;z-index:8;display:flex;align-items:center;gap:8px;padding:7px 9px;background:rgba(4,25,20,.78);border:1px solid rgba(255,255,255,.14);border-radius:11px;box-shadow:0 5px 16px #0004;backdrop-filter:blur(3px);transform:scale(.64);transform-origin:left bottom}.deckzone::before{content:'DRAW PILE';position:absolute;left:9px;top:-16px;font-size:9px;font-weight:900;letter-spacing:.8px;color:#f2c35b;text-shadow:0 1px 2px #000}.deckstack{position:relative;width:68px;height:90px}.back{width:54px;height:78px;border:2px solid #f5f6f8;border-radius:7px;background:repeating-linear-gradient(45deg,#1b477c 0 5px,#dce7f5 5px 10px);box-shadow:0 4px 9px #0005;position:absolute}.trump-under{position:absolute;width:54px;height:78px;left:-34px;top:9px;transform:rotate(90deg);z-index:-1}.deckinfo{font-size:12px;font-weight:800;text-shadow:0 1px 2px #000;min-width:84px;line-height:1.3}.deckinfo b{font-size:18px;color:#fff0a7}.deckmeter{display:inline-block;width:68px;height:6px;margin-top:3px;border-radius:99px;background:#ffffff26;border:1px solid #ffffff55;overflow:hidden;vertical-align:middle}.deckmeter i{display:block;height:100%;background:linear-gradient(90deg,#d9b85f,#fff0a7);border-radius:99px;transition:width .25s ease}.direction{position:absolute;left:14%;bottom:10%;background:#061f1acc;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:12px}.direction b{color:var(--gold)}
+.message{position:absolute;left:50%;top:15%;transform:translateX(-50%);background:#071e19e6;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:9px 14px;font-size:13px;text-align:center;max-width:70%;box-shadow:0 5px 18px #0005;z-index:8;pointer-events:none}.message:empty{display:none}
+.partner-warning{max-width:760px;margin:0 auto 7px;padding:8px 12px;border:1px solid #ffd166;background:linear-gradient(90deg,#6b3d00e8,#4a2900e8);color:#fff4cf;border-radius:10px;text-align:center;font-size:12px;font-weight:800;box-shadow:0 5px 18px #0005}.partner-warning b{color:#ffd166}.playerdock{position:fixed;left:0;right:0;bottom:0;z-index:30;background:linear-gradient(180deg,#071e1900,#071e19 17%,#051713 100%);padding:34px 8px max(8px,env(safe-area-inset-bottom));}.player-head{max-width:1100px;margin:0 auto 4px;display:flex;align-items:center;justify-content:space-between;gap:8px}.player-label{font-weight:900;font-size:13px}.player-hint{font-size:12px;opacity:.78;text-align:right}.hand-wrap{max-width:1100px;margin:auto;display:flex;align-items:flex-end;justify-content:center;position:relative;min-height:122px;padding-left:116px;padding-right:6px}.hand{--hand-overlap:calc(var(--cardW)*-.20);display:flex;justify-content:safe center;align-items:flex-end;padding:18px 14px 4px;width:100%;min-width:0;max-width:100%;overflow-x:auto;overflow-y:visible;scroll-padding-inline:16px;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}.hand.overflowing{justify-content:flex-start}.hand::-webkit-scrollbar{display:none}.hand .card{flex:0 0 auto;margin-left:var(--hand-overlap)}.hand .card:first-child{margin-left:0}.hand .card.selectable:hover,.hand .card.selected{z-index:6}.hand .card .corner:last-child{display:none}.controls{max-width:1100px;margin:5px auto 0;display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.actionbtn{background:#ffffff13;font-weight:800;padding:8px 13px}.actionbtn.primary{background:linear-gradient(#e6b944,#c99222);color:#271b04;border-color:#f8d77c}.actionbtn.danger{background:#7e282dcc}.actionbtn:disabled{opacity:.42;cursor:not-allowed}
+.overlay{position:fixed;inset:0;background:#02120ee8;display:flex;align-items:center;justify-content:center;z-index:100;padding:18px}.modal{width:min(94vw,600px);max-height:90dvh;overflow:auto;background:linear-gradient(160deg,#123f33,#09251e);border:1px solid #ffffff22;border-radius:18px;padding:23px;box-shadow:0 20px 60px #000b}.modal h1{margin:0 0 6px;font-size:34px}.modal h1 span{color:var(--gold)}.modal p{line-height:1.48;color:#e6eee9}.modegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}.mode{border:1px solid #ffffff22;border-radius:12px;padding:12px;background:#ffffff09;cursor:pointer}.mode.selected{outline:2px solid var(--gold);background:#f2c35b15}.mode b{display:block}.mode small{opacity:.76}.bigbtn{width:100%;border:0;border-radius:12px;padding:13px;background:linear-gradient(#f1c85f,#d69e29);color:#2c2108;font-weight:900;font-size:16px;cursor:pointer}.rules{font-size:13px;background:#0002;padding:10px;border-radius:10px;margin-top:14px}.rules summary{cursor:pointer;font-weight:800}.howto{font-size:14px;line-height:1.5}.howto-intro{background:#f2c35b16;border:1px solid #f2c35b44;border-radius:12px;padding:12px 14px;margin:10px 0 14px}.howto-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.howto-card{background:#0002;border:1px solid #ffffff16;border-radius:12px;padding:12px}.howto-card h3{margin:0 0 6px;color:var(--gold);font-size:16px}.howto-card p{margin:0;color:#e6eee9}.howto-card.full{grid-column:1/-1}.howto-example{margin-top:8px;padding:8px 10px;background:#ffffff0a;border-radius:8px;color:#fff}.howto-actions{display:flex;gap:10px;margin-top:16px}.secondarybtn{width:100%;border:1px solid #ffffff2a;border-radius:12px;padding:12px;background:#ffffff0c;color:#fff;font-weight:800;cursor:pointer}.house-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:14px 0}.house-card{background:#0002;border:1px solid #ffffff16;border-radius:12px;padding:12px}.house-card.full{grid-column:1/-1}.house-card label{display:block;font-weight:850;color:var(--gold);font-size:13px;margin-bottom:5px}.house-card small{display:block;opacity:.72;line-height:1.35;margin-top:5px}.house-card select,.house-card input[type=number]{width:100%;border:1px solid #ffffff2b;border-radius:9px;padding:9px 10px;background:#071e19;color:#fff;font:inherit}.house-toggle{display:flex;gap:10px;align-items:flex-start}.house-toggle input{margin-top:3px;accent-color:#e2b548}.house-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.setting-note{font-size:12px;background:#64cbff10;border:1px solid #64cbff33;border-radius:10px;padding:9px 11px;color:#e7f7ff}.house-note{font-size:12px;background:#f2c35b13;border:1px solid #f2c35b38;border-radius:10px;padding:9px 11px;color:#f8efdc}.start-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}.stats-hero{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}.stat-big{background:linear-gradient(160deg,#173f35,#0b2d25);border:1px solid #ffffff18;border-radius:13px;padding:13px;text-align:center}.stat-big b{display:block;font-size:28px;color:var(--gold);line-height:1.05}.stat-big span{font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.6px}.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0}.stats-card{background:#0002;border:1px solid #ffffff16;border-radius:12px;padding:12px}.stats-card h3{margin:0 0 8px;color:var(--gold);font-size:15px}.stat-row{display:flex;justify-content:space-between;gap:16px;padding:5px 0;border-bottom:1px solid #ffffff0d;font-size:13px}.stat-row:last-child{border-bottom:0}.stat-row b{color:#fff}.stats-note{font-size:12px;opacity:.72;line-height:1.4;margin:8px 0}.last-game{background:#f2c35b11;border:1px solid #f2c35b33;border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.45;margin-top:10px}@media(max-width:620px){.howto-grid,.house-grid,.stats-grid{grid-template-columns:1fr}.stats-hero{grid-template-columns:repeat(3,1fr)}.howto-card.full,.house-card.full{grid-column:auto}.house-actions,.start-tools{grid-template-columns:1fr!important}}.endgame-hands{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;align-items:start}
+.reveal-hand{background:#0002;border:1px solid #ffffff18;border-radius:12px;padding:10px;min-width:0;overflow:hidden}
+.reveal-hand h3{margin:0 0 8px;color:var(--gold);font-size:14px}
+.reveal-cards{display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px;min-width:0}
+.reveal-cards .card{--cardW:48px;width:48px;height:70px;min-width:48px;box-sizing:border-box;padding:4px;overflow:hidden;justify-content:flex-start}
+.reveal-cards .card .corner{font-size:13px;line-height:.9;flex:0 0 auto}
+.reveal-cards .card .corner:last-child{display:none}
+.reveal-cards .card .suit-big{font-size:24px;line-height:1;margin:auto;align-self:center;flex:0 0 auto}.end-summary{background:#f2c35b13;border:1px solid #f2c35b38;border-radius:11px;padding:10px 12px;line-height:1.45}.direction-choice{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px auto}
+.battle-banner{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%) scale(.96);z-index:20;pointer-events:none;padding:12px 20px;border-radius:14px;font-weight:1000;letter-spacing:.05em;text-transform:uppercase;text-align:center;box-shadow:0 10px 35px #0009;animation:bannerIn .18s ease forwards}
+.battle-banner.defended{background:#123d67ed;border:2px solid #77c9ff;color:#e7f7ff}.battle-banner.take{background:#6e292ded;border:2px solid #ff8e94;color:#fff0f0}.battle-banner.deckend{background:#73530bed;border:2px solid #ffd96b;color:#fff3be}
+@keyframes bannerIn{from{opacity:0;transform:translate(-50%,-50%) scale(.86)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.seat.uninvolved{opacity:.54;filter:saturate(.65)}.seat.active{outline-width:3px!important;box-shadow:0 0 0 5px #f2c35b29,0 0 30px #f2c35b38,0 8px 24px #0006!important}.seat.defender{outline-width:3px!important;box-shadow:0 0 0 5px #64cbff22,0 0 30px #64cbff2d,0 8px 24px #0006!important}
+.pair{border:1px dashed #ffffff13;border-radius:10px;background:#00000010}.pair.covered{border-color:#64cbff2d;background:#64cbff0a}.pair.uncovered{border-color:#f2c35b35;background:#f2c35b09}
+.card.recommended{box-shadow:0 0 0 3px #7cf0a8,0 0 22px #50e88a99!important;transform:translateY(-10px)!important}
+.hintbtn{border-color:#70e3a0!important;color:#caffdc!important;background:#16472f!important}
+@media(max-width:760px){.actionbtn{min-height:42px;min-width:44px;touch-action:manipulation}.controls{gap:6px}.battle-banner{top:30%;max-width:82vw;font-size:12px;padding:10px 14px}}
+@media(max-width:900px) and (orientation:landscape){.board{min-height:430px;padding-bottom:128px}.playerdock{padding-top:13px}.hand-wrap{min-height:72px;padding-left:82px}.hand{padding-top:8px}.controls{margin-top:2px}.center{top:43%;transform:translate(-50%,-50%) scale(.78);width:64vw}.seat.north{top:6px}.seat.west,.seat.east{top:38%;width:116px}.message{top:9%;font-size:11px}.deckzone{transform:scale(.44)}}
+
+.hide{display:none!important}
+@media(max-width:760px){
+.endgame-hands{gap:8px}
+.reveal-hand{padding:9px}
+.reveal-hand h3{font-size:13px}
+.reveal-cards{gap:5px}
+.reveal-cards .card{width:46px;min-width:46px;height:68px;padding:4px}
+.reveal-cards .card .corner{font-size:12px}
+.reveal-cards .card .suit-big{font-size:23px}
+:root{--cardW:58px}.topbar{height:52px;padding:6px 8px}.brand{font-size:14px}.status-top{font-size:11px}.power-badge{padding:4px 6px;font-size:9px;gap:3px}.power-badge .power-suit{font-size:16px}.power-badge #powerName{display:none}.board{min-height:560px;padding-bottom:184px}.seat.west,.seat.east{width:104px;padding:6px;font-size:11px}.seat .name{font-size:12px}.seat .meta{font-size:10px}.center{width:78vw;top:43%;min-height:250px}.table-area{min-height:245px}.battle{padding:34px 10px;gap:8px 3px}.pair{width:78px;height:112px}.deckzone{left:3px;right:auto;top:auto;bottom:0;gap:6px;padding:6px 7px;transform:scale(.50);transform-origin:left bottom}.deckzone::before{top:-15px}.direction{left:5%;bottom:5%;font-size:10px}.message{top:12%;font-size:11px;max-width:82%}.playerdock{padding-top:25px}.hand-wrap{min-height:94px;padding-left:92px;padding-right:2px}.hand{padding:14px 10px 4px;scroll-padding-inline:12px}.controls{gap:5px}.actionbtn{padding:7px 9px;font-size:12px}.player-head{padding:0 7px}}
+@media(max-height:720px){.board{min-height:500px}.center{top:40%;transform:translate(-50%,-50%) scale(.86)}.seat.north{top:8px}.seat.west,.seat.east{top:36%}.playerdock{padding-top:18px}.hand-wrap{min-height:88px}.hand .card{transform:scale(.88);transform-origin:bottom center;margin-left:-17px}.hand .card.selected{transform:translateY(-10px) scale(.88)!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">ATTACK <span>&amp;</span> DEFEND</div>
+    <div class="status-top" id="roundStatus">New game</div>
+    <div class="power-badge" id="powerBadge" title="Power suit"><span>POWER</span><span class="power-suit" id="powerSuit">?</span><span id="powerName">—</span></div>
+    <div class="top-actions"><button class="iconbtn" id="rulesBtn">Rules</button><button class="iconbtn" id="newBtn">New</button></div>
+  </div>
+  <main class="board">
+    <div class="seat north" id="seat2"><div class="name">CPU 2</div><div class="meta"></div><div class="cpu-hand"></div></div>
+    <div class="seat west" id="seat1"><div class="name">CPU 1</div><div class="meta"></div><div class="cpu-hand"></div></div>
+    <div class="seat east" id="seat3"><div class="name">CPU 3</div><div class="meta"></div><div class="cpu-hand"></div></div>
+    <div class="message" id="message"></div><div class="battle-banner hide" id="battleBanner"></div>
+    <div class="center"><div class="table-area"><div class="battle" id="battle"></div></div></div>
+    <div class="direction" id="direction"></div>
+  </main>
+  <section class="playerdock">
+    <div class="partner-warning hide" id="partnerWarning">⚠ <b>CPU 2 IS YOUR PARTNER.</b> Your team wins if either of you goes out. Attack only if you mean to do it strategically.</div>
+    <div class="player-head"><div class="player-label" id="youLabel">YOU</div><div class="player-hint" id="hint">Choose a card</div></div>
+    <div class="hand-wrap"><div class="deckzone"><div class="deckstack" id="deckstack"></div><div class="deckinfo" id="deckinfo"></div></div><div class="hand" id="hand"></div></div>
+    <div class="controls">
+      <button class="actionbtn primary" id="playBtn">Play Selected</button>
+      <button class="actionbtn" id="sameRankBtn">Select Same Rank</button>
+      <button class="actionbtn" id="doneBtn">Done Adding — For Now</button>
+      <button class="actionbtn danger" id="takeBtn">Take Cards</button><button class="actionbtn hintbtn hide" id="hintMoveBtn">Recommended Move</button><div class="direction-choice hide" id="directionChoice"><button class="actionbtn primary" id="clockwiseBtn">Attack Clockwise ↻</button><button class="actionbtn primary" id="counterBtn">Attack Counter-clockwise ↺</button></div>
+      
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="startOverlay">
+  <div class="modal">
+    <h1>Attack <span>&amp;</span> Defend</h1>
+    <p>A four-player shedding game for one human and three CPU opponents. Defend attacks, add matching ranks, preserve your power cards, and be the first player or team to empty a hand.</p>
+    <div class="modegrid">
+      <div class="mode selected" data-mode="ffa"><b>Free For All</b><small>Every player for themselves. Empty your hand after the draw pile is exhausted to win.</small></div>
+      <div class="mode" data-mode="team"><b>Team Play</b><small>You + CPU 2 versus CPU 1 + CPU 3. Once the draw pile is exhausted, either partner emptying their hand wins for the team.</small></div>
+    </div>
+    <button class="bigbtn" id="startBtn">Deal the Cards</button>
+    <div class="start-tools">
+      <button class="secondarybtn" id="startHowToBtn">How to Play</button>
+      <button class="secondarybtn" id="houseRulesBtn">House Rules</button>
+      <button class="secondarybtn" id="gameSettingsBtn">Game Settings</button>
+      <button class="secondarybtn" id="statsBtn">Stats</button>
+    </div>
+    <div class="house-note" id="houseSummary" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<div class="overlay hide" id="houseOverlay">
+  <div class="modal" style="width:min(96vw,760px)">
+    <h1>House <span>Rules</span></h1>
+    <p>Customize the next deal. These settings are saved on this device and take effect when you start a new game.</p>
+    <div class="house-grid">
+      <div class="house-card">
+        <label for="hrStartingHand">Starting cards</label>
+        <input id="hrStartingHand" type="number" min="2" max="10" step="1">
+        <small>Cards dealt to every player at the beginning.</small>
+      </div>
+      <div class="house-card">
+        <label for="hrTargetHand">Draw up to</label>
+        <input id="hrTargetHand" type="number" min="2" max="10" step="1">
+        <small>After a battle, players replenish toward this hand size while the deck has cards.</small>
+      </div>
+      <div class="house-card">
+        <label>Multiple-card opening attack</label>
+        <div class="house-toggle"><input id="hrMultiOpen" type="checkbox"><span>Allow the opening attacker to throw multiple cards of the same rank at once.</span></div>
+        <small>When off, the battle begins with one card; matching cards can still be added afterward.</small>
+      </div>
+      <div class="house-card">
+        <label for="hrPowerVisibility">Power card visibility</label>
+        <select id="hrPowerVisibility">
+          <option value="card">Show exposed Power card</option>
+          <option value="suit">Show Power suit only</option>
+        </select>
+        <small>The Power suit is always known. This only changes whether the determining card itself is visible.</small>
+      </div>
+    </div>
+    <div class="house-actions" style="grid-template-columns:1fr 1fr 1fr">
+      <button class="secondarybtn" id="cancelHouseBtn">Cancel</button>
+      <button class="secondarybtn" id="resetHouseBtn">Reset Defaults</button>
+      <button class="bigbtn" id="saveHouseBtn">Save House Rules</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hide" id="settingsOverlay">
+  <div class="modal" style="width:min(94vw,680px)">
+    <h1>Game <span>Settings</span></h1>
+    <p>Interface and pacing preferences. These do not change the rules of the card game.</p>
+    <div class="house-grid">
+      <div class="house-card"><label for="gsCpuDifficulty">CPU difficulty</label><select id="gsCpuDifficulty"><option value="casual">Casual</option><option value="normal">Normal</option><option value="strategic">Strategic</option></select><small>Strategic CPUs plan around Power, exposed ranks, endgame pressure, and teammates without seeing hidden hands.</small></div>
+      <div class="house-card"><label for="gsCpuSpeed">CPU pacing</label><select id="gsCpuSpeed"><option value="slow">Slow</option><option value="normal">Normal</option><option value="fast">Fast</option><option value="instant">Very Fast</option></select></div>
+      <div class="house-card"><label>Legal-move highlighting</label><div class="house-toggle"><input id="gsHighlights" type="checkbox"><span>Dim cards that cannot currently be played and emphasize legal choices.</span></div></div><div class="house-card"><label>Recommended move</label><div class="house-toggle"><input id="gsRecommended" type="checkbox"><span>Show an optional button that highlights one suggested legal move. Off by default.</span></div></div>
+      <div class="house-card full"><label>Team-mode partner caution</label><div class="house-toggle"><input id="gsPartnerWarning" type="checkbox"><span>Warn visually when your attack would target CPU 2, your partner.</span></div></div>
+    </div>
+    <div class="setting-note"><b>Difficulty:</b> Casual makes simpler, occasionally wasteful choices; Normal uses solid Power conservation and legal planning; Strategic adds exposed-rank risk, endgame pressure, deeper defense planning, and stronger team cooperation. CPUs never inspect hidden hands.</div>
+    <div class="house-actions"><button class="secondarybtn" id="cancelSettingsBtn">Cancel</button><button class="bigbtn" id="saveSettingsBtn">Save Settings</button></div>
+  </div>
+</div>
+
+<div class="overlay hide" id="endOverlay">
+  <div class="modal" style="width:min(96vw,820px)">
+    <h1 id="endTitle">Game <span>Over</span></h1>
+    <div class="end-summary" id="endSummary"></div>
+    <h2 style="font-size:17px;margin:15px 0 6px">Final hands revealed</h2>
+    <div class="endgame-hands" id="endHands"></div>
+    <div class="howto-actions"><button class="secondarybtn" id="endStatsBtn">View Stats</button><button class="bigbtn" id="endNewBtn">New Game</button></div>
+  </div>
+</div>
+
+<div class="overlay hide" id="statsOverlay">
+  <div class="modal" style="width:min(96vw,760px)">
+    <h1>Player <span>Stats</span></h1>
+    <p>Persistent statistics for completed games on this device. Restarted or abandoned games are not added to lifetime totals.</p>
+    <div id="statsContent"></div>
+    <div class="howto-actions">
+      <button class="secondarybtn" id="resetStatsBtn">Reset Stats</button>
+      <button class="bigbtn" id="closeStatsBtn">Back</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hide" id="rulesOverlay">
+  <div class="modal" style="width:min(96vw,820px)">
+    <h1>How to <span>Play</span></h1>
+    <div class="howto">
+      <div class="howto-intro" id="howtoIntro"><b>The goal is simple:</b> get rid of every card in your hand. House Rules can modify exactly when an empty hand wins. In Team Play, either partner going out wins for the team. You play against three CPU players, and the current House Rules determine the starting and replenishment hand sizes.</div>
+      <div class="howto-grid">
+        <div class="howto-card"><h3>1. Find the Power suit</h3><p>At the start of the game, one card is exposed at the bottom of the draw deck. Its suit becomes the <b>Power suit</b> for the entire game. The current Power suit is also shown clearly at the top of the screen.</p><div class="howto-example">Power cards can beat non-Power attacks regardless of suit. A Power attack can only be beaten by a higher Power card.</div></div>
+        <div class="howto-card"><h3>2. Attacking</h3><p>When it is your turn to attack, select a card and press <b>Play Selected</b>. If you have several cards of the same rank, select one of them and press <b>Select Same Rank</b> to select all legal copies at once. You may start with multiple cards only when they are the same rank and the defender has enough cards to receive them.</p><div class="howto-example">Example: if you hold 7♣, 7♦ and 7♥, you can select one 7, press Select Same Rank, then throw all three together if the defender has enough cards to receive them.</div></div>
+        <div class="howto-card"><h3>3. Joining an attack</h3><p>Once an attack has started, every player may add cards whose <b>rank already appears on the table</b>. That includes ranks introduced by cards the defender used to cover attacks.</p><div class="howto-example">A 7 is attacked and defended with a 10. From then on, additional 7s <i>or</i> 10s may be thrown in, up to the number of cards the defender had available at the start of the battle.</div></div>
+        <div class="howto-card"><h3>4. Defending</h3><p id="howtoDefense">To defend a card, play a <b>higher card of the same suit</b>, or use a Power card. You cannot defend with an unrelated non-Power suit. Defense cards may be freely rearranged or returned to your hand before you finish.</p><div class="howto-example">Against 6♥, 9♥ works. If Spades are Power, any ♠ works. If you first defend with a Jack, Jacks become attackable. If you later replace it with an 8♠ Power card, Jacks <i>and</i> 8s are now attackable for the rest of that battle.</div></div>
+        <div class="howto-card"><h3>5. Taking the table</h3><p id="howtoPickup">If you cannot — or do not want to — defend everything, press <b>Take Cards</b>. You pick up every attack and defense card currently on the table.</p></div>
+        <div class="howto-card"><h3>6. Passing your attack window</h3><p>When you have nothing else you want to add <i>right now</i>, press <b>Done Adding — For Now</b>. This only passes on the ranks currently available. The CPUs then continue resolving the battle. If a defense card introduces a new rank that matches a card in your hand, you get another opportunity to throw it in. The battle ends only when everything is covered and nobody has another legal card to add.</p><div class="howto-example">Example: you attack with a 6 and pass. CPU 3 covers it with a Jack. If you hold a Jack, the game returns to you and lets you add that Jack before the battle can end.</div></div>
+        <div class="howto-card"><h3>7. Replenishing your hand</h3><p id="howtoReplenish">After each battle, players draw back toward the configured hand size while cards remain in the deck. The player who initiated that attack draws first, followed by the others in the established attack direction.</p></div>
+        <div class="howto-card"><h3>8. First player &amp; attack direction</h3><p>A player is randomly selected to attack first. That player chooses clockwise or counter-clockwise play before the first attack. If you are selected, the game will ask you to choose. The chosen direction remains fixed for the entire game.</p></div>
+        <div class="howto-card full"><h3>9. Free For All vs. Team Play</h3><p><b>Free For All:</b> every player is on their own. <b>Team Play:</b> opposite seats are partners, so you and CPU 2 are one team while CPU 1 and CPU 3 are the other. After the draw pile is exhausted, if <b>either member</b> of a team gets rid of all their cards, that entire team wins. You are still technically allowed to attack CPU 2, but the game will visually warn you because attacking your own partner is usually a strategic exception rather than the normal choice.</p></div>
+        <div class="howto-card full"><h3>Quick controls</h3><p><b>Select Same Rank</b> quickly selects every legal card in your hand matching the rank of your current selection, up to the number of cards the defender can receive. <b>Play Selected</b> plays your chosen card(s). <b>Done Adding — For Now</b> passes your current opportunity; a newly introduced defense rank can give you another one. <b>Take Cards</b> gives up the defense and takes the whole battle. When defending, you can select the attack card you want to cover before playing your defense card. Defense cards are not locked: click any defense you have already played to return it to your hand and rearrange it. However, every defense rank you reveal stays eligible for throw-ins for the rest of that battle, even if you take that card back. Once every attack is covered exactly how you want, press <b>Defense Complete</b>.</p></div>
+      </div>
+    </div>
+    <div class="howto-actions"><button class="bigbtn" id="closeRules">Back to Game</button></div>
+  </div>
+</div>
+
+<script>
+(()=>{
+'use strict';
+const SUITS=['♣','♦','♥','♠']; const SUITNAME={'♣':'Clubs','♦':'Diamonds','♥':'Hearts','♠':'Spades'};
+const RANKS=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+const val=r=>RANKS.indexOf(r);
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const ui={hand:$('#hand'),battle:$('#battle'),msg:$('#message'),hint:$('#hint'),status:$('#roundStatus'),direction:$('#direction'),deck:$('#deckstack'),deckinfo:$('#deckinfo'),powerBadge:$('#powerBadge'),powerSuit:$('#powerSuit'),powerName:$('#powerName'),partnerWarning:$('#partnerWarning'),play:$('#playBtn'),sameRank:$('#sameRankBtn'),done:$('#doneBtn'),take:$('#takeBtn'),directionChoice:$('#directionChoice')};
+let G=null, selected=new Set(), selectedTarget=null, recommendedCardId=null, timers=[], gameSerial=0;
+const DEFAULT_RULES={startingHand:5,targetHand:5,multiOpen:true,powerVisibility:'card'};
+const DEFAULT_SETTINGS={cpuDifficulty:'normal',cpuSpeed:'normal',highlights:true,partnerWarning:true,recommendedMove:false};
+const CPU_NAMES=['Alex','Ben','Carlos','Derek','Eli','Frank','Gabriel','Henry','Isaac','Jordan','Kevin','Leo','Marco','Nate','Oscar','Paul','Rafael','Sam','Tony','Victor','Will','Xavier','Zach','Adrian'];
+const PARTNER_NAMES=['Rosie','Esperanza','Denise','Maria','Jimmy','Jose'];
+const DEFAULT_STATS={version:1,games:0,wins:0,losses:0,ffaGames:0,ffaWins:0,teamGames:0,teamWins:0,currentStreak:0,bestStreak:0,attackCards:0,openingAttackCards:0,throwInCards:0,defensePlacements:0,successfulDefenses:0,pickups:0,cardsTaken:0,defenseRearrangements:0,powerCardsPlayed:0,attackPasses:0,battlesInitiated:0,totalDurationSec:0,fastestWinSec:null,largestPickup:0,lastGame:null,difficultyStats:{casual:{games:0,wins:0},normal:{games:0,wins:0},strategic:{games:0,wins:0}},cpuFinishes:{1:0,2:0,3:0}};
+let houseRules=loadHouseRules();
+let gameSettings=loadGameSettings();
+let playerStats=loadStats();
+function clampInt(v,min,max,fallback){v=parseInt(v,10);return Number.isFinite(v)?Math.max(min,Math.min(max,v)):fallback}
+function loadHouseRules(){try{const x=JSON.parse(localStorage.getItem('attackDefendHouseRules')||'{}');return {...DEFAULT_RULES,startingHand:clampInt(x.startingHand,2,10,5),targetHand:clampInt(x.targetHand,2,10,5),multiOpen:x.multiOpen!==false,powerVisibility:x.powerVisibility==='suit'?'suit':'card'}}catch(e){return {...DEFAULT_RULES}}}
+function loadGameSettings(){try{const x=JSON.parse(localStorage.getItem('attackDefendGameSettings')||'{}');return {...DEFAULT_SETTINGS,...x,cpuDifficulty:['casual','normal','strategic'].includes(x.cpuDifficulty)?x.cpuDifficulty:'normal',cpuSpeed:['slow','normal','fast','instant'].includes(x.cpuSpeed)?x.cpuSpeed:'normal',recommendedMove:!!x.recommendedMove}}catch(e){return {...DEFAULT_SETTINGS}}}
+function saveGameSettings(){try{localStorage.setItem('attackDefendGameSettings',JSON.stringify(gameSettings))}catch(e){}}
+function saveHouseRules(){try{localStorage.setItem('attackDefendHouseRules',JSON.stringify(houseRules))}catch(e){console.warn('Could not save House Rules',e)}}
+function loadStats(){try{const x=JSON.parse(localStorage.getItem('attackDefendStats')||'{}');const base={...DEFAULT_STATS,...x,lastGame:x.lastGame||null};base.difficultyStats={...DEFAULT_STATS.difficultyStats,...(x.difficultyStats||{})};base.cpuFinishes={...DEFAULT_STATS.cpuFinishes,...(x.cpuFinishes||{})};return base}catch(e){return JSON.parse(JSON.stringify(DEFAULT_STATS))}}
+function saveStats(){try{localStorage.setItem('attackDefendStats',JSON.stringify(playerStats))}catch(e){console.warn('Could not save stats',e)}}
+function newGameStats(){return {startedAt:Date.now(),attackCards:0,openingAttackCards:0,throwInCards:0,defensePlacements:0,successfulDefenses:0,pickups:0,cardsTaken:0,defenseRearrangements:0,powerCardsPlayed:0,attackPasses:0,battlesInitiated:0,largestPickup:0}}
+function fmtDuration(sec){sec=Math.max(0,Math.round(sec||0));const m=Math.floor(sec/60),s=sec%60;return m?`${m}m ${s}s`:`${s}s`}
+function pct(n,d){return d?`${Math.round(n/d*100)}%`:'—'}
+function commitGameStats(winner){
+ if(!G||!G.gameStats||G.statsCommitted)return;
+ G.statsCommitted=true;
+ const gs=G.gameStats,duration=Math.max(1,Math.round((Date.now()-gs.startedAt)/1000));
+ const won=G.mode==='team'?team(winner)===0:winner===0;
+ playerStats.games++;
+ if(won){playerStats.wins++;playerStats.currentStreak++;playerStats.bestStreak=Math.max(playerStats.bestStreak,playerStats.currentStreak);playerStats.fastestWinSec=playerStats.fastestWinSec==null?duration:Math.min(playerStats.fastestWinSec,duration)}
+ else{playerStats.losses++;playerStats.currentStreak=0}
+ if(G.mode==='team'){playerStats.teamGames++;if(won)playerStats.teamWins++}else{playerStats.ffaGames++;if(won)playerStats.ffaWins++}
+ for(const k of ['attackCards','openingAttackCards','throwInCards','defensePlacements','successfulDefenses','pickups','cardsTaken','defenseRearrangements','powerCardsPlayed','attackPasses','battlesInitiated'])playerStats[k]=(playerStats[k]||0)+(gs[k]||0);
+ playerStats.largestPickup=Math.max(playerStats.largestPickup||0,gs.largestPickup||0);
+ playerStats.totalDurationSec=(playerStats.totalDurationSec||0)+duration;
+ const diff=gameSettings.cpuDifficulty||'normal';
+ playerStats.difficultyStats=playerStats.difficultyStats||JSON.parse(JSON.stringify(DEFAULT_STATS.difficultyStats));
+ playerStats.difficultyStats[diff]=playerStats.difficultyStats[diff]||{games:0,wins:0};
+ playerStats.difficultyStats[diff].games++;if(won)playerStats.difficultyStats[diff].wins++;
+ playerStats.cpuFinishes=playerStats.cpuFinishes||{1:0,2:0,3:0};if(winner>0)playerStats.cpuFinishes[winner]=(playerStats.cpuFinishes[winner]||0)+1;
+ playerStats.lastGame={won,mode:G.mode,difficulty:diff,duration,winner:playerName(winner),attackCards:gs.attackCards,throwInCards:gs.throwInCards,defensePlacements:gs.defensePlacements,pickups:gs.pickups,largestPickup:gs.largestPickup||0,playedAt:Date.now()};
+ saveStats()
+}
+function renderStats(){
+ const st=playerStats,avg=st.games?Math.round(st.totalDurationSec/st.games):0,last=st.lastGame;
+ const ds=st.difficultyStats||DEFAULT_STATS.difficultyStats,cf=st.cpuFinishes||DEFAULT_STATS.cpuFinishes;
+ const danger=[1,2,3].sort((a,b)=>(cf[b]||0)-(cf[a]||0))[0];
+ const dangerText=(cf[danger]||0)?`CPU ${danger} (${cf[danger]} finishes)`:'—';
+ $('#statsContent').innerHTML=`<div class="stats-hero"><div class="stat-big"><b>${st.games}</b><span>Games</span></div><div class="stat-big"><b>${st.wins}-${st.losses}</b><span>Record</span></div><div class="stat-big"><b>${pct(st.wins,st.games)}</b><span>Win rate</span></div></div>
+ <div class="stats-grid">
+ <div class="stats-card"><h3>Results</h3><div class="stat-row"><span>Free For All</span><b>${st.ffaWins}/${st.ffaGames} wins</b></div><div class="stat-row"><span>Team Play</span><b>${st.teamWins}/${st.teamGames} wins</b></div><div class="stat-row"><span>Current win streak</span><b>${st.currentStreak}</b></div><div class="stat-row"><span>Best win streak</span><b>${st.bestStreak}</b></div><div class="stat-row"><span>Average completed game</span><b>${st.games?fmtDuration(avg):'—'}</b></div><div class="stat-row"><span>Fastest win</span><b>${st.fastestWinSec==null?'—':fmtDuration(st.fastestWinSec)}</b></div></div>
+ <div class="stats-card"><h3>By CPU Difficulty</h3>${['casual','normal','strategic'].map(d=>`<div class="stat-row"><span>${d[0].toUpperCase()+d.slice(1)}</span><b>${ds[d]?.wins||0}/${ds[d]?.games||0} wins • ${pct(ds[d]?.wins||0,ds[d]?.games||0)}</b></div>`).join('')}</div>
+ <div class="stats-card"><h3>CPU Finishes</h3><div class="stat-row"><span>CPU 1</span><b>${cf[1]||0}</b></div><div class="stat-row"><span>CPU 2</span><b>${cf[2]||0}</b></div><div class="stat-row"><span>CPU 3</span><b>${cf[3]||0}</b></div><div class="stat-row"><span>Most frequent CPU finisher</span><b>${dangerText}</b></div></div>
+ <div class="stats-card"><h3>Attacking</h3><div class="stat-row"><span>Attack cards played</span><b>${st.attackCards}</b></div><div class="stat-row"><span>Opening attack cards</span><b>${st.openingAttackCards}</b></div><div class="stat-row"><span>Throw-in cards</span><b>${st.throwInCards}</b></div><div class="stat-row"><span>Battles initiated</span><b>${st.battlesInitiated}</b></div><div class="stat-row"><span>Attack windows passed</span><b>${st.attackPasses}</b></div><div class="stat-row"><span>Power cards played</span><b>${st.powerCardsPlayed}</b></div></div>
+ <div class="stats-card"><h3>Defending</h3><div class="stat-row"><span>Defense placements</span><b>${st.defensePlacements}</b></div><div class="stat-row"><span>Successful defenses</span><b>${st.successfulDefenses}</b></div><div class="stat-row"><span>Defense rearrangements</span><b>${st.defenseRearrangements}</b></div><div class="stat-row"><span>Times you took the table</span><b>${st.pickups}</b></div><div class="stat-row"><span>Total cards picked up</span><b>${st.cardsTaken}</b></div><div class="stat-row"><span>Largest single pickup</span><b>${st.largestPickup}</b></div></div>
+ <div class="stats-card"><h3>Rates</h3><div class="stat-row"><span>Successful defenses / decisions</span><b>${pct(st.successfulDefenses,st.successfulDefenses+st.pickups)}</b></div><div class="stat-row"><span>Throw-ins / attack cards</span><b>${pct(st.throwInCards,st.attackCards)}</b></div><div class="stat-row"><span>Power usage / all plays</span><b>${pct(st.powerCardsPlayed,st.attackCards+st.defensePlacements)}</b></div></div>
+ ${last?`<div class="stats-card full"><h3>Last Completed Game</h3><div class="stat-row"><span>Result</span><b>${last.won?'Win':'Loss'} • ${last.mode==='team'?'Team':'FFA'} • ${last.difficulty||'normal'}</b></div><div class="stat-row"><span>Winner</span><b>${last.winner}</b></div><div class="stat-row"><span>Duration</span><b>${fmtDuration(last.duration)}</b></div><div class="stat-row"><span>Your biggest pickup</span><b>${last.largestPickup||0}</b></div></div>`:''}
+ </div>`;
+}
+function showStats(v){if(v){renderStats();$('#statsOverlay').classList.remove('hide')}else $('#statsOverlay').classList.add('hide')}
+function roundAttackLimit(){return G.players[G.defender].hand.length}
+function updateHouseSummary(){const el=$('#houseSummary');if(!el)return;el.textContent=`Current: ${houseRules.startingHand} starting • draw to ${houseRules.targetHand} • ${houseRules.multiOpen?'multi-card':'single-card'} opening`;const ht=$('#howtoReplenish');if(ht)ht.textContent=`After each battle, players with fewer than ${houseRules.targetHand} cards draw back toward ${houseRules.targetHand} while cards remain in the deck. The player who initiated that attack draws first, followed by the others in the established attack direction.`;const hi=$('#howtoIntro');if(hi)hi.innerHTML=`<b>The goal is simple:</b> empty your hand <b>after the draw pile has been exhausted</b>. An empty hand while cards remain is replenished normally. In Team Play, either partner emptying their hand after the deck is exhausted wins for the team. This setup deals <b>${houseRules.startingHand}</b> cards and replenishes toward <b>${houseRules.targetHand}</b>.`;const hd=$('#howtoDefense');if(hd)hd.innerHTML=`To defend a card, play a <b>higher card of the same suit</b>, or use a Power card. Defense cards may be rearranged or returned to your hand before you finish, but <b>every defense rank you expose remains attackable for the rest of that battle</b>.`;const hp=$('#howtoPickup');if(hp)hp.innerHTML=`If you cannot — or do not want to — defend everything, press <b>Take Cards</b>. You pick up every attack and defense card currently on the table and lose the immediate opportunity to attack next.`}
+function populateHouseForm(){$('#hrStartingHand').value=houseRules.startingHand;$('#hrTargetHand').value=houseRules.targetHand;$('#hrMultiOpen').checked=houseRules.multiOpen;$('#hrPowerVisibility').value=houseRules.powerVisibility}
+function readHouseForm(){return {startingHand:clampInt($('#hrStartingHand').value,2,10,5),targetHand:clampInt($('#hrTargetHand').value,2,10,5),multiOpen:$('#hrMultiOpen').checked,powerVisibility:$('#hrPowerVisibility').value==='suit'?'suit':'card'}}
+function populateSettingsForm(){$('#gsCpuDifficulty').value=gameSettings.cpuDifficulty;$('#gsCpuSpeed').value=gameSettings.cpuSpeed;$('#gsHighlights').checked=gameSettings.highlights;$('#gsRecommended').checked=gameSettings.recommendedMove;$('#gsPartnerWarning').checked=gameSettings.partnerWarning}
+function showSettings(v){if(v){populateSettingsForm();$('#settingsOverlay').classList.remove('hide')}else $('#settingsOverlay').classList.add('hide')}
+function readSettingsForm(){return {cpuDifficulty:$('#gsCpuDifficulty').value,cpuSpeed:$('#gsCpuSpeed').value,highlights:$('#gsHighlights').checked,recommendedMove:$('#gsRecommended').checked,partnerWarning:$('#gsPartnerWarning').checked}}
+function showHouse(v){if(v){populateHouseForm();$('#houseOverlay').classList.remove('hide')}else $('#houseOverlay').classList.add('hide')}
+function gameOverlayOpen(){return !!G && !G.gameOver && $$('.overlay').some(o=>!o.classList.contains('hide'))}
+async function sleep(ms){
+  const serial=G?G.serial:null;
+  const speedMult={slow:1.45,normal:1,fast:.55,instant:.18}[gameSettings.cpuSpeed]||1;
+  const thinkMult=gameSettings.cpuDifficulty==='strategic'?.88:1;
+  ms=Math.max(30,Math.round(ms*speedMult*thinkMult));
+  await new Promise(r=>{const t=setTimeout(r,ms);timers.push(t)});
+  while(serial!=null && G && G.serial===serial && gameOverlayOpen())await new Promise(r=>setTimeout(r,90));
+  // If a new deal replaced this one while an old CPU action was waiting, retire the old async chain.
+  if(serial!=null && (!G||G.serial!==serial))await new Promise(()=>{});
+}
+function cardObj(rank,suit){return {rank,suit,id:rank+suit+'-'+Math.random().toString(36).slice(2,8)}}
+function freshDeck(){let d=[];for(const s of SUITS)for(const r of RANKS)d.push(cardObj(r,s));for(let i=d.length-1;i;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]]}return d}
+function next(p,n=1){return (p+n*G.dir+40)%4}
+function team(p){return p%2}
+function sortHand(h){h.sort((a,b)=>(a.suit===G.power?1:0)-(b.suit===G.power?1:0)||SUITS.indexOf(a.suit)-SUITS.indexOf(b.suit)||val(a.rank)-val(b.rank))}
+function legalDefense(def,atk){if(def.suit===G.power){if(atk.suit===G.power)return val(def.rank)>val(atk.rank);return true}return def.suit===atk.suit && val(def.rank)>val(atk.rank)}
+function tableRanks(){
+  // Attack ranks currently on the table plus every defense rank exposed at any point this battle.
+  // Once a defender reveals a rank, taking/rearranging that card does not make the rank safe again.
+  const ranks=new Set(G.table.map(p=>p.attack.rank));
+  for(const r of (G.revealedDefenseRanks||[]))ranks.add(r)
+  return ranks;
+}
+function revealDefenseRank(card){if(!G.revealedDefenseRanks)G.revealedDefenseRanks=new Set();G.revealedDefenseRanks.add(card.rank)}
+function rankSignature(){return [...tableRanks()].sort((a,b)=>val(a)-val(b)).join('|')}
+function refreshHumanPass(){if(G.humanPassed && G.humanPassSignature!==rankSignature()){G.humanPassed=false;G.humanPassSignature=null}}
+function uncovered(){return G.table.filter(p=>!p.defense)}
+function attackCount(){return G.table.length}
+function maxAttack(){return G.roundMax}
+function canThrowCard(c){if(G.table.length===0)return true; return tableRanks().has(c.rank)}
+function canPlayerThrow(p){return G.players[p].hand.some(canThrowCard)&&attackCount()<maxAttack()}
+function cardCost(c){return val(c.rank)+(c.suit===G.power?16:0)}
+function defenseCost(c,atk){return cardCost(c)+(c.suit===G.power&&atk.suit!==G.power?8:0)}
+function cpuBestDefense(hand,atk){return hand.filter(c=>legalDefense(c,atk)).sort((a,b)=>defenseCost(a,atk)-defenseCost(b,atk))[0]||null}
+function cpuBestDefenseForTable(hand,atk,remainingAttacks){
+  let options=hand.filter(c=>legalDefense(c,atk)).sort((a,b)=>defenseCost(a,atk)-defenseCost(b,atk));
+  if(gameSettings.cpuDifficulty==='casual'&&options.length>1&&Math.random()<.28)return options[Math.floor(Math.random()*Math.min(3,options.length))];
+  for(const c of options){
+    const rest=hand.filter(x=>x.id!==c.id);
+    if(canCoverAll(rest,remainingAttacks))return c;
+  }
+  return options[0]||null;
+}
+// Can this set of cards cover all attacks? Small hands make a backtracking match inexpensive,
+// and it prevents a flexible Power card from being spent where a suit card is needed elsewhere.
+function canCoverAll(hand, attacks){
+  if(attacks.length===0)return true;
+  if(hand.length<attacks.length)return false;
+  const ordered=[...attacks].sort((a,b)=>{
+    const ca=hand.filter(c=>legalDefense(c,a)).length, cb=hand.filter(c=>legalDefense(c,b)).length;
+    return ca-cb || (a.suit===G.power?-1:0)-(b.suit===G.power?-1:0);
+  });
+  function match(i,used){
+    if(i>=ordered.length)return true;
+    const atk=ordered[i];
+    const options=hand.map((c,idx)=>({c,idx})).filter(x=>!used.has(x.idx)&&legalDefense(x.c,atk))
+      .sort((x,y)=>defenseCost(x.c,atk)-defenseCost(y.c,atk));
+    for(const o of options){used.add(o.idx);if(match(i+1,used))return true;used.delete(o.idx)}
+    return false;
+  }
+  return match(0,new Set());
+}
+function bestHumanDefenseTarget(card){
+  const candidates=G.table.map((p,i)=>({p,i})).filter(x=>!x.p.defense&&legalDefense(card,x.p.attack));
+  if(!candidates.length)return -1;
+  // Prefer a placement that leaves a complete legal defense available for the remaining attacks.
+  const remainingHand=G.players[0].hand.filter(c=>c.id!==card.id);
+  for(const x of candidates){
+    const remainingAttacks=G.table.filter((p,i)=>i!==x.i&&!p.defense).map(p=>p.attack);
+    if(canCoverAll(remainingHand,remainingAttacks))return x.i;
+  }
+  // If a full defense is impossible anyway, prefer the most constrained attack: Power first, then fewest alternatives.
+  candidates.sort((a,b)=>{
+    const ap=a.p.attack.suit===G.power?0:1, bp=b.p.attack.suit===G.power?0:1;
+    const ac=G.players[0].hand.filter(c=>legalDefense(c,a.p.attack)).length;
+    const bc=G.players[0].hand.filter(c=>legalDefense(c,b.p.attack)).length;
+    return ap-bp || ac-bc;
+  });
+  return candidates[0].i;
+}
+function undoHumanDefense(i){
+  if(!G||G.phase!=='human_defend')return;
+  const pair=G.table[i];if(!pair||!pair.defense)return;
+  G.players[0].hand.push(pair.defense);pair.defense=null;sortHand(G.players[0].hand);if(G.gameStats)G.gameStats.defenseRearrangements++;
+  // Intentionally do NOT remove its rank from revealedDefenseRanks: once shown, it stays vulnerable this battle.
+  selected.clear();selectedTarget=i;message(`Defense returned to your hand. Choose how to cover ${pair.attack.rank}${pair.attack.suit}.`);render();
+}
+function cpuAttackChoice(p, opening=false){
+  const h=G.players[p].hand;
+  const choices=h.filter(c=>opening||canThrowCard(c));
+  if(!choices.length)return [];
+  const deckEmpty=G.deck.length===0,diff=gameSettings.cpuDifficulty||'normal';
+  const defenderCount=G.defender==null?99:G.players[G.defender].hand.length;
+  const defenderNearOut=deckEmpty&&defenderCount<=2;
+
+  if(opening){
+    const groups={};for(const c of choices)(groups[c.rank]??=[]).push(c);
+    let plans=Object.values(groups).map(group=>{
+      const sorted=[...group].sort((a,b)=>cardCost(a)-cardCost(b));
+      const nonPower=sorted.filter(c=>c.suit!==G.power);
+      const wholeHand=group.length===h.length&&group.length<=maxAttack();
+      let cards=wholeHand&&deckEmpty?sorted:(nonPower.length?nonPower:[sorted[0]]);
+      cards=cards.slice(0,Math.min(cards.length,maxAttack()));
+      const powerCount=cards.filter(c=>c.suit===G.power).length;
+      let score=cards.reduce((n,c)=>n+val(c.rank),0)/Math.max(1,cards.length);
+      score+=powerCount*(diff==='strategic'?(deckEmpty?14:42):diff==='normal'?(deckEmpty?8:30):8);
+      score-=Math.min(3,cards.length-1)*(defenderNearOut&&diff==='strategic'?4:1.3);
+      if(diff==='casual')score+=(Math.random()-.5)*10;
+      return {cards,score};
+    }).filter(x=>x.cards.length);
+    plans.sort((a,b)=>a.score-b.score||b.cards.length-a.cards.length);
+    if(diff==='casual'&&plans.length>1&&Math.random()<.32)return plans[Math.floor(Math.random()*Math.min(3,plans.length))].cards;
+    return plans[0]?.cards||[];
+  }
+
+  let nonPower=choices.filter(c=>c.suit!==G.power).sort((a,b)=>cardCost(a)-cardCost(b));
+  let powers=choices.filter(c=>c.suit===G.power).sort((a,b)=>cardCost(a)-cardCost(b));
+  if(diff==='casual'){
+    if(Math.random()<.18)return [];
+    const pool=nonPower.length&&Math.random()<.72?nonPower:choices;
+    return [pool[Math.floor(Math.random()*pool.length)]];
+  }
+  if(nonPower.length)return [nonPower[0]];
+  if(deckEmpty&&h.length<=2)return [powers[0]||choices[0]];
+  if(diff==='strategic'&&defenderNearOut){
+    const low=powers.filter(c=>val(c.rank)<=5);
+    if(low.length)return [low[0]];
+  }
+  return [];
+}
+function removeCards(p,cards){let ids=new Set(cards.map(c=>c.id));G.players[p].hand=G.players[p].hand.filter(c=>!ids.has(c.id))}
+function message(t){ui.msg.textContent=t}
+function showBanner(text,type='defended',ms=0){const el=$('#battleBanner');if(!el)return;el.textContent=text;el.className=`battle-banner ${type}`;if(ms)setTimeout(()=>{if(el.textContent===text)el.classList.add('hide')},ms)}
+function hideBanner(){const el=$('#battleBanner');if(el)el.classList.add('hide')}
+function playerName(p){if(p===0)return 'You';return G?.players?.[p]?.name||`CPU ${p}`}
+function assignCpuNames(mode){
+  const pool=[...CPU_NAMES].sort(()=>Math.random()-.5);
+  const names={1:pool.shift(),2:null,3:pool.shift()};
+  names[2]=mode==='team'?PARTNER_NAMES[Math.floor(Math.random()*PARTNER_NAMES.length)]:pool.shift();
+  return names;
+}
+function showEndGame(winner){
+  let text=G.mode==='team'?(team(winner)===0?'Your team wins!':`${playerName(1)} + ${playerName(3)} win!`):(winner===0?'You win!':`${playerName(winner)} wins!`);
+  $('#endTitle').innerHTML=`${text.replace('!','')} <span>!</span>`;
+  const duration=Math.max(1,Math.round((Date.now()-G.gameStats.startedAt)/1000));
+  const counts=G.players.map((pl,i)=>`${playerName(i)}: ${pl.hand.length}`).join(' • ');
+  $('#endSummary').innerHTML=`<b>${G.mode==='team'?'Team Play':'Free For All'}</b> • ${gameSettings.cpuDifficulty[0].toUpperCase()+gameSettings.cpuDifficulty.slice(1)} CPU • ${fmtDuration(duration)}<br><b>Winner:</b> ${playerName(winner)} • Power: ${G.power} ${SUITNAME[G.power]} • Draw pile: ${G.deck.length}<br>${counts}<br><b>Your biggest pickup:</b> ${G.gameStats.largestPickup||0}<br><span style="opacity:.78">The final table is preserved behind this screen. All remaining hands are revealed below.</span>`;
+  const box=$('#endHands');box.innerHTML='';
+  for(let i=0;i<4;i++){const d=document.createElement('div');d.className='reveal-hand';d.innerHTML=`<h3>${playerName(i)} — ${G.players[i].hand.length} card${G.players[i].hand.length===1?'':'s'}</h3>`;const cards=document.createElement('div');cards.className='reveal-cards';G.players[i].hand.forEach(c=>cards.appendChild(createCardEl(c)));if(!G.players[i].hand.length)cards.innerHTML='<span style="opacity:.7">No cards remaining</span>';d.appendChild(cards);box.appendChild(d)}
+  $('#endOverlay').classList.remove('hide');
+}
+function declareWinner(p){
+  if(!G||G.gameOver)return true;
+  G.gameOver=true;G.phase='over';selected.clear();selectedTarget=null;commitGameStats(p);
+  let text;if(G.mode==='team'){let winTeam=team(p);text=winTeam===0?'Your team wins!':`${playerName(1)} + ${playerName(3)} win!`}else{text=p===0?'You win!':`${playerName(p)} wins!`}
+  message(text);render();setTimeout(()=>showEndGame(p),250);return true;
+}
+function checkImmediateAttackWin(p){return G.deck.length===0&&G.players[p].hand.length===0?declareWinner(p):false}
+function createCardEl(c,{defense=false,attack=false,selectable=false}={}){let d=document.createElement('div');d.className='card '+((c.suit==='♥'||c.suit==='♦')?'red ':'')+(defense?'defense ':'')+(attack?'attack ':'')+(selectable?'selectable ':'');d.dataset.id=c.id;d.innerHTML=`<div class="corner">${c.rank}<br>${c.suit}</div><div class="suit-big">${c.suit}</div><div class="corner" style="transform:rotate(180deg)">${c.rank}<br>${c.suit}</div>`;return d}
+function render(){if(!G)return;
+  // seats
+  for(let p=1;p<4;p++){let seat=$('#seat'+p),pl=G.players[p],inBattle=G.table.length>0;seat.classList.toggle('active',p===G.attacker);seat.classList.toggle('defender',p===G.defender);seat.classList.toggle('skipped',pl.skipAttack);seat.classList.toggle('last-card',pl.hand.length===1&&G.deck.length===0);seat.classList.toggle('uninvolved',inBattle&&p!==G.attacker&&p!==G.defender);seat.querySelector('.name').textContent=`${playerName(p)}${G.mode==='team'&&p===2?' • PARTNER':''}`;let pressure=pl.hand.length===1?(G.deck.length?' • 1 CARD — WILL DRAW':' • LAST CARD!'):'';seat.querySelector('.meta').textContent=`${pl.hand.length} card${pl.hand.length===1?'':'s'}${pressure}${pl.skipAttack?' • attack skipped':''}`;let mh=seat.querySelector('.cpu-hand');mh.innerHTML='';for(let i=0;i<Math.min(pl.hand.length,12);i++){let b=document.createElement('span');b.className='mini-back';mh.appendChild(b)}}
+  const yl=$('#youLabel');const myOne=G.players[0].hand.length===1;yl.textContent=`YOU • ${G.players[0].hand.length} Card${G.players[0].hand.length===1?'':'s'}${myOne?(G.deck.length?' • 1 CARD — WILL DRAW':' • LAST CARD!'):''}`;yl.style.color=myOne?'#ffe39a':'';
+  // battle
+  ui.battle.innerHTML='';G.table.forEach((pair,i)=>{let wrap=document.createElement('div');wrap.className=`pair ${pair.defense?'covered':'uncovered'}`;let a=createCardEl(pair.attack,{attack:true});wrap.appendChild(a);if(pair.defense){let d=createCardEl(pair.defense,{defense:true});if(G.phase==='human_defend'&&G.defender===0){d.classList.add('selectable');d.title='Click to return this defense card to your hand';d.onclick=()=>undoHumanDefense(i)}wrap.appendChild(d)}else if(G.phase==='human_defend'){/* Incoming attack cards are display-only. Defense cards are assigned automatically from the player's selected hand card. */}ui.battle.appendChild(wrap)});
+  // deck/trump — show a progressively thinner stack as the draw pile empties
+  ui.deck.innerHTML='';
+  if(G.deck.length){
+    if(G.rules.powerVisibility==='card'){let tr=createCardEl(G.trump,{attack:false});tr.classList.add('trump-under');ui.deck.appendChild(tr);}
+    const maxVisible=9;
+    const layers=Math.max(1,Math.ceil((G.deck.length/Math.max(1,G.initialDeckSize))*maxVisible));
+    for(let i=0;i<layers;i++){
+      let b=document.createElement('div');b.className='back';
+      const spread=layers>1?Math.min(10,2+layers*.75):0;
+      const off=layers>1?(i/(layers-1))*spread:0;
+      b.style.left=`${off}px`;b.style.top=`${-off}px`;b.style.zIndex=10+i;
+      ui.deck.appendChild(b);
+    }
+  }
+  const pct=Math.max(0,Math.min(100,Math.round((G.deck.length/Math.max(1,G.initialDeckSize))*100)));
+  ui.deckinfo.innerHTML=`<b>${G.deck.length}</b> card${G.deck.length===1?'':'s'} left<br><span class="deckmeter"><i style="width:${pct}%"></i></span><br>Power: ${G.power} ${SUITNAME[G.power]}`;
+  ui.powerSuit.textContent=G.power; ui.powerName.textContent=SUITNAME[G.power]; ui.powerBadge.classList.toggle('red',G.power==='♥'||G.power==='♦'); ui.powerBadge.classList.toggle('black',G.power==='♣'||G.power==='♠');
+  ui.direction.innerHTML=G.dir?`Attack direction: <b>${G.dir===1?'Clockwise ↻':'Counter-clockwise ↺'}</b>`:`Attack direction: <b>Not chosen yet</b>`;
+  // human hand — preserve horizontal position and compact progressively before scrolling.
+  const previousScroll=ui.hand.scrollLeft;
+  ui.hand.innerHTML='';G.players[0].hand.forEach(c=>{let el=createCardEl(c,{selectable:humanCanSelect(c)});if(selected.has(c.id))el.classList.add('selected');if(recommendedCardId===c.id)el.classList.add('recommended');if(gameSettings.highlights&&!humanCanSelect(c))el.classList.add('disabled');el.onclick=()=>humanCardClick(c);ui.hand.appendChild(el)});
+  requestAnimationFrame(()=>{
+    const cards=[...ui.hand.children],n=cards.length;
+    if(n>1){
+      const w=cards[0].getBoundingClientRect().width||58;
+      const available=Math.max(1,ui.hand.clientWidth-28);
+      const defaultOverlap=w*.20;
+      const needed=Math.max(0,(n*w-available)/(n-1));
+      const overlap=Math.min(w*.58,Math.max(defaultOverlap,needed));
+      ui.hand.style.setProperty('--hand-overlap',`${-overlap}px`);
+    }else ui.hand.style.setProperty('--hand-overlap','0px');
+    ui.hand.classList.toggle('overflowing',ui.hand.scrollWidth>ui.hand.clientWidth+2);
+    ui.hand.scrollLeft=Math.min(previousScroll,Math.max(0,ui.hand.scrollWidth-ui.hand.clientWidth));
+  });
+  $('#youLabel').textContent=`YOU • ${G.players[0].hand.length} Card${G.players[0].hand.length===1?'':'s'}${G.players[0].hand.length===1&&G.deck.length===0?' • LAST CARD!':''}`;
+  ui.play.disabled=!canHumanPlay(); ui.play.textContent=selected.size?`Play Selected (${selected.size})`:'Play Selected'; ui.sameRank.disabled=!canSelectSameRank();
+  const defenseReady=G.phase==='human_defend' && uncovered().length===0;
+  ui.done.disabled=!((G.phase==='human_attack' && G.table.length>0)||defenseReady);
+  ui.done.textContent=defenseReady?'Defense Complete':'Done Adding — For Now';
+  ui.take.disabled=G.phase!=='human_defend';
+  const attackingPartner=gameSettings.partnerWarning && G.mode==='team' && G.phase==='human_attack' && G.defender===2;
+  if(attackingPartner)ui.partnerWarning.innerHTML=`⚠ <b>${playerName(2).toUpperCase()} IS YOUR PARTNER.</b> Your team wins if either of you goes out after the draw pile is empty. Attack only if you mean to do it strategically.`;
+  ui.partnerWarning.classList.toggle('hide',!attackingPartner);
+  const hintBtn=$('#hintMoveBtn'),humanPhase=G.phase==='human_attack'||G.phase==='human_defend';
+  hintBtn.classList.toggle('hide',!(gameSettings.recommendedMove&&humanPhase));
+  hintBtn.disabled=!humanPhase;
+  ui.directionChoice.classList.toggle('hide',G.phase!=='choose_direction');
+  
+  if(G.phase==='human_attack')ui.hint.textContent=G.table.length?'Your attack window: add any rank already on the table, or pass for now':'Select one or more cards of the same rank';
+  else if(G.phase==='human_defend')ui.hint.textContent=uncovered().length?'Select a legal card from your hand to defend. Played defense cards can be returned and rearranged.':'All attacks are covered. Rearrange any defense cards if needed, then press Defense Complete.';
+  else ui.hint.textContent='CPU players are acting';
+  ui.status.textContent=G.gameOver?'Game over':(!G.dir?`${playerName(G.attacker)} goes first • choosing direction`:`${playerName(G.attacker)} attacks ${playerName(G.defender)}`);
+}
+function humanCanSelect(c){if(!G||G.gameOver)return false;
+ if(G.phase==='human_attack'){
+   // A selected card must always remain clickable so the player can deselect it,
+   // even when the attack is currently at its card limit.
+   if(selected.has(c.id))return true;
+   if(G.table.length===0){
+     if(!selected.size)return true;
+     let first=G.players[0].hand.find(x=>selected.has(x.id));
+     return !!first && c.rank===first.rank && (G.rules.multiOpen||selected.size===0);
+   }
+   return canThrowCard(c) && attackCount()+selected.size<maxAttack();
+ }
+ if(G.phase==='human_defend'){
+   // Once an incoming attack is targeted, only cards that can legally cover
+   // that particular attack are highlighted/clickable.
+   if(selected.has(c.id))return true;
+   if(selectedTarget!=null){
+     const pair=G.table[selectedTarget];
+     return !!pair && !pair.defense && legalDefense(c,pair.attack);
+   }
+   return uncovered().some(p=>legalDefense(c,p.attack));
+ }
+ return false
+}
+function humanCardClick(c){
+ if(!G||G.gameOver)return;
+ recommendedCardId=null;
+ // Deselect first, without re-validating the card. This makes selection reversible
+ // even if selecting it caused the remaining attack capacity to become zero.
+ if(selected.has(c.id)){selected.delete(c.id);render();return}
+ if(!humanCanSelect(c))return;
+ if(G.phase==='human_defend')selected.clear();
+ selected.add(c.id);
+ render()
+}
+
+function recommendedMoveCard(){
+ if(!G||G.gameOver)return null;
+ const hand=G.players[0].hand;
+ if(G.phase==='human_attack'){
+   let legal=hand.filter(c=>humanCanSelect(c));
+   if(!legal.length)return null;
+   // If the player has already begun selecting an opening rank, stay with that rank.
+   if(selected.size){const first=hand.find(c=>selected.has(c.id));if(first)legal=legal.filter(c=>c.rank===first.rank)}
+   legal.sort((a,b)=>(a.suit===G.power?1:0)-(b.suit===G.power?1:0)||val(a.rank)-val(b.rank));
+   return legal[0]||null;
+ }
+ if(G.phase==='human_defend'){
+   const attacks=uncovered().map(p=>p.attack);
+   let candidates=hand.filter(c=>attacks.some(a=>legalDefense(c,a)));
+   if(!candidates.length)return null;
+   candidates.sort((a,b)=>{
+     const ap=a.suit===G.power?1:0,bp=b.suit===G.power?1:0;
+     return ap-bp||val(a.rank)-val(b.rank);
+   });
+   // Prefer a card that still leaves a path to covering the remaining attacks.
+   for(const c of candidates){
+     const target=bestHumanDefenseTarget(c);
+     if(target>=0)return c;
+   }
+   return candidates[0];
+ }
+ return null;
+}
+function showRecommendedMove(){
+ recommendedCardId=null;
+ const c=recommendedMoveCard();
+ if(!c){message('No legal move is available to recommend right now.');render();return}
+ recommendedCardId=c.id;
+ const action=G.phase==='human_defend'?'defense':'attack';
+ message(`Suggested ${action}: ${c.rank}${c.suit}. This is only a hint; nothing has been selected or played.`);
+ render();
+}
+function canSelectSameRank(){
+ if(!G||G.gameOver||G.phase!=='human_attack'||!selected.size)return false;
+ let first=G.players[0].hand.find(c=>selected.has(c.id)); if(!first)return false;
+ let room=maxAttack()-attackCount()-selected.size; if(room<=0)return false;
+ return G.players[0].hand.some(c=>!selected.has(c.id)&&c.rank===first.rank&&humanCanSelect(c));
+}
+function selectSameRank(){
+ if(!G||G.phase!=='human_attack'||!selected.size)return;
+ let first=G.players[0].hand.find(c=>selected.has(c.id)); if(!first)return;
+ let room=maxAttack()-attackCount()-selected.size;
+ if(room<=0)return;
+ for(const c of G.players[0].hand){
+   if(room<=0)break;
+   if(!selected.has(c.id)&&c.rank===first.rank&&humanCanSelect(c)){selected.add(c.id);room--;}
+ }
+ render();
+}
+function canHumanPlay(){if(!G||!selected.size)return false;if(G.phase==='human_attack'){
+ let cs=G.players[0].hand.filter(c=>selected.has(c.id));if(G.table.length===0)return cs.every(c=>c.rank===cs[0].rank)&&cs.length<=maxAttack()&&(G.rules.multiOpen||cs.length===1);return cs.every(canThrowCard)&&attackCount()+cs.length<=maxAttack();
+ }if(G.phase==='human_defend'){let c=G.players[0].hand.find(c=>selected.has(c.id));if(!c)return false;if(selectedTarget!=null){let pair=G.table[selectedTarget];return pair&&!pair.defense&&legalDefense(c,pair.attack)}return uncovered().some(p=>legalDefense(c,p.attack))}return false}
+async function humanPlay(){if(!canHumanPlay())return;recommendedCardId=null;let cards=G.players[0].hand.filter(c=>selected.has(c.id));
+ selected.clear();
+ if(G.phase==='human_attack'){const opening=G.table.length===0;if(G.gameStats){G.gameStats.attackCards+=cards.length;if(opening){G.gameStats.openingAttackCards+=cards.length;G.gameStats.battlesInitiated++}else G.gameStats.throwInCards+=cards.length;G.gameStats.powerCardsPlayed+=cards.filter(c=>c.suit===G.power).length}removeCards(0,cards);for(const c of cards)G.table.push({attack:c,defense:null,by:0});message(`You attack with ${cards.map(c=>c.rank+c.suit).join(', ')}.`);render();if(checkImmediateAttackWin(0))return;G.humanAttackContext=null;await sleep(420);await defenseLoop();}
+ else {let c=cards[0], idx=selectedTarget;if(idx==null||!G.table[idx]||G.table[idx].defense||!legalDefense(c,G.table[idx].attack))idx=bestHumanDefenseTarget(c);if(idx<0)return;if(G.gameStats){G.gameStats.defensePlacements++;if(c.suit===G.power)G.gameStats.powerCardsPlayed++}removeCards(0,[c]);G.table[idx].defense=c;revealDefenseRank(c);message(true?`You defend ${G.table[idx].attack.rank}${G.table[idx].attack.suit} with ${c.rank}${c.suit}. ${c.rank}s are now exposed for the rest of this battle, even if you rearrange this card.`:`You defend ${G.table[idx].attack.rank}${G.table[idx].attack.suit} with ${c.rank}${c.suit}.`);selectedTarget=null;render();await sleep(200);if(uncovered().length)await defenseLoop();else{G.phase='human_defend';render();}}}
+function chooseDirection(dir){if(!G||G.phase!=='choose_direction')return;G.dir=dir;G.defender=next(G.attacker);G.roundInitiator=G.attacker;G.roundMax=roundAttackLimit();message(`You choose ${dir===1?'clockwise':'counter-clockwise'} play and will attack ${playerName(G.defender)}.`);render();setTimeout(startRound,250)}
+function init(mode){timers.forEach(clearTimeout);timers=[];selected.clear();selectedTarget=null;recommendedCardId=null;const rules={...houseRules};let deck=freshDeck(),players=[0,1,2,3].map(i=>({hand:[],skipAttack:false,name:i===0?'You':null}));for(let r=0;r<rules.startingHand;r++)for(let p=0;p<4;p++)players[p].hand.push(deck.shift());let trump=deck.shift();deck.push(trump);const cpuNames=assignCpuNames(mode);for(let p=1;p<4;p++)players[p].name=cpuNames[p];G={serial:++gameSerial,players,deck,trump,power:trump.suit,mode,rules,initialDeckSize:deck.length,dir:0,attacker:Math.floor(Math.random()*4),defender:null,table:[],roundMax:0,phase:'cpu',gameOver:false,roundInitiator:0,humanAttackContext:null,partnerAttackConfirmed:false,humanPassed:false,humanPassSignature:null,revealedDefenseRanks:new Set(),gameStats:newGameStats(),statsCommitted:false,deckEmptyAnnounced:false};for(let p=0;p<4;p++)sortHand(players[p].hand);G.roundInitiator=G.attacker;message(`${playerName(G.attacker)} was randomly selected to attack first and will choose the direction.`);render();setTimeout(startRound,500)}
+async function startRound(){if(G.gameOver)return;selected.clear();selectedTarget=null;recommendedCardId=null;hideBanner();G.table=[];
+  if(!G.dir){
+    if(G.attacker===0){G.phase='choose_direction';G.defender=null;message('You were selected to go first. Choose the attack direction.');render();return}
+    G.dir=Math.random()<.5?1:-1;message(`${playerName(G.attacker)} chooses ${G.dir===1?'clockwise':'counter-clockwise'} play.`);render();await sleep(450);
+  }G.revealedDefenseRanks=new Set();G.humanPassed=false;G.humanPassSignature=null;G.humanAttackContext=null;G.partnerAttackConfirmed=false;
+ // skip attack capability if needed
+ while(G.players[G.attacker].skipAttack){G.players[G.attacker].skipAttack=false;G.attacker=next(G.attacker);}
+ G.defender=next(G.attacker);G.roundInitiator=G.attacker;G.roundMax=roundAttackLimit();render();
+ if(G.attacker===0){G.phase='human_attack';message(`Your turn: attack ${playerName(G.defender)}.`);render()}else{G.phase='cpu';message(`${playerName(G.attacker)} is attacking ${playerName(G.defender)}.`);render();await sleep(600);let cs=cpuAttackChoice(G.attacker,true);if(!G.rules.multiOpen&&cs.length>1)cs=cs.slice(0,1);if(!cs.length){await advanceAfterEmptyAttack();return}removeCards(G.attacker,cs);for(const c of cs)G.table.push({attack:c,defense:null,by:G.attacker});message(`${playerName(G.attacker)} attacks.`);render();if(checkImmediateAttackWin(G.attacker))return;await sleep(400);if(await offerHumanThrowInBeforeDefense())return;await defenseLoop()}}
+async function offerHumanThrowInBeforeDefense(){
+ refreshHumanPass();
+ if(G.gameOver||G.defender===0||G.humanPassed||attackCount()>=maxAttack()||!canPlayerThrow(0))return false;
+ G.phase='human_attack';G.humanAttackContext='predefense';
+ message(`You may join the attack on ${playerName(G.defender)} now: add a matching rank, or pass this attack window for now.`);
+ render();return true;
+}
+async function defenseLoop(){if(G.gameOver)return;if(attackCount()>maxAttack()){console.error('attack cap exceeded');}
+ // defend all uncovered sequentially
+ while(uncovered().length){if(G.defender===0){G.phase='human_defend';selectedTarget=null;message('Defend the uncovered attack card(s), or take the table.');render();return}
+   G.phase='cpu';let currentUncovered=uncovered(),pair=currentUncovered[0],pl=G.players[G.defender];
+   // If the CPU already knows it cannot cover the attacks currently on the table, do not waste cards
+   // (or expose extra ranks) on a defense that must end in a pickup anyway.
+   if(!canCoverAll(pl.hand,currentUncovered.map(x=>x.attack))){message(G.defender===0?'You cannot complete the defense and take the table.':`${playerName(G.defender)} cannot complete the defense and takes the table.`);render();await sleep(650);await takeRound(G.defender);return}
+   let d=cpuBestDefenseForTable(pl.hand,pair.attack,currentUncovered.slice(1).map(x=>x.attack));
+   if(!d){message(G.defender===0?'You cannot defend and take the table.':`${playerName(G.defender)} cannot defend and takes the table.`);render();await sleep(650);await takeRound(G.defender);return}
+   removeCards(G.defender,[d]);pair.defense=d;revealDefenseRank(d);message(true?`${playerName(G.defender)} defends. ${d.rank}s are now exposed for the rest of this battle.`:`${playerName(G.defender)} defends.`);render();await sleep(430);
+ }
+ // All covered. Give throw-in opportunities, beginning with attacker and then all non-defenders around table.
+ await throwInCycle();
+}
+async function throwInCycle(){refreshHumanPass();if(attackCount()>=maxAttack()){await successfulDefense();return}
+ // When a CPU is defending, always stop for the human first if the human has a legal throw-in.
+ // This prevents CPU players from chaining throw-ins and ending the battle before the player gets a chance to participate.
+ if(G.defender!==0 && !G.humanPassed && canPlayerThrow(0)){
+   G.phase='human_attack';G.humanAttackContext='postdefense';G.attacker=G.roundInitiator;
+   message('A rank on the table matches your hand. Add a card, or pass this attack window for now.');
+   render();return;
+ }
+ let order=[];for(let k=0;k<4;k++){let p=(G.roundInitiator+k*G.dir+40)%4;if(p!==G.defender&&p!==0)order.push(p)}
+ for(const p of order){if(attackCount()>=maxAttack())break;if(!canPlayerThrow(p))continue;
+   // CPU logic: teammates in team mode avoid hurting partner; FFA generally throw low cards
+   if(G.mode==='team' && team(p)===team(G.defender))continue;
+   let cs=cpuAttackChoice(p,false);if(cs.length){removeCards(p,cs);G.table.push({attack:cs[0],defense:null,by:p});message(`${playerName(p)} throws in ${cs[0].rank}${cs[0].suit}.`);render();if(checkImmediateAttackWin(p))return;await sleep(350);if(await offerHumanThrowInBeforeDefense())return;await defenseLoop();return}
+ }
+ await successfulDefense();
+}
+async function humanDone(){
+ recommendedCardId=null;
+ if(G.phase==='human_defend'&&uncovered().length===0){selected.clear();selectedTarget=null;G.phase='cpu';message('Defense complete. Other players may still throw in if they have a legal rank.');render();await sleep(250);await throwInCycle();return}
+ if(G.phase!=='human_attack'||G.table.length===0)return;selected.clear();if(G.gameStats)G.gameStats.attackPasses++;G.humanPassed=true;G.humanPassSignature=rankSignature();let ctx=G.humanAttackContext;G.humanAttackContext=null;G.phase='cpu';message('You pass this attack window. The battle continues, and you may be invited back if a defense introduces a new usable rank.');render();await sleep(250);if(ctx==='predefense'||ctx===null)await defenseLoop();else await throwInCycle()}
+async function successfulDefense(){
+ if(G.defender===0&&G.gameStats)G.gameStats.successfulDefenses++;
+ G.phase='cpu';message(`${playerName(G.defender)} defended successfully.`);showBanner('DEFENDED','defended');render();await sleep(520);hideBanner();
+ let oldDef=G.defender;await replenish();if(checkWinner())return;
+ G.attacker=oldDef;G.table=[];render();await sleep(240);await startRound()
+}
+async function takeRound(p){
+ G.phase='cpu';let cards=[];for(const pair of G.table){cards.push(pair.attack);if(pair.defense)cards.push(pair.defense)}
+ if(p===0&&G.gameStats){G.gameStats.pickups++;G.gameStats.cardsTaken+=cards.length;G.gameStats.largestPickup=Math.max(G.gameStats.largestPickup,cards.length)}
+ showBanner(`${playerName(p)} ${p===0?'TAKE':'TAKES'} ${cards.length} CARD${cards.length===1?'':'S'}`,'take');render();await sleep(520);hideBanner();
+ G.players[p].hand.push(...cards);sortHand(G.players[p].hand);G.table=[];await replenish();if(checkWinner())return;
+ G.attacker=next(p);render();await sleep(300);await startRound()
+}
+async function humanTake(){if(G.phase!=='human_defend')return;recommendedCardId=null;selected.clear();selectedTarget=null;message('You take the entire table and will lose your next attack.');render();await sleep(300);await takeRound(0)}
+async function replenish(){
+ const before=G.deck.length;
+ let order=[];for(let k=0;k<4;k++)order.push((G.roundInitiator+k*G.dir+40)%4);
+ for(const p of order){while(G.players[p].hand.length<G.rules.targetHand&&G.deck.length){G.players[p].hand.push(G.deck.shift())}sortHand(G.players[p].hand)}
+ render();
+ if(before>0&&G.deck.length===0&&!G.deckEmptyAnnounced){
+   G.deckEmptyAnnounced=true;
+   message('The draw pile is empty. From now on, emptying your hand wins.');
+   showBanner('DRAW PILE EMPTY — EMPTY HAND NOW WINS','deckend',1500);
+   await sleep(700);
+ }else await sleep(220);
+}
+function checkWinner(){if(G.deck.length>0)return false;let outs=G.players.map((p,i)=>p.hand.length===0?i:null).filter(x=>x!==null);if(!outs.length)return false;return declareWinner(outs[0])}
+async function advanceAfterEmptyAttack(){await replenish();G.attacker=next(G.attacker);await startRound()}
+function showRules(v){$('#rulesOverlay').classList.toggle('hide',!v)}
+ui.play.onclick=humanPlay;$('#hintMoveBtn').onclick=showRecommendedMove;$('#clockwiseBtn').onclick=()=>chooseDirection(1);$('#counterBtn').onclick=()=>chooseDirection(-1);ui.sameRank.onclick=selectSameRank;ui.done.onclick=humanDone;ui.take.onclick=humanTake;$('#rulesBtn').onclick=()=>showRules(true);$('#startHowToBtn').onclick=()=>showRules(true);$('#closeRules').onclick=()=>showRules(false);$('#newBtn').onclick=()=>{$('#startOverlay').classList.remove('hide');updateHouseSummary()};$('#houseRulesBtn').onclick=()=>showHouse(true);$('#gameSettingsBtn').onclick=()=>showSettings(true);$('#cancelSettingsBtn').onclick=()=>showSettings(false);$('#saveSettingsBtn').onclick=()=>{gameSettings=readSettingsForm();saveGameSettings();showSettings(false);if(G)render()};$('#statsBtn').onclick=()=>showStats(true);$('#closeStatsBtn').onclick=()=>showStats(false);$('#resetStatsBtn').onclick=()=>{if(confirm('Reset all Attack and Defend statistics on this device?')){playerStats=JSON.parse(JSON.stringify(DEFAULT_STATS));saveStats();renderStats()}};$('#cancelHouseBtn').onclick=()=>showHouse(false);$('#resetHouseBtn').onclick=()=>{houseRules={...DEFAULT_RULES};populateHouseForm()};$('#saveHouseBtn').onclick=()=>{houseRules=readHouseForm();saveHouseRules();updateHouseSummary();showHouse(false)};
+$('#endStatsBtn').onclick=()=>{showStats(true)};$('#endNewBtn').onclick=()=>{$('#endOverlay').classList.add('hide');$('#startOverlay').classList.remove('hide');updateHouseSummary()};let mode='ffa';$$('.mode').forEach(x=>x.onclick=()=>{$$('.mode').forEach(y=>y.classList.remove('selected'));x.classList.add('selected');mode=x.dataset.mode});$('#startBtn').onclick=()=>{$('#startOverlay').classList.add('hide');init(mode)};let resizeTimer=null;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(G)render()},120)});updateHouseSummary();
+})();
+</script>
+</body>
+</html>
