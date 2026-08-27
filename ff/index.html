@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#102a56">
+<title>2026 Unmanaged Care League Draft Tracker</title>
+<style>
+:root{--navy:#102a56;--blue:#204f91;--blue2:#2f65ad;--ink:#182230;--muted:#627086;--bg:#f4f7fb;--card:#fff;--line:#d8e0eb;--soft:#eaf0f9;--mine:#dff7e7;--mineInk:#17613a;--other:#eef1f5;--otherInk:#6b7280;--target:#fff3bf;--targetInk:#8a5b00;--avoid:#ffe1e1;--avoidInk:#922b2b;--sleeper:#eee7ff;--sleeperInk:#6840a2;--shadow:0 8px 24px rgba(16,42,86,.09)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}button,input,select,textarea{font:inherit}button{cursor:pointer}
+header{position:sticky;top:0;z-index:30;background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;box-shadow:0 3px 12px rgba(0,0,0,.18)}
+.header-inner{max-width:1450px;margin:auto;padding:12px 16px 10px}.title-row{display:flex;gap:12px;align-items:center;justify-content:space-between}h1{font-size:clamp(20px,3vw,30px);line-height:1.1;margin:0}.subtitle{opacity:.83;font-size:12px;margin-top:3px}.header-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:9px;padding:8px 11px;font-weight:650}.btn:hover{filter:brightness(.98)}.btn.primary{background:var(--blue2);color:#fff;border-color:transparent}.btn.ghost{background:rgba(255,255,255,.12);color:white;border-color:rgba(255,255,255,.3)}.btn.danger{color:#a82424}
+main{max-width:1450px;margin:auto;padding:14px 16px 32px}.summary{display:grid;grid-template-columns:repeat(6,minmax(110px,1fr));gap:10px;margin-bottom:12px}.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;box-shadow:var(--shadow)}.stat .n{font-size:22px;font-weight:800}.stat .l{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:12px;box-shadow:var(--shadow);margin-bottom:12px}.controls{display:grid;grid-template-columns:minmax(190px,2fr) repeat(4,minmax(115px,1fr));gap:9px;align-items:end}.field label{display:block;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 4px}.field input,.field select{width:100%;border:1px solid var(--line);border-radius:9px;background:#fff;padding:9px 10px;color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;align-items:center}.chip{border:1px solid var(--line);border-radius:999px;background:#fff;padding:6px 10px;font-size:12px;font-weight:700}.chip.active{background:var(--navy);color:white;border-color:var(--navy)}.legend{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;color:var(--muted);font-size:12px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}.dot.mine{background:#49a96b}.dot.other{background:#9aa3af}.dot.target{background:#e0ad1e}.dot.avoid{background:#dc6868}.dot.sleeper{background:#8a6bd1}
+.table-wrap{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:auto;box-shadow:var(--shadow)}table{border-collapse:separate;border-spacing:0;width:100%;min-width:1030px}thead th{position:sticky;top:0;background:var(--navy);color:#fff;text-align:left;padding:10px 8px;font-size:12px;z-index:2;white-space:nowrap}tbody td{border-bottom:1px solid var(--line);padding:7px 8px;vertical-align:middle}tbody tr:nth-child(even){background:#f8fafe}tbody tr:hover{background:#eef4fb}tbody tr.mine{background:var(--mine)}tbody tr.other{background:var(--other);color:var(--otherInk)}tbody tr.other .player-name{text-decoration:line-through}tbody tr.target:not(.mine):not(.other){box-shadow:inset 5px 0 0 #e0ad1e}tbody tr.avoid:not(.mine):not(.other){box-shadow:inset 5px 0 0 #dc6868}tbody tr.sleeper:not(.mine):not(.other){box-shadow:inset 5px 0 0 #8a6bd1}.rank{font-weight:850;color:var(--navy);text-align:center}.player-name{font-weight:800;font-size:15px}.meta{font-size:11px;color:var(--muted)}.posbadge{display:inline-block;min-width:42px;text-align:center;padding:4px 6px;border-radius:7px;background:var(--soft);font-weight:850}.actions{display:flex;gap:5px;flex-wrap:wrap}.action{border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 7px;font-size:11px;font-weight:750}.action.mine.on{background:var(--mine);border-color:#91d5a7;color:var(--mineInk)}.action.other.on{background:#d9dee5;border-color:#aeb6c2;color:#4b5563}.action.target.on{background:var(--target);border-color:#e1bd4b;color:var(--targetInk)}.action.avoid.on{background:var(--avoid);border-color:#e59090;color:var(--avoidInk)}.action.sleeper.on{background:var(--sleeper);border-color:#b4a0e8;color:var(--sleeperInk)}.note-btn{min-width:30px}
+.compact-edit{border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px 7px;font-size:11px;font-weight:800;margin-left:6px}
+.compact-status{font-size:10px;font-weight:900;letter-spacing:.04em;padding:3px 6px;border-radius:999px}
+.compact-status.mine{background:var(--mine);color:var(--mineInk);border:1px solid #91d5a7}
+.compact-status.other{background:#d9dee5;color:#4b5563;border:1px solid #aeb6c2}
+
+.drafted-compact td{padding:3px 8px!important;height:28px;border-bottom:1px solid var(--line)}.drafted-line{display:flex;align-items:center;gap:7px;min-height:21px;font-size:12px;line-height:1.15}.drafted-line .player-name{font-size:12px}.drafted-line .compact-meta{font-size:11px;color:var(--muted);white-space:nowrap}.drafted-line .compact-status{margin-left:auto;border:0;background:transparent;padding:2px 5px;font-size:10px;font-weight:850;color:inherit}.drafted-line .compact-status:hover{text-decoration:underline}.card.drafted-compact{padding:5px 9px;margin-bottom:5px;box-shadow:none}.card.drafted-compact .drafted-line{min-height:24px}.card.drafted-compact.other .player-name{text-decoration:line-through}.mobile-list{display:none}.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px;margin-bottom:9px;box-shadow:var(--shadow)}.card.mine{background:var(--mine)}.card.other{background:var(--other);color:var(--otherInk)}.card.target:not(.mine):not(.other){border-left:5px solid #e0ad1e}.card.avoid:not(.mine):not(.other){border-left:5px solid #dc6868}.card.sleeper:not(.mine):not(.other){border-left:5px solid #8a6bd1}.card-top{display:grid;grid-template-columns:48px 1fr auto;gap:9px;align-items:center}.card .rankbox{background:var(--navy);color:#fff;border-radius:9px;padding:7px 4px;text-align:center;font-weight:850}.card .projected{text-align:right;font-weight:800}.card .projected span{display:block;color:var(--muted);font-weight:600;font-size:10px}.card-info{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;color:var(--muted);font-size:12px}.card-actions{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}.card-actions .action{padding:8px 4px}.note{margin-top:8px;width:100%;resize:vertical;min-height:54px;border:1px solid var(--line);border-radius:8px;padding:8px}.empty{padding:35px;text-align:center;color:var(--muted)}.footer-tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;margin-top:12px}.small{font-size:12px;color:var(--muted)}
+dialog{border:0;border-radius:14px;box-shadow:0 18px 65px rgba(0,0,0,.25);max-width:520px;width:calc(100% - 30px);padding:0}dialog::backdrop{background:rgba(8,19,38,.55)}.dialog-inner{padding:18px}.dialog-inner h2{margin:0 0 8px}.dialog-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}.roster-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.roster-col{border:1px solid var(--line);border-radius:9px;padding:8px}.roster-col b{display:block;color:var(--navy)}.toast{position:fixed;right:16px;bottom:16px;z-index:99;background:#111d31;color:white;padding:10px 13px;border-radius:10px;box-shadow:var(--shadow);opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:950px){.summary{grid-template-columns:repeat(3,1fr)}.controls{grid-template-columns:1fr 1fr 1fr}.controls .search{grid-column:1/-1}}
+@media(max-width:720px){.header-inner{padding:10px}.title-row{align-items:flex-start}.header-actions .btn{padding:6px 8px;font-size:11px}main{padding:10px 10px 26px}.summary{grid-template-columns:repeat(3,1fr);gap:6px}.stat{padding:8px}.stat .n{font-size:18px}.stat .l{font-size:9px}.panel{padding:9px}.controls{grid-template-columns:1fr 1fr}.controls .search{grid-column:1/-1}.chips{gap:5px}.chip{padding:6px 8px}.legend{width:100%;margin-left:0}.table-wrap{display:none}.mobile-list{display:block}.card-actions{grid-template-columns:repeat(3,1fr)}.roster-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:430px){h1{font-size:19px}.subtitle{font-size:10px}.header-actions{gap:4px}.header-actions .btn{font-size:11px;padding:6px 7px}.summary{grid-template-columns:repeat(3,1fr)}}
+@media print{header,.panel,.actions,.card-actions,.footer-tools,.toast{display:none!important}body{background:white}main{max-width:none;padding:0}.table-wrap{display:block!important;box-shadow:none;border:0}table{min-width:0;font-size:10px}thead th{position:static;background:#ddd;color:#000}tbody td{padding:3px}}
+
+.tabs{display:flex;gap:6px;margin-top:10px}
+.tab-btn{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.10);color:#fff;border-radius:9px;padding:7px 12px;font-weight:800}
+.tab-btn.active{background:#fff;color:var(--navy);border-color:#fff}
+.tab-view{display:none}.tab-view.active{display:block}
+.team-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+.team-title{margin:0;font-size:23px;color:var(--navy)}.team-sub{color:var(--muted);font-size:12px;margin-top:2px}
+.team-metrics{display:flex;gap:8px;flex-wrap:wrap}.team-metric{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 11px;min-width:105px}.team-metric b{font-size:18px;display:block}.team-metric span{font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:.04em}
+.lineup-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:12px}
+.lineup-box{background:#fff;border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);overflow:hidden}
+.lineup-box h2{font-size:14px;margin:0;padding:11px 12px;background:var(--navy);color:#fff;letter-spacing:.04em}
+.slot-row{display:grid;grid-template-columns:68px minmax(0,1fr) 60px 52px;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);min-height:48px}
+.slot-row:last-child{border-bottom:0}.slot-pos{display:inline-flex;align-items:center;justify-content:center;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:6px 5px;font-size:11px;font-weight:900;color:var(--navy)}
+.slot-player{min-width:0}.slot-player strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}.slot-player small{color:var(--muted)}
+.slot-proj{text-align:right;font-weight:900}.slot-proj small{display:block;color:var(--muted);font-size:9px;font-weight:700}.slot-bye{text-align:center;font-size:11px;color:var(--muted)}
+.slot-empty{color:#9aa3af;font-style:italic;font-size:12px}.bench-row{grid-template-columns:48px minmax(0,1fr) 60px 52px}
+.extra-box{margin-top:12px}.extra-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:10px}
+.extra-player{border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-size:12px;background:#fafbfd}
+.team-note{background:#fff8db;border:1px solid #ead48a;color:#735700;border-radius:10px;padding:9px 11px;font-size:12px;margin-bottom:12px}
+@media(max-width:850px){.lineup-grid{grid-template-columns:1fr}.extra-list{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.tabs{width:100%}.tab-btn{flex:1;padding:7px 6px}.team-metrics{width:100%}.team-metric{flex:1;min-width:0}.slot-row{grid-template-columns:56px minmax(0,1fr) 48px 38px;padding:7px 8px;gap:6px}.bench-row{grid-template-columns:40px minmax(0,1fr) 48px 38px}.slot-player strong{font-size:12px}.extra-list{grid-template-columns:1fr}}
+
+
+.sleeper-bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:8px;padding:7px 8px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);border-radius:10px}
+.sleeper-label{font-size:11px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:#dce8fb}
+.sleeper-select{border:1px solid rgba(255,255,255,.35);background:#fff;color:var(--ink);border-radius:8px;padding:6px 8px;min-width:170px;font-weight:750}
+.sync-btn{border:1px solid rgba(255,255,255,.32);background:rgba(255,255,255,.12);color:#fff;border-radius:8px;padding:6px 9px;font-size:11px;font-weight:850}
+.sync-status{display:flex;align-items:center;gap:5px;font-size:11px;color:#e6efff;min-width:0}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#aeb7c5;flex:0 0 auto}
+.sync-dot.ok{background:#6dd28d}.sync-dot.busy{background:#f5c85f}.sync-dot.err{background:#ff8a8a}
+.sync-detail{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:440px}
+.sleeper-badge{display:inline-block;margin-left:5px;padding:2px 5px;border-radius:999px;background:#dfe8f7;color:#345483;font-size:9px;font-weight:850;vertical-align:middle}
+@media(max-width:720px){
+  .sleeper-bar{gap:6px}.sleeper-label{width:100%}.sleeper-select{min-width:0;flex:1}.sync-status{width:100%}.sync-detail{max-width:calc(100vw - 55px)}
+}
+
+
+.sleeper-teamname{display:none;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding:5px 8px;border-radius:8px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);
+  color:#fff;font-size:11px;font-weight:850}
+.sleeper-teamname.show{display:inline-block}
+@media(max-width:720px){.sleeper-teamname{max-width:100%;width:100%}}
+
+</style>
+</head>
+<body>
+<header><div class="header-inner">
+<div class="title-row"><div><h1>2026 Unmanaged Care League Draft Tracker</h1><div class="subtitle">Custom rankings • 300 players • progress saves automatically on this device • v1.2.1</div></div>
+<div class="header-actions"><button class="btn ghost" id="exportBtn">⬇ Export</button><button class="btn ghost" id="importBtn">⬆ Import</button></div></div>
+<div class="tabs"><button class="tab-btn active" data-tab="draft">Draft Board</button><button class="tab-btn" data-tab="team">My Team</button></div>
+<div class="sleeper-bar">
+  <span class="sleeper-label">Sleeper Team</span>
+  <select id="sleeperUser" class="sleeper-select" aria-label="Select Sleeper team"><option value="">Select your team…</option><option value="dmercado">dmercado</option><option value="ChiefJuannataco">ChiefJuannataco</option><option value="MadRagin">MadRagin</option><option value="karebear">karebear</option><option value="fograw">fograw</option><option value="mgarcia49">mgarcia49</option><option value="brianbrianrbianbrina">brianbrianrbianbrina</option><option value="Ntsuas">Ntsuas</option></select>
+  <span id="sleeperTeamName" class="sleeper-teamname" title="Sleeper team name"></span>
+  <button id="syncNowBtn" class="sync-btn" type="button">↻ Sync now</button>
+  <span class="sync-status"><i id="syncDot" class="sync-dot"></i><span id="syncText" class="sync-detail">Select your team to connect Sleeper.</span></span>
+</div>
+</div></header>
+<main><section id="draftView" class="tab-view active">
+<section class="summary"><div class="stat"><div class="n" id="availableCount">300</div><div class="l">Available</div></div><div class="stat"><div class="n" id="mineCount">0</div><div class="l">My Team</div></div><div class="stat"><div class="n" id="otherCount">0</div><div class="l">Taken</div></div><div class="stat"><div class="n" id="targetCount">0</div><div class="l">Targets</div></div><div class="stat"><div class="n" id="sleeperCount">0</div><div class="l">Sleepers</div></div><div class="stat"><div class="n" id="pickCount">0</div><div class="l">Drafted</div></div></section>
+<section class="panel"><div class="controls"><div class="field search"><label>Search</label><input id="search" placeholder="Player, team, rank…" autocomplete="off"></div><div class="field"><label>Position</label><select id="posFilter"><option value="">All positions</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></div><div class="field"><label>Status</label><select id="statusFilter"><option value="">All statuses</option><option value="available">Available</option><option value="mine">MINE</option><option value="other">TAKEN</option><option value="target">Targets</option><option value="sleeper">Sleepers</option><option value="avoid">Avoid</option></select></div><div class="field"><label>Bye week</label><select id="byeFilter"><option value="">All byes</option></select></div><div class="field"><label>Sort</label><select id="sortBy"><option value="rank">Overall rank</option><option value="proj">Projected points</option><option value="posrank">Position rank</option><option value="name">Player name</option></select></div></div>
+<div class="chips"><button class="chip active" data-quick="all">All</button><button class="chip" data-quick="available">Available only</button><button class="chip" data-quick="target">⭐ Targets</button><button class="chip" data-quick="sleeper">💎 Sleepers</button><button class="chip" data-quick="mine">MINE only</button><button class="chip" id="topAvailable">Best available</button><div class="legend"><span><i class="dot mine"></i>MINE</span><span><i class="dot other"></i>TAKEN</span><span><i class="dot target"></i>Target</span><span><i class="dot sleeper"></i>Sleeper</span><span><i class="dot avoid"></i>Avoid</span></div></div></section>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>TM</th><th>Pos</th><th>Bye</th><th>Proj</th><th>Draft / Tags</th><th>Note</th></tr></thead><tbody id="tbody"></tbody></table></div>
+<div class="mobile-list" id="mobileList"></div>
+<div class="footer-tools"><div class="small" id="shownCount"></div><div><button class="btn" id="undoBtn">↶ Undo last change</button> <button class="btn danger" id="resetDraftBtn">Reset draft</button> <button class="btn danger" id="resetAllBtn">Reset everything</button></div></div>
+</section>
+<section id="teamView" class="tab-view">
+  <div class="team-head">
+    <div><h2 class="team-title">My Team</h2><div class="team-sub">Automatically projected from players marked MINE.</div></div>
+    <div class="team-metrics">
+      <div class="team-metric"><b id="teamPlayers">0</b><span>Players</span></div>
+      <div class="team-metric"><b id="starterPts">0</b><span>Starter Proj.</span></div>
+      <div class="team-metric"><b id="benchPts">0</b><span>Bench Proj.</span></div>
+    </div>
+  </div>
+  <div class="team-note">Projected lineup uses your league setup: 1 QB, 2 RB, 3 WR, 1 W/R/T flex, 1 K, 1 DEF, and 6 bench. The uploaded rankings contain QB/RB/WR/TE only, so K and DEF remain empty here.</div>
+  <div class="lineup-grid">
+    <div class="lineup-box"><h2>PROJECTED STARTERS</h2><div id="starterLineup"></div></div>
+    <div class="lineup-box"><h2>PROJECTED BENCH</h2><div id="benchLineup"></div></div>
+  </div>
+  <div class="lineup-box extra-box" id="extraBox" style="display:none"><h2>UNSLOTTED / EXTRA DRAFTED PLAYERS</h2><div class="extra-list" id="extraPlayers"></div></div>
+</section>
+</main>
+<input type="file" id="importFile" accept="application/json" hidden>
+
+<dialog id="noteDialog"><div class="dialog-inner"><h2 id="noteTitle">Player note</h2><textarea class="note" id="noteText" placeholder="Round target, backup plan, concerns, stacking idea…"></textarea><div class="dialog-actions"><button class="btn" id="noteCancel">Cancel</button><button class="btn primary" id="noteSave">Save note</button></div></div></dialog>
+<div class="toast" id="toast"></div>
+<script>
+const PLAYERS=[{"rank": 1, "name": "Ja'Marr Chase", "team": "CIN", "pos": "WR", "posRank": "WR1", "bye": 6, "proj": 368}, {"rank": 2, "name": "Jaxon Smith-Njigba", "team": "SEA", "pos": "WR", "posRank": "WR2", "bye": 11, "proj": 355}, {"rank": 3, "name": "Puka Nacua", "team": "LAR", "pos": "WR", "posRank": "WR3", "bye": 11, "proj": 350}, {"rank": 4, "name": "Amon-Ra St. Brown", "team": "DET", "pos": "WR", "posRank": "WR4", "bye": 6, "proj": 321}, {"rank": 5, "name": "Jahmyr Gibbs", "team": "DET", "pos": "RB", "posRank": "RB1", "bye": 6, "proj": 363}, {"rank": 6, "name": "Christian McCaffrey", "team": "SF", "pos": "RB", "posRank": "RB2", "bye": 8, "proj": 349}, {"rank": 7, "name": "Bijan Robinson", "team": "ATL", "pos": "RB", "posRank": "RB3", "bye": 11, "proj": 348}, {"rank": 8, "name": "Brock Bowers", "team": "LV", "pos": "TE", "posRank": "TE1", "bye": 13, "proj": 357}, {"rank": 9, "name": "George Pickens", "team": "DAL", "pos": "WR", "posRank": "WR5", "bye": 14, "proj": 278}, {"rank": 10, "name": "Josh Allen", "team": "BUF", "pos": "QB", "posRank": "QB1", "bye": 7, "proj": 426}, {"rank": 11, "name": "Justin Jefferson", "team": "MIN", "pos": "WR", "posRank": "WR6", "bye": 6, "proj": 272}, {"rank": 12, "name": "CeeDee Lamb", "team": "DAL", "pos": "WR", "posRank": "WR7", "bye": 14, "proj": 272}, {"rank": 13, "name": "Drake London", "team": "ATL", "pos": "WR", "posRank": "WR8", "bye": 11, "proj": 263}, {"rank": 14, "name": "A.J. Brown", "team": "NE", "pos": "WR", "posRank": "WR9", "bye": 11, "proj": 261}, {"rank": 15, "name": "Nico Collins", "team": "HOU", "pos": "WR", "posRank": "WR10", "bye": 8, "proj": 257}, {"rank": 16, "name": "Jonathan Taylor", "team": "IND", "pos": "RB", "posRank": "RB4", "bye": 13, "proj": 308}, {"rank": 17, "name": "Trey McBride", "team": "ARI", "pos": "TE", "posRank": "TE2", "bye": 14, "proj": 330}, {"rank": 18, "name": "Chris Olave", "team": "NO", "pos": "WR", "posRank": "WR11", "bye": 8, "proj": 253}, {"rank": 19, "name": "Tee Higgins", "team": "CIN", "pos": "WR", "posRank": "WR12", "bye": 6, "proj": 250}, {"rank": 20, "name": "Zay Flowers", "team": "BAL", "pos": "WR", "posRank": "WR13", "bye": 13, "proj": 246}, {"rank": 21, "name": "Jaylen Waddle", "team": "DEN", "pos": "WR", "posRank": "WR14", "bye": 10, "proj": 245}, {"rank": 22, "name": "Joe Burrow", "team": "CIN", "pos": "QB", "posRank": "QB2", "bye": 6, "proj": 398}, {"rank": 23, "name": "Colston Loveland", "team": "CHI", "pos": "TE", "posRank": "TE3", "bye": 10, "proj": 319}, {"rank": 24, "name": "Rashee Rice", "team": "KC", "pos": "WR", "posRank": "WR15", "bye": 5, "proj": 242}, {"rank": 25, "name": "Tetairoa McMillan", "team": "CAR", "pos": "WR", "posRank": "WR16", "bye": 5, "proj": 242}, {"rank": 26, "name": "Chase Brown", "team": "CIN", "pos": "RB", "posRank": "RB5", "bye": 6, "proj": 290}, {"rank": 27, "name": "DeVonta Smith", "team": "PHI", "pos": "WR", "posRank": "WR17", "bye": 10, "proj": 241}, {"rank": 28, "name": "Drake Maye", "team": "NE", "pos": "QB", "posRank": "QB3", "bye": 11, "proj": 396}, {"rank": 29, "name": "Garrett Wilson", "team": "NYJ", "pos": "WR", "posRank": "WR18", "bye": 13, "proj": 239}, {"rank": 30, "name": "Ladd McConkey", "team": "LAC", "pos": "WR", "posRank": "WR19", "bye": 7, "proj": 239}, {"rank": 31, "name": "Parker Washington", "team": "JAX", "pos": "WR", "posRank": "WR20", "bye": 7, "proj": 236}, {"rank": 32, "name": "Terry McLaurin", "team": "WSH", "pos": "WR", "posRank": "WR21", "bye": 7, "proj": 233}, {"rank": 33, "name": "De'Von Achane", "team": "MIA", "pos": "RB", "posRank": "RB6", "bye": 6, "proj": 279}, {"rank": 34, "name": "Jameson Williams", "team": "DET", "pos": "WR", "posRank": "WR22", "bye": 6, "proj": 231}, {"rank": 35, "name": "Tyler Warren", "team": "IND", "pos": "TE", "posRank": "TE4", "bye": 13, "proj": 306}, {"rank": 36, "name": "Carnell Tate", "team": "TEN", "pos": "WR", "posRank": "WR23", "bye": 9, "proj": 228}, {"rank": 37, "name": "Malik Nabers", "team": "NYG", "pos": "WR", "posRank": "WR24", "bye": 8, "proj": 226}, {"rank": 38, "name": "James Cook", "team": "BUF", "pos": "RB", "posRank": "RB7", "bye": 7, "proj": 270}, {"rank": 39, "name": "DJ Moore", "team": "BUF", "pos": "WR", "posRank": "WR25", "bye": 7, "proj": 224}, {"rank": 40, "name": "Davante Adams", "team": "LAR", "pos": "WR", "posRank": "WR26", "bye": 11, "proj": 224}, {"rank": 41, "name": "Emeka Egbuka", "team": "TB", "pos": "WR", "posRank": "WR27", "bye": 10, "proj": 224}, {"rank": 42, "name": "Luther Burden", "team": "CHI", "pos": "WR", "posRank": "WR28", "bye": 10, "proj": 223}, {"rank": 43, "name": "Mike Evans", "team": "SF", "pos": "WR", "posRank": "WR29", "bye": 8, "proj": 220}, {"rank": 44, "name": "Lamar Jackson", "team": "BAL", "pos": "QB", "posRank": "QB4", "bye": 13, "proj": 387}, {"rank": 45, "name": "Omarion Hampton", "team": "LAC", "pos": "RB", "posRank": "RB8", "bye": 7, "proj": 259}, {"rank": 46, "name": "Rome Odunze", "team": "CHI", "pos": "WR", "posRank": "WR30", "bye": 10, "proj": 216}, {"rank": 47, "name": "Kenneth Walker", "team": "KC", "pos": "RB", "posRank": "RB9", "bye": 5, "proj": 254}, {"rank": 48, "name": "Christian Watson", "team": "GB", "pos": "WR", "posRank": "WR31", "bye": 11, "proj": 210}, {"rank": 49, "name": "Saquon Barkley", "team": "PHI", "pos": "RB", "posRank": "RB10", "bye": 10, "proj": 249}, {"rank": 50, "name": "Derrick Henry", "team": "BAL", "pos": "RB", "posRank": "RB11", "bye": 13, "proj": 249}, {"rank": 51, "name": "DK Metcalf", "team": "PIT", "pos": "WR", "posRank": "WR32", "bye": 9, "proj": 207}, {"rank": 52, "name": "Bucky Irving", "team": "TB", "pos": "RB", "posRank": "RB12", "bye": 10, "proj": 247}, {"rank": 53, "name": "Javonte Williams", "team": "DAL", "pos": "RB", "posRank": "RB13", "bye": 14, "proj": 246}, {"rank": 54, "name": "Stefon Diggs", "team": "WSH", "pos": "WR", "posRank": "WR33", "bye": 7, "proj": 206}, {"rank": 55, "name": "Courtland Sutton", "team": "DEN", "pos": "WR", "posRank": "WR34", "bye": 10, "proj": 205}, {"rank": 56, "name": "Ashton Jeanty", "team": "LV", "pos": "RB", "posRank": "RB14", "bye": 13, "proj": 242}, {"rank": 57, "name": "Breece Hall", "team": "NYJ", "pos": "RB", "posRank": "RB15", "bye": 13, "proj": 241}, {"rank": 58, "name": "Quentin Johnston", "team": "LAC", "pos": "WR", "posRank": "WR35", "bye": 7, "proj": 198}, {"rank": 59, "name": "Kyren Williams", "team": "LAR", "pos": "RB", "posRank": "RB16", "bye": 11, "proj": 236}, {"rank": 60, "name": "Michael Pittman", "team": "PIT", "pos": "WR", "posRank": "WR36", "bye": 9, "proj": 197}, {"rank": 61, "name": "Josh Jacobs", "team": "GB", "pos": "RB", "posRank": "RB17", "bye": 11, "proj": 234}, {"rank": 62, "name": "Jalen Coker", "team": "CAR", "pos": "WR", "posRank": "WR37", "bye": 5, "proj": 196}, {"rank": 63, "name": "Jalen Hurts", "team": "PHI", "pos": "QB", "posRank": "QB5", "bye": 10, "proj": 372}, {"rank": 64, "name": "Travis Etienne", "team": "NO", "pos": "RB", "posRank": "RB18", "bye": 8, "proj": 232}, {"rank": 65, "name": "Harold Fannin", "team": "CLE", "pos": "TE", "posRank": "TE5", "bye": 11, "proj": 271}, {"rank": 66, "name": "Jordan Addison", "team": "MIN", "pos": "WR", "posRank": "WR38", "bye": 6, "proj": 192}, {"rank": 67, "name": "Jayden Daniels", "team": "WSH", "pos": "QB", "posRank": "QB6", "bye": 7, "proj": 372}, {"rank": 68, "name": "Dak Prescott", "team": "DAL", "pos": "QB", "posRank": "QB7", "bye": 14, "proj": 371}, {"rank": 69, "name": "Kyle Pitts", "team": "ATL", "pos": "TE", "posRank": "TE6", "bye": 11, "proj": 263}, {"rank": 70, "name": "David Montgomery", "team": "HOU", "pos": "RB", "posRank": "RB19", "bye": 8, "proj": 221}, {"rank": 71, "name": "Marvin Harrison", "team": "ARI", "pos": "WR", "posRank": "WR39", "bye": 14, "proj": 186}, {"rank": 72, "name": "Jayden Reed", "team": "GB", "pos": "WR", "posRank": "WR40", "bye": 11, "proj": 186}, {"rank": 73, "name": "Rhamondre Stevenson", "team": "NE", "pos": "RB", "posRank": "RB20", "bye": 11, "proj": 218}, {"rank": 74, "name": "Wan'Dale Robinson", "team": "TEN", "pos": "WR", "posRank": "WR41", "bye": 9, "proj": 182}, {"rank": 75, "name": "Travis Kelce", "team": "KC", "pos": "TE", "posRank": "TE7", "bye": 5, "proj": 259}, {"rank": 76, "name": "Adonai Mitchell", "team": "NYJ", "pos": "WR", "posRank": "WR42", "bye": 13, "proj": 182}, {"rank": 77, "name": "Bhayshul Tuten", "team": "JAX", "pos": "RB", "posRank": "RB21", "bye": 7, "proj": 215}, {"rank": 78, "name": "Brock Purdy", "team": "SF", "pos": "QB", "posRank": "QB8", "bye": 8, "proj": 369}, {"rank": 79, "name": "George Kittle", "team": "SF", "pos": "TE", "posRank": "TE8", "bye": 8, "proj": 257}, {"rank": 80, "name": "Chris Godwin", "team": "TB", "pos": "WR", "posRank": "WR43", "bye": 10, "proj": 179}, {"rank": 81, "name": "Makai Lemon", "team": "PHI", "pos": "WR", "posRank": "WR44", "bye": 10, "proj": 179}, {"rank": 82, "name": "Tucker Kraft", "team": "GB", "pos": "TE", "posRank": "TE9", "bye": 11, "proj": 256}, {"rank": 83, "name": "Brian Thomas", "team": "JAX", "pos": "WR", "posRank": "WR45", "bye": 7, "proj": 178}, {"rank": 84, "name": "Isaiah Likely", "team": "NYG", "pos": "TE", "posRank": "TE10", "bye": 8, "proj": 255}, {"rank": 85, "name": "Matthew Stafford", "team": "LAR", "pos": "QB", "posRank": "QB9", "bye": 11, "proj": 368}, {"rank": 86, "name": "D'Andre Swift", "team": "CHI", "pos": "RB", "posRank": "RB22", "bye": 10, "proj": 209}, {"rank": 87, "name": "Sam LaPorta", "team": "DET", "pos": "TE", "posRank": "TE11", "bye": 6, "proj": 253}, {"rank": 88, "name": "Patrick Mahomes", "team": "KC", "pos": "QB", "posRank": "QB10", "bye": 5, "proj": 367}, {"rank": 89, "name": "TreVeyon Henderson", "team": "NE", "pos": "RB", "posRank": "RB23", "bye": 11, "proj": 208}, {"rank": 90, "name": "Jared Goff", "team": "DET", "pos": "QB", "posRank": "QB11", "bye": 6, "proj": 366}, {"rank": 91, "name": "Deebo Samuel", "team": "SF", "pos": "WR", "posRank": "WR46", "bye": 8, "proj": 173}, {"rank": 92, "name": "Caleb Williams", "team": "CHI", "pos": "QB", "posRank": "QB12", "bye": 10, "proj": 364}, {"rank": 93, "name": "Jeremiyah Love", "team": "ARI", "pos": "RB", "posRank": "RB24", "bye": 14, "proj": 202}, {"rank": 94, "name": "Jake Ferguson", "team": "DAL", "pos": "TE", "posRank": "TE12", "bye": 14, "proj": 247}, {"rank": 95, "name": "Jaxson Dart", "team": "NYG", "pos": "QB", "posRank": "QB13", "bye": 8, "proj": 361}, {"rank": 96, "name": "Quinshon Judkins", "team": "CLE", "pos": "RB", "posRank": "RB25", "bye": 11, "proj": 198}, {"rank": 97, "name": "Cam Skattebo", "team": "NYG", "pos": "RB", "posRank": "RB26", "bye": 8, "proj": 197}, {"rank": 98, "name": "Xavier Worthy", "team": "KC", "pos": "WR", "posRank": "WR47", "bye": 5, "proj": 167}, {"rank": 99, "name": "Matthew Golden", "team": "GB", "pos": "WR", "posRank": "WR48", "bye": 11, "proj": 166}, {"rank": 100, "name": "Trevor Lawrence", "team": "JAX", "pos": "QB", "posRank": "QB14", "bye": 7, "proj": 360}, {"rank": 101, "name": "Josh Downs", "team": "IND", "pos": "WR", "posRank": "WR49", "bye": 13, "proj": 165}, {"rank": 102, "name": "Jadarian Price", "team": "SEA", "pos": "RB", "posRank": "RB27", "bye": 11, "proj": 194}, {"rank": 103, "name": "Rashid Shaheed", "team": "SEA", "pos": "WR", "posRank": "WR50", "bye": 11, "proj": 164}, {"rank": 104, "name": "Keenan Allen", "team": "IND", "pos": "WR", "posRank": "WR51", "bye": 13, "proj": 164}, {"rank": 105, "name": "Michael Wilson", "team": "ARI", "pos": "WR", "posRank": "WR52", "bye": 14, "proj": 164}, {"rank": 106, "name": "Romeo Doubs", "team": "NE", "pos": "WR", "posRank": "WR53", "bye": 11, "proj": 164}, {"rank": 107, "name": "Jakobi Meyers", "team": "JAX", "pos": "WR", "posRank": "WR54", "bye": 7, "proj": 161}, {"rank": 108, "name": "Juwan Johnson", "team": "NO", "pos": "TE", "posRank": "TE13", "bye": 8, "proj": 236}, {"rank": 109, "name": "RJ Harvey", "team": "DEN", "pos": "RB", "posRank": "RB28", "bye": 10, "proj": 187}, {"rank": 110, "name": "Jaylen Warren", "team": "PIT", "pos": "RB", "posRank": "RB29", "bye": 9, "proj": 186}, {"rank": 111, "name": "Bo Nix", "team": "DEN", "pos": "QB", "posRank": "QB15", "bye": 10, "proj": 352}, {"rank": 112, "name": "Jonathon Brooks", "team": "CAR", "pos": "RB", "posRank": "RB30", "bye": 5, "proj": 186}, {"rank": 113, "name": "Khalil Shakir", "team": "BUF", "pos": "WR", "posRank": "WR55", "bye": 7, "proj": 157}, {"rank": 114, "name": "Dallas Goedert", "team": "PHI", "pos": "TE", "posRank": "TE14", "bye": 10, "proj": 234}, {"rank": 115, "name": "Rico Dowdle", "team": "PIT", "pos": "RB", "posRank": "RB31", "bye": 9, "proj": 182}, {"rank": 116, "name": "Justin Herbert", "team": "LAC", "pos": "QB", "posRank": "QB16", "bye": 7, "proj": 350}, {"rank": 117, "name": "KC Concepcion", "team": "CLE", "pos": "WR", "posRank": "WR56", "bye": 11, "proj": 153}, {"rank": 118, "name": "Alec Pierce", "team": "IND", "pos": "WR", "posRank": "WR57", "bye": 13, "proj": 153}, {"rank": 119, "name": "Kenneth Gainwell", "team": "TB", "pos": "RB", "posRank": "RB32", "bye": 10, "proj": 180}, {"rank": 120, "name": "Dalton Kincaid", "team": "BUF", "pos": "TE", "posRank": "TE15", "bye": 7, "proj": 229}, {"rank": 121, "name": "Rashod Bateman", "team": "BAL", "pos": "WR", "posRank": "WR58", "bye": 13, "proj": 151}, {"rank": 122, "name": "T.J. Hockenson", "team": "MIN", "pos": "TE", "posRank": "TE16", "bye": 6, "proj": 228}, {"rank": 123, "name": "Jordyn Tyson", "team": "NO", "pos": "WR", "posRank": "WR59", "bye": 8, "proj": 149}, {"rank": 124, "name": "Jalen Nailor", "team": "LV", "pos": "WR", "posRank": "WR60", "bye": 13, "proj": 148}, {"rank": 125, "name": "Dalton Schultz", "team": "HOU", "pos": "TE", "posRank": "TE17", "bye": 8, "proj": 225}, {"rank": 126, "name": "Tre Tucker", "team": "LV", "pos": "WR", "posRank": "WR61", "bye": 13, "proj": 144}, {"rank": 127, "name": "Rachaad White", "team": "WSH", "pos": "RB", "posRank": "RB33", "bye": 7, "proj": 169}, {"rank": 128, "name": "Tony Pollard", "team": "TEN", "pos": "RB", "posRank": "RB34", "bye": 9, "proj": 165}, {"rank": 129, "name": "Caleb Douglas", "team": "MIA", "pos": "WR", "posRank": "WR62", "bye": 6, "proj": 140}, {"rank": 130, "name": "Baker Mayfield", "team": "TB", "pos": "QB", "posRank": "QB17", "bye": 10, "proj": 336}, {"rank": 131, "name": "Jalen McMillan", "team": "TB", "pos": "WR", "posRank": "WR63", "bye": 10, "proj": 138}, {"rank": 132, "name": "Jahan Dotson", "team": "ATL", "pos": "WR", "posRank": "WR64", "bye": 11, "proj": 137}, {"rank": 133, "name": "Calvin Ridley", "team": "TEN", "pos": "WR", "posRank": "WR65", "bye": 9, "proj": 133}, {"rank": 134, "name": "Kyler Murray", "team": "MIN", "pos": "QB", "posRank": "QB18", "bye": 6, "proj": 331}, {"rank": 135, "name": "Jacory Croskey-Merritt", "team": "WSH", "pos": "RB", "posRank": "RB35", "bye": 7, "proj": 153}, {"rank": 136, "name": "Malachi Fields", "team": "NYG", "pos": "WR", "posRank": "WR66", "bye": 8, "proj": 130}, {"rank": 137, "name": "Omar Cooper", "team": "NYJ", "pos": "WR", "posRank": "WR67", "bye": 13, "proj": 130}, {"rank": 138, "name": "Malik Washington", "team": "MIA", "pos": "WR", "posRank": "WR68", "bye": 6, "proj": 129}, {"rank": 139, "name": "Jordan Love", "team": "GB", "pos": "QB", "posRank": "QB19", "bye": 11, "proj": 330}, {"rank": 140, "name": "Hunter Henry", "team": "NE", "pos": "TE", "posRank": "TE18", "bye": 11, "proj": 206}, {"rank": 141, "name": "Mark Andrews", "team": "BAL", "pos": "TE", "posRank": "TE19", "bye": 13, "proj": 206}, {"rank": 142, "name": "Tyler Shough", "team": "NO", "pos": "QB", "posRank": "QB20", "bye": 8, "proj": 326}, {"rank": 143, "name": "Denzel Boston", "team": "CLE", "pos": "WR", "posRank": "WR69", "bye": 11, "proj": 124}, {"rank": 144, "name": "Chuba Hubbard", "team": "CAR", "pos": "RB", "posRank": "RB36", "bye": 5, "proj": 143}, {"rank": 145, "name": "Ryan Flournoy", "team": "DAL", "pos": "WR", "posRank": "WR70", "bye": 14, "proj": 123}, {"rank": 146, "name": "Jordan Mason", "team": "MIN", "pos": "RB", "posRank": "RB37", "bye": 6, "proj": 142}, {"rank": 147, "name": "Aaron Jones", "team": "MIN", "pos": "RB", "posRank": "RB38", "bye": 6, "proj": 142}, {"rank": 148, "name": "Malik Willis", "team": "MIA", "pos": "QB", "posRank": "QB21", "bye": 6, "proj": 326}, {"rank": 149, "name": "Blake Corum", "team": "LAR", "pos": "RB", "posRank": "RB39", "bye": 11, "proj": 139}, {"rank": 150, "name": "Ja'Kobi Lane", "team": "BAL", "pos": "WR", "posRank": "WR71", "bye": 13, "proj": 119}, {"rank": 151, "name": "Jerry Jeudy", "team": "CLE", "pos": "WR", "posRank": "WR72", "bye": 11, "proj": 118}, {"rank": 152, "name": "Kyle Monangai", "team": "CHI", "pos": "RB", "posRank": "RB40", "bye": 10, "proj": 134}, {"rank": 153, "name": "Jauan Jennings", "team": "MIN", "pos": "WR", "posRank": "WR73", "bye": 6, "proj": 114}, {"rank": 154, "name": "C.J. Stroud", "team": "HOU", "pos": "QB", "posRank": "QB22", "bye": 8, "proj": 318}, {"rank": 155, "name": "J.K. Dobbins", "team": "DEN", "pos": "RB", "posRank": "RB41", "bye": 10, "proj": 128}, {"rank": 156, "name": "Tyjae Spears", "team": "TEN", "pos": "RB", "posRank": "RB42", "bye": 9, "proj": 127}, {"rank": 157, "name": "Chris Bell", "team": "MIA", "pos": "WR", "posRank": "WR74", "bye": 6, "proj": 110}, {"rank": 158, "name": "Woody Marks", "team": "HOU", "pos": "RB", "posRank": "RB43", "bye": 8, "proj": 124}, {"rank": 159, "name": "Sam Darnold", "team": "SEA", "pos": "QB", "posRank": "QB23", "bye": 11, "proj": 315}, {"rank": 160, "name": "Cooper Kupp", "team": "SEA", "pos": "WR", "posRank": "WR75", "bye": 11, "proj": 108}, {"rank": 161, "name": "Tyquan Thornton", "team": "KC", "pos": "WR", "posRank": "WR76", "bye": 5, "proj": 106}, {"rank": 162, "name": "Andrei Iosivas", "team": "CIN", "pos": "WR", "posRank": "WR77", "bye": 6, "proj": 105}, {"rank": 163, "name": "Isaac TeSlaa", "team": "DET", "pos": "WR", "posRank": "WR78", "bye": 6, "proj": 105}, {"rank": 164, "name": "Tyler Allgeier", "team": "ARI", "pos": "RB", "posRank": "RB44", "bye": 14, "proj": 118}, {"rank": 165, "name": "Kayshon Boutte", "team": "HOU", "pos": "WR", "posRank": "WR79", "bye": 8, "proj": 103}, {"rank": 166, "name": "Tank Dell", "team": "HOU", "pos": "WR", "posRank": "WR80", "bye": 8, "proj": 103}, {"rank": 167, "name": "Chig Okonkwo", "team": "WSH", "pos": "TE", "posRank": "TE20", "bye": 7, "proj": 179}, {"rank": 168, "name": "Brenton Strange", "team": "JAX", "pos": "TE", "posRank": "TE21", "bye": 7, "proj": 179}, {"rank": 169, "name": "Terrance Ferguson", "team": "LAR", "pos": "TE", "posRank": "TE22", "bye": 11, "proj": 176}, {"rank": 170, "name": "Cam Ward", "team": "TEN", "pos": "QB", "posRank": "QB24", "bye": 9, "proj": 306}, {"rank": 171, "name": "DeMario Douglas", "team": "NE", "pos": "WR", "posRank": "WR81", "bye": 11, "proj": 97}, {"rank": 172, "name": "Alvin Kamara", "team": "NO", "pos": "RB", "posRank": "RB45", "bye": 8, "proj": 109}, {"rank": 173, "name": "Daniel Jones", "team": "IND", "pos": "QB", "posRank": "QB25", "bye": 13, "proj": 306}, {"rank": 174, "name": "Dontayvion Wicks", "team": "PHI", "pos": "WR", "posRank": "WR82", "bye": 10, "proj": 96}, {"rank": 175, "name": "Pat Bryant", "team": "DEN", "pos": "WR", "posRank": "WR83", "bye": 10, "proj": 95}, {"rank": 176, "name": "Isiah Pacheco", "team": "DET", "pos": "RB", "posRank": "RB46", "bye": 6, "proj": 106}, {"rank": 177, "name": "De'Zhaun Stribling", "team": "SF", "pos": "WR", "posRank": "WR84", "bye": 8, "proj": 92}, {"rank": 178, "name": "Justice Hill", "team": "BAL", "pos": "RB", "posRank": "RB47", "bye": 13, "proj": 104}, {"rank": 179, "name": "Braelon Allen", "team": "NYJ", "pos": "RB", "posRank": "RB48", "bye": 13, "proj": 103}, {"rank": 180, "name": "Germie Bernard", "team": "PIT", "pos": "WR", "posRank": "WR85", "bye": 9, "proj": 91}, {"rank": 181, "name": "Oronde Gadsden", "team": "LAC", "pos": "TE", "posRank": "TE23", "bye": 7, "proj": 167}, {"rank": 182, "name": "Kendrick Bourne", "team": "ARI", "pos": "WR", "posRank": "WR86", "bye": 14, "proj": 87}, {"rank": 183, "name": "Jalen Tolbert", "team": "MIA", "pos": "WR", "posRank": "WR87", "bye": 6, "proj": 86}, {"rank": 184, "name": "Greg Dulcich", "team": "MIA", "pos": "TE", "posRank": "TE24", "bye": 6, "proj": 163}, {"rank": 185, "name": "Brian Robinson", "team": "ATL", "pos": "RB", "posRank": "RB49", "bye": 11, "proj": 93}, {"rank": 186, "name": "Bryce Young", "team": "CAR", "pos": "QB", "posRank": "QB26", "bye": 5, "proj": 292}, {"rank": 187, "name": "Samaje Perine", "team": "CIN", "pos": "RB", "posRank": "RB50", "bye": 6, "proj": 91}, {"rank": 188, "name": "Chris Rodriguez", "team": "JAX", "pos": "RB", "posRank": "RB51", "bye": 7, "proj": 89}, {"rank": 189, "name": "Keaton Mitchell", "team": "LAC", "pos": "RB", "posRank": "RB52", "bye": 7, "proj": 88}, {"rank": 190, "name": "Ty Johnson", "team": "BUF", "pos": "RB", "posRank": "RB53", "bye": 7, "proj": 87}, {"rank": 191, "name": "Devaughn Vele", "team": "NO", "pos": "WR", "posRank": "WR88", "bye": 8, "proj": 78}, {"rank": 192, "name": "Dylan Sampson", "team": "CLE", "pos": "RB", "posRank": "RB54", "bye": 11, "proj": 85}, {"rank": 193, "name": "MarShawn Lloyd", "team": "GB", "pos": "RB", "posRank": "RB55", "bye": 11, "proj": 84}, {"rank": 194, "name": "Xavier Legette", "team": "CAR", "pos": "WR", "posRank": "WR89", "bye": 5, "proj": 73}, {"rank": 195, "name": "Mike Washington", "team": "LV", "pos": "RB", "posRank": "RB56", "bye": 13, "proj": 79}, {"rank": 196, "name": "Tre' Harris", "team": "LAC", "pos": "WR", "posRank": "WR90", "bye": 7, "proj": 72}, {"rank": 197, "name": "Pat Freiermuth", "team": "PIT", "pos": "TE", "posRank": "TE25", "bye": 9, "proj": 146}, {"rank": 198, "name": "Tank Bigsby", "team": "PHI", "pos": "RB", "posRank": "RB57", "bye": 10, "proj": 74}, {"rank": 199, "name": "Keon Coleman", "team": "BUF", "pos": "WR", "posRank": "WR91", "bye": 7, "proj": 68}, {"rank": 200, "name": "Mason Taylor", "team": "NYJ", "pos": "TE", "posRank": "TE26", "bye": 13, "proj": 144}, {"rank": 201, "name": "Jaylin Noel", "team": "HOU", "pos": "WR", "posRank": "WR92", "bye": 8, "proj": 67}, {"rank": 202, "name": "Ted Hurst", "team": "TB", "pos": "WR", "posRank": "WR93", "bye": 10, "proj": 66}, {"rank": 203, "name": "Tyrone Tracy", "team": "NYG", "pos": "RB", "posRank": "RB58", "bye": 8, "proj": 70}, {"rank": 204, "name": "Darnell Mooney", "team": "NYG", "pos": "WR", "posRank": "WR94", "bye": 8, "proj": 65}, {"rank": 205, "name": "Aaron Rodgers", "team": "PIT", "pos": "QB", "posRank": "QB27", "bye": 9, "proj": 276}, {"rank": 206, "name": "KaVontae Turpin", "team": "DAL", "pos": "WR", "posRank": "WR95", "bye": 14, "proj": 64}, {"rank": 207, "name": "Najee Harris", "team": "NYG", "pos": "RB", "posRank": "RB59", "bye": 8, "proj": 69}, {"rank": 208, "name": "Gunnar Helm", "team": "TEN", "pos": "TE", "posRank": "TE27", "bye": 9, "proj": 140}, {"rank": 209, "name": "Cade Otton", "team": "TB", "pos": "TE", "posRank": "TE28", "bye": 10, "proj": 139}, {"rank": 210, "name": "Roman Wilson", "team": "PIT", "pos": "WR", "posRank": "WR96", "bye": 9, "proj": 62}, {"rank": 211, "name": "Cyrus Allen", "team": "KC", "pos": "WR", "posRank": "WR97", "bye": 5, "proj": 62}, {"rank": 212, "name": "George Holani", "team": "SEA", "pos": "RB", "posRank": "RB60", "bye": 11, "proj": 63}, {"rank": 213, "name": "Treylon Burks", "team": "WSH", "pos": "WR", "posRank": "WR98", "bye": 7, "proj": 59}, {"rank": 214, "name": "Colbie Young", "team": "CIN", "pos": "WR", "posRank": "WR99", "bye": 6, "proj": 58}, {"rank": 215, "name": "Kaelon Black", "team": "SF", "pos": "RB", "posRank": "RB61", "bye": 8, "proj": 61}, {"rank": 216, "name": "Evan Engram", "team": "DEN", "pos": "TE", "posRank": "TE29", "bye": 10, "proj": 134}, {"rank": 217, "name": "Isaiah Bond", "team": "CLE", "pos": "WR", "posRank": "WR100", "bye": 11, "proj": 56}, {"rank": 218, "name": "Emanuel Wilson", "team": "SEA", "pos": "RB", "posRank": "RB62", "bye": 11, "proj": 58}, {"rank": 219, "name": "Jacoby Brissett", "team": "ARI", "pos": "QB", "posRank": "QB28", "bye": 14, "proj": 269}, {"rank": 220, "name": "Zachariah Branch", "team": "ATL", "pos": "WR", "posRank": "WR101", "bye": 11, "proj": 54}, {"rank": 221, "name": "Darius Slayton", "team": "NYG", "pos": "WR", "posRank": "WR102", "bye": 8, "proj": 54}, {"rank": 222, "name": "Troy Franklin", "team": "DEN", "pos": "WR", "posRank": "WR103", "bye": 10, "proj": 54}, {"rank": 223, "name": "Malik Benson", "team": "LV", "pos": "WR", "posRank": "WR104", "bye": 13, "proj": 54}, {"rank": 224, "name": "Konata Mumpfield", "team": "LAR", "pos": "WR", "posRank": "WR105", "bye": 11, "proj": 53}, {"rank": 225, "name": "Travis Hunter", "team": "JAX", "pos": "WR", "posRank": "WR106", "bye": 7, "proj": 53}, {"rank": 226, "name": "Jaylen Wright", "team": "MIA", "pos": "RB", "posRank": "RB63", "bye": 6, "proj": 54}, {"rank": 227, "name": "Jonah Coleman", "team": "DEN", "pos": "RB", "posRank": "RB64", "bye": 10, "proj": 54}, {"rank": 228, "name": "Kalif Raymond", "team": "CHI", "pos": "WR", "posRank": "WR107", "bye": 10, "proj": 52}, {"rank": 229, "name": "Jaydon Blue", "team": "DAL", "pos": "RB", "posRank": "RB65", "bye": 14, "proj": 53}, {"rank": 230, "name": "Ray Davis", "team": "BUF", "pos": "RB", "posRank": "RB66", "bye": 7, "proj": 53}, {"rank": 231, "name": "Zach Charbonnet", "team": "SEA", "pos": "RB", "posRank": "RB67", "bye": 11, "proj": 52}, {"rank": 232, "name": "Elic Ayomanor", "team": "TEN", "pos": "WR", "posRank": "WR108", "bye": 9, "proj": 50}, {"rank": 233, "name": "Bryce Lance", "team": "NO", "pos": "WR", "posRank": "WR109", "bye": 8, "proj": 49}, {"rank": 234, "name": "Demond Claiborne", "team": "MIN", "pos": "RB", "posRank": "RB68", "bye": 6, "proj": 50}, {"rank": 235, "name": "Emmett Johnson", "team": "KC", "pos": "RB", "posRank": "RB69", "bye": 5, "proj": 49}, {"rank": 236, "name": "Brashard Smith", "team": "KC", "pos": "RB", "posRank": "RB70", "bye": 5, "proj": 49}, {"rank": 237, "name": "Nicholas Singleton", "team": "TEN", "pos": "RB", "posRank": "RB71", "bye": 9, "proj": 48}, {"rank": 238, "name": "LeQuint Allen", "team": "JAX", "pos": "RB", "posRank": "RB72", "bye": 7, "proj": 47}, {"rank": 239, "name": "Olamide Zaccheaus", "team": "ATL", "pos": "WR", "posRank": "WR110", "bye": 11, "proj": 45}, {"rank": 240, "name": "Darnell Washington", "team": "PIT", "pos": "TE", "posRank": "TE30", "bye": 9, "proj": 122}, {"rank": 241, "name": "Malik Davis", "team": "DAL", "pos": "RB", "posRank": "RB73", "bye": 14, "proj": 41}, {"rank": 242, "name": "Kimani Vidal", "team": "LAC", "pos": "RB", "posRank": "RB74", "bye": 7, "proj": 38}, {"rank": 243, "name": "Mike Gesicki", "team": "CIN", "pos": "TE", "posRank": "TE31", "bye": 6, "proj": 116}, {"rank": 244, "name": "Emari Demercado", "team": "KC", "pos": "RB", "posRank": "RB75", "bye": 5, "proj": 37}, {"rank": 245, "name": "Tua Tagovailoa", "team": "ATL", "pos": "QB", "posRank": "QB29", "bye": 11, "proj": 251}, {"rank": 246, "name": "Chris Brooks", "team": "GB", "pos": "RB", "posRank": "RB76", "bye": 11, "proj": 34}, {"rank": 247, "name": "David Njoku", "team": "LAC", "pos": "TE", "posRank": "TE32", "bye": 7, "proj": 112}, {"rank": 248, "name": "Isaiah Davis", "team": "NYJ", "pos": "RB", "posRank": "RB77", "bye": 13, "proj": 31}, {"rank": 249, "name": "Seth McGowan", "team": "IND", "pos": "RB", "posRank": "RB78", "bye": 13, "proj": 30}, {"rank": 250, "name": "Bam Knight", "team": "ARI", "pos": "RB", "posRank": "RB79", "bye": 14, "proj": 30}, {"rank": 251, "name": "Jordan James", "team": "SF", "pos": "RB", "posRank": "RB80", "bye": 8, "proj": 29}, {"rank": 252, "name": "AJ Barner", "team": "SEA", "pos": "TE", "posRank": "TE33", "bye": 11, "proj": 108}, {"rank": 253, "name": "Geno Smith", "team": "NYJ", "pos": "QB", "posRank": "QB30", "bye": 13, "proj": 245}, {"rank": 254, "name": "Raheim Sanders", "team": "CLE", "pos": "RB", "posRank": "RB81", "bye": 11, "proj": 26}, {"rank": 255, "name": "Rasheen Ali", "team": "BAL", "pos": "RB", "posRank": "RB82", "bye": 13, "proj": 26}, {"rank": 256, "name": "Roschon Johnson", "team": "CHI", "pos": "RB", "posRank": "RB83", "bye": 10, "proj": 26}, {"rank": 257, "name": "Elijah Arroyo", "team": "SEA", "pos": "TE", "posRank": "TE34", "bye": 11, "proj": 106}, {"rank": 258, "name": "Colby Parkinson", "team": "LAR", "pos": "TE", "posRank": "TE35", "bye": 11, "proj": 105}, {"rank": 259, "name": "Ollie Gordon", "team": "MIA", "pos": "RB", "posRank": "RB84", "bye": 6, "proj": 23}, {"rank": 260, "name": "Eli Heidenreich", "team": "PIT", "pos": "RB", "posRank": "RB85", "bye": 9, "proj": 22}, {"rank": 261, "name": "Dawson Knox", "team": "BUF", "pos": "TE", "posRank": "TE36", "bye": 7, "proj": 103}, {"rank": 262, "name": "Kendre Miller", "team": "NO", "pos": "RB", "posRank": "RB86", "bye": 8, "proj": 21}, {"rank": 263, "name": "Jeremy McNichols", "team": "WSH", "pos": "RB", "posRank": "RB87", "bye": 7, "proj": 20}, {"rank": 264, "name": "Tyler Goodson", "team": "ATL", "pos": "RB", "posRank": "RB88", "bye": 11, "proj": 20}, {"rank": 265, "name": "Isaac Guerendo", "team": "SF", "pos": "RB", "posRank": "RB89", "bye": 8, "proj": 20}, {"rank": 266, "name": "Adam Randall", "team": "BAL", "pos": "RB", "posRank": "RB90", "bye": 13, "proj": 19}, {"rank": 267, "name": "Kaytron Allen", "team": "WSH", "pos": "RB", "posRank": "RB91", "bye": 7, "proj": 19}, {"rank": 268, "name": "DJ Giddens", "team": "IND", "pos": "RB", "posRank": "RB92", "bye": 13, "proj": 19}, {"rank": 269, "name": "Jacob Saylors", "team": "DET", "pos": "RB", "posRank": "RB93", "bye": 6, "proj": 17}, {"rank": 270, "name": "Ja'Tavion Sanders", "team": "CAR", "pos": "TE", "posRank": "TE37", "bye": 5, "proj": 99}, {"rank": 271, "name": "Sean Tucker", "team": "TB", "pos": "RB", "posRank": "RB94", "bye": 10, "proj": 16}, {"rank": 272, "name": "James Conner", "team": "ARI", "pos": "RB", "posRank": "RB95", "bye": 14, "proj": 16}, {"rank": 273, "name": "Will Shipley", "team": "PHI", "pos": "RB", "posRank": "RB96", "bye": 10, "proj": 16}, {"rank": 274, "name": "Jawhar Jordan", "team": "HOU", "pos": "RB", "posRank": "RB97", "bye": 8, "proj": 15}, {"rank": 275, "name": "Jam Miller", "team": "NE", "pos": "RB", "posRank": "RB98", "bye": 11, "proj": 15}, {"rank": 276, "name": "Tahj Brooks", "team": "CIN", "pos": "RB", "posRank": "RB99", "bye": 6, "proj": 14}, {"rank": 277, "name": "Trevor Etienne", "team": "CAR", "pos": "RB", "posRank": "RB100", "bye": 5, "proj": 13}, {"rank": 278, "name": "Kenyon Sadiq", "team": "NYJ", "pos": "TE", "posRank": "TE38", "bye": 13, "proj": 95}, {"rank": 279, "name": "Eli Raridon", "team": "NE", "pos": "TE", "posRank": "TE39", "bye": 11, "proj": 95}, {"rank": 280, "name": "Michael Mayer", "team": "LV", "pos": "TE", "posRank": "TE40", "bye": 13, "proj": 94}, {"rank": 281, "name": "Cole Kmet", "team": "CHI", "pos": "TE", "posRank": "TE41", "bye": 10, "proj": 83}, {"rank": 282, "name": "Erick All", "team": "CIN", "pos": "TE", "posRank": "TE42", "bye": 6, "proj": 82}, {"rank": 283, "name": "Darren Waller", "team": "CAR", "pos": "TE", "posRank": "TE43", "bye": 5, "proj": 77}, {"rank": 284, "name": "Noah Gray", "team": "KC", "pos": "TE", "posRank": "TE44", "bye": 5, "proj": 74}, {"rank": 285, "name": "Theo Johnson", "team": "NYG", "pos": "TE", "posRank": "TE45", "bye": 8, "proj": 72}, {"rank": 286, "name": "Justin Joly", "team": "DEN", "pos": "TE", "posRank": "TE46", "bye": 10, "proj": 63}, {"rank": 287, "name": "Austin Hooper", "team": "ATL", "pos": "TE", "posRank": "TE47", "bye": 11, "proj": 58}, {"rank": 288, "name": "Foster Moreau", "team": "HOU", "pos": "TE", "posRank": "TE48", "bye": 8, "proj": 58}, {"rank": 289, "name": "Luke Musgrave", "team": "GB", "pos": "TE", "posRank": "TE49", "bye": 11, "proj": 54}, {"rank": 290, "name": "Tommy Tremble", "team": "CAR", "pos": "TE", "posRank": "TE50", "bye": 5, "proj": 51}, {"rank": 291, "name": "Kirk Cousins", "team": "LV", "pos": "QB", "posRank": "QB31", "bye": 13, "proj": 160}, {"rank": 292, "name": "Deshaun Watson", "team": "CLE", "pos": "QB", "posRank": "QB32", "bye": 11, "proj": 150}, {"rank": 293, "name": "Fernando Mendoza", "team": "LV", "pos": "QB", "posRank": "QB33", "bye": 13, "proj": 117}, {"rank": 294, "name": "Shedeur Sanders", "team": "CLE", "pos": "QB", "posRank": "QB34", "bye": 11, "proj": 112}, {"rank": 295, "name": "Michael Penix", "team": "ATL", "pos": "QB", "posRank": "QB35", "bye": 11, "proj": 37}, {"rank": 296, "name": "Cade Klubnik", "team": "NYJ", "pos": "QB", "posRank": "QB36", "bye": 13, "proj": 30}, {"rank": 297, "name": "Anthony Richardson", "team": "IND", "pos": "QB", "posRank": "QB37", "bye": 13, "proj": 28}, {"rank": 298, "name": "Justin Fields", "team": "KC", "pos": "QB", "posRank": "QB38", "bye": 5, "proj": 18}, {"rank": 299, "name": "Marcus Mariota", "team": "WSH", "pos": "QB", "posRank": "QB39", "bye": 7, "proj": 18}, {"rank": 300, "name": "Tyler Huntley", "team": "BAL", "pos": "QB", "posRank": "QB40", "bye": 13, "proj": 16}];
+const KEY='ucl-draft-tracker-2026-v1';function loadState(){try{return JSON.parse(localStorage.getItem(KEY)||'{"players":{},"history":[]}')}catch(e){return {players:{},history:[]}}}const state=loadState();state.players||={};state.history||=[];let noteRank=null;
+const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function ps(rank){return state.players[rank]||={draft:'available',target:false,sleeper:false,avoid:false,note:''}}function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}function snapshot(rank){state.history.push({rank,before:JSON.parse(JSON.stringify(ps(rank)))});if(state.history.length>30)state.history.shift()}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),1700)}
+function rowClasses(p){const s=ps(p.rank),c=[s.draft];if(s.target)c.push('target');if(s.sleeper)c.push('sleeper');if(s.avoid)c.push('avoid');return c.join(' ')}
+function buttons(p){const s=ps(p.rank);return `<button class="action mine ${s.draft==='mine'?'on':''}" data-act="mine" data-r="${p.rank}">✓ MINE</button><button class="action other ${s.draft==='other'?'on':''}" data-act="other" data-r="${p.rank}">✕ TAKEN</button><button class="action target ${s.target?'on':''}" data-act="target" data-r="${p.rank}">★ Target</button><button class="action sleeper ${s.sleeper?'on':''}" data-act="sleeper" data-r="${p.rank}">◆ Sleeper</button><button class="action avoid ${s.avoid?'on':''}" data-act="avoid" data-r="${p.rank}">! Avoid</button>`}
+function filtered(){const q=$('#search').value.trim().toLowerCase(),pos=$('#posFilter').value,status=$('#statusFilter').value,bye=$('#byeFilter').value;let a=PLAYERS.filter(p=>{const s=ps(p.rank);if(q && !`${p.rank} ${p.name} ${p.team} ${p.pos} ${p.posRank}`.toLowerCase().includes(q)) return false;if(pos&&p.pos!==pos)return false;if(bye&&String(p.bye)!==bye)return false;if(status==='available'&&s.draft!=='available')return false;if(status==='mine'&&s.draft!=='mine')return false;if(status==='other'&&s.draft!=='other')return false;if(status==='target'&&!s.target)return false;if(status==='sleeper'&&!s.sleeper)return false;if(status==='avoid'&&!s.avoid)return false;return true});const sort=$('#sortBy').value;a.sort((x,y)=>sort==='proj'?y.proj-x.proj||x.rank-y.rank:sort==='posrank'?(x.pos.localeCompare(y.pos)||parseInt(x.posRank.match(/\d+/))-parseInt(y.posRank.match(/\d+/))):sort==='name'?x.name.localeCompare(y.name):x.rank-y.rank);return a}
+function render(){
+  const a=filtered();
+  $('#tbody').innerHTML=a.map(p=>{
+    const s=ps(p.rank);
+    if(s.draft==='mine'||s.draft==='other'){
+      const label=s.draft==='mine'?'MINE':'TAKEN';
+      return `<tr class="${rowClasses(p)} compact-drafted">
+        <td class="rank">${p.rank}</td>
+        <td colspan="6"><span class="player-name" style="font-size:12px">${esc(p.name)}</span>
+          <span class="meta"> • ${p.posRank} • ${p.team}</span></td>
+        <td style="white-space:nowrap;text-align:right">
+          <span class="compact-status ${s.draft}">${label}</span>${s.source==='sleeper'?'<span class="sleeper-badge">Sleeper</span>':''}
+          <button class="compact-edit" data-edit="${p.rank}">Edit</button>
+        </td>
+      </tr>`;
+    }
+    return `<tr class="${rowClasses(p)}">
+      <td class="rank">${p.rank}</td>
+      <td><div class="player-name">${esc(p.name)}</div><div class="meta">${s.note?esc(s.note):''}</div></td>
+      <td>${p.team}</td><td><span class="posbadge">${p.posRank}</span></td><td>${p.bye}</td><td><b>${p.proj}</b></td>
+      <td><div class="actions">${buttons(p)}</div></td>
+      <td><button class="action note-btn" data-note="${p.rank}">${s.note?'📝':'＋'}</button></td>
+    </tr>`;
+  }).join('');
+
+  $('#mobileList').innerHTML=a.map(p=>{
+    const s=ps(p.rank);
+    if(s.draft==='mine'||s.draft==='other'){
+      const label=s.draft==='mine'?'MINE':'TAKEN';
+      return `<article class="card ${rowClasses(p)}" style="padding:7px 9px">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0">
+          <div style="min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px">
+            <strong>${esc(p.name)}</strong> <span class="meta">• ${p.posRank} • ${p.team}</span>
+          </div>
+          <span class="compact-status ${s.draft}">${label}</span>${s.source==='sleeper'?'<span class="sleeper-badge">Sleeper</span>':''}
+          <button class="compact-edit" data-edit="${p.rank}">Edit</button>
+        </div>
+      </article>`;
+    }
+    return `<article class="card ${rowClasses(p)}">
+      <div class="card-top"><div class="rankbox">#${p.rank}</div>
+      <div><div class="player-name">${esc(p.name)}</div><div class="meta">${p.team} • ${p.posRank} • Bye ${p.bye}</div></div>
+      <div class="projected">${p.proj}<span>PROJ PTS</span></div></div>
+      <div class="card-info">${s.note?`📝 ${esc(s.note)}`:''}</div>
+      <div class="card-actions">${buttons(p)}<button class="action" data-note="${p.rank}">📝 Note</button></div>
+    </article>`;
+  }).join('')||`<div class="empty">No players match these filters.</div>`;
+  $('#shownCount').textContent=`Showing ${a.length} of ${PLAYERS.length} ranked players`;
+  counts();
+  if($('#teamView')&&$('#teamView').classList.contains('active'))renderTeam();
+}
+function counts(){let mine=0,other=0,target=0,sleeper=0;PLAYERS.forEach(p=>{const s=ps(p.rank);if(s.draft==='mine')mine++;if(s.draft==='other')other++;if(s.target)target++;if(s.sleeper)sleeper++});$('#mineCount').textContent=mine;$('#otherCount').textContent=other;$('#targetCount').textContent=target;$('#sleeperCount').textContent=sleeper;$('#pickCount').textContent=mine+other;$('#availableCount').textContent=PLAYERS.length-mine-other}
+function doAction(rank,act){const p=PLAYERS.find(x=>x.rank===rank),s=ps(rank);snapshot(rank);if(act==='mine'){s.draft=s.draft==='mine'?'available':'mine';s.source='manual'}if(act==='other'){s.draft=s.draft==='other'?'available':'other';s.source='manual'}if(act==='target')s.target=!s.target;if(act==='sleeper')s.sleeper=!s.sleeper;if(act==='avoid')s.avoid=!s.avoid;save();render();toast(`${p.name}: updated`)}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(b)doAction(+b.dataset.r,b.dataset.act);
+  const n=e.target.closest('[data-note]');if(n)openNote(+n.dataset.note);
+  const ed=e.target.closest('[data-edit]');
+  if(ed){
+    const rank=+ed.dataset.edit,p=PLAYERS.find(x=>x.rank===rank);
+    snapshot(rank);
+    ps(rank).draft='available';ps(rank).source='manual';
+    save();render();
+    toast(`${p.name}: status unlocked`);
+  }
+});
+['search','posFilter','statusFilter','byeFilter','sortBy'].forEach(id=>$('#'+id).addEventListener(id==='search'?'input':'change',render));
+document.querySelectorAll('[data-quick]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-quick]').forEach(x=>x.classList.remove('active'));b.classList.add('active');const q=b.dataset.quick;$('#statusFilter').value=q==='all'?'':q;render()}));
+$('#topAvailable').onclick=()=>{$('#statusFilter').value='available';$('#sortBy').value='rank';$('#search').value='';render();window.scrollTo({top:0,behavior:'smooth'})};
+function openNote(rank){noteRank=rank;const p=PLAYERS.find(x=>x.rank===rank);$('#noteTitle').textContent=`Note — ${p.name}`;$('#noteText').value=ps(rank).note||'';$('#noteDialog').showModal();setTimeout(()=>$('#noteText').focus(),50)}
+$('#noteCancel').onclick=()=>$('#noteDialog').close();$('#noteSave').onclick=()=>{snapshot(noteRank);ps(noteRank).note=$('#noteText').value.trim();save();$('#noteDialog').close();render();toast('Note saved')};
+$('#undoBtn').onclick=()=>{const h=state.history.pop();if(!h)return toast('Nothing to undo');state.players[h.rank]=h.before;save();render();toast('Last change undone')};
+$('#resetDraftBtn').onclick=()=>{if(!confirm('Clear all “Drafted by me/others” marks? Targets, sleepers, avoids, and notes will stay.'))return;PLAYERS.forEach(p=>ps(p.rank).draft='available');state.history=[];save();render();toast('Draft marks reset')};
+$('#resetAllBtn').onclick=()=>{if(!confirm('Reset ALL draft marks, targets, sleepers, avoids, and notes?'))return;state.players={};state.history=[];save();render();toast('Everything reset')};
+
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  $('#draftView').classList.toggle('active',name==='draft');
+  $('#teamView').classList.toggle('active',name==='team');
+  if(name==='team')renderTeam();
+}
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+
+function minePlayers(){
+  return PLAYERS.filter(p=>ps(p.rank).draft==='mine').slice().sort((a,b)=>b.proj-a.proj||a.rank-b.rank);
+}
+function takeBest(pool,pos){
+  const i=pool.findIndex(p=>p.pos===pos);
+  if(i<0)return null;
+  return pool.splice(i,1)[0];
+}
+function takeFlex(pool){
+  let bestIndex=-1;
+  for(let i=0;i<pool.length;i++){
+    if(['RB','WR','TE'].includes(pool[i].pos)){bestIndex=i;break;}
+  }
+  return bestIndex<0?null:pool.splice(bestIndex,1)[0];
+}
+function slotHtml(label,p,bench=false,note=''){
+  if(!p){
+    return `<div class="slot-row ${bench?'bench-row':''}">
+      <div class="slot-pos">${label}</div>
+      <div class="slot-player"><span class="slot-empty">${note||'Empty'}</span></div>
+      <div class="slot-proj">—<small>PROJ</small></div><div class="slot-bye">—</div>
+    </div>`;
+  }
+  return `<div class="slot-row ${bench?'bench-row':''}">
+    <div class="slot-pos">${label}</div>
+    <div class="slot-player"><strong>${esc(p.name)}</strong><small>${p.team} • ${p.posRank}</small></div>
+    <div class="slot-proj">${p.proj}<small>PROJ</small></div><div class="slot-bye">Bye ${p.bye}</div>
+  </div>`;
+}
+function renderTeam(){
+  const mine=minePlayers(), pool=mine.slice();
+  const starters=[];
+  starters.push(['QB',takeBest(pool,'QB')]);
+  starters.push(['RB',takeBest(pool,'RB')]);
+  starters.push(['RB',takeBest(pool,'RB')]);
+  starters.push(['WR',takeBest(pool,'WR')]);
+  starters.push(['WR',takeBest(pool,'WR')]);
+  starters.push(['WR',takeBest(pool,'WR')]);
+  starters.push(['W/R/T',takeFlex(pool)]);
+  starters.push(['K',null,'Not in rankings']);
+  starters.push(['DEF',null,'Not in rankings']);
+
+  const bench=[];
+  for(let i=1;i<=6;i++) bench.push([`BN${i}`,pool.shift()||null]);
+  const extras=pool;
+
+  $('#starterLineup').innerHTML=starters.map(x=>slotHtml(x[0],x[1],false,x[2]||'')).join('');
+  $('#benchLineup').innerHTML=bench.map(x=>slotHtml(x[0],x[1],true)).join('');
+  $('#teamPlayers').textContent=mine.length;
+  $('#starterPts').textContent=starters.reduce((sum,x)=>sum+(x[1]?.proj||0),0);
+  $('#benchPts').textContent=bench.reduce((sum,x)=>sum+(x[1]?.proj||0),0);
+
+  $('#extraBox').style.display=extras.length?'block':'none';
+  $('#extraPlayers').innerHTML=extras.map(p=>`<div class="extra-player"><strong>${esc(p.name)}</strong><br><span class="small">${p.team} • ${p.posRank} • ${p.proj} proj • Bye ${p.bye}</span></div>`).join('');
+}
+
+const SLEEPER_API='https://api.sleeper.app/v1';
+const SLEEPER_SEASON='2026';
+const SLEEPER_USERS=['dmercado','ChiefJuannataco','MadRagin','karebear','fograw','mgarcia49','brianbrianrbianbrina','Ntsuas'];
+let sleeperCtx={username:'',userId:'',leagueId:'',draftId:'',rosterId:null,leagueName:'',teamName:'',lastPickCount:0};
+let sleeperTimer=null,sleeperBusy=false;
+
+function setSyncStatus(kind,msg){
+  const dot=$('#syncDot'),txt=$('#syncText');
+  dot.className='sync-dot '+(kind||'');
+  txt.textContent=msg;
+}
+
+function setSleeperTeamName(teamName,username){
+  const el=$('#sleeperTeamName');
+  const clean=String(teamName||'').trim();
+  const user=String(username||'').trim();
+  const different=clean && clean.toLowerCase()!==user.toLowerCase();
+  el.textContent=different?`Team: ${clean}`:'';
+  el.classList.toggle('show',!!different);
+  el.title=different?`Sleeper team name for ${user}`:'';
+}
+async function sleeperGet(path){
+  const r=await fetch(SLEEPER_API+path,{cache:'no-store'});
+  if(!r.ok)throw new Error(`Sleeper API ${r.status}`);
+  return await r.json();
+}
+function normName(s){
+  return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+function playerFromPick(pick){
+  const md=pick.metadata||{};
+  const full=(md.first_name&&md.last_name)?`${md.first_name} ${md.last_name}`:(md.name||'');
+  const n=normName(full);
+  if(n){
+    let hit=PLAYERS.find(p=>normName(p.name)===n);
+    if(hit)return hit;
+  }
+  const team=String(md.team||'').toUpperCase(),pos=String(md.position||'').toUpperCase();
+  if(full){
+    const last=normName(md.last_name||full.split(' ').slice(-1)[0]);
+    const hits=PLAYERS.filter(p=>normName(p.name).endsWith(last)&&(!team||p.team===team)&&(!pos||p.pos===pos));
+    if(hits.length===1)return hits[0];
+  }
+  return null;
+}
+function findLeague(leagues){
+  const unmanaged=leagues.filter(l=>/unmanaged/i.test(l.name||''));
+  if(unmanaged.length===1)return unmanaged[0];
+  const care=unmanaged.find(l=>/care/i.test(l.name||''));
+  if(care)return care;
+  const chaos=unmanaged.find(l=>/chaos/i.test(l.name||''));
+  if(chaos)return chaos;
+  const eight=unmanaged.find(l=>Number(l.total_rosters)===8);
+  if(eight)return eight;
+  return unmanaged[0]||null;
+}
+async function connectSleeper(username){
+  clearInterval(sleeperTimer);sleeperTimer=null;
+  sleeperCtx={username:'',userId:'',leagueId:'',draftId:'',rosterId:null,leagueName:'',teamName:'',lastPickCount:0};
+  if(!username){
+    localStorage.removeItem(KEY+'-sleeper-user');
+    setSyncStatus('', 'Select your team to connect Sleeper.');
+    setSleeperTeamName('','');
+    return;
+  }
+  localStorage.setItem(KEY+'-sleeper-user',username);
+  setSyncStatus('busy',`Connecting ${username}…`);
+  try{
+    const user=await sleeperGet(`/user/${encodeURIComponent(username)}`);
+    if(!user||!user.user_id)throw new Error('Sleeper user not found');
+    const leagues=await sleeperGet(`/user/${user.user_id}/leagues/nfl/${SLEEPER_SEASON}`);
+    const league=findLeague(leagues||[]);
+    if(!league)throw new Error('No 2026 Unmanaged league found for this account');
+    const [rosters,drafts,leagueUsers]=await Promise.all([
+      sleeperGet(`/league/${league.league_id}/rosters`),
+      sleeperGet(`/league/${league.league_id}/drafts`),
+      sleeperGet(`/league/${league.league_id}/users`)
+    ]);
+    const roster=(rosters||[]).find(r=>String(r.owner_id)===String(user.user_id));
+    const leagueUser=(leagueUsers||[]).find(u=>String(u.user_id)===String(user.user_id));
+    const teamName=String(leagueUser?.metadata?.team_name||'').trim();
+    setSleeperTeamName(teamName,username);
+    let draft=null;
+    if(league.draft_id) draft=(drafts||[]).find(d=>String(d.draft_id)===String(league.draft_id));
+    if(!draft) draft=(drafts||[])[0]||null;
+    sleeperCtx={
+      username,userId:String(user.user_id),leagueId:String(league.league_id),
+      draftId:draft?String(draft.draft_id):'',rosterId:roster?String(roster.roster_id):null,
+      leagueName:league.name||'Unmanaged League',teamName,lastPickCount:0
+    };
+    await syncSleeper(true);
+    sleeperTimer=setInterval(()=>syncSleeper(false),10000);
+  }catch(err){
+    console.error(err);
+    setSyncStatus('err',`${username}: ${err.message}. If opened as file://, try hosting the app over http/https.`);
+  }
+}
+async function syncSleeper(forceMessage=false){
+  if(sleeperBusy||!sleeperCtx.userId||!sleeperCtx.leagueId)return;
+  sleeperBusy=true;
+  if(forceMessage)setSyncStatus('busy','Syncing Sleeper draft…');
+  try{
+    if(!sleeperCtx.draftId){
+      const drafts=await sleeperGet(`/league/${sleeperCtx.leagueId}/drafts`);
+      const d=(drafts||[])[0];
+      if(d)sleeperCtx.draftId=String(d.draft_id);
+    }
+    if(!sleeperCtx.draftId){
+      setSyncStatus('ok',`${sleeperCtx.leagueName} connected${sleeperCtx.teamName&&sleeperCtx.teamName.toLowerCase()!==sleeperCtx.username.toLowerCase()?` • ${sleeperCtx.teamName}`:''} • draft not created yet`);
+      sleeperBusy=false;return;
+    }
+    const picks=await sleeperGet(`/draft/${sleeperCtx.draftId}/picks`);
+
+    // Clear only statuses that were previously created by Sleeper, then rebuild from current picks.
+    PLAYERS.forEach(p=>{
+      const s=ps(p.rank);
+      if(s.source==='sleeper'){s.draft='available';delete s.source;delete s.sleeperPick;}
+    });
+
+    let matched=0,unmatched=0,mine=0;
+    for(const pick of (picks||[])){
+      const player=playerFromPick(pick);
+      if(!player){unmatched++;continue;}
+      const s=ps(player.rank);
+      const isMine=String(pick.picked_by||'')===String(sleeperCtx.userId) ||
+                   (sleeperCtx.rosterId!=null && String(pick.roster_id||'')===String(sleeperCtx.rosterId));
+      s.draft=isMine?'mine':'other';
+      s.source='sleeper';
+      s.sleeperPick={pick_no:pick.pick_no,round:pick.round,draft_slot:pick.draft_slot};
+      matched++;if(isMine)mine++;
+    }
+    save();render();
+    sleeperCtx.lastPickCount=(picks||[]).length;
+    const extra=unmatched?` • ${unmatched} pick${unmatched===1?'':'s'} not in rankings`:'';
+    setSyncStatus('ok',`${sleeperCtx.leagueName}${sleeperCtx.teamName&&sleeperCtx.teamName.toLowerCase()!==sleeperCtx.username.toLowerCase()?` • ${sleeperCtx.teamName}`:''} • ${picks.length} picks synced • ${mine} MINE${extra}`);
+  }catch(err){
+    console.error(err);
+    setSyncStatus('err',`Sleeper sync failed: ${err.message}`);
+  }finally{
+    sleeperBusy=false;
+  }
+}
+$('#sleeperUser').addEventListener('change',e=>connectSleeper(e.target.value));
+$('#syncNowBtn').addEventListener('click',()=>syncSleeper(true));
+const savedSleeperUser=localStorage.getItem(KEY+'-sleeper-user');
+if(savedSleeperUser&&SLEEPER_USERS.includes(savedSleeperUser)){
+  $('#sleeperUser').value=savedSleeperUser;
+  setTimeout(()=>connectSleeper(savedSleeperUser),0);
+}
+$('#exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({app:'Unmanaged Care League Draft Tracker',version:1,exported:new Date().toISOString(),state},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='UCL_Draft_Tracker_Backup_2026.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('Backup exported')};
+$('#importBtn').onclick=()=>$('#importFile').click();$('#importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text()),incoming=d.state||d;if(!incoming.players)throw 0;state.players=incoming.players;state.history=incoming.history||[];save();render();toast('Backup imported')}catch{alert('Could not import that backup file.')}e.target.value=''};
+for(let w=5;w<=14;w++){const o=document.createElement('option');o.value=o.textContent=w;$('#byeFilter').appendChild(o)}render();
+</script></body></html>
