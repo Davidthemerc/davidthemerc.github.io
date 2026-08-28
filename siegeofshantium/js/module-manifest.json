@@ -1,0 +1,373 @@
+{
+  "version": "1.5.26.3.4",
+  "architecture": "static modular source with shared world integration foundations, centralized language, explicit service boundaries, and regression diagnostics",
+  "notes": [
+    "No Node, npm, bundler, or build command is required for deployment.",
+    "The standalone remains the primary self-contained test artifact.",
+    "Player-facing language is centralized; persistence keys are protected engine constants.",
+    "High-risk combat, companion and navigation crossings route through SOSServices.",
+    "REGRESSION_AUDIT.md records long-running-save compatibility validation.",
+    "v1.5.26 adds persistent world-party composition, named-group combat identity, group-appropriate generic combat names, and broader ActorRef synchronization.",
+    "v1.5.26 adds shared location-aware Resources, Accommodation, and Accounts/Transactions services and begins migrating Hall, Town Life, properties, and settlement services to them.",
+    "v1.5.26 adds shared Dispatch, persistent Intel, Regional Intelligence, and centralized Attention-driven rest interruption.",
+    "v1.5.26 integrates canonical Incidents with combat, regional conflict, Guardian-caravan law/politics, faction disputes, and political raids.",
+    "v1.5.26 completes World Systems Integration with canonical query read models, shared situation summaries, Homecoming/War Room/Journal migrations, and a conservative cross-system audit.",
+    "v1.5.26 adds persistent combat doctrine, formations, leaders, morale-based surrender/withdrawal, reinforcement waves, and region-sensitive ambush/roadblock variants.",
+    "v1.5.26.1 rebalances temporary regional Scouting, adds battle alert choices/faction labels, and regional political protection for Guardian caravans.",
+    "v1.5.26.1.2 moves party browsing into Region & Politics, adds a compact all-region party list, and integrates intercept/meeting messenger options with persistent parties and Hall visitors.",
+    "v1.5.26.1.4 adds explicit dependent placement: orphaned named children are referred to local authorities and placed with concrete named local households while preserving original identity and family history.",
+    "v1.5.26.3 fixes political raid outcome labeling, expands Political Case Files, adds witness bribery/intimidation, and removes Political Activities back-navigation loops.",
+    "v1.5.26.1.3 adds named traveler lifecycle accountability and legacy orphan-group repair.",
+    "v1.5.26.1.4 adds explicit dependent placement for orphaned named children.",
+    "v1.5.26.1.5 cleans up Town Life and Road Contacts, adds contextual local contacts/socializing, removes redundant Local Affairs navigation, fixes local-contact back navigation, and excludes ordinary regional battles from Guardian Hall homecoming briefings.",
+    "v1.5.26.2 reconciles the Open World Guide and Stats & Classes Guide with current mechanics.",
+    "v1.5.26.2.1 adds explicit covert-operation Proceed confirmation and aligns political outcome snapshots with post-day state.",
+    "v1.5.26.3.1 adds settlement-arrival law enforcement, covert entry, recognition risk, and prevents simple fine payment from clearing serious custody warrants.",
+    "v1.5.26.3.4 adds Logistics Master trade-goods procurement caravans with real market sourcing, escort priorities, tracking, Hall delivery, and loss risk."
+  ],
+  "modules": [
+    {
+      "order": 0,
+      "file": "core/language.js",
+      "description": "Central catalog for player-facing UI text, narration, dialogue, journal prose, help text, and dynamic language templates.",
+      "bytes": 1335688,
+      "functionCount": 1
+    },
+    {
+      "order": 1,
+      "file": "core/services.js",
+      "description": "Explicit subsystem service facades for state, navigation, companions, combat, politics, Hall finance/Hall services, contracts, and world operations.",
+      "bytes": 8801,
+      "functionCount": 0
+    },
+    {
+      "order": 2,
+      "file": "core/bootstrap-data.js",
+      "description": "Core runtime utilities, difficulty, routes, factions, enemies, commanders, and base tier data.",
+      "bytes": 6287,
+      "functionCount": 0
+    },
+    {
+      "order": 3,
+      "file": "items/equipment.js",
+      "description": "Item definitions, traits, equipment evaluation, inspection, and valuables.",
+      "bytes": 41826,
+      "functionCount": 11
+    },
+    {
+      "order": 4,
+      "file": "world/regions-security.js",
+      "description": "World locations/regions, capitals, faction security responses, live regional conflicts, and Guardian caravan disputes.",
+      "bytes": 45984,
+      "functionCount": 64
+    },
+    {
+      "order": 5,
+      "file": "politics/core.js",
+      "description": "Faction diplomacy, standing, local political state, influence metrics, internal faction politics, and local Guardian/faction relations.",
+      "bytes": 37103,
+      "functionCount": 44
+    },
+    {
+      "order": 6,
+      "file": "politics/protection-outcomes.js",
+      "description": "Covert-state bookkeeping, political protection/case files, capital/debt, and shared political outcome rendering.",
+      "bytes": 23064,
+      "functionCount": 29
+    },
+    {
+      "order": 7,
+      "file": "politics/campaigns-civic.js",
+      "description": "Campaign momentum/needs/contracts, civic political actions, endorsements, and campaign desk.",
+      "bytes": 38547,
+      "functionCount": 26
+    },
+    {
+      "order": 8,
+      "file": "politics/covert-raids.js",
+      "description": "Covert target selection, witness handling, supporter actions, intimidation, political raids, and Political Activities/Situation UI.",
+      "bytes": 44779,
+      "functionCount": 31
+    },
+    {
+      "order": 9,
+      "file": "politics/control-incidents.js",
+      "description": "Faction priorities, power/pressure, political control shifts, treaties, settlement politics, regional politics, and faction incidents.",
+      "bytes": 38662,
+      "functionCount": 36
+    },
+    {
+      "order": 10,
+      "file": "politics/faction-social.js",
+      "description": "Faction social influence, representatives, faction posts, settlement faction UI, and faction presence simulation.",
+      "bytes": 40521,
+      "functionCount": 43
+    },
+    {
+      "order": 11,
+      "file": "social/travelers-contacts.js",
+      "description": "Persistent traveler identities, recurring groups, road contacts, inquiries, favors, referrals, and traveler-local influence.",
+      "bytes": 76259,
+      "functionCount": 86
+    },
+    {
+      "order": 12,
+      "file": "social/world-life-chains.js",
+      "description": "Social-life events, delayed consequence chains, companion opinions of NPCs/travelers, and companion social requests.",
+      "bytes": 38426,
+      "functionCount": 47
+    },
+    {
+      "order": 13,
+      "file": "social/relationship-contracts.js",
+      "description": "Relationship-generated contracts, messenger work, cross-region relationship contract navigation, and mature-world compaction.",
+      "bytes": 14782,
+      "functionCount": 20
+    },
+    {
+      "order": 14,
+      "file": "economy/trade-world-parties.js",
+      "description": "Interregional trade signals, goods, stock, prices, merchant manifests, world-party economy movement, tracking, pursuit, and interception.",
+      "bytes": 53121,
+      "functionCount": 84
+    },
+    {
+      "order": 15,
+      "file": "contracts/contracts-journal.js",
+      "description": "Contracts, escorts, regional/faction contract variants, quest completion/payment, contract board, and World Journal.",
+      "bytes": 84519,
+      "functionCount": 84
+    },
+    {
+      "order": 16,
+      "file": "economy/property-investments.js",
+      "description": "Property, storage, caravan investments, regional projects, settlement economy, trade ledger, and merchant caravan views.",
+      "bytes": 19789,
+      "functionCount": 24
+    },
+    {
+      "order": 17,
+      "file": "law/encounter-planning-law.js",
+      "description": "Encounter planning, scouting, ambush/surrender/parley, law, crime, warrants, jurisdiction, bounties, and arrest.",
+      "bytes": 48505,
+      "functionCount": 61
+    },
+    {
+      "order": 18,
+      "file": "world/party-interactions.js",
+      "description": "Live battle interaction, world-party information/talk/aid/spot contracts, encounter tuning, named traveler combat parties, and combat-group creation.",
+      "bytes": 62583,
+      "functionCount": 51
+    },
+    {
+      "order": 19,
+      "file": "exploration/adventures-dungeons-factionquests.js",
+      "description": "Adventure sites, treasure maps, bosses, dungeons, branching resolutions, and faction questlines.",
+      "bytes": 44093,
+      "functionCount": 43
+    },
+    {
+      "order": 20,
+      "file": "openworld/state-captivity.js",
+      "description": "Open World state creation/repair, integrity/preflight, travel-day simulation, captivity, confiscation, escape, and captive companions.",
+      "bytes": 99346,
+      "functionCount": 47
+    },
+    {
+      "order": 21,
+      "file": "events/field-runtime-navigation.js",
+      "description": "Field encounters, dynamic-event scheduling, metadata, runtime JavaScript diagnostics, and modal navigation history.",
+      "bytes": 73963,
+      "functionCount": 52
+    },
+    {
+      "order": 22,
+      "file": "core/state-party-classes.js",
+      "description": "Campaign state, items/legacy instance migration, class progression, party membership, companion trust, combat stats, and core resources.",
+      "bytes": 31978,
+      "functionCount": 70
+    },
+    {
+      "order": 23,
+      "file": "core/town-save-load.js",
+      "description": "Siege-town condition helpers, living-town flavor, save-slot routing, campaign load/sanitize/migration, and save persistence.",
+      "bytes": 28151,
+      "functionCount": 38
+    },
+    {
+      "order": 24,
+      "file": "siege/campaign-start-menu.js",
+      "description": "Siege objectives, weather/routes/groups, campaign creation, Continue/load entry, and main menu rendering.",
+      "bytes": 11673,
+      "functionCount": 15
+    },
+    {
+      "order": 25,
+      "file": "openworld/ui-map-actions.js",
+      "description": "Open World map/filter/view controls, battle/homecoming alerts, Guardian & Company actions, navigation groups, nearby parties, and main Open World renderer.",
+      "bytes": 50895,
+      "functionCount": 57
+    },
+    {
+      "order": 26,
+      "file": "world/road-travel.js",
+      "description": "Road conditions/events, travel encounters, region unlocking, inter-region journeys, travel execution, and regional local-life profiles.",
+      "bytes": 66168,
+      "functionCount": 31
+    },
+    {
+      "order": 27,
+      "file": "regions/sengia-redstone.js",
+      "description": "Sengia economy/security/resolution/authority systems and Redstone civic/policy/district systems.",
+      "bytes": 95120,
+      "functionCount": 73
+    },
+    {
+      "order": 28,
+      "file": "settlements/people-townlife.js",
+      "description": "Local reputation, persistent settlement NPC relationships, people/conversations, Town Life, local work, and settlement events.",
+      "bytes": 76102,
+      "functionCount": 54
+    },
+    {
+      "order": 29,
+      "file": "world/regional-simulation.js",
+      "description": "Regional evidence, route conditions, trade/refugee/patrol consequences, network simulation, response parties, opportunities, and regional records.",
+      "bytes": 45799,
+      "functionCount": 58
+    },
+    {
+      "order": 30,
+      "file": "world/integration-foundations.js",
+      "description": "v1.5.25 shared world foundations: ActorRef, World Matter, structured effects, attention, incident envelopes, world snapshots, and cross-system consolidation ownership.",
+      "bytes": 47550,
+      "functionCount": 75
+    },
+    {
+      "order": 31,
+      "file": "settlements/problems-stories.js",
+      "description": "Settlement problems/recovery, reputation milestones, population movement, Shantium community, regional story arcs, world history, and background settlement life.",
+      "bytes": 88512,
+      "functionCount": 69
+    },
+    {
+      "order": 32,
+      "file": "hall/core-hospitality.js",
+      "description": "Guardian Hall base state, upgrades, storage, preparation, armory/war room/legacy, guest capacity, invitations, dining, and hospitality.",
+      "bytes": 80900,
+      "functionCount": 87
+    },
+    {
+      "order": 33,
+      "file": "hall/staff-correspondence.js",
+      "description": "Hall staffing/Steward/workload, correspondence, messenger inquiries, procurement requests, replies, and mail UI.",
+      "bytes": 79151,
+      "functionCount": 79
+    },
+    {
+      "order": 34,
+      "file": "hall/business-finance-logistics.js",
+      "description": "Hall business/Economic Adviser, finance ledger/budget, prisoner/service income, emergency local procurement, Logistics Master, supply caravans, and logistics UI.",
+      "bytes": 57565,
+      "functionCount": 62
+    },
+    {
+      "order": 35,
+      "file": "hall/security.js",
+      "description": "Head Guard, guard posture/readiness, security strength/risk, incidents, reports, and Hall Security UI.",
+      "bytes": 14376,
+      "functionCount": 18
+    },
+    {
+      "order": 36,
+      "file": "hall/life-visitors-diplomacy.js",
+      "description": "Hall companion life, audiences/visitors, delegation/mediation/diplomacy, autonomy, and sanctuary.",
+      "bytes": 47170,
+      "functionCount": 41
+    },
+    {
+      "order": 37,
+      "file": "hall/homecoming-office-upgrades.js",
+      "description": "Homecoming briefing, Guardian Office, Training Yard, Archives, Infirmary, daily Hall tick, rest/downtime, upgrades, and Hall home menu.",
+      "bytes": 40949,
+      "functionCount": 33
+    },
+    {
+      "order": 38,
+      "file": "companions/stories-settlement-services.js",
+      "description": "Companion personal stories/requests, settlement services/equipment/rest/healing, camping, and settlement special actions.",
+      "bytes": 72099,
+      "functionCount": 38
+    },
+    {
+      "order": 39,
+      "file": "exploration/wilderness-artifacts.js",
+      "description": "Field discoveries, clues, hidden wilderness sites, companion expeditions, artifacts, interiors, minor sites, and exploration journals.",
+      "bytes": 69440,
+      "functionCount": 73
+    },
+    {
+      "order": 40,
+      "file": "companions/life-road.js",
+      "description": "Persistent companion profiles, memories/loyalty, camp and road-life scenes, recruitment, road reactions, and companion world conversations.",
+      "bytes": 43413,
+      "functionCount": 41
+    },
+    {
+      "order": 41,
+      "file": "ui/game-town-navigation.js",
+      "description": "Main game renderer/HUD, town map/panels/navigation/modals, town life entry, chronicle, and Hall entry.",
+      "bytes": 29116,
+      "functionCount": 37
+    },
+    {
+      "order": 42,
+      "file": "companions/relationships-party.js",
+      "description": "Companion relationships, memories, conversation topics/history, party UI, companion profiles, and companion conversation screens.",
+      "bytes": 52587,
+      "functionCount": 38
+    },
+    {
+      "order": 43,
+      "file": "items/inventory-class-gear.js",
+      "description": "Inventory, equipment, class guide/selection, leveling allocation, bound-weapon fit, and gear utility.",
+      "bytes": 14963,
+      "functionCount": 21
+    },
+    {
+      "order": 44,
+      "file": "economy/shops-commissions.js",
+      "description": "Outfitting, commissions, shop/market/enchanting/apothecary/healer/tavern/recruitment/training, town upgrades, Council Hall, and prisoner-count helpers.",
+      "bytes": 54461,
+      "functionCount": 69
+    },
+    {
+      "order": 45,
+      "file": "siege/prisoners-force-encounters.js",
+      "description": "Surrender/prisoners/custody, force interaction, neutral encounters, and transition into combat.",
+      "bytes": 17551,
+      "functionCount": 18
+    },
+    {
+      "order": 46,
+      "file": "combat/combat.js",
+      "description": "Combat initialization/rendering, player/ally/enemy turns, spells, targeting, items, lethal-threat/interpose, retreat, loot, victory/defeat, and Guardian fall.",
+      "bytes": 60480,
+      "functionCount": 64
+    },
+    {
+      "order": 47,
+      "file": "siege/round-events-endings.js",
+      "description": "Siege end-round forecasting/advancement, strategic forces, defense assignments, attacks, random/diplomacy events, campaign outcome, endings, and epilogue.",
+      "bytes": 23935,
+      "functionCount": 29
+    },
+    {
+      "order": 48,
+      "file": "core/settings-help-audio.js",
+      "description": "Leveling/achievements, settings/game menu, import/export/stats/help, audio/SFX, before-unload save, and initial menu bootstrap.",
+      "bytes": 12341,
+      "functionCount": 21
+    }
+  ]
+}

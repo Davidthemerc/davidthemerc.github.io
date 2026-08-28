@@ -1,0 +1,1489 @@
+
+:root{
+  --bg:#bdbdbd;--panel:#d8d8d8;--ink:#111;--shadow:#555;--light:#fff;--mid:#888;
+  --danger:#8b1e1e;--good:#1d6a2a;--gold:#7d5b08;--blue:#314b7d;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#8d8d8d;color:var(--ink);font-family:Geneva,Chicago,"Trebuchet MS",Arial,sans-serif;font-size:14px}
+button,input,select{font:inherit;color:#111}
+button,.mac-btn{background:var(--panel);border:2px solid;border-color:var(--light) var(--shadow) var(--shadow) var(--light);padding:5px 10px;cursor:pointer;min-height:30px}
+button:active{border-color:var(--shadow) var(--light) var(--light) var(--shadow)}
+button:disabled{color:#777;cursor:not-allowed;background:#c8c8c8}
+.app-shell{width:min(1440px,100%);margin:0 auto;background:var(--bg);min-height:100vh;border-left:1px solid #666;border-right:1px solid #666;display:flex;flex-direction:column}
+.titlebar{height:34px;background:linear-gradient(#eee,#c9c9c9);border-bottom:2px solid #444;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 10px;font-weight:700;letter-spacing:.5px}
+.titlebar .right{justify-self:end;font-weight:400;display:flex;gap:8px;align-items:center}
+.titlebar .left{font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.game-grid{display:grid;grid-template-columns:250px minmax(420px,1fr) 260px;grid-template-rows:1fr 180px;gap:8px;padding:8px;min-height:calc(100vh - 34px)}
+.panel{background:var(--panel);border:2px solid;border-color:var(--light) var(--shadow) var(--shadow) var(--light);padding:8px;overflow:auto}
+.panel h2,.panel h3{font-family:Georgia,serif;margin:0 0 8px;border-bottom:1px solid #777;padding-bottom:4px}
+.sidebar{display:flex;flex-direction:column;gap:8px}
+.stat-row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted #888;padding:2px 0}.stat-row b{font-variant-numeric:tabular-nums}
+.meter{height:12px;background:#aaa;border:1px solid #444;position:relative;margin:2px 0 6px}.meter>span{display:block;height:100%;background:#444}.meter.hp>span{background:#8e2b2b}.meter.stamina>span{background:#315f8a}.meter.morale>span{background:#5e7332}
+.map-panel{position:relative;overflow:hidden;padding:0;min-height:520px;background:#c9c0a6}
+.map-canvas{position:relative;min-height:520px;height:100%;background:
+  radial-gradient(circle at 50% 52%,#b1a47a 0 14%,transparent 15%),
+  linear-gradient(25deg,transparent 48%,rgba(70,65,45,.15) 49% 51%,transparent 52%),
+  linear-gradient(#afa67f,#cac09b);overflow:hidden}
+.town{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:250px;height:180px;border:4px double #4c4a3f;background:#b9aa78;box-shadow:0 0 0 10px rgba(93,78,45,.25)}
+.building{position:absolute;background:#d0c59b;border:2px solid #493f2f;box-shadow:2px 2px 0 #6d6048;padding:3px;font-size:11px;text-align:center;cursor:pointer;width:72px;min-height:34px;display:flex;align-items:center;justify-content:center}.building:hover{background:#eee2b9}
+.route{position:absolute;font-weight:700;color:#3f382d;text-shadow:1px 1px #eee;pointer-events:none;font-size:12px}
+.enemy-marker{position:absolute;width:42px;height:42px;min-height:0;padding:0;border:0;background:#9b2525;color:#fff;font-weight:700;font-size:12px;line-height:42px;text-align:center;cursor:pointer;transform:translate(-50%,-50%);filter:drop-shadow(2px 2px 1px rgba(0,0,0,.5));z-index:5}.enemy-marker:hover,.enemy-marker:focus-visible{background:#c83232;filter:drop-shadow(2px 2px 1px rgba(0,0,0,.5)) drop-shadow(0 0 3px #fff);outline:none}.enemy-marker.low{background:#a44a42}.enemy-marker.moderate{background:#a52d2d}.enemy-marker.high{background:#8f1f1f}.enemy-marker.severe{background:#681414}.enemy-marker.circle{border-radius:50%}.enemy-marker.triangle{clip-path:polygon(50% 2%,98% 94%,2% 94%)}.enemy-marker.square{border-radius:2px}.enemy-marker.pentagon{clip-path:polygon(50% 0,98% 36%,80% 100%,20% 100%,2% 36%)}.enemy-marker.hexagon{clip-path:polygon(24% 2%,76% 2%,100% 50%,76% 98%,24% 98%,0 50%)}.enemy-marker.boss{box-shadow:0 0 0 3px #d3a62b inset}.force-count{position:relative;z-index:2;text-shadow:1px 1px #431010}.boss-pin{position:absolute;right:-7px;top:-11px;width:18px;height:18px;line-height:18px;border-radius:50%;background:#e3c155;color:#291d00;border:1px solid #5a4200;font-size:11px;z-index:7;clip-path:none}.map-status{position:absolute;left:8px;top:8px;z-index:4;background:rgba(235,229,207,.92);border:1px solid #635944;padding:4px 6px;font-size:11px;box-shadow:1px 1px 0 rgba(0,0,0,.25)}.force-legend{position:absolute;right:8px;bottom:8px;z-index:4;display:grid;grid-template-columns:auto auto auto;gap:3px 8px;align-items:center;background:rgba(235,229,207,.94);border:1px solid #635944;padding:5px 7px;font-size:10px;box-shadow:1px 1px 0 rgba(0,0,0,.25)}.force-legend b,.force-legend small{grid-column:1/-1}.force-legend span{display:flex;gap:4px;align-items:center}.mini-shape{display:inline-block;width:12px;height:12px;background:#8f1f1f}.mini-shape.circle{border-radius:50%}.mini-shape.triangle{clip-path:polygon(50% 2%,98% 94%,2% 94%)}.mini-shape.square{border-radius:1px}.mini-shape.pentagon{clip-path:polygon(50% 0,98% 36%,80% 100%,20% 100%,2% 36%)}.mini-shape.hexagon{clip-path:polygon(24% 2%,76% 2%,100% 50%,76% 98%,24% 98%,0 50%)}
+.log-panel{grid-column:1/4}.log{height:120px;background:#efefef;border:1px inset #888;padding:6px;overflow:auto;font-family:"Courier New",monospace;font-size:12px;white-space:pre-wrap}.log-line{margin-bottom:3px}.log-line.good{color:#175d22}.log-line.bad{color:#821919}.log-line.info{color:#294e83}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:18px;z-index:20}.dialog{width:min(820px,96vw);max-height:90vh;overflow:auto;background:var(--panel);border:3px solid;border-color:#fff #333 #333 #fff;box-shadow:8px 8px 0 rgba(0,0,0,.35);padding:12px}.dialog.large{width:min(1080px,97vw)}
+.dialog h1,.dialog h2{font-family:Georgia,serif;margin:0 0 10px}.dialog-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap}.choice-list{display:grid;gap:8px}.choice{background:#eee;border:1px solid #777;padding:8px}.choice button{width:100%;text-align:left}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}.tabs button.active{background:#fff;font-weight:700}
+.shop-grid,.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}.card{border:1px solid #666;background:#eee;padding:8px}.card h4{margin:0 0 6px;font-family:Georgia,serif}.card small{color:#555}.price{font-weight:700;color:var(--gold)}
+.inventory-list{display:grid;gap:4px}.inventory-row{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;border-bottom:1px dotted #888;padding:3px 0}
+.combat-grid{display:grid;grid-template-columns:240px 1fr;gap:10px}.enemy-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px}.enemy-card{border:2px solid #777;background:#eee;padding:6px;cursor:pointer}.enemy-card.selected{outline:3px solid #222}.enemy-card.dead{opacity:.45;text-decoration:line-through}.combat-actions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.combat-log{background:#111;color:#e5e5e5;padding:8px;min-height:160px;max-height:260px;overflow:auto;font-family:"Courier New",monospace;font-size:12px}
+.combat-log .combat-js-error{font-weight:700;text-decoration:underline}
+.menu-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(0deg,#969696,#969696 2px,#9e9e9e 2px,#9e9e9e 4px)}.menu-window{width:min(760px,94vw);background:var(--panel);border:3px solid;border-color:#fff #444 #444 #fff;padding:18px;box-shadow:12px 12px 0 rgba(0,0,0,.25)}.menu-title{font-family:Georgia,serif;text-align:center;font-size:40px;margin:0 0 4px}.menu-sub{text-align:center;margin-bottom:18px;font-style:italic}.menu-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.menu-actions button{min-height:44px;font-weight:700}.new-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.new-form label{display:flex;flex-direction:column;gap:4px}
+.badge{display:inline-block;border:1px solid #555;background:#eee;padding:1px 5px;margin:2px;font-size:11px}.badge.good{background:#dbe8d3}.badge.bad{background:#ecd0d0}.badge.gold{background:#eee0a6}.notice{padding:7px;border:1px solid #777;background:#eee;margin:6px 0}.warning{background:#ead1d1;border-color:#8b1e1e}.success{background:#d4e6d0;border-color:#37683a}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.compact{font-size:12px}.muted{color:#666}.danger-text{color:#8b1e1e;font-weight:700}.good-text{color:#1d6a2a;font-weight:700}.center{text-align:center}
+@media(max-width:980px){.game-grid{grid-template-columns:1fr;grid-template-rows:auto}.sidebar,.map-panel,.log-panel{grid-column:1}.map-panel{min-height:560px}.game-grid>.panel:nth-child(3){grid-row:auto}.log-panel{height:190px}.two-col,.three-col{grid-template-columns:1fr}.combat-grid{grid-template-columns:1fr}.menu-actions{grid-template-columns:1fr}}
+
+/* v1.0.2 battlefield clarity */
+.dialog-status{position:sticky;top:-12px;z-index:9;margin:-12px -12px 12px;padding:6px 10px;background:linear-gradient(#f5f5f5,#d1d1d1);border-bottom:1px solid #777;display:flex;justify-content:space-between;gap:12px;font-size:12px;box-shadow:0 1px 0 #fff inset}
+.enemy-marker.fast::after{content:"";position:absolute;inset:5px;border:1px dashed rgba(255,255,255,.8);pointer-events:none}.enemy-marker.urgent{filter:drop-shadow(0 0 0 #fff) drop-shadow(0 0 4px #f5e5b4) drop-shadow(2px 2px 1px rgba(0,0,0,.5))}.enemy-marker.urgent:hover,.enemy-marker.urgent:focus-visible{filter:drop-shadow(0 0 6px #fff) drop-shadow(2px 2px 1px rgba(0,0,0,.5))}.speed-pin{position:absolute;left:-8px;bottom:-8px;min-width:18px;height:17px;line-height:15px;padding:0 2px;border:1px solid #4f1b1b;background:#f0dddd;color:#681414;font-size:14px;font-weight:900;z-index:8;clip-path:none;border-radius:2px}.enemy-marker.advancing{animation:forceAdvance .26s ease-in forwards}@keyframes forceAdvance{0%{filter:brightness(1);transform:translate(-50%,-50%) scale(1)}45%{filter:brightness(1.35);transform:translate(-50%,-50%) scale(1.14)}100%{filter:brightness(.9);transform:translate(-50%,-50%) scale(.92)}}
+.forecast-list{border:1px solid #777;background:#eee}.forecast-row{display:grid;grid-template-columns:minmax(180px,1fr) 74px minmax(145px,auto);gap:10px;align-items:center;padding:7px 9px;border-bottom:1px solid #bbb}.forecast-row:last-child{border-bottom:0}.forecast-row.impact{background:#ead1d1}.forecast-row.urgent-row{background:#eee5c8}.forecast-distance{text-align:center;font-size:15px;font-weight:700;font-family:monospace}.forecast-row small{color:#555}
+@media(max-width:650px){.dialog-status{gap:6px;font-size:11px}.forecast-row{grid-template-columns:1fr 60px}.forecast-row>span:last-child{grid-column:1/-1}.force-legend{max-width:180px}}
+
+/* v1.0.3 live HUD, town-map and responsive interface pass */
+.map-panel{min-height:590px}
+.map-canvas{min-height:590px;background:linear-gradient(#b8ad84,#cec59f);isolation:isolate}
+.map-canvas::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.3;background-image:radial-gradient(circle at 24% 18%,rgba(255,255,255,.35) 0 1px,transparent 1.5px),radial-gradient(circle at 72% 68%,rgba(74,64,43,.22) 0 1px,transparent 1.5px);background-size:21px 19px,27px 23px;z-index:0}
+.terrain{position:absolute;pointer-events:none;z-index:1}
+.west-woods{left:0;top:17%;width:27%;height:52%}
+.tree{position:absolute;width:19px;height:27px;background:#53643d;clip-path:polygon(50% 0,100% 64%,73% 64%,94% 100%,6% 100%,28% 64%,0 64%);filter:drop-shadow(2px 2px 0 rgba(48,44,31,.3))}
+.tree::after{content:"";position:absolute;width:4px;height:8px;left:8px;bottom:0;background:#62513a}
+.tree-1{left:7%;top:10%;transform:scale(.9)}.tree-2{left:29%;top:2%;transform:scale(1.2)}.tree-3{left:54%;top:14%;transform:scale(.85)}.tree-4{left:77%;top:5%;transform:scale(1.05)}.tree-5{left:14%;top:34%;transform:scale(1.15)}.tree-6{left:42%;top:31%;transform:scale(.8)}.tree-7{left:69%;top:37%;transform:scale(1.25)}.tree-8{left:3%;top:61%;transform:scale(.8)}.tree-9{left:28%;top:70%;transform:scale(1.1)}.tree-10{left:52%;top:59%;transform:scale(.95)}.tree-11{left:80%;top:67%;transform:scale(1.2)}.tree-12{left:61%;top:84%;transform:scale(.75)}.tree-13{left:18%;top:88%;transform:scale(.8)}
+.quarry-art{left:4%;bottom:2%;width:26%;height:25%;border:2px solid rgba(89,79,61,.35);border-radius:48% 52% 18% 22%;background:repeating-linear-gradient(165deg,rgba(111,101,81,.20) 0 8px,rgba(226,217,186,.12) 8px 15px);transform:rotate(-3deg)}
+.quarry-art span{position:absolute;width:22px;height:14px;border-radius:50%;background:#837b6b;border:1px solid #595447;box-shadow:2px 2px 0 rgba(0,0,0,.15)}
+.quarry-art span:nth-child(1){left:12%;top:26%}.quarry-art span:nth-child(2){left:42%;top:15%;transform:scale(1.35)}.quarry-art span:nth-child(3){left:69%;top:38%;transform:scale(.8)}.quarry-art span:nth-child(4){left:31%;top:63%;transform:scale(.75)}.quarry-art span:nth-child(5){left:72%;top:71%;transform:scale(1.1)}
+.river-band{right:5%;top:-2%;width:21%;height:42%;border-left:13px solid rgba(74,113,128,.58);border-right:4px solid rgba(215,230,224,.35);transform:rotate(14deg);border-radius:45%}
+.river-band i{position:absolute;width:22px;height:2px;background:rgba(235,244,236,.7);transform:rotate(-14deg)}.river-band i:nth-child(1){left:-12px;top:18%}.river-band i:nth-child(2){left:-7px;top:47%}.river-band i:nth-child(3){left:-14px;top:72%}
+.hills-art{right:0;top:34%;width:25%;height:39%}
+.hills-art span{position:absolute;width:86px;height:45px;border-radius:50% 50% 12% 12%;background:linear-gradient(#a59a70,#81785b);border-top:2px solid rgba(76,68,50,.55);transform:rotate(-8deg);opacity:.75}.hills-art span:nth-child(1){right:-10px;top:10%}.hills-art span:nth-child(2){right:48px;top:43%;transform:rotate(9deg) scale(.8)}.hills-art span:nth-child(3){right:-19px;top:68%;transform:rotate(-2deg) scale(1.15)}
+.north-road-art{left:47.5%;top:0;width:5%;height:31%;background:linear-gradient(90deg,transparent 0 18%,rgba(113,99,70,.35) 18% 35%,rgba(225,210,170,.4) 35% 65%,rgba(113,99,70,.35) 65% 82%,transparent 82%);transform:rotate(-2deg)}
+.south-trail-art{left:47%;bottom:0;width:7%;height:32%;background:linear-gradient(90deg,transparent 0 24%,rgba(109,93,66,.38) 24% 39%,rgba(229,213,173,.35) 39% 61%,rgba(109,93,66,.38) 61% 76%,transparent 76%);transform:rotate(5deg)}
+.route{z-index:3;background:rgba(235,228,198,.68);border:1px solid rgba(81,73,56,.4);padding:2px 5px;border-radius:2px;white-space:nowrap;transform:translate(-50%,-50%)}
+.route-west{left:8%!important}.route-east{left:88%!important}.route-quarry{top:82%!important}.route-south{top:92%!important}.route-river{top:8%!important}
+.town-wrap{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(54%,440px);min-width:350px;height:300px;z-index:2}
+.town{position:absolute;inset:18px 0 24px;width:auto;height:auto;transform:none;border:5px double #4c4a3f;background:linear-gradient(rgba(187,171,121,.93),rgba(174,156,106,.95));box-shadow:0 0 0 10px rgba(93,78,45,.22),3px 4px 0 rgba(0,0,0,.18);overflow:hidden}
+.town::before{content:"";position:absolute;inset:8px;border:1px dashed rgba(80,69,47,.42);pointer-events:none}
+.town-caption{position:absolute;left:50%;bottom:0;transform:translateX(-50%);padding:2px 9px;background:#d9cfaa;border:1px solid #514735;font:700 12px Georgia,serif;letter-spacing:2px;box-shadow:1px 1px 0 rgba(0,0,0,.2)}
+.town-road{position:absolute;background:#938363;z-index:1;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(70,61,45,.18)}
+.town-road-h{left:2%;right:2%;height:17px;top:50%;transform:translateY(-50%)}
+.town-road-v{top:7%;bottom:9%;width:17px;left:50%;transform:translateX(-50%)}
+.building{width:26%;min-height:50px;padding:17px 3px 4px;background:#d0c59b;border:2px solid #493f2f;box-shadow:2px 2px 0 #6d6048;font-size:10.5px;line-height:1.08;z-index:3;overflow:visible}
+.building .roof{position:absolute;left:7%;right:7%;top:-9px;height:18px;background:#79634d;border:1px solid #473b2e;clip-path:polygon(50% 0,100% 52%,92% 100%,8% 100%,0 52%);filter:drop-shadow(1px 1px 0 rgba(0,0,0,.18))}
+.building-label{position:relative;z-index:2}
+.building-forge .roof{background:#6f5746}.building-temple .roof{background:#857653}.building-tavern .roof{background:#735646}.building-market .roof,.building-shop .roof{background:#92714d}.building-hall .roof{background:#665c51}.building-yard{background:#b7a97c;border-style:dashed}.building-yard .roof{display:none}.building-store .roof{background:#665844}.building-mason .roof{background:#766f61}
+.enemy-marker{z-index:8}
+.map-status{z-index:10}.force-legend{z-index:10}
+.dialog-status{z-index:11}
+
+@media(max-width:1180px) and (min-width:981px){.game-grid{grid-template-columns:220px minmax(390px,1fr) 230px}.town-wrap{width:min(62%,410px)}.building{font-size:10px}.force-legend{max-width:190px}}
+@media(max-width:980px){.map-panel{min-height:620px}.map-canvas{min-height:620px}.town-wrap{width:min(60%,440px)}.sidebar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.sidebar>.panel{min-width:0}.game-grid>.sidebar:nth-child(3){grid-template-columns:1fr 1fr}.log-panel{height:190px}}
+@media(max-width:680px){.titlebar{grid-template-columns:1fr auto;gap:4px}.titlebar>div:nth-child(2){display:none}.titlebar .left{max-width:none;font-size:11px}.titlebar .right{font-size:11px}.game-grid{padding:5px;gap:5px}.sidebar,.game-grid>.sidebar:nth-child(3){grid-template-columns:1fr}.map-panel{min-height:560px}.map-canvas{min-height:560px}.town-wrap{width:82%;min-width:0;height:270px}.building{width:27%;min-height:46px;font-size:9.5px;padding-top:14px}.building .roof{top:-7px;height:15px}.route{font-size:10px;padding:1px 3px}.west-woods{width:30%}.tree{transform:scale(.75)}.hills-art{width:28%}.force-legend{right:5px;bottom:5px;max-width:160px}.map-status{left:5px;top:5px;max-width:190px}.enemy-marker{width:39px;height:39px;line-height:39px}.dialog{width:98vw;max-height:94vh;padding:10px}.dialog.large{width:98vw}.shop-grid,.card-grid{grid-template-columns:1fr}.inventory-row{grid-template-columns:1fr auto}.inventory-row>span:last-child{grid-column:1/-1}.two-col,.three-col{grid-template-columns:1fr}}
+@media(max-width:430px){.map-panel{min-height:525px}.map-canvas{min-height:525px}.town-wrap{width:88%;height:248px}.building{min-height:42px;font-size:8.8px}.town-caption{font-size:10px}.force-legend{display:none}.route-west,.route-east{display:none}.map-status{font-size:10px}.tree{width:15px;height:22px}.quarry-art{opacity:.7}}
+/* v1.0.3 town spacing refinement */
+.map-panel,.map-canvas{min-height:620px}
+.town-wrap{height:330px}
+.building{min-height:44px;padding-top:15px}
+@media(max-width:980px){.map-panel,.map-canvas{min-height:620px}.town-wrap{height:315px}}
+@media(max-width:680px){.map-panel,.map-canvas{min-height:570px}.town-wrap{height:300px}.building{min-height:40px}}
+@media(max-width:430px){.map-panel,.map-canvas{min-height:545px}.town-wrap{height:285px}.building{min-height:38px}}
+
+/* v1.0.4 party and equipment separation */
+.party-hud-title{margin-top:9px!important;font-size:13px}
+.party-hud-row{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px dotted #888;font-size:11px}
+.party-hud-row.down{color:#777;text-decoration:line-through}
+.party-card{background:#eee;border:1px solid #777;padding:9px;box-shadow:1px 1px 0 rgba(0,0,0,.12)}
+.party-card h4{margin:0 0 2px;font-family:Georgia,serif}.party-card p{margin:7px 0}.party-card.down{opacity:.65;background:#ddd}
+.party-vitals{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:7px;padding:4px 0;border-top:1px dotted #999;border-bottom:1px dotted #999;font-size:12px}
+.party-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.party-card-actions button{flex:1 1 120px}
+.party-recruit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.owner-tabs{padding-bottom:6px;border-bottom:1px solid #888}.owner-tabs button{min-width:100px}
+.inventory-layout{align-items:start}.equipment-list{border:1px solid #888;background:#eee}.equipment-row{display:grid;grid-template-columns:90px minmax(0,1fr) auto;gap:7px;align-items:center;padding:6px;border-bottom:1px solid #bbb}.equipment-row:last-child{border-bottom:0}.equipment-row button{min-height:26px;padding:3px 7px}
+.combat-party{display:grid;gap:5px;margin-bottom:8px}.combat-defender{display:grid;grid-template-columns:minmax(120px,1fr) auto;gap:3px 8px;padding:6px;border:1px solid #777;background:#eee}.combat-defender>div{grid-row:1/3}.combat-defender small{display:block;color:#555}.combat-defender>span{font-size:11px;text-align:right}.combat-defender.guardian-combat{border-width:2px;background:#f4f4f4}.combat-defender.down{opacity:.5;text-decoration:line-through;background:#d2d2d2}
+@media(max-width:680px){.party-recruit-grid{grid-template-columns:1fr}.equipment-row{grid-template-columns:72px minmax(0,1fr)}.equipment-row>span:last-child{grid-column:1/-1}.owner-tabs button{flex:1 1 42%;min-width:0}.combat-defender{grid-template-columns:1fr auto}}
+
+/* v1.0.5 combat readability + mobile battlefield responsiveness */
+.enemy-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:5px}
+.enemy-vitals{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:5px;font-size:11px}
+.trait-badge{display:inline-block;padding:1px 4px;border:1px solid #777;background:#ddd;font-size:9px;font-weight:700;letter-spacing:.35px;white-space:nowrap}
+.mini-hp{height:7px;margin:3px 0 5px;border:1px solid #555;background:#aaa}.mini-hp>span{display:block;height:100%;background:#8e2b2b}
+
+@media(max-width:680px){
+  html,body{font-size:13px}
+  .map-panel,.map-canvas{min-height:520px}
+  .town-wrap{width:76%;max-width:320px;height:244px;top:53%}
+  .town{inset:14px 0 20px;border-width:4px;box-shadow:0 0 0 7px rgba(93,78,45,.2),2px 3px 0 rgba(0,0,0,.16)}
+  .town::before{inset:6px}
+  .town-road-h{height:12px}.town-road-v{width:12px}
+  .building{width:27%;min-height:34px;padding:11px 2px 2px;font-size:7.8px;line-height:1.02;border-width:1px;box-shadow:1px 1px 0 #6d6048}
+  .building .roof{top:-5px;height:11px;border-width:1px}
+  .town-caption{bottom:1px;padding:1px 6px;font-size:9px;letter-spacing:1.5px}
+  .route{font-size:8.5px;padding:1px 3px;text-shadow:none}
+  .route-north{top:7%!important}.route-river{top:11%!important}.route-quarry{top:85%!important}.route-south{top:94%!important}
+  .enemy-marker{width:33px;height:33px;line-height:33px;font-size:10px}
+  .boss-pin{right:-6px;top:-8px;width:15px;height:15px;line-height:14px;font-size:9px}
+  .speed-pin{left:-6px;bottom:-6px;min-width:15px;height:14px;line-height:12px;font-size:11px}
+  .map-status{font-size:9px;padding:3px 5px;max-width:160px}
+  .west-woods{width:26%;height:48%;top:20%}.tree{width:13px;height:19px}.tree::after{width:3px;height:6px;left:5px}
+  .quarry-art{width:22%;height:22%;bottom:2%}.quarry-art span{width:16px;height:10px}
+  .river-band{right:6%;width:17%;border-left-width:9px}
+  .hills-art{width:21%;height:35%}.hills-art span{width:58px;height:31px}
+  .north-road-art{width:4%;left:48%}.south-trail-art{width:5%;left:47.5%}
+  .combat-actions button{flex:1 1 calc(50% - 6px);font-size:12px;padding:4px 5px}
+  .enemy-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+  .enemy-card{padding:5px;font-size:11px}.enemy-card small{font-size:9px;line-height:1.15;display:block}
+}
+
+@media(max-width:430px){
+  .map-panel,.map-canvas{min-height:500px}
+  .town-wrap{width:72%;max-width:275px;height:222px;top:53%}
+  .town{inset:13px 0 18px}
+  .town-road-h{height:10px}.town-road-v{width:10px}
+  .building{width:27.5%;min-height:31px;padding-top:9px;font-size:7.1px}
+  .building .roof{top:-4px;height:9px}
+  .building-label{white-space:normal}
+  .town-caption{font-size:8px;letter-spacing:1.2px}
+  .enemy-marker{width:30px;height:30px;line-height:30px;font-size:9px}
+  .route{font-size:7.7px;padding:1px 2px}
+  .map-status{font-size:8.5px;max-width:145px}
+  .tree{width:11px;height:17px}.tree::after{left:4px}
+  .quarry-art{width:21%;height:20%}.hills-art{width:19%}
+  .enemy-list{grid-template-columns:1fr 1fr}
+  .trait-badge{font-size:8px;padding:1px 3px}
+  .enemy-vitals{font-size:10px}
+}
+
+@media(max-width:360px){
+  .town-wrap{width:70%;height:210px}
+  .building{font-size:6.7px;min-height:29px;padding-top:8px}
+  .enemy-marker{width:28px;height:28px;line-height:28px}
+  .route{font-size:7px}
+}
+
+/* v1.0.6 — classes, outfitting, rescue prompts */
+.class-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:8px;margin:10px 0}
+.class-card{border:1px solid #686868;background:#eee;padding:9px;box-shadow:inset 1px 1px #fff,inset -1px -1px #aaa;display:flex;flex-direction:column;gap:5px}
+.class-card h3,.class-card p{margin:0}.class-card button{margin-top:auto}
+.badge.favored{background:#e4d9aa;border-color:#75693c;font-weight:700}
+.dialog-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.field-label{display:block;margin:9px 0;font-weight:700}.field-label input,.field-label select{display:block;width:100%;margin-top:4px;box-sizing:border-box}
+.combat-defender.down{opacity:.62;background:#c9c9c9}.combat-defender.down b{text-decoration:line-through}
+@media(max-width:430px){
+  .class-grid{grid-template-columns:1fr 1fr;gap:5px}.class-card{padding:6px;font-size:10px}.class-card h3{font-size:13px}
+  .dialog-toolbar button{font-size:10px;padding:5px 7px}.field-label{font-size:10px}
+}
+@media(max-width:360px){.class-grid{grid-template-columns:1fr}.class-card{font-size:10px}}
+
+.upgrade-badge,.downgrade-badge,.sidegrade-badge{display:inline-block;padding:2px 5px;border:1px solid #555;font-size:10px;font-weight:bold;margin-left:3px;background:#fff}.upgrade-badge{background:#dff2df;border-color:#467346}.downgrade-badge{background:#f2dddd;border-color:#8a5555}.sidegrade-badge{background:#ececec}input[type=range]{width:100%;margin-top:10px}button:disabled{opacity:.48;cursor:not-allowed}
+
+.element-status{margin:8px 0;padding:6px 8px;border:2px solid #555;text-align:center;font-size:11px;letter-spacing:.04em}
+.element-fire{background:#f2d5c8}.element-water{background:#d6e6ef}.element-earth{background:#e4ddc6}.element-air{background:#edf0e8}.element-none{background:#e6e2eb}
+.element-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.element-grid button:first-child{grid-column:1/-1}
+@media(max-width:430px){.element-grid{grid-template-columns:1fr}.element-grid button:first-child{grid-column:auto}.combat-actions button{font-size:11px;padding:7px 4px}}
+
+.town-atmosphere{font-size:10px;line-height:1.35;padding:6px;margin-bottom:7px;border:1px dotted #777;background:#f5f0df}
+.town-scene{border:2px inset #aaa;padding:10px;background:#f4efd9;margin:8px 0}
+.chronicle-list{max-height:58vh;overflow:auto;padding-right:5px}.chronicle-entry{border-left:4px solid #777;border-bottom:1px dotted #999;padding:7px 9px;margin:0 0 8px;background:#f7f3e5}.chronicle-entry.battle{border-left-color:#7b2929}.chronicle-entry.milestone{border-left-color:#8a6b1d}.chronicle-entry.decision{border-left-color:#355d70}.chronicle-round{font-size:9px;text-transform:uppercase;letter-spacing:.08em}.chronicle-entry h4{margin:2px 0 3px}.chronicle-entry p{margin:0}
+.building-damaged{filter:saturate(.55);border-style:dashed!important}.building-damaged.damage-2{filter:grayscale(.35) saturate(.45)}.damage-mark{position:absolute;right:2px;top:1px;font-weight:bold;font-size:13px;color:#7b2929}.building-upgraded{box-shadow:inset 0 0 0 2px rgba(255,255,255,.45),0 0 0 1px #665}
+.town-detail{position:absolute;z-index:2;font-size:10px;opacity:.7;pointer-events:none}.town-detail.well{left:48%;top:48%}.town-detail.cart{left:67%;top:57%}.town-detail.flags{left:16%;top:55%}.town-wrap.depopulated .town-detail.cart,.town-wrap.depopulated .town-detail.flags{display:none}.town-wrap.frightened .town-detail.flags{opacity:.25}.building-wizard .roof{background:#77708b}
+@media(max-width:430px){.town-atmosphere{font-size:9px}.town-caption{font-size:8px!important}.building-label{font-size:7px!important}.town-detail{font-size:7px}.chronicle-list{max-height:52vh}}
+
+.weather-strip{position:absolute;left:2%;right:2%;bottom:6px;z-index:4;background:rgba(244,240,220,.9);border:1px solid #777;padding:3px 5px;font-size:8px;text-align:center}
+@media(max-width:600px){
+ .town-wrap{left:13%!important;right:13%!important;top:29%!important;height:39%!important}
+ .town{left:5%!important;right:5%!important;top:5%!important;bottom:7%!important}
+ .building{width:26%!important;height:17%!important;min-width:0!important;padding:1px 2px!important}
+ .building-label{font-size:6.8px!important;line-height:1.05!important;white-space:normal!important}
+ .building .roof{height:6px!important;top:-4px!important}
+ .town-caption{bottom:-16px!important;font-size:7px!important}
+ .town-detail{display:none!important}
+}
+@media(max-width:380px){
+ .town-wrap{left:11%!important;right:11%!important;height:40%!important}
+ .building{width:25%!important;height:16.5%!important}
+ .building-label{font-size:6.2px!important}
+}
+
+
+/* v1.1.0.1 mobile town centering hotfix
+   Keep the town as one centered, bounded unit. Do not combine left/right
+   positioning with the desktop translate/width rules. */
+@media(max-width:600px){
+  .town-wrap{
+    left:50%!important;
+    right:auto!important;
+    top:49%!important;
+    transform:translate(-50%,-50%)!important;
+    width:76%!important;
+    max-width:360px!important;
+    min-width:0!important;
+    height:40%!important;
+    box-sizing:border-box!important;
+  }
+  .town{
+    left:0!important;
+    right:0!important;
+    top:5%!important;
+    bottom:7%!important;
+    width:auto!important;
+    height:auto!important;
+    transform:none!important;
+    box-sizing:border-box!important;
+  }
+  .building{
+    width:26%!important;
+    max-width:26%!important;
+    box-sizing:border-box!important;
+  }
+  .town-caption{
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    width:max-content!important;
+    max-width:96%!important;
+    white-space:nowrap!important;
+  }
+}
+@media(max-width:430px){
+  .town-wrap{
+    width:80%!important;
+    max-width:330px!important;
+    height:39%!important;
+  }
+}
+@media(max-width:380px){
+  .town-wrap{
+    left:50%!important;
+    right:auto!important;
+    width:82%!important;
+    max-width:300px!important;
+    transform:translate(-50%,-50%)!important;
+  }
+}
+
+.gear-trait{display:inline-block;border:1px solid #777;border-radius:2px;padding:1px 4px;margin:1px 1px 1px 0;font-size:8px;background:#eee8d5}
+.gear-compare{margin:5px 0;padding:5px;border:1px dotted #777;background:rgba(255,255,255,.42);font-size:9px;line-height:1.35}
+@media(max-width:430px){.gear-compare{font-size:8px}.gear-trait{font-size:7px;padding:1px 3px}}
+
+/* v1.1.2 — Events & Consequences */
+.event-tier{display:inline-block;margin:0 0 7px;padding:2px 7px;border:1px solid #666;background:#ece8d8;font-size:9px;font-weight:bold;letter-spacing:.08em}
+.event-tier.routine{background:#ecebe3}.event-tier.notable{background:#e1e8d6}.event-tier.major{background:#ead9c9}.event-tier.rare{background:#e3d9ea;border-style:double}
+.prisoner-card{border:2px inset #aaa;background:#f2eedf;padding:8px;margin:8px 0}.prisoner-card h4{margin:0 0 2px}.prisoner-card .choice-list{margin-top:7px;display:flex;flex-wrap:wrap;gap:4px;align-items:center}.prisoner-card .choice-list button{width:auto!important;min-width:0!important;flex:0 0 auto!important;padding:5px 8px;line-height:1.15}.custody-summary{display:flex;flex-wrap:wrap;gap:6px}.custody-summary .notice{flex:1 1 150px;margin:0}
+@media(max-width:430px){.event-tier{font-size:8px}.prisoner-card{padding:6px}.prisoner-card .choice-list button{font-size:10px;padding:6px 4px}}
+
+/* v1.1.3 companions & relationships */
+.relationship-card{border:2px inset #aaa;background:#f4efd9;padding:8px;margin:7px 0}
+.trust-row{display:grid;grid-template-columns:auto minmax(70px,1fr) auto;gap:6px;align-items:center;font-size:9px;margin:5px 0}
+.trust-meter{height:8px;border:1px solid #555;background:#d1cec1;overflow:hidden}
+.trust-meter span{display:block;height:100%;background:#555}
+.trust-meter.large{height:11px}
+.chronicle-entry.companion{border-left-color:#67537a}
+@media(max-width:430px){
+ .trust-row{grid-template-columns:auto minmax(50px,1fr) auto;font-size:8px;gap:4px}
+ .relationship-card{padding:6px}
+ .party-card-actions button{font-size:9px;padding:6px 4px}
+}
+.outcome-reasons{border:2px inset #aaa;background:#f4efd9;padding:7px 10px;margin:6px 0}.outcome-reasons p{margin:4px 0}
+.fit-table{display:grid;gap:5px}.fit-row{display:grid;grid-template-columns:minmax(120px,1fr) auto auto;gap:5px;border:1px solid #888;padding:6px;background:#f5f1df;align-items:center}.fit-row small{grid-column:1/-1}
+@media(max-width:430px){.fit-row{grid-template-columns:1fr auto;font-size:9px}.fit-row span:nth-of-type(2){grid-column:1/-1}}
+
+/* v1.1.5 field contacts */
+.field-marker{position:absolute;z-index:10;width:34px;height:34px;border:2px solid #444;transform:translate(-50%,-50%);display:grid;place-items:center;font-weight:bold;font-size:17px;box-shadow:2px 2px 2px #555;background:#d8d1aa}
+.field-marker.neutral{border-radius:50%;background:#d8d1aa}
+.field-marker.friendly{border-radius:7px;background:#c7d8c2;border-color:#355b3c}
+.field-marker:hover,.field-marker:focus{outline:2px solid #fff;z-index:20}
+@media(max-width:430px){.field-marker{width:28px;height:28px;font-size:13px}}
+
+.combat-resource{display:inline-block;padding:4px 7px;border:1px solid #777;background:#eee6c9;font-weight:bold}
+
+.defense-buttons{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+@media(max-width:430px){.defense-buttons button{font-size:11px;padding:5px 6px}}
+
+.mini-check{font-size:11px;padding:4px 7px;margin-top:5px}.party-fit-mini{margin:5px 0;line-height:1.3}
+
+
+/* v1.1.9 Living Shantium */
+.living-encounter{border:2px solid #74694f;background:#eee5c8;padding:10px;margin:10px 0;box-shadow:2px 2px 0 rgba(0,0,0,.15)}
+.town-wrap.siege-pressed{filter:saturate(.92)}.town-wrap.siege-desperate{filter:saturate(.8) contrast(1.04)}.town-wrap.siege-final{filter:saturate(.68) contrast(1.08)}
+.town-detail.barricade{left:44%;top:45%;font-size:9px;transform:rotate(-8deg);opacity:.8}.town-detail.evac{right:8%;bottom:7%;font-size:18px;font-weight:bold}
+.town-wrap.siege-final .flags{font-size:20px}.town-wrap.siege-desperate .building,.town-wrap.siege-final .building{box-shadow:1px 2px 0 rgba(0,0,0,.25)}
+@media(max-width:430px){.living-encounter{padding:7px}.town-detail.barricade{font-size:7px}.town-detail.evac{font-size:14px}}
+/* v1.2.0 — strategic warfare, commercial district, enchantments */
+.commercial-links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:8px 0 12px}
+.market-district-label{position:absolute;left:3%;top:38%;width:55%;height:39%;border:1px dashed rgba(73,63,47,.6);background:rgba(226,211,157,.18);font-size:7px;letter-spacing:1px;text-align:center;padding-top:2px;pointer-events:none;z-index:1}
+.building.market-shop{width:22%!important;min-height:35px!important;font-size:8px!important;padding-top:10px!important}
+.building.market-core{width:22%!important}
+.building.market-enchanter{width:18%!important;min-height:31px!important;font-size:7.5px!important;z-index:4}
+.building.market-shop .roof,.building.market-enchanter .roof{height:10px!important;top:-5px!important}
+@media(max-width:680px){.commercial-links{grid-template-columns:repeat(2,minmax(0,1fr))}.market-district-label{left:2%;width:58%}.building.market-shop{width:21%!important;min-height:31px!important;font-size:7px!important}.building.market-enchanter{width:18%!important;min-height:28px!important;font-size:6.6px!important}}
+@media(max-width:430px){.market-district-label{left:2%;top:39%;width:59%;height:38%;font-size:5.8px}.building.market-shop{width:20%!important;min-height:25px!important;height:14%!important;font-size:5.6px!important;padding-top:7px!important}.building.market-core{width:20%!important}.building.market-enchanter{width:17%!important;min-height:23px!important;height:12%!important;font-size:5.2px!important;padding-top:6px!important}.building.market-shop .roof,.building.market-enchanter .roof{height:6px!important;top:-3px!important}}
+/* v1.2.1 — town-map simplification */
+.market-district-label{display:none!important}
+.building.market-shop,.building.market-enchanter{display:none!important}
+.building.market-complex{min-height:62px!important}
+.market-sub{display:block;font-size:7px;line-height:1.15;margin-top:2px;opacity:.78}
+.guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media(max-width:520px){
+ .guide-grid{grid-template-columns:1fr}
+ .building.market-complex{min-height:48px!important}
+ .market-sub{font-size:5.8px}
+}
+/* v1.2.2 — Roads & Companions / Open World foundation */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.mode-card{min-height:84px;text-align:left;padding:10px}
+.mode-card b{font-size:13px}
+.world-map-canvas{position:relative;min-height:520px;height:100%;overflow:hidden;background:linear-gradient(#d9d2a7,#cfc59a);border:2px inset #aaa}
+.world-location{position:absolute;transform:translate(-50%,-50%);min-width:92px;max-width:130px;padding:5px 6px;border:2px outset #aaa;background:#eee4bd;z-index:3;font-size:9px}
+.world-location span{display:block;font-size:7px;margin-top:2px}
+.world-location.current{outline:3px solid #333;background:#fff1b8}
+.world-location.world-type-town,.world-location.world-type-settlement,.world-location.world-type-fort{border-radius:3px}
+.world-location.world-type-wilderness{border-radius:18px}
+.world-location.world-type-ruins{border-style:dashed}
+.world-location.world-type-camp{transform:translate(-50%,-50%) rotate(-1deg)}
+.world-map-caption{position:absolute;left:8px;bottom:7px;background:#f4edcf;border:1px solid #777;padding:4px 7px;font-size:9px;z-index:5}
+.world-terrain{position:absolute;opacity:.32;pointer-events:none;font-size:30px;letter-spacing:4px}.woods-patch{left:5%;top:43%}.hills-patch{right:7%;top:12%}.water-patch{left:17%;top:18%;transform:rotate(-18deg)}
+.companion-rumor-pin{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:#efe5b6;border:2px solid #555;display:grid;place-items:center;font-weight:bold;z-index:6}
+@media(max-width:700px){.world-map-canvas{min-height:430px}.world-location{min-width:72px;max-width:98px;font-size:7.5px;padding:4px}.world-location span{font-size:6px}}
+@media(max-width:430px){.mode-grid{grid-template-columns:1fr}.world-map-canvas{min-height:380px}.world-location{min-width:58px;max-width:78px;font-size:6.5px;padding:3px}.world-location span{font-size:5.2px}.world-terrain{font-size:22px}}
+/* v1.2.3 — Open World Systems I */
+.live-battle-alert-panel{border:2px solid rgba(135,54,42,.7)!important;box-shadow:0 0 0 2px rgba(135,54,42,.12),0 2px 8px rgba(0,0,0,.18)}
+.live-battle-alert-panel h3{animation:liveBattleTextPulse 1.5s ease-in-out infinite}
+@keyframes liveBattleTextPulse{0%,100%{opacity:1}50%{opacity:.66}}
+.live-conflict-marker{position:absolute;transform:translate(-50%,-50%);z-index:18;border:2px solid rgba(110,25,20,.85);border-radius:50%;width:34px;height:34px;background:rgba(245,222,170,.92);font-size:18px;font-weight:900;box-shadow:0 2px 7px rgba(0,0,0,.35);cursor:pointer;animation:liveConflictPulse 1.4s ease-in-out infinite}
+@keyframes liveConflictPulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.12)}}
+.world-party{position:absolute;transform:translate(-50%,-50%);width:25px;height:25px;padding:0;border:2px solid #555;z-index:7;font-size:11px;font-weight:bold}
+.world-party.hostile{background:#d8a19a;border-color:#6e2923}
+.world-party.friendly{background:#b8d4b0;border-color:#315c37}
+.world-party.neutral,.world-party.wary{background:#d8cfaa;border-color:#655f45}
+.world-party.party-merchant{border-radius:3px}.world-party.party-refugees{border-radius:50%}.world-party.party-bandits,.world-party.party-raiders{clip-path:polygon(50% 0,100% 100%,0 100%)}
+@media(max-width:430px){.world-party{width:21px;height:21px;font-size:9px}}
+/* v1.2.4 — Open World Systems II */
+.world-party[title*="Merchant"]{box-shadow:0 0 0 2px rgba(120,100,45,.18)}
+.world-party[title*="Redstone"]{font-weight:900}
+.world-party[title*="Coalition"]{outline:1px dotted rgba(40,80,40,.6)}
+/* v1.2.5 — Regional Conflict & Faction Simulation */
+.world-party.hostile{box-shadow:0 0 0 1px rgba(90,20,20,.35)}
+.world-party.friendly{box-shadow:0 0 0 1px rgba(20,90,35,.3)}
+.choice-list label{display:block;padding:5px 7px;border:1px solid rgba(0,0,0,.18);background:rgba(255,255,255,.25)}
+/* v1.2.6 — Adventure Sites */
+.adventure-site{border:1px solid #665;background:rgba(245,235,194,.35);padding:7px;margin:6px 0}
+.adventure-site.cleared{opacity:.72}
+@media(max-width:430px){.adventure-site{font-size:9px}}
+/* v1.2.7 — Expeditions, Bosses & Treasure Maps */
+.boss-notice{border:2px solid #713;background:rgba(170,100,90,.18);padding:7px}
+.treasure-map-card{border:1px dashed #765;background:rgba(235,220,170,.28);padding:7px}
+/* v1.2.8 — Interior dungeons, secrets, faction questlines */
+.dungeon-map{position:relative;min-height:360px;background:linear-gradient(135deg,#d6cfad,#bbb28f);border:2px inset #999;margin:8px 0;overflow:hidden}
+.dungeon-map:before{content:"";position:absolute;left:8%;right:8%;top:49%;height:3px;background:rgba(75,65,50,.35);box-shadow:0 -90px 0 rgba(75,65,50,.18),0 90px 0 rgba(75,65,50,.18)}
+.dungeon-room{position:absolute;transform:translate(-50%,-50%);width:112px;min-height:54px;padding:5px;border:2px outset #aaa;background:#eee4bd;z-index:2;font-size:8px}
+.dungeon-room span{display:block;font-size:6.5px;margin-top:3px}
+.dungeon-room.room-trap{border-color:#9a684f}.dungeon-room.room-lock{border-color:#6b7185}.dungeon-room.room-secret{border-style:dashed}.dungeon-room.room-boss{border-color:#6f2e2e;background:#dcc0ad}.dungeon-room.room-cleared{opacity:.72}
+@media(max-width:520px){.dungeon-map{min-height:310px}.dungeon-room{width:78px;min-height:43px;font-size:6.5px;padding:3px}.dungeon-room span{font-size:5.4px}}
+/* v1.2.9 — Settlement Services & World Progression */
+.settlement-service-summary{border:1px solid rgba(70,60,40,.35);padding:7px;background:rgba(245,235,195,.3)}
+.rank-badge{display:inline-block;border:1px solid #766;padding:2px 5px;background:#eee0b5;font-size:8px}
+@media(max-width:520px){.settlement-service-summary{font-size:9px}}
+/* v1.3.0 — Living Open World */
+.living-location{padding:6px;border-left:3px solid rgba(70,60,40,.45);background:rgba(244,234,196,.28);line-height:1.35}
+.history-entry{margin:5px 0;padding:6px;border:1px solid rgba(70,60,40,.3);background:rgba(255,255,255,.25)}
+.history-entry.good{border-left:4px solid #596f46}.history-entry.bad{border-left:4px solid #864942}
+/* v1.3.0.1 — Open World mobile map isolation + responsiveness hotfix */
+.world-map-canvas .world-location{
+  position:absolute!important;
+  width:auto!important;height:auto!important;
+  min-height:0!important;
+  left:auto;right:auto;bottom:auto;
+  box-sizing:border-box!important;
+  white-space:normal;
+  line-height:1.1;
+}
+.world-map-canvas .world-location.current{
+  outline:2px solid #333!important;
+  box-shadow:0 0 0 2px rgba(255,255,255,.35);
+}
+.world-map-canvas .world-party,
+.world-map-canvas .companion-rumor-pin{box-sizing:border-box}
+
+@media(max-width:700px){
+  .world-map-canvas{min-height:500px!important;padding:0!important}
+  .world-map-canvas .world-location{
+    min-width:64px!important;
+    width:72px!important;
+    max-width:72px!important;
+    padding:4px 3px!important;
+    font-size:7px!important;
+    line-height:1.05!important;
+    overflow-wrap:anywhere;
+  }
+  .world-map-canvas .world-location span{font-size:5.7px!important;margin-top:2px!important}
+  .world-map-canvas .world-party{width:19px!important;height:19px!important;font-size:8px!important;border-width:1px!important}
+  .world-map-canvas .companion-rumor-pin{width:18px!important;height:18px!important;font-size:9px!important;border-width:1px!important}
+  .world-map-caption{left:6px!important;right:6px!important;bottom:5px!important;width:auto!important;max-width:none!important;padding:3px 5px!important;font-size:7.5px!important;white-space:normal!important}
+}
+@media(max-width:430px){
+  .world-map-canvas{min-height:470px!important}
+  .world-map-canvas .world-location{
+    min-width:56px!important;
+    width:62px!important;
+    max-width:62px!important;
+    padding:3px 2px!important;
+    font-size:6.3px!important;
+  }
+  .world-map-canvas .world-location span{font-size:5.1px!important}
+  .world-map-canvas .world-party{width:17px!important;height:17px!important;font-size:7px!important}
+  .world-map-canvas .companion-rumor-pin{width:16px!important;height:16px!important;font-size:8px!important}
+  .world-terrain{font-size:18px!important;opacity:.22!important}
+}
+/* v1.3.0.2 — fixed-size pannable regional map */
+.world-map-viewport{
+  position:relative;
+  width:100%;
+  height:540px;
+  overflow:hidden;
+  background:#d3caa0;
+  border:2px inset #999;
+  touch-action:none;
+  user-select:none;
+}
+.world-map-viewport .world-map-canvas{
+  position:absolute!important;
+  left:0!important;top:0!important;
+  width:920px!important;
+  height:700px!important;
+  min-height:700px!important;
+  border:0!important;
+  overflow:visible!important;
+  transform-origin:0 0;
+  background:linear-gradient(#d9d2a7,#cfc59a);
+}
+.world-map-viewport .world-location{
+  width:112px!important;
+  min-width:112px!important;
+  max-width:112px!important;
+  min-height:48px!important;
+  padding:6px!important;
+  font-size:9px!important;
+  line-height:1.12!important;
+}
+.world-map-viewport .world-location span{font-size:7px!important}
+.world-map-viewport .world-party{width:25px!important;height:25px!important;font-size:11px!important}
+.world-map-viewport .companion-rumor-pin{width:22px!important;height:22px!important;font-size:11px!important}
+.world-map-viewport .world-map-caption{
+  position:absolute!important;
+  left:8px!important;right:auto!important;bottom:7px!important;
+  width:auto!important;max-width:calc(100% - 16px)!important;
+  z-index:20;
+  pointer-events:none;
+}
+.map-pan-controls{
+  position:absolute;right:8px;bottom:34px;z-index:25;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:rgba(240,234,207,.82);border:1px solid #777;padding:3px;
+}
+.map-pan-controls>div{display:flex;gap:2px}
+.map-pan-controls button{width:34px;height:30px;min-width:34px;padding:0;font-size:12px}
+@media(max-width:700px){
+ .world-map-viewport{height:500px!important}
+ .world-map-viewport .world-map-canvas{width:920px!important;height:700px!important;min-height:700px!important}
+ .world-map-viewport .world-location{width:104px!important;min-width:104px!important;max-width:104px!important;font-size:8.5px!important;padding:5px!important}
+ .world-map-viewport .world-location span{font-size:6.6px!important}
+ .world-map-viewport .world-party{width:23px!important;height:23px!important;font-size:10px!important}
+ .world-map-viewport .companion-rumor-pin{width:21px!important;height:21px!important;font-size:10px!important}
+}
+@media(max-width:430px){
+ .world-map-viewport{height:470px!important}
+ .world-map-viewport .world-location{width:96px!important;min-width:96px!important;max-width:96px!important;font-size:8px!important}
+ .world-map-viewport .world-location span{font-size:6.2px!important}
+ .map-pan-controls{right:5px;bottom:30px}
+ .map-pan-controls button{width:31px;height:28px;min-width:31px}
+}
+/* v1.3.0.3 — Open World Town Life / map control cleanup */
+.map-pan-controls{display:none!important}
+/* v1.3.1 — Guardian Hall expansion */
+.home-hall-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0}
+.home-hall-grid button{min-height:64px;text-align:left;padding:8px}
+.home-hall-grid button b,.home-hall-grid button small{display:block}
+.home-hall-grid button small{margin-top:4px;font-size:8px;font-weight:normal}
+.home-storage-tabs{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.home-storage-tabs button{flex:1 1 90px}
+@media(max-width:520px){.home-hall-grid{grid-template-columns:1fr}.home-hall-grid button{min-height:55px}.home-hall-grid button small{font-size:7px}}
+/* v1.3.3 — tracked parties & expanded local relationships */
+.world-party.tracked-party{outline:3px solid #202020;box-shadow:0 0 0 3px rgba(240,230,170,.7),2px 2px 3px rgba(0,0,0,.45)}
+
+
+/* v1.3.4 — World Map Visual Overhaul */
+.world-map-frame{position:relative;padding:9px 9px 7px;background:linear-gradient(135deg,#6e5b3f,#9a8259 45%,#5c4a34);border:2px solid #3e3224;box-shadow:inset 0 0 0 2px #c1a879,0 2px 5px rgba(0,0,0,.35)}
+.world-map-title{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;color:#efe1b6;background:linear-gradient(#51422f,#352b20);border:1px solid #241c15;letter-spacing:1.3px;text-shadow:1px 1px #111}
+.world-map-title b{font-size:12px}.world-map-title span{font-size:7px;opacity:.78;letter-spacing:.7px}
+.world-map-frame .world-map-viewport{border:1px solid #3d3427!important;background:#cbbf8e!important;box-shadow:inset 0 0 14px rgba(55,42,23,.45);cursor:grab}
+.world-map-frame .world-map-viewport:active{cursor:grabbing}
+.world-map-frame .world-map-canvas{background:radial-gradient(ellipse at 48% 47%,rgba(226,216,166,.98) 0 24%,rgba(205,195,143,.98) 58%,rgba(181,164,112,.98) 100%)!important;box-shadow:inset 0 0 75px rgba(82,58,29,.28)}
+.map-paper-grain{position:absolute;inset:0;pointer-events:none;opacity:.2;background-image:repeating-linear-gradient(7deg,rgba(70,54,31,.08) 0 1px,transparent 1px 8px),repeating-linear-gradient(97deg,rgba(255,255,220,.08) 0 1px,transparent 1px 13px)}
+.map-region-name{position:absolute;color:rgba(78,63,37,.25);font-family:Georgia,serif;font-weight:bold;font-size:18px;letter-spacing:3px;line-height:1.05;text-align:center;pointer-events:none;transform:rotate(-5deg)}
+.region-west{left:5%;top:42%}.region-north{left:39%;top:4%;transform:rotate(2deg)}.region-east{right:3%;top:37%;transform:rotate(5deg)}.region-south{left:39%;bottom:5%;transform:rotate(-2deg)}
+.map-river{position:absolute;height:16px;background:repeating-linear-gradient(0deg,rgba(74,111,117,.28) 0 3px,rgba(92,132,134,.12) 3px 6px);border-top:2px solid rgba(61,91,97,.35);border-bottom:2px solid rgba(61,91,97,.3);border-radius:50%;pointer-events:none;z-index:0}.river-a{width:440px;left:-55px;top:210px;transform:rotate(-19deg)}.river-b{width:330px;left:215px;top:138px;transform:rotate(55deg);opacity:.7}
+.map-road{position:absolute;height:4px;background:#92774e;border-top:1px dashed rgba(62,49,31,.65);border-bottom:1px solid rgba(235,220,168,.45);transform-origin:left center;pointer-events:none;z-index:1;opacity:.78}.road-north{width:265px;left:443px;top:338px;transform:rotate(-88deg)}.road-west{width:345px;left:440px;top:344px;transform:rotate(-148deg)}.road-east{width:365px;left:445px;top:343px;transform:rotate(-21deg)}.road-south{width:225px;left:446px;top:349px;transform:rotate(72deg)}.road-se{width:315px;left:532px;top:520px;transform:rotate(3deg)}
+.map-forest,.map-hills,.map-marsh{position:absolute;pointer-events:none;white-space:pre;text-align:center;line-height:1.15;z-index:0}.map-forest{color:rgba(45,78,47,.46);font-size:28px;letter-spacing:5px}.forest-west{left:2%;top:43%;transform:rotate(-8deg)}.forest-mid{left:32%;top:34%;font-size:21px;opacity:.55}.map-hills{color:rgba(91,70,46,.42);font:26px Georgia,serif;letter-spacing:8px}.hills-ne{right:7%;top:8%;transform:rotate(-8deg)}.hills-east{right:1%;top:49%;transform:rotate(7deg)}.map-marsh{color:rgba(57,93,83,.46);font:25px Georgia,serif;letter-spacing:7px}.marsh-sw{left:17%;bottom:4%;transform:rotate(5deg)}
+.map-compass{position:absolute;right:22px;bottom:24px;width:62px;height:62px;border:1px solid rgba(65,50,29,.4);border-radius:50%;display:grid;place-items:center;color:rgba(61,47,27,.62);font-family:Georgia,serif;z-index:2;pointer-events:none}.map-compass b{position:absolute;top:-16px;font-size:11px}.map-compass span{font-size:36px;line-height:1}
+.world-map-frame .world-location{display:grid!important;grid-template-columns:24px 1fr!important;grid-template-rows:auto auto!important;align-items:center!important;text-align:left!important;width:122px!important;min-width:122px!important;max-width:122px!important;min-height:48px!important;padding:5px 6px!important;border:1px solid #584b36!important;border-radius:3px!important;background:linear-gradient(#f0e4b9,#d7c793)!important;box-shadow:1px 2px 2px rgba(48,36,22,.35),inset 0 0 0 1px rgba(255,250,216,.55)!important;color:#30291d!important;z-index:5!important}
+.world-map-frame .world-location:hover{filter:brightness(1.06)}.world-map-frame .world-location.current{background:linear-gradient(#fff0a8,#e6c96d)!important;outline:3px solid #4d3d25!important;box-shadow:0 0 0 3px rgba(250,225,126,.55),2px 3px 3px rgba(0,0,0,.4)!important;z-index:8!important}
+.world-loc-icon{grid-row:1/3;font-style:normal;font-size:20px;text-align:center;color:#5b4931}.world-map-frame .world-location b{font-size:9px;line-height:1.05}.world-map-frame .world-location span{grid-column:2;font-size:6.5px!important;color:#65583f;margin:1px 0 0!important}.map-you-here{font-weight:bold;color:#6a3c1f!important;letter-spacing:.4px}.world-type-wilderness .world-loc-icon{color:#3f6741}.world-type-ruins .world-loc-icon{color:#665d57}.world-type-fort .world-loc-icon{color:#753f37}.world-type-camp .world-loc-icon{color:#7c5932}
+.contract-location{border-color:#6b4b83!important}.contract-pin{position:absolute;right:-7px;top:-8px;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:#68497b;color:white;border:2px solid #e7d8ad;font-style:normal;font-weight:bold;font-size:10px}
+.world-map-frame .world-party{display:grid;place-items:center;border-radius:50%!important;width:29px!important;height:29px!important;clip-path:none!important;padding:0!important;box-shadow:1px 2px 3px rgba(0,0,0,.42)!important;z-index:10!important}.world-map-frame .world-party span{font-size:12px;line-height:1}.world-map-frame .world-party.hostile{background:#a95143!important;color:#fff4dc;border:2px solid #54251f!important}.world-map-frame .world-party.friendly{background:#65865e!important;color:#fff9df;border:2px solid #304a2d!important}.world-map-frame .world-party.neutral,.world-map-frame .world-party.wary{background:#b99c5f!important;color:#30291d;border:2px solid #604e2f!important}.world-map-frame .world-party.party-merchant{border-radius:4px!important}.world-map-frame .world-party.tracked-party{outline:3px solid #f4d85c!important;box-shadow:0 0 0 5px rgba(62,48,29,.65),0 0 12px rgba(255,225,90,.8)!important;animation:trackedPulse 1.4s ease-in-out infinite alternate}@keyframes trackedPulse{from{filter:brightness(1)}to{filter:brightness(1.22)}}
+.world-map-frame .companion-rumor-pin{background:#765b87!important;color:white!important;border:2px solid #e5d7ad!important;box-shadow:1px 2px 3px rgba(0,0,0,.4);z-index:11!important}
+.tracking-route{position:absolute;inset:0;width:920px;height:700px;pointer-events:none;z-index:4}.tracking-route line{stroke:#765b28;stroke-width:3;stroke-dasharray:10 8;opacity:.75}
+.world-map-frame .world-map-caption{left:7px!important;bottom:7px!important;display:flex;gap:10px;align-items:center;background:rgba(48,39,28,.88)!important;color:#f1e5bd!important;border:1px solid #211a13!important;padding:5px 8px!important;font-size:8px!important;box-shadow:1px 1px 2px rgba(0,0,0,.35)}
+.world-map-legend{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:6px 4px 0;color:#eee0b5;font-size:7px}.world-map-legend span{display:flex;align-items:center;gap:4px}.legend-dot{display:inline-block;width:9px;height:9px;border:1px solid #2f261b;border-radius:50%}.legend-dot.loc{background:#dfcf99;border-radius:2px}.legend-dot.hostile{background:#a95143}.legend-dot.neutral{background:#b99c5f}.legend-dot.friendly{background:#65865e}.legend-dot.lead{background:#765b87}
+@media(max-width:700px){.world-map-frame{padding:6px}.world-map-title{height:30px;padding:0 7px}.world-map-title b{font-size:10px}.world-map-title span{font-size:6px}.world-map-frame .world-location{width:112px!important;min-width:112px!important;max-width:112px!important}.world-map-legend{gap:8px}.map-region-name{font-size:15px}.world-map-frame .world-party{width:27px!important;height:27px!important}}
+@media(max-width:430px){.world-map-frame{padding:4px}.world-map-title{height:29px}.world-map-title span{display:none}.world-map-frame .world-map-viewport{height:485px!important}.world-map-frame .world-location{width:104px!important;min-width:104px!important;max-width:104px!important;padding:4px!important}.world-loc-icon{font-size:17px}.world-map-frame .world-location b{font-size:8px}.world-map-frame .world-location span{font-size:6px!important}.world-map-frame .world-party{width:25px!important;height:25px!important}.world-map-frame .world-map-caption{max-width:70%!important;gap:5px;font-size:7px!important}.world-map-legend{font-size:6.5px;gap:7px}.map-region-name{font-size:13px;letter-spacing:2px}}
+/* v1.3.5 — Contract system overhaul */
+.contract-card{position:relative;border-left:4px solid #7c7256}
+.contract-card .contract-type{float:right;font-size:7px;border:1px solid #887b5a;padding:2px 4px;background:rgba(240,228,187,.55)}
+.contract-escort{border-left-color:#376b7a}
+.contract-hunt{border-left-color:#7d3d35}
+.contract-delivery,.contract-procure{border-left-color:#766536}
+.contract-diplomacy{border-left-color:#66557b}
+.escort-active-panel{border:2px solid #725d31;background:rgba(242,226,174,.34)}
+.world-party.escort-caravan{outline:3px solid #2e7381;box-shadow:0 0 0 3px rgba(218,238,229,.75),2px 2px 3px rgba(0,0,0,.45)}
+
+.world-map-legend .legend-dot.escort{background:#2e7381;box-shadow:0 0 0 2px rgba(218,238,229,.8)}
+/* v1.3.6 — Encounters & Road Events */
+.road-event-card{border:2px solid #6e6148;background:linear-gradient(180deg,rgba(248,237,199,.88),rgba(226,207,157,.78));padding:12px;margin:8px 0 12px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+.road-event-card .road-event-icon{float:left;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid #766744;border-radius:50%;margin:0 10px 5px 0;font-size:18px;background:rgba(255,255,255,.35)}
+.road-event-card p{margin-top:2px;min-height:30px}.road-event-card small{display:block;clear:both;border-top:1px solid rgba(92,75,45,.25);padding-top:5px}
+/* v1.3.7 — Contract Expansion */
+.contract-recovery{border-left-color:#8a4e2d}
+.contract-followup{box-shadow:inset 0 0 0 2px rgba(173,138,57,.45)}
+.contract-summary{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 10px}
+.contract-summary span{flex:1 1 90px;border:1px solid #8d8060;background:rgba(247,235,195,.45);padding:5px;text-align:center;font-size:8px}
+/* v1.3.8 — Relationships & Party Dynamics */
+.relationship-list{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.relationship-pair{width:100%;display:flex;align-items:center;justify-content:space-between;text-align:left;gap:10px;padding:9px 10px}
+.relationship-pair span{display:flex;flex-direction:column;gap:3px;min-width:0}.relationship-pair small{white-space:normal}
+.relation-good{border-left:4px solid #4f7848}.relation-warn{border-left:4px solid #9a742e}.relation-bad{border-left:4px solid #8c3e36}.relation-neutral{border-left:4px solid #77705f}
+.relationship-card{padding:10px;margin:8px 0;border-top:1px solid #8c8067;border-right:1px solid #8c8067;border-bottom:1px solid #8c8067;background:rgba(245,234,196,.45)}
+@media(max-width:620px){.relationship-pair{font-size:10px}.relationship-pair small{font-size:8px}}
+/* v1.3.9 — Conversations & Personal History */
+.history-ledger{display:flex;flex-direction:column;gap:7px;margin:8px 0}
+.history-entry{padding:9px;border:1px solid #8b8067;background:rgba(246,235,198,.4)}
+.history-entry p{margin:4px 0 0}.history-entry.known{border-left:4px solid #4e7548}.history-entry.available{border-left:4px solid #9a742e}.history-entry.locked{opacity:.67;border-left:4px solid #777}
+@media(max-width:620px){.history-entry{padding:7px}.history-entry p{font-size:9px}}
+/* v1.3.9.2 — Defeat, Captivity & Escape */
+.captive-card{border-left:4px solid #8c3e36}
+.captivity-panel{border:1px solid #8c3e36;background:rgba(110,55,45,.08);padding:10px}
+/* v1.3.10 — Regional Factions */
+.faction-presence-row{width:100%;margin:6px 0;text-align:left}
+.faction-presence-row small{display:block;margin-top:3px;opacity:.78}
+/* v1.3.11 — Faction Life & Political Consequences */
+.diplomacy-grid{display:grid;grid-template-columns:1fr;gap:5px;margin:8px 0}
+.diplomacy-grid>div{display:flex;justify-content:space-between;gap:12px;padding:6px 8px;border:1px solid var(--line);border-radius:6px}
+.companion-story-card{border-left:4px solid #785f91}.story-complete{border-left:4px solid #4f7848}
+/* v1.3.13 — Living Settlements & NPC Life */
+.settlement-event-card{border:1px solid #8f734a;border-left:4px solid #9a742e;background:rgba(246,232,187,.45);padding:10px;margin:8px 0}
+.settlement-event-card p{margin:5px 0 8px}
+.living-welcome{font-style:italic;opacity:.86;border-bottom:1px solid rgba(100,85,60,.25);padding-bottom:7px}
+.persistent-problem-card{border:1px solid #8f5c50;border-left:4px solid #8b3f37;background:rgba(116,52,45,.08);padding:10px;margin:8px 0}.persistent-problem-card p{margin:5px 0}
+/* v1.3.15 — Regional Simulation & Emergent Stories */
+.regional-thread-card{border:1px solid #6f7580;border-left:4px solid #596b82;background:rgba(72,91,113,.08);padding:9px;margin:7px 0}
+.regional-thread-card.resolved{opacity:.76;border-left-color:#4f7848}
+.regional-thread-card p{margin:5px 0}
+/* v1.3.16 — Emergent World Events & Player Intervention */
+.regional-opportunity-marker{border:1px solid #8b7748;border-left:5px solid #a17a27;background:rgba(151,112,35,.10);padding:10px;margin:8px 0}
+.regional-opportunity-marker p{margin:6px 0}
+.companion-reaction{margin:5px 0 10px;padding:8px 10px;border-left:3px solid #6d667f;background:rgba(90,80,110,.07);font-size:.94em}
+/* v1.3.17 — Politics, Influence & Territorial Change */
+.political-control-tag{position:absolute;right:-8px;top:-8px;font-size:7px;line-height:1;padding:3px 4px;border:1px solid #6c604c;border-radius:7px;background:#efe2b8;color:#342d23;font-style:normal;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.political-control-tag.contested{background:#e7c783;border-color:#8b6427}
+.political-settlement-card{width:100%;display:flex;justify-content:space-between;gap:12px;text-align:left;padding:9px 10px;margin:5px 0}
+.political-settlement-card>span{display:flex;flex-direction:column}.political-settlement-card>span:last-child{text-align:right}
+.legend-pol{font-size:8px;border:1px solid #74654d;border-radius:5px;padding:1px 3px;background:#efe2b8}
+/* v1.3.18 — Open World Combat & Encounter Expansion */
+.encounter-tactical-card{border-left:4px solid #6b7658;padding:8px}
+/* v1.3.19 — Economy, Property & Long-Term Wealth */
+.property-card{border:1px solid #776746;border-left:5px solid #8b6a2e;padding:10px;margin:8px 0;background:rgba(137,103,43,.08)}
+.economic-holding-card{width:100%;display:flex;justify-content:space-between;gap:12px;text-align:left;padding:9px 10px;margin:5px 0}
+.economic-holding-card>span{display:flex;flex-direction:column}
+/* v1.3.20 */
+.law-location-card{width:100%;display:flex;justify-content:space-between;gap:12px;text-align:left;padding:9px 10px;margin:5px 0}.law-location-card>span{display:flex;flex-direction:column}.law-location-card>span:last-child{text-align:right}
+/* v1.3.21 — Companions on the Road */
+.road-life-card{width:100%;display:grid;grid-template-columns:minmax(120px,.8fr) minmax(0,1.6fr);gap:10px;text-align:left;padding:9px 10px;margin:6px 0}
+.road-life-card>span{display:flex;flex-direction:column}
+/* v1.3.22 — World Encounter Variety */
+.encounter-catalogue{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px}
+.encounter-catalogue .unseen{opacity:.58}
+.encounter-catalogue .seen{border-left:4px solid #6f7b55}
+/* v1.3.23 — Wilderness & Exploration */
+.world-location.world-type-hidden{border-style:dashed;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+.world-location.world-type-hidden .world-loc-icon{font-size:18px}
+.exploration-site-card{width:100%;display:grid;grid-template-columns:minmax(145px,.8fr) minmax(0,1.6fr);gap:10px;text-align:left;padding:9px 10px;margin:6px 0}
+.exploration-site-card>span{display:flex;flex-direction:column}
+@media(max-width:600px){.exploration-site-card{grid-template-columns:1fr}.exploration-site-card>span+span{font-size:12px}}
+/* v1.3.24 — Site Interiors & Dungeons */
+.interior-map{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:6px;margin:10px 0}
+.interior-node{border:1px solid rgba(90,74,50,.45);padding:7px;background:rgba(255,248,225,.45);display:flex;flex-direction:column;min-height:48px}
+.interior-node.current{outline:2px solid currentColor}
+.interior-node.cleared{opacity:.82}
+.interior-node.unknown{opacity:.48}
+.interior-node small{margin-top:4px;font-size:10px;letter-spacing:.08em}
+/* v1.3.25 — Artifacts & Unique Equipment */
+.artifact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;margin:10px 0}
+.artifact-card{border:1px solid #7f6a42;border-left:5px solid #9a762d;padding:9px;background:rgba(154,118,45,.08)}
+.artifact-card.unknown{opacity:.62;border-left-color:#777}
+.artifact-card small{display:block;margin:3px 0 6px}
+.artifact-mark{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.08em;padding:2px 4px;border:1px solid #8c6a27;border-radius:4px;background:rgba(171,126,36,.14)}
+/* v1.3.26 — Companion Exploration & Personal Quests */
+.companion-expedition-card{width:100%;display:grid;grid-template-columns:minmax(180px,.9fr) minmax(0,1.5fr);gap:10px;text-align:left;padding:9px 10px;margin:6px 0}
+.companion-expedition-card>span{display:flex;flex-direction:column}
+.companion-site-recognition{border-left:4px solid #6d667f;background:rgba(90,80,110,.08);padding:8px 10px;margin:7px 0}
+.companion-site-recognition button{margin-top:6px}
+@media(max-width:600px){.companion-expedition-card{grid-template-columns:1fr}}
+/* v1.3.27 — Living Settlements II */
+.town-scene-inline{border-left:4px solid #7b6a4c;background:rgba(120,95,55,.07);padding:8px 10px;margin:7px 0}
+.town-rumor{padding:7px 9px;margin:5px 0;border-left:3px solid #6b7786;background:rgba(75,90,105,.06)}
+.town-notice{padding:7px 9px;margin:5px 0;border:1px dashed rgba(100,80,45,.5);background:rgba(145,115,55,.06)}
+/* v1.3.28 — Regional Simulation II */
+.regional-evidence,.route-condition{padding:8px 10px;margin:6px 0;border-left:4px solid #777;background:rgba(80,80,80,.05)}
+.regional-evidence.good,.route-condition.open{border-left-color:#61754e}
+.regional-evidence.bad,.route-condition.dangerous{border-left-color:#8a4f43}
+.route-condition.risky{border-left-color:#a07b38}.route-condition.watched{border-left-color:#6f7180}
+.route-condition p{margin:5px 0 0}
+/* v1.3.29 — Roads, Travel & Dynamic Encounters II */
+.route-preview{padding:9px 11px;margin:8px 0;border-left:5px solid #777;background:rgba(80,80,80,.06)}
+.route-preview.route-open{border-left-color:#657b51}.route-preview.route-watched{border-left-color:#77798b}.route-preview.route-risky{border-left-color:#a07a38}.route-preview.route-dangerous{border-left-color:#914b42}
+.choice-list button small{display:block;font-weight:normal;margin-top:3px;opacity:.8}
+.world-location.route-watched{box-shadow:0 0 0 2px rgba(100,100,120,.35)}
+.world-location.route-risky{box-shadow:0 0 0 2px rgba(150,110,40,.55)}
+.world-location.route-dangerous{box-shadow:0 0 0 3px rgba(145,65,55,.65)}
+.legend-road{display:inline-block;width:18px;height:4px;vertical-align:middle;margin-right:3px;background:#777}
+.legend-road.open{background:#657b51}.legend-road.risky{background:#a07a38}.legend-road.dangerous{background:#914b42}
+.road-event-card.route-dangerous{border-left:5px solid #914b42}.road-event-card.route-risky{border-left:5px solid #a07a38}
+/* v1.3.30 — Companion Life III */
+.loyalty-card{width:100%;display:grid;grid-template-columns:minmax(150px,.8fr) minmax(0,1.5fr);gap:10px;text-align:left;padding:9px 10px;margin:6px 0}
+.loyalty-card>span{display:flex;flex-direction:column}
+.relationship-driver{padding:8px 10px;margin:6px 0;border-left:4px solid #777;background:rgba(90,90,90,.06)}
+.relationship-driver.positive{border-left-color:#637b52}.relationship-driver.negative{border-left-color:#8b5147}
+@media(max-width:600px){.loyalty-card{grid-template-columns:1fr}}
+/* v1.3.31 — Contracts II: Regional Contracts */
+.regional-contract{border-left:5px solid #6d7955;background:rgba(90,112,70,.07)}
+.regional-contract-source,.regional-contract-why{padding:7px 9px;margin:7px 0;border-left:3px solid #6d7955;background:rgba(90,112,70,.08)}
+.regional-contract-why{font-size:.9em}
+/* v1.3.32 */
+.law-location-card small{max-width:270px}
+/* v1.3.33 — Economy & Trade II */
+.trade-good-row small{line-height:1.3}
+.trade-route-card{padding:8px 10px;margin:6px 0;border-left:4px solid #6e7755;background:rgba(90,110,70,.07)}
+.merchant-manifest-card{display:flex;flex-direction:column;width:100%;text-align:left;padding:9px 10px;margin:6px 0}
+.merchant-manifest-card small{margin:3px 0}
+/* v1.3.34 — Wilderness & Exploration II */
+.exploration-site-card.procedural{border-style:dashed}
+.exploration-clue-card{padding:8px 10px;margin:7px 0;border-left:4px solid #786b91;background:rgba(105,90,130,.08)}
+.rare-explore-mark{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.07em;padding:2px 4px;border:1px solid #677b59;border-radius:4px;background:rgba(90,115,75,.12)}
+.world-location.world-type-hidden .world-loc-icon{min-width:16px}
+/* v1.3.35 — Factions III: Politics & Regional Power */
+.political-lean-row{display:grid;grid-template-columns:minmax(150px,.7fr) minmax(0,1.3fr);gap:10px;padding:8px 10px;margin:5px 0;border-left:4px solid #74705f;background:rgba(100,95,80,.06)}
+.political-lean-row span{display:flex;flex-direction:column}.political-lean-row small{margin-top:2px}
+.faction-priority-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px}
+.political-profile-list{display:flex;flex-direction:column;gap:9px;margin:8px 0 14px}
+.political-profile-card{border:1px solid rgba(80,76,65,.38);background:rgba(120,110,85,.055);padding:10px;border-radius:7px}
+.political-profile-card.controlling{border-width:2px}
+.political-profile-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:8px}.political-profile-head span{display:flex;flex-direction:column}
+.political-metric-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.political-metric-grid>span{display:flex;flex-direction:column;padding:5px 6px;border:1px solid rgba(80,76,65,.20);min-width:0}.political-metric-grid small{opacity:.78}
+.political-driver-list{display:flex;flex-direction:column;gap:2px;margin-top:8px;padding-top:7px;border-top:1px dotted rgba(80,76,65,.35)}
+.political-action-faction,.political-person-row{display:flex!important;justify-content:space-between!important;gap:10px!important;text-align:left!important}.political-action-faction span,.political-person-row span{display:flex;flex-direction:column;min-width:0}
+.political-party-choice button.selected{outline:3px solid rgba(70,82,106,.72);outline-offset:-3px;background:rgba(90,105,135,.14)}
+.political-party-choice button.selected::after{content:'Selected';display:block;margin-top:4px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:.72}
+.political-glance-row{align-items:stretch!important}.political-glance-main{width:100%;gap:3px}.political-glance-title{display:flex!important;flex-direction:row!important;justify-content:space-between;align-items:center;gap:10px}.political-glance-score{font-size:1.05em}
+.political-strength-track{display:block!important;width:100%;height:9px;margin-top:4px;border:1px solid rgba(60,58,52,.45);background:rgba(50,48,44,.10);overflow:hidden}
+.political-strength-fill{display:block!important;height:100%;min-width:4px;background:#777}.political-strength-fill.strong{background:#6d8252}.political-strength-fill.medium{background:#9a854b}.political-strength-fill.weak{background:#8a6760}
+
+.political-campaign-source,.political-contract-why{margin:7px 0;padding:8px 9px;border:1px solid rgba(87,72,48,.40);border-left:4px solid rgba(87,72,48,.70);border-radius:5px;background:rgba(150,125,70,.09);overflow-wrap:anywhere}
+.political-contract{box-shadow:inset 3px 0 0 rgba(90,75,45,.55)}
+.political-contract .contract-type{font-weight:bold}
+.internal-faction-bloc{border-left:4px solid rgba(75,65,45,.55)}
+.witness-method-warning{border:1px solid rgba(110,55,45,.55);padding:8px;border-radius:6px}
+.political-outcome-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:9px 0}.political-outcome-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 8px;border:1px solid rgba(80,76,65,.25);background:rgba(255,255,255,.18)}.political-outcome-row span{display:flex;flex-direction:column;min-width:0}.political-outcome-row small{opacity:.78}.political-delta{font-weight:bold}
+@media(max-width:650px){.political-outcome-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.political-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.political-control-tag.leaning{outline:1px dashed currentColor}
+@media(max-width:600px){.political-lean-row{grid-template-columns:1fr}}
+/* v1.3.36 — Shantium Region Story Layer */
+.regional-story-card{width:100%;display:grid;grid-template-columns:minmax(180px,.85fr) minmax(0,1.5fr);gap:10px;text-align:left;padding:9px 10px;margin:6px 0;border-left:5px solid #6d687e}
+.regional-story-card.complete{border-left-color:#627552;background:rgba(90,115,75,.07)}
+.regional-story-card span{display:flex;flex-direction:column}.regional-story-card small{margin-top:3px}
+.regional-story-note{padding:7px 9px;margin:5px 0;border-left:3px solid #777083;background:rgba(100,90,120,.06)}
+.regional-story-inline{width:100%;text-align:left;margin:5px 0;padding:7px 9px;border-left:4px solid #6d687e}
+@media(max-width:600px){.regional-story-card{grid-template-columns:1fr}}
+/* v1.3.37 — Open World Polish / Expansion Preflight */
+html,body{max-width:100%;overflow-x:hidden}
+.overlay{padding:10px;box-sizing:border-box}
+.dialog{box-sizing:border-box;overscroll-behavior:contain}
+.dialog img,.dialog svg{max-width:100%}
+.dialog .choice-list button,.dialog-footer button{white-space:normal;overflow-wrap:anywhere}
+.world-map-title{gap:6px;flex-wrap:wrap}.world-map-title span{white-space:normal}
+.world-map-caption{font-size:9px;line-height:1.25}.map-legend{gap:5px 8px}.map-legend span{white-space:nowrap}
+@media(max-width:700px){
+ .overlay{padding:4px;align-items:flex-start}
+ .dialog,.dialog.large{width:calc(100vw - 8px)!important;max-width:calc(100vw - 8px)!important;max-height:calc(100dvh - 8px)!important;margin:0!important;padding:10px!important;box-shadow:3px 3px 0 rgba(0,0,0,.25)}
+ .dialog-status{top:-10px;margin:-10px -10px 10px;padding:6px 8px;gap:6px;font-size:10px;flex-wrap:wrap}
+ .dialog h2{font-size:20px}.dialog-footer{position:sticky;bottom:-10px;background:var(--panel);padding:8px 0 2px;z-index:8}
+ .dialog-footer button{flex:1 1 130px;min-height:40px}
+ .choice-list{gap:6px}.choice-list button{min-height:42px;padding:8px 9px;text-align:left}
+ .inventory-row{grid-template-columns:minmax(0,1fr) auto;align-items:start}
+ .inventory-row>span:nth-child(3){grid-column:1/-1;display:flex;gap:5px;flex-wrap:wrap}.inventory-row button{min-height:36px}
+ .tabs{gap:3px}.tabs button{flex:1 1 110px;min-height:38px}
+ .world-map-frame{max-width:100%;overflow:hidden}.world-map-viewport{height:min(470px,58dvh)!important}
+ .world-map-viewport .world-location{width:88px!important;min-width:88px!important;max-width:88px!important;min-height:44px!important;padding:4px!important}
+ .world-map-viewport .world-location b{font-size:7.8px!important}.world-map-viewport .world-location span{font-size:6px!important}
+ .world-map-caption{left:5px!important;bottom:5px!important;max-width:calc(100% - 10px)!important}.map-legend{font-size:7px!important}
+ .regional-story-card,.political-settlement-card,.law-location-card,.merchant-manifest-card{min-width:0;max-width:100%;box-sizing:border-box}
+}
+@media(max-width:430px){
+ .dialog{font-size:12px}.dialog h2{font-size:18px}.compact{font-size:11px}
+ .world-map-viewport{height:min(430px,54dvh)!important}.world-map-viewport .world-location{width:82px!important;min-width:82px!important;max-width:82px!important}
+ .map-region-name{font-size:7px!important}.map-forest,.map-hills,.map-marsh{font-size:8px!important}
+ .menu-window{width:calc(100vw - 10px);padding:12px;box-sizing:border-box}.menu-title{font-size:30px}.new-form{grid-template-columns:1fr}
+}
+/* v1.3.38 — Shantium Region Consolidation */
+.region-snapshot{display:flex;flex-direction:column;gap:2px;padding:8px 10px;margin:7px 0;border:1px solid #777;background:rgba(255,255,255,.35)}
+.region-snapshot.compact{font-size:11px;padding:6px 8px}.region-snapshot span{line-height:1.3}
+.region-overview-row{width:100%;display:grid;grid-template-columns:minmax(180px,.8fr) minmax(0,1.4fr);gap:10px;text-align:left;padding:9px 10px;margin:6px 0}
+.region-overview-row span{display:flex;flex-direction:column;min-width:0}.region-overview-row small{margin-top:2px}
+@media(max-width:600px){.region-overview-row{grid-template-columns:1fr}.region-snapshot{font-size:11px}}
+/* v1.3.39 — Pre-Beyond Shantium Comprehensive Bug Review */
+.integrity-audit{margin:7px 0}
+@media(max-width:700px){
+ .region-snapshot,.regional-story-inline,.town-rumor,.town-notice{overflow-wrap:anywhere}
+ .dialog .notice,.dialog .card{max-width:100%;box-sizing:border-box}
+}
+/* v1.4.0 — Beyond Shantium / Bluestone Highlands */
+.region-map-bluestone .world-map-canvas{background:radial-gradient(ellipse at 45% 38%,rgba(230,226,204,.9) 0 20%,transparent 21%),linear-gradient(145deg,rgba(150,145,125,.22),transparent 34%),#d9d0ad}
+.blue-ridge{position:absolute;font-family:Georgia,serif;color:#57584e;font-size:22px;line-height:.85;letter-spacing:5px;opacity:.78;pointer-events:none;white-space:nowrap;text-shadow:0 1px rgba(255,255,255,.5)}
+.ridge-a{left:3%;top:8%;transform:rotate(-7deg)}.ridge-b{left:56%;top:4%;transform:rotate(8deg)}.ridge-c{left:2%;top:56%;transform:rotate(6deg)}.ridge-d{left:64%;top:58%;transform:rotate(-8deg)}
+.blue-snow{position:absolute;color:#777b79;font-size:18px;letter-spacing:9px;opacity:.7;pointer-events:none}.snow-a{left:34%;top:2%}
+.blue-creek{position:absolute;width:4px;height:52%;background:rgba(74,108,125,.6);border:1px solid rgba(55,80,96,.5);left:66%;top:27%;transform:rotate(17deg);transform-origin:center;pointer-events:none}
+.blue-road{position:absolute;height:3px;background:#8a7355;border-top:1px solid #665741;border-bottom:1px solid rgba(255,255,255,.35);transform-origin:left center;pointer-events:none}
+.blue-road-a{left:51%;top:32%;width:36%;transform:rotate(57deg)}.blue-road-b{left:22%;top:54%;width:36%;transform:rotate(-25deg)}.blue-road-c{left:37%;top:72%;width:45%;transform:rotate(11deg)}.blue-road-d{left:48%;top:31%;width:40%;transform:rotate(-20deg)}
+.blue-zion-label{left:44%;top:38%}.blue-valley-label{left:27%;top:79%}.blue-west-label{left:7%;top:41%}.blue-pass-label{left:51%;top:5%}
+.region-map-bluestone .world-location{box-shadow:1px 2px 0 rgba(60,50,35,.35)}
+.region-map-bluestone .terrain-pass,.region-map-bluestone .terrain-gorge,.region-map-bluestone .terrain-mountain-road{border-style:dashed}
+.mountain-route{border-left:5px solid #67685f;background:rgba(100,100,90,.10)}
+@media(max-width:700px){.blue-ridge{font-size:16px;letter-spacing:2px;opacity:.65}.blue-snow{font-size:13px}}
+
+/* v1.5.22 — Bluestone map road-network polish */
+.shantium-road-network{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible}
+.shantium-road-network .road-shadow{fill:none;stroke:rgba(62,53,43,.38);stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
+.shantium-road-network .road-line{fill:none;stroke:#887456;stroke-width:.78;stroke-linecap:round;stroke-linejoin:round}
+.shantium-road-network .road-highlight{fill:none;stroke:rgba(244,236,205,.68);stroke-width:.18;stroke-linecap:round;stroke-linejoin:round}
+.shantium-road-network .minor .road-shadow{stroke-width:1.05}.shantium-road-network .minor .road-line{stroke-width:.58}.shantium-road-network .minor .road-highlight{stroke-width:.13}
+.shantium-road-network .trail .road-line{stroke-dasharray:1.15 1.1;opacity:.82}.shantium-road-network .trail .road-highlight{opacity:.5}
+.region-map-shantium .map-region-name{z-index:2}.region-map-shantium .map-river,.region-map-shantium .map-forest,.region-map-shantium .map-hills,.region-map-shantium .map-marsh{z-index:0}
+.blue-road-network{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible}
+.blue-road-network .road-shadow{fill:none;stroke:rgba(62,53,43,.36);stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
+.blue-road-network .road-line{fill:none;stroke:#887456;stroke-width:.78;stroke-linecap:round;stroke-linejoin:round}
+.blue-road-network .road-highlight{fill:none;stroke:rgba(244,236,205,.65);stroke-width:.18;stroke-linecap:round;stroke-linejoin:round}
+.blue-road-network .minor .road-shadow{stroke-width:1.05}.blue-road-network .minor .road-line{stroke-width:.58}.blue-road-network .minor .road-highlight{stroke-width:.13}
+.blue-road-network .trail .road-line{stroke-dasharray:1.1 1.1;opacity:.8}
+.region-map-bluestone .map-region-name{z-index:2}.region-map-bluestone .blue-ridge,.region-map-bluestone .blue-creek,.region-map-bluestone .blue-snow{z-index:0}
+/* v1.4.1 — Bluestone Town Life & Factions */
+.bluestone-life,.bluestone-politics{margin:12px 0;padding:12px;border:1px solid rgba(90,92,82,.45);background:rgba(120,125,112,.08);border-radius:8px}
+.bluestone-life h3,.bluestone-politics h3{margin-top:0}.mountain-concerns{display:flex;flex-direction:column;gap:4px;margin-top:8px;padding:8px;border-top:1px solid rgba(90,92,82,.28)}
+.politics-side{margin:8px 0;padding:9px;background:rgba(255,255,255,.22);border-left:4px solid rgba(85,88,80,.55)}.politics-side p{margin:4px 0 0}
+/* v1.4.2 — Bluestone Companions & Personal Stories */
+.companion-story-card{overflow-wrap:anywhere}
+/* v1.4.3 — Cross-Region Economy & Caravans */
+.trade-route-card small{line-height:1.45}
+/* v1.4.4 — Regional Storylines */
+.cross-story-banner{margin:9px 0;padding:9px 11px;border-left:5px solid rgba(80,85,95,.7);background:rgba(90,100,115,.10);font-size:.92em}
+.companion-story-reaction{margin:9px 0;padding:10px;border:1px solid rgba(100,95,80,.35);background:rgba(150,135,95,.08);font-style:italic}
+/* v1.4.5 — World Systems Consolidation II */
+.region-map-shantium .world-party,.region-map-bluestone .world-party{transition:left .18s ease,top .18s ease}
+@media(max-width:760px){
+ .world-map-title{gap:4px;align-items:flex-start}
+ .world-map-title span{font-size:.72rem}
+ .contract-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .cross-story-banner,.companion-story-reaction{font-size:.88rem}
+}
+/* v1.5.0 — Sengia / Redstone regional map */
+.region-map-redstone .world-map-canvas{background:linear-gradient(145deg,rgba(126,98,76,.13),transparent 34%),radial-gradient(ellipse at 48% 29%,rgba(205,195,157,.55) 0 21%,transparent 22%),#d8c49d}
+.red-road-network{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;overflow:visible}
+.red-road-network .road-shadow{fill:none;stroke:rgba(91,61,43,.48);stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}
+.red-road-network .road-line{fill:none;stroke:#92705a;stroke-width:.72;stroke-linecap:round;stroke-linejoin:round}
+.red-road-network .road-highlight{fill:none;stroke:rgba(239,220,174,.42);stroke-width:.16;stroke-linecap:round;stroke-linejoin:round}
+.red-road-network .minor .road-shadow{stroke-width:.92}.red-road-network .minor .road-line{stroke-width:.55}.red-road-network .minor .road-highlight{stroke-width:.12}
+.red-forest{position:absolute;font-family:Georgia,serif;color:#4d5a42;font-size:19px;line-height:.9;letter-spacing:4px;opacity:.78;pointer-events:none;white-space:nowrap}
+.red-forest-west{left:2%;top:42%;transform:rotate(-5deg)}.red-forest-east{left:82%;top:50%;transform:rotate(5deg)}
+.red-ridge{position:absolute;font-family:Georgia,serif;color:#6d675d;font-size:18px;line-height:.9;letter-spacing:5px;opacity:.7;pointer-events:none;white-space:nowrap}
+.red-ridge-north{left:28%;top:4%;transform:rotate(-3deg)}.red-ridge-mid{left:45%;top:12%;transform:rotate(9deg)}
+.red-lake{position:absolute;left:51%;top:17%;color:#6b8992;font-size:23px;line-height:.7;transform:rotate(-8deg);opacity:.72;pointer-events:none}
+.red-dry{position:absolute;left:60%;top:78%;font-size:18px;letter-spacing:9px;color:#967b5f;opacity:.65;pointer-events:none}
+.red-capital-wall{position:absolute;left:69%;top:42%;padding:5px 8px;border:3px double #77604d;border-radius:3px;font-family:Georgia,serif;font-size:13px;letter-spacing:2px;color:#67503f;background:rgba(224,207,164,.72);pointer-events:none}
+.red-lock-label{left:5%;top:35%}.red-grain-label{left:40%;top:6%}.red-sengia-label{left:61%;top:31%}.red-east-label{left:78%;top:62%}
+.redstone-life,.redstone-politics{margin:12px 0;padding:12px;border:1px solid rgba(116,82,62,.45);background:rgba(140,90,65,.07);border-radius:8px}
+.redstone-life h3,.redstone-politics h3{margin-top:0}.redstone-concerns{display:flex;flex-direction:column;gap:4px;margin-top:8px;padding:8px;border-top:1px solid rgba(116,82,62,.28)}
+@media(max-width:700px){.red-forest,.red-ridge{font-size:14px;letter-spacing:2px}.red-capital-wall{font-size:10px;letter-spacing:1px}}
+
+/* v1.5.1 — Redstone Companions & Personal Stories */
+.redstone-companion-note{margin:10px 0;padding:10px;border-left:4px solid rgba(120,78,58,.7);background:rgba(130,90,70,.08)}
+@media(max-width:700px){.redstone-companion-note{font-size:.9rem}}
+
+/* v1.5.2 — Redstone Town Life & Politics II */
+.redstone-policy-ledger{margin:10px 0;padding:10px 12px;border:1px solid rgba(116,82,62,.45);background:rgba(116,82,62,.08);border-radius:8px;display:flex;flex-direction:column;gap:5px}
+.redstone-civic-issue{margin:10px 0;padding:12px;border:1px solid rgba(132,86,56,.48);background:rgba(154,101,68,.08);border-radius:8px}
+.redstone-institutions{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
+.redstone-institutions span{padding:5px 8px;border-radius:999px;border:1px solid rgba(116,82,62,.35);background:rgba(255,255,255,.35);font-size:.88rem}
+@media(max-width:700px){.redstone-institutions span{font-size:.8rem}.redstone-civic-issue,.redstone-policy-ledger{padding:9px}}
+
+/* v1.5.3 — Redstone Regional Stories */
+.redstone-story-context{margin:10px 0;padding:10px 12px;border-left:5px solid rgba(116,72,52,.72);background:rgba(128,82,58,.08);border-radius:5px;font-size:.92rem}
+@media(max-width:700px){.redstone-story-context{font-size:.86rem;padding:9px}}
+
+/* v1.5.3.1 — Open World Navigation & Regional Travel Hotfix */
+.openworld-group-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.openworld-group-grid button{min-height:54px;text-align:left;padding:8px 10px}
+.openworld-group-grid button b,.player-action-grid button b{display:block}
+.openworld-group-grid button small,.player-action-grid button small,.local-actions-panel button small{display:block;margin-top:2px;opacity:.78;line-height:1.2}
+.player-actions-panel{margin-bottom:8px}
+.player-action-grid{display:grid!important;grid-template-columns:1fr 1fr;gap:6px}
+.player-action-grid button{min-height:48px;text-align:left;padding:7px 9px}
+.world-nav-panel .notice{margin:7px 0}
+.region-crossing-hint{margin-top:8px;padding:8px 9px;border:1px solid rgba(87,101,114,.38);background:rgba(90,110,125,.08);border-radius:6px;font-size:.84rem}
+.nearby-party-list{display:flex;flex-direction:column;gap:5px;margin:10px 0}
+.nearby-party-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px 8px;border:1px solid rgba(90,90,90,.25);border-radius:6px;background:rgba(255,255,255,.03)}
+.nearby-party-row span{min-width:0}.nearby-party-row b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nearby-party-row small{display:block;opacity:.76;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nearby-party-row button{padding:5px 9px;min-height:32px;width:auto}
+.regional-route-list{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.regional-route-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid rgba(83,99,113,.34);border-radius:7px;background:rgba(90,110,125,.06)}
+.regional-route-card b,.regional-route-card small{display:block}.regional-route-card small{margin-top:3px;opacity:.78;line-height:1.25}
+.regional-route-card.at-crossing{border-width:2px;background:rgba(107,133,106,.11)}
+.regional-route-card button{width:auto;max-width:230px}
+.regional-crossing-callout{margin:8px 0 10px;padding:9px 10px;border:2px solid rgba(92,116,87,.62);background:rgba(92,130,88,.11);border-radius:7px;font-size:.88rem}
+.regional-crossing-callout button{margin-top:6px}
+.world-location.regional-crossing-location{outline:2px dashed rgba(79,112,75,.75);outline-offset:3px}
+.regional-crossing-tag{display:block!important;margin-top:2px!important;font-style:normal!important;font-size:9px!important;font-weight:800!important;letter-spacing:.7px!important;color:#395c37!important}
+.mini-action{padding:4px 7px!important;min-height:28px!important;margin-top:4px!important}
+@media(max-width:900px){
+ .openworld-group-grid,.player-action-grid{grid-template-columns:1fr 1fr}
+ .nearby-party-row,.regional-route-card{grid-template-columns:minmax(0,1fr) auto}
+}
+@media(max-width:520px){
+ .openworld-group-grid{grid-template-columns:1fr 1fr;gap:5px}
+ .openworld-group-grid button{min-height:50px;padding:6px 7px;font-size:.88rem}
+ .openworld-group-grid button small,.player-action-grid button small{font-size:.72rem}
+ .player-action-grid{gap:5px}
+ .regional-route-card{grid-template-columns:1fr}.regional-route-card button{max-width:none;width:100%}
+ .nearby-party-row{grid-template-columns:minmax(0,1fr) auto;padding:6px}
+}
+
+/* v1.5.3.2 — Graphical map/layout hotfix */
+.world-map-frame .world-location{overflow:visible!important}
+.world-map-frame .world-location .regional-crossing-tag{
+ position:absolute!important;
+ left:50%!important;
+ bottom:-15px!important;
+ transform:translateX(-50%)!important;
+ display:block!important;
+ width:max-content!important;
+ max-width:none!important;
+ margin:0!important;
+ padding:2px 5px!important;
+ border:1px solid #466341!important;
+ border-radius:3px!important;
+ background:#e4edcf!important;
+ color:#355332!important;
+ font-size:7px!important;
+ line-height:1!important;
+ letter-spacing:.45px!important;
+ white-space:nowrap!important;
+ overflow-wrap:normal!important;
+ word-break:normal!important;
+ z-index:12!important;
+ box-shadow:1px 1px 2px rgba(0,0,0,.25)!important;
+}
+.world-map-frame .world-location.regional-crossing-location{margin-bottom:4px}
+.world-map-frame .companion-rumor-pin{pointer-events:none}
+.openworld-group-grid>button:last-child:nth-child(odd){grid-column:1/-1}
+@media(max-width:700px){
+ .world-map-frame .world-location .regional-crossing-tag{bottom:-14px!important;font-size:6.5px!important;padding:2px 4px!important}
+ .world-map-frame .companion-rumor-pin{width:20px!important;height:20px!important;font-size:9px!important}
+}
+@media(max-width:430px){
+ .world-map-frame .world-location .regional-crossing-tag{bottom:-13px!important;font-size:6px!important;letter-spacing:.25px!important}
+ .world-map-frame .world-location.regional-crossing-location{margin-bottom:6px}
+}
+
+/* v1.5.3.3 — Open World Interface Consolidation */
+.ui-group-panel{margin-top:8px}
+.ui-group-heading,.area-section-heading,.service-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.ui-group-heading h3,.area-section-heading h3,.service-section-heading h3{margin:0}
+.ui-group-heading small,.area-section-heading small,.service-section-heading small{display:block;opacity:.72;line-height:1.25;margin-top:2px}
+.ui-count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 7px;border:1px solid rgba(80,80,80,.38);border-radius:999px;font-size:.78rem;font-weight:700;background:rgba(255,255,255,.18)}
+.local-action-buttons button,.area-action-grid button,.service-button-grid button{text-align:left}
+.local-action-buttons button b,.area-action-grid button b,.service-button-grid button b{display:block}
+.local-action-buttons button small,.area-action-grid button small,.service-button-grid button small{display:block;margin-top:2px;line-height:1.2;opacity:.75}
+.local-parties-panel{border-top:3px solid rgba(83,94,105,.5)}
+.nearby-party-buttons{display:flex;flex-direction:column;gap:6px}
+.nearby-party-button{display:grid!important;grid-template-columns:28px minmax(0,1fr) auto!important;gap:7px!important;align-items:center!important;width:100%!important;min-height:54px!important;padding:7px 8px!important;text-align:left!important;border-width:2px!important}
+.nearby-party-symbol{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-size:14px;font-weight:800;background:rgba(0,0,0,.08)}
+.nearby-party-copy{min-width:0}
+.nearby-party-copy>b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nearby-party-copy>small{display:block;margin:1px 0 4px;opacity:.72;font-size:.72rem}
+.nearby-party-tags{display:flex;flex-wrap:wrap;gap:3px}
+.party-tag{display:inline-block!important;padding:2px 5px!important;border-radius:999px!important;font-size:9px!important;line-height:1.1!important;font-style:normal!important;font-weight:800!important;letter-spacing:.25px!important;white-space:nowrap!important;border:1px solid rgba(70,70,70,.35)!important;background:rgba(255,255,255,.26)!important}
+.party-tag.faction{background:rgba(91,103,119,.14)!important}
+.party-tag.contract{background:rgba(51,100,126,.16)!important}
+.nearby-party-approach{font-size:.76rem;font-weight:800;white-space:nowrap;opacity:.82}
+.nearby-party-button.disposition-hostile{border-color:#9b4545!important;background:rgba(151,61,61,.11)!important}
+.nearby-party-button.disposition-wary{border-color:#9a783d!important;background:rgba(154,120,61,.10)!important}
+.nearby-party-button.disposition-neutral{border-color:#72777b!important;background:rgba(110,116,120,.08)!important}
+.nearby-party-button.disposition-friendly{border-color:#4f7c59!important;background:rgba(65,124,78,.10)!important}
+.party-tag.status-hostile,.party-status-key .status-hostile{background:rgba(151,61,61,.18)!important;border-color:#9b4545!important}
+.party-tag.status-wary,.party-status-key .status-wary{background:rgba(154,120,61,.18)!important;border-color:#9a783d!important}
+.party-tag.status-neutral,.party-status-key .status-neutral{background:rgba(110,116,120,.15)!important;border-color:#72777b!important}
+.party-tag.status-friendly,.party-status-key .status-friendly{background:rgba(65,124,78,.16)!important;border-color:#4f7c59!important}
+.nearby-party-button.faction-redstone .party-tag.faction{border-color:#8b4d42!important}
+.nearby-party-button.faction-bluestone .party-tag.faction{border-color:#526f91!important}
+.nearby-party-button.faction-coalition .party-tag.faction{border-color:#60744c!important}
+.nearby-party-button.faction-independent .party-tag.faction{border-color:#807361!important}
+.nearby-party-button.faction-outlaws .party-tag.faction,.nearby-party-button.faction-raiders .party-tag.faction{border-color:#8b4848!important}
+.nearby-party-button.faction-spawn .party-tag.faction{border-color:#745b88!important}
+.nearby-party-button.faction-mercenaries .party-tag.faction{border-color:#7a6650!important}
+.party-status-key{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}
+.party-status-key span{padding:3px 6px;border:1px solid;border-radius:999px;font-size:9px;font-weight:800;text-transform:uppercase}
+.view-all-parties{margin-top:7px!important;width:100%!important;min-height:34px!important;padding:5px 8px!important}
+.area-section{margin-top:12px;padding-top:10px;border-top:1px solid rgba(80,80,80,.28)}
+.nearby-parties-section{margin-top:16px;padding-top:12px;border-top:3px solid rgba(83,94,105,.42)}
+.area-action-grid,.service-button-grid{display:grid!important;grid-template-columns:1fr 1fr;gap:6px}
+.service-section{margin:12px 0;padding:10px;border:1px solid rgba(80,80,80,.25);border-radius:7px;background:rgba(255,255,255,.035)}
+.service-section:first-of-type{margin-top:8px}
+@media(max-width:700px){
+ .nearby-party-button{grid-template-columns:25px minmax(0,1fr) auto!important;min-height:50px!important;padding:6px 7px!important}
+ .nearby-party-symbol{width:23px;height:23px;font-size:12px}
+ .nearby-party-approach{font-size:.7rem}
+ .party-tag{font-size:8px!important;padding:2px 4px!important}
+ .area-action-grid,.service-button-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:430px){
+ .local-action-buttons button,.area-action-grid button,.service-button-grid button{padding:6px 7px!important}
+ .nearby-party-button{grid-template-columns:23px minmax(0,1fr)!important}
+ .nearby-party-approach{grid-column:2;justify-self:start;margin-top:-2px}
+ .nearby-party-copy>b{white-space:normal;line-height:1.1}
+ .area-action-grid,.service-button-grid{gap:5px}
+}
+
+/* v1.5.3.4 — mobile map gesture ownership */
+.mobile-map-pan-toggle{
+ display:none;
+ position:absolute;
+ top:8px;
+ right:8px;
+ z-index:40;
+ width:auto!important;
+ min-width:108px!important;
+ min-height:38px!important;
+ padding:5px 8px!important;
+ border:2px solid #625a45!important;
+ border-radius:5px!important;
+ background:rgba(239,232,199,.94)!important;
+ color:#312d23!important;
+ box-shadow:2px 2px 2px rgba(0,0,0,.28)!important;
+ text-align:center!important;
+ touch-action:manipulation!important;
+}
+.mobile-map-pan-toggle b,.mobile-map-pan-toggle small{display:block;line-height:1.05}
+.mobile-map-pan-toggle b{font-size:10px}.mobile-map-pan-toggle small{font-size:7px;margin-top:2px;opacity:.72}
+@media(max-width:980px){
+ .world-map-viewport{touch-action:pan-y!important;overscroll-behavior-y:auto!important}
+ .world-map-viewport .world-location,.world-map-viewport .world-party{touch-action:pan-y!important}
+ .world-map-viewport.map-pan-active{touch-action:none!important;overscroll-behavior:contain!important}
+ .world-map-viewport.map-pan-active .world-location,.world-map-viewport.map-pan-active .world-party{touch-action:none!important}
+ .mobile-map-pan-toggle{display:block}
+ .world-map-viewport.map-pan-active .mobile-map-pan-toggle{background:rgba(214,226,202,.97)!important;border-color:#496147!important}
+}
+@media(min-width:981px){
+ .world-map-viewport{touch-action:none!important}
+}
+
+/* v1.5.3.5 — Contract, Campaign & Open World Stabilization */
+
+/* The Pan Map control must never float above dialogs/other interfaces. */
+.overlay{z-index:100!important}
+.mobile-map-pan-toggle{z-index:15!important}
+
+/* Current-town map taps scroll here and briefly identify the unified interface. */
+#openWorldTownSection{scroll-margin-top:10px}
+#openWorldTownSection.town-section-focus{
+ outline:3px solid rgba(104,91,49,.72);
+ outline-offset:2px;
+ animation:townSectionFocus1535 .9s ease-out;
+}
+@keyframes townSectionFocus1535{
+ 0%{box-shadow:0 0 0 6px rgba(240,211,87,.46)}
+ 100%{box-shadow:none}
+}
+
+/* Contract turn-in is visually distinct from accepting new work. */
+.contract-priority-section{margin:8px 0}
+.contract-turnin-priority{
+ border:3px solid #4f5f78!important;
+ background:linear-gradient(#eef3fb,#d8e2f0)!important;
+ box-shadow:2px 2px 0 rgba(0,0,0,.18)!important;
+ margin:8px 0!important;
+}
+.contract-turnin-banner{
+ display:inline-block;
+ margin:-2px 0 7px;
+ padding:3px 7px;
+ border:1px solid #4f5f78;
+ background:#4f5f78;
+ color:#fff;
+ font-size:10px;
+ font-weight:900;
+ letter-spacing:.6px;
+}
+.contract-turnin-priority>button:first-of-type{
+ font-weight:900!important;
+ border-width:2px!important;
+ background:#f4f7fb!important;
+}
+.secondary-contract-button{margin-top:5px!important}
+.contract-board-offers .contract-board-offer{
+ background:#ececec!important;
+ border-color:#777!important;
+ box-shadow:none!important;
+}
+.contract-board-offer .contract-type{opacity:.8}
+
+/* Main menu: active Open World and Siege saves are always the first choices. */
+.continue-campaigns{
+ margin:10px 0 14px;
+ padding:10px;
+ border:2px solid #777;
+ background:rgba(255,255,255,.18);
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:7px;
+}
+.continue-campaigns h3{grid-column:1/-1;margin:0 0 2px}
+.continue-slot{
+ min-height:58px!important;
+ padding:8px 10px!important;
+ text-align:left!important;
+}
+.continue-slot b,.continue-slot small{display:block}
+.continue-slot small{margin-top:4px;line-height:1.2;opacity:.75}
+.continue-open{border-left:5px solid #657c54!important}
+.continue-siege{border-left:5px solid #8b554d!important}
+
+/* Open World Council Hall should read as civic administration, not a siege command screen. */
+.openworld-council-note{margin:8px 0}
+
+/* Mobile contract/campaign layouts. */
+@media(max-width:620px){
+ .continue-campaigns{grid-template-columns:1fr}
+ .continue-campaigns h3{grid-column:1}
+ .contract-turnin-priority{padding:8px!important}
+}
+
+body.modal-open .mobile-map-pan-toggle{display:none!important}
+
+/* v1.5.3.7 — dialog navigation hierarchy */
+.dialog-breadcrumb{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:-2px 0 9px;padding:5px 7px;border:1px solid rgba(75,75,75,.26);background:rgba(255,255,255,.16);font-size:.72rem;line-height:1.2;opacity:.86}
+.dialog-breadcrumb span{opacity:.5;font-weight:900}
+.dialog-breadcrumb+ h2{margin-top:7px}
+@media(max-width:520px){.dialog-breadcrumb{font-size:.66rem;padding:4px 6px;gap:4px}.service-button-grid button small{line-height:1.15}}
+
+/* v1.5.3.8 — Regional Systems Cleanup */
+.regional-opportunity-marker.opportunity-here{
+ border-width:2px!important;
+ border-color:#596f55!important;
+ background:rgba(98,130,91,.10)!important;
+}
+.regional-opportunity-marker.opportunity-here>button{font-weight:800!important}
+
+/* v1.5.4 — Friendly & Neutral Party Interactions */
+.compact-party-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.compact-party-actions button{min-height:48px;text-align:left;white-space:normal}
+.compact-party-actions button small{display:inline;font-size:.78em;opacity:.72}
+@media(max-width:520px){.compact-party-actions{grid-template-columns:1fr 1fr}.compact-party-actions button{font-size:.92rem;padding:9px 8px}}
+
+/* v1.5.5 — Redstone Factions, Law & Occupation II */
+.sengia-authority-card{border-left:5px solid currentColor}
+.sengia-law-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.sengia-law-actions button{white-space:normal;min-height:52px}
+@media(max-width:520px){.sengia-law-actions{grid-template-columns:1fr 1fr}.sengia-law-actions button{font-size:.9rem;padding:9px 7px}}
+
+/* v1.5.6 */
+.sengia-economy-card{border-left:5px solid currentColor}.sengia-econ-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.sengia-econ-actions button{white-space:normal;min-height:48px}@media(max-width:520px){.sengia-econ-actions button{font-size:.88rem;padding:8px 6px}}
+
+/* v1.5.7 — Sengia Military & Security */
+.sengia-security-card{border-left:5px solid currentColor}
+.sengia-security-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.sengia-security-actions button{white-space:normal;min-height:50px}
+@media(max-width:520px){.sengia-security-actions{grid-template-columns:1fr 1fr}.sengia-security-actions button{font-size:.87rem;padding:8px 6px}}
+
+/* v1.5.8 — Sengia Settlement & NPC Depth */
+.npc-current-context{display:flex;flex-direction:column;gap:4px;margin:8px 0;padding:8px;border:1px solid rgba(80,80,80,.28);border-radius:6px;background:rgba(255,255,255,.04)}
+.npc-current-context span{font-size:.82rem;line-height:1.25}
+
+/* v1.5.9 — Sengia Regional Consequences & Story Resolution */
+.sengia-resolution-summary{display:flex;flex-direction:column;gap:3px;margin:8px 0;padding:9px;border:2px solid rgba(92,76,52,.48);border-radius:7px;background:rgba(166,140,86,.09)}
+.sengia-resolution-summary>b{font-size:1rem}
+.sengia-resolution-summary span{font-size:.82rem;line-height:1.25}
+
+/* v1.5.10 — Sengia Consolidation & Completion */
+@media(max-width:620px){
+ .sengia-resolution-summary,.sengia-economy-card,.sengia-security-card{margin:7px 0;padding:8px;overflow-wrap:anywhere}
+ .region-overview-row{grid-template-columns:1fr!important;gap:5px!important;text-align:left!important}
+ .region-overview-row>span{min-width:0}
+ .sengia-law-actions,.sengia-econ-actions,.sengia-security-actions{grid-template-columns:1fr!important}
+ .world-map-caption{flex-wrap:wrap;gap:4px 8px}
+ .world-map-caption span{min-width:0;overflow-wrap:anywhere}
+}
+
+/* v1.5.11 — Three-Region Open World Post-Completion Polish */
+.interregional-contract-route,.interregional-offer-route{margin:7px 0;padding:7px 9px;border:1px solid rgba(85,95,115,.35);border-radius:6px;background:rgba(80,100,135,.08);font-size:.84rem}
+.interregional-contract .contract-type{font-weight:800}
+.recurring-traveler-note{border-left:4px solid currentColor}
+.traveler-identity-card{margin:8px 0;padding:9px 10px;border:1px solid rgba(70,65,50,.42);background:rgba(245,238,208,.58)}
+.traveler-identity-card p{margin:5px 0 8px}
+.traveler-member-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.traveler-member{display:flex;flex-direction:column;padding:5px 6px;border:1px dotted #888;background:rgba(255,255,255,.30);min-width:0}
+.traveler-member small{color:#555;overflow-wrap:anywhere}
+@media(max-width:620px){.traveler-member-list{grid-template-columns:1fr}}
+.journal-priority-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0}
+.journal-priority-card{display:flex;flex-direction:column;gap:3px;padding:8px;border:1px solid rgba(80,80,80,.28);border-radius:6px}
+.journal-priority-card span{font-size:.82rem;line-height:1.25}
+.journal-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+.journal-section-grid button{min-height:56px;text-align:left;white-space:normal}
+.journal-section-grid button small{display:block;margin-top:2px}
+.interregional-signal{border-left:4px solid currentColor}
+@media(max-width:620px){
+ .journal-priority-grid,.journal-section-grid{grid-template-columns:1fr}
+ .journal-section-grid button{min-height:50px}
+ .interregional-contract-route,.interregional-offer-route{overflow-wrap:anywhere}
+}
+
+/* v1.5.12 — Recurring Travelers & Interregional Life II */
+.road-contact-card{display:grid;grid-template-columns:1fr auto;gap:10px;width:100%;text-align:left;margin:6px 0;align-items:center}
+.road-contact-card span{display:flex;flex-direction:column;min-width:0}
+.road-contact-card small{opacity:.72;overflow-wrap:anywhere}
+.recurring-town-contact{border-left:4px solid currentColor}
+@media(max-width:620px){.road-contact-card{grid-template-columns:1fr}.road-contact-card>span:last-child{align-items:flex-start}}
+
+/* v1.5.13 — Open World Relationship & Consequence Consolidation */
+.relationship-market-note{border-left:4px solid currentColor}
+.road-contact-reaction{font-size:.88rem}
+.traveler-referral{margin:6px 0;padding:7px 9px;border:1px solid rgba(85,95,115,.35);border-radius:6px;background:rgba(80,100,135,.08)}
+
+/* v1.5.14 — Open World Event & Social Life Expansion */
+.social-life-event{margin:10px 0;padding:10px;border:2px solid rgba(95,82,62,.42);border-radius:7px;background:rgba(140,110,70,.08)}
+.social-life-kicker{font-size:.72rem;font-weight:800;letter-spacing:.06em;margin-bottom:4px}
+.social-event-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.social-event-actions button{white-space:normal;text-align:left;min-height:58px}
+.social-journal-card{display:flex;flex-direction:column;width:100%;text-align:left;margin:6px 0}
+.social-life-history{margin-top:10px}
+@media(max-width:620px){.social-event-actions{grid-template-columns:1fr}.social-event-actions button{min-height:50px}}
+
+/* v1.5.15 — Social Events II: Consequence Chains */
+.social-chain-stack{margin:10px 0}.social-chain-card{margin:7px 0;padding:10px;border:1px solid rgba(92,76,52,.42);border-radius:7px;background:rgba(125,100,70,.07)}.social-chain-card p{margin:6px 0}.social-chain-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.social-chain-actions button{white-space:normal;text-align:left;min-height:56px}@media(max-width:620px){.social-chain-actions{grid-template-columns:1fr}}
+
+/* v1.5.16 — Companion / NPC Social Integration II */
+.companion-social-request{margin:9px 0;padding:10px;border:2px solid rgba(80,90,125,.40);border-radius:7px;background:rgba(70,90,135,.08)}
+.companion-town-interjection,.companion-social-interjection{border-left:4px solid currentColor}
+
+/* v1.5.17 — Dynamic Settlements & Population Movement */
+.population-life-block{margin:10px 0;padding:8px;border:1px solid rgba(90,85,75,.28);border-radius:7px}
+.population-life-block h3{margin-top:0}
+
+/* v1.5.18 — Contracts III: Relationship-Generated Work */
+.relationship-contract-source{margin:7px 0;padding:8px 9px;border:1px solid rgba(92,76,52,.38);border-radius:6px;background:rgba(120,95,70,.08)}
+
+/* v1.5.19 — Factions IV */
+
+/* v1.5.20 — World Life Consolidation III */
+.world-life-status{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:8px 0 12px}
+.world-life-status span{display:flex;flex-direction:column;padding:7px;border:1px solid rgba(85,85,85,.28);border-radius:6px;text-align:center;font-size:.78rem}
+.world-life-status b{font-size:1rem}.world-life-choice-list button,.journal-group button{white-space:normal;overflow-wrap:anywhere}
+.journal-group-stack{display:flex;flex-direction:column;gap:10px}.journal-group{padding:8px;border:1px solid rgba(85,85,85,.25);border-radius:7px}.journal-group h3{margin:0 0 7px}
+.social-journal-card,.road-contact-card,.relationship-contract-source,.population-life-block,.social-chain-card{overflow-wrap:anywhere}
+@media(max-width:700px){.world-life-status{grid-template-columns:repeat(2,minmax(0,1fr))}.journal-group{padding:6px}.journal-section-grid{grid-template-columns:1fr}.world-life-choice-list button{min-height:50px;text-align:left}}
+
+/* v1.5.20.1 — Escort/combat turn-lock hotfix */
+.combat-actions button,.enemy-card{touch-action:manipulation}
+.combat-actions button{min-height:42px}
+.combat-recovery-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:2px 0 6px;padding-top:5px;border-top:1px dotted #999}
+.combat-recovery-row button{min-height:28px;padding:3px 7px;font-size:10px}
+.combat-recovery-row small{color:#666}
+.continue-error-stack{white-space:pre-wrap;overflow-wrap:anywhere;background:#eee;border:1px inset #999;padding:7px;font-size:10px;max-height:120px;overflow:auto}
+
+/* v1.5.20.2 — Road Life repetition + desktop map/layout hotfix */
+.world-map-viewport .world-location,.world-map-viewport .world-party{cursor:pointer}
+
+/* Use the available desktop monitor instead of preserving a narrow app column. */
+@media(min-width:1200px){
+ .app-shell{width:min(1920px,100vw)!important;max-width:none!important}
+ .game-grid{grid-template-columns:clamp(245px,16vw,315px) minmax(620px,1fr) clamp(285px,20vw,390px)!important;grid-template-rows:minmax(600px,calc(100vh - 205px)) 150px!important}
+ .map-panel{min-width:0!important;min-height:600px!important}
+ .world-map-frame{max-width:100%!important}
+ .world-map-viewport{height:min(700px,calc(100vh - 175px))!important}
+ .log-panel{min-height:0!important}
+ .log-panel .log{height:96px!important}
+ .dialog{width:min(980px,92vw)}
+ .dialog.large{width:min(1320px,94vw)}
+ .openworld-group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .player-action-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* On genuinely wide screens the journal becomes a fourth column instead of a
+   full-width row, substantially reducing vertical page travel. */
+@media(min-width:1560px){
+ .game-grid{grid-template-columns:minmax(230px,285px) minmax(660px,1fr) minmax(270px,345px) minmax(245px,310px)!important;grid-template-rows:minmax(620px,calc(100vh - 50px))!important;align-items:stretch}
+ .game-grid>.sidebar:first-child{grid-column:1;grid-row:1;min-height:0;overflow:auto}
+ .game-grid>.map-panel{grid-column:2;grid-row:1;min-height:0}
+ .game-grid>.sidebar:nth-child(3){grid-column:3;grid-row:1;min-height:0;overflow:auto}
+ .game-grid>.log-panel{grid-column:4!important;grid-row:1!important;height:auto!important;min-height:0!important}
+ .game-grid>.log-panel .log{height:calc(100vh - 112px)!important;min-height:300px}
+ .world-map-viewport{height:min(700px,calc(100vh - 118px))!important}
+}
+
+/* Very wide screens can present modal option groups in more columns. */
+@media(min-width:1700px){
+ .dialog.large .choice-list:not(.compact){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .dialog.large .choice-list:not(.compact)>button{margin:0}
+}
+
+
+/* v1.5.20.3–1.5.20.7 — guides, touch/map UX, combat reliability, save/Continue recovery */
+.player-context-thought{display:block;margin-top:10px!important;padding-top:8px;border-top:1px dotted rgba(80,80,80,.45);font-style:italic}
+.journal-width-control{display:none;margin:6px 0 10px;padding:7px 9px;border:1px solid rgba(80,80,80,.3);background:rgba(255,255,255,.24)}
+.journal-width-control label{display:grid;grid-template-columns:auto minmax(220px,1fr) auto;gap:10px;align-items:center;font-weight:700}
+.journal-width-control input{width:100%;margin:0}.journal-width-control output{min-width:58px;text-align:right;font-variant-numeric:tabular-nums}.journal-width-control small{display:block;margin-top:3px;color:#666}
+@media(min-width:1100px){.journal-width-control{display:block}.journal-resizable-dialog{transition:width .08s linear}}
+@media(max-width:980px){.world-map-viewport{touch-action:pan-y!important;cursor:default!important}.world-map-frame .world-map-viewport:active{cursor:default!important}.mobile-map-pan-toggle{display:none!important}}
+
+.home-hall-grid .notice{grid-column:1/-1}.hall-capacity{font-variant-numeric:tabular-nums}.home-hall-grid button small{line-height:1.35}.prisoner-card{break-inside:avoid}
+
+/* v1.5.23.2 — Guardian Hall Logistics Master & Provisioning */
+/* v1.5.23.3 — Guardian Hall Guard & Private Security */
+/* v1.5.23.4 — Guests, Invitations & Hospitality */
+/* v1.5.23.6 — Hall Staff & Household Administration */
+.hospitality-invite-card{border-left:4px solid #76684c}.hospitality-history{max-height:220px;overflow:auto}.hospitality-status{display:inline-block;padding:1px 5px;border:1px solid #777;background:#eee3bf;font-size:9px;font-weight:700}.hospitality-status.traveling{background:#dce7d6}.hospitality-status.declined{background:#ead4d1}.hospitality-status.sent{background:#e4e1d5}.guest-social-note{border-left:4px solid #705f7d}
+.dining-event-card{border-left:4px solid #7b6742}.dining-event-card.formal{border-left-color:#5f5875}.dining-event-card.banquet{border-left-color:#8a6b1d}.hospitality-status.arrived{background:#d4e6d0}.hospitality-status.withdrawn,.hospitality-status.expired{background:#e1e1e1}
+.logistics-supply-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.logistics-supply-grid .stat-row{background:rgba(255,255,255,.25);padding:5px 7px;border:1px solid rgba(0,0,0,.14)}
+@media(max-width:520px){.logistics-supply-grid{grid-template-columns:1fr}}
+.hall-security-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:7px 0}.hall-security-grid .stat-row{background:rgba(255,255,255,.25);padding:5px 7px;border:1px solid rgba(0,0,0,.14)}.security-report.good{border-left:4px solid #4d744f}.security-report.bad{border-left:4px solid #8b3939}.security-report.info{border-left:4px solid #6a6a6a}.security-readiness-meter{height:12px;border:1px solid #555;background:#c8c8c8;margin:4px 0 8px}.security-readiness-meter span{display:block;height:100%;background:#666}@media(max-width:520px){.hall-security-grid{grid-template-columns:1fr}}
+
+/* v1.5.23.9 — Guardian Hall correspondence, requests & procurement */
+.hall-mail-row{border:1px solid #888;background:#f5f1df;padding:7px;margin:5px 0}.hall-mail-row.unread{border-left:5px solid #5c4a22;background:#fff7d7}.hall-mail-meta{font-size:9px;color:#555;margin-bottom:3px}.hall-mail-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.hall-mail-status{display:inline-block;border:1px solid #777;background:#eee;padding:1px 5px;font-size:8px;font-weight:700;text-transform:uppercase}.hall-mail-status.pending,.hall-mail-status.sent,.hall-mail-status.delegated{background:#eee5c8}.hall-mail-status.field_required,.hall-mail-status.overdue{background:#ead1d1;border-color:#8b1e1e}.hall-mail-status.complete,.hall-mail-status.replied{background:#d4e6d0;border-color:#37683a}.hall-correspondence-tabs{display:flex;gap:4px;flex-wrap:wrap;margin:7px 0}.hall-correspondence-tabs button{flex:1 1 110px}.procurement-card{border-left:4px solid #76654b}.correspondence-badge{display:inline-block;min-width:18px;text-align:center;border:1px solid #554;background:#f4e7ad;padding:0 4px;font-size:9px;margin-left:3px}
+
+/* v1.5.23.9 — Guardian Hall audiences & visitors */
+/* v1.5.23.10 — Guardian Hall politics & diplomacy */
+.hall-diplomacy-status{border-left:4px solid #66557b}.hall-autonomy{border:2px double #655;background:#efe7cc;padding:8px;margin:8px 0}.hall-diplomacy-history{max-height:42vh;overflow:auto}
+.audience-waiting{border-left:4px solid #6b5a38}.home-hall-grid #homeVisitors small{line-height:1.3}.audience-history{max-height:42vh;overflow:auto}
+
+/* v1.5.23.11 — Guardian Hall homecoming integration */
+.homecoming-main-alert{border:2px solid #6d5a2c;background:#efe5bf;box-shadow:inset 1px 1px #fff;margin-bottom:8px}.homecoming-main-alert button{margin-top:5px}.home-hall-grid #homeHomecoming{grid-column:1/-1;background:#efe5bf;border-color:#fff #66552b #66552b #fff}.home-hall-grid #homeHomecoming b{font-size:13px}
+
+/* v1.5.23.12 — living Guardian Hall integration */
+.hall-life-person{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}.hall-life-person small{display:block;margin-top:2px}.hall-life-history{max-height:260px;overflow:auto}.hall-life-scene{border-left:4px solid #74694f}.hall-life-scene.good{border-left-color:#4d7346}.hall-life-scene.info{border-left-color:#536d80}.hall-life-people{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.hall-life-staff{background:#ece7d6}.hall-life-guest{background:#eee0c6}.hall-life-connection{margin-top:6px;padding:5px 7px;border-left:3px solid #786b4d;background:rgba(255,255,255,.28);font-size:10px}
+@media(max-width:620px){.hall-life-people{grid-template-columns:1fr}.hall-life-person{grid-template-columns:1fr}.hall-life-person button{width:100%}}
+
+
+/* v1.5.23.13 — live battle action + runtime diagnostics hotfix */
+.js-error-journal{border:2px solid #8b1e1e;background:#f1dddd;padding:8px;margin:8px 0}
+.js-error-entry{border-left:4px solid #8b1e1e;background:#f7eded;padding:7px 9px;margin:6px 0;font-family:"Courier New",monospace;font-size:10px;overflow-wrap:anywhere}
+.js-error-entry small{font-family:Geneva,Chicago,"Trebuchet MS",Arial,sans-serif;color:#555}
+/* v1.5.23.28 — Hall finance, budget ledger, slider funding, prisoner labor income */
+.contract-turnin-priority{border:2px solid #557042!important;background:#e6efda!important}.contract-turnin-priority h3{color:#304b24}
+
+.hall-menu-section{margin:14px 0 18px;padding-top:2px}
+.hall-menu-section>h3{margin:0 0 7px;padding-bottom:4px;border-bottom:1px solid rgba(65,62,55,.35);font-size:1.02em}
+.hall-menu-urgent{padding:8px;border:1px solid rgba(120,75,55,.55);background:rgba(150,95,70,.08)}
+.hall-menu-urgent>h3{border-bottom-color:rgba(120,75,55,.35)}
+
+.budget-dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:10px 0 14px}
+.budget-kpi{border:1px solid rgba(65,62,55,.35);background:rgba(255,255,255,.28);padding:10px;display:flex;flex-direction:column;gap:2px}
+.budget-kpi.primary{border-width:2px}.budget-kpi small{text-transform:uppercase;letter-spacing:.04em;font-size:.72em;opacity:.72}.budget-kpi b{font-size:1.35em}.budget-kpi span{font-size:.78em;opacity:.72}
+.budget-period-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin:12px 0 16px}
+.budget-period-card{border:1px solid rgba(65,62,55,.4);background:rgba(255,255,255,.18);padding:10px}
+.budget-period-head{display:flex;justify-content:space-between;gap:10px;align-items:center;padding-bottom:7px;margin-bottom:7px;border-bottom:1px solid rgba(65,62,55,.25)}
+.budget-metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.budget-metric-grid>div{padding:6px;background:rgba(255,255,255,.18)}.budget-metric-grid small{display:block;font-size:.72em;opacity:.72}.budget-metric-grid b{display:block;margin-top:2px}
+.budget-income-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:4px 10px}.budget-transfer-card{margin-bottom:14px}
+.budget-ledger{display:flex;flex-direction:column;gap:5px}.budget-ledger-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid rgba(65,62,55,.18);padding:7px 4px}.budget-ledger-row span{min-width:0}.budget-ledger-row small{display:block;white-space:normal}.budget-ledger-row.income>b{font-weight:800}.budget-ledger-row.capital{opacity:.85}
+.emergency-procurement-row{display:flex;justify-content:space-between;align-items:center;gap:12px}.emergency-procurement-row button{width:auto!important;min-width:100px}
+.good-text{font-weight:700}.danger-text{font-weight:700}
+
+/* v1.5.24.9 Political Outcome briefing */
+.political-outcome-title{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:end;margin-bottom:10px}
+.political-outcome-title h2{grid-column:1;margin:0}
+.political-outcome-kicker{grid-column:1/-1;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800;opacity:.68}
+.political-outcome-status{grid-column:2;grid-row:2;padding:6px 9px;border:1px solid currentColor;font-size:.78rem;white-space:nowrap}
+.political-outcome-lead{font-size:1.03em;line-height:1.38}
+.political-check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 16px}
+.political-check-card{border:2px solid rgba(60,60,60,.45);padding:10px;background:rgba(255,255,255,.24)}
+.political-check-card.good{border-color:rgba(53,112,62,.72)}
+.political-check-card.bad{border-color:rgba(140,56,48,.72)}
+.political-check-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.political-check-head>span{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;font-weight:800;opacity:.7}
+.political-check-head>b{text-align:right}
+.political-check-numbers{display:grid;grid-template-columns:auto 1fr auto auto;gap:5px;align-items:baseline;margin-top:8px}
+.political-check-numbers strong{font-size:1.35rem}
+.political-check-numbers span{font-size:.72rem;opacity:.72}
+.political-check-track{height:9px;position:relative;background:rgba(0,0,0,.12);margin:7px 3px 6px}
+.political-check-threshold,.political-check-roll{position:absolute;top:-4px;width:3px;height:17px;transform:translateX(-1px)}
+.political-check-threshold{background:rgba(0,0,0,.45)}
+.political-check-roll{background:currentColor;width:5px;transform:translateX(-2px)}
+.political-outcome-section{margin:14px 0}
+.political-outcome-section h3{margin-bottom:7px}
+.political-aftermath{margin:0;padding:9px 11px;border-left:4px solid rgba(70,70,70,.55);background:rgba(255,255,255,.18);line-height:1.4}
+.political-impact-grid{display:flex;flex-direction:column;gap:6px}
+.political-impact-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid rgba(70,70,70,.35);padding:8px 10px;background:rgba(255,255,255,.18)}
+.political-impact-row span:first-child small,.political-impact-change small{display:block}
+.political-impact-change{text-align:right;min-width:105px}
+.political-impact-change>b{font-size:1.05rem}
+.political-operation-details{margin:14px 0;border:1px solid rgba(70,70,70,.4);padding:8px 10px}
+.political-operation-details summary{cursor:pointer;font-weight:800}
+.political-detail-line{padding:7px 2px;border-top:1px solid rgba(70,70,70,.18)}
+.political-operation-details summary+.political-detail-line{margin-top:8px}
+@media(max-width:620px){
+ .political-check-grid{grid-template-columns:1fr}
+ .political-outcome-title{grid-template-columns:1fr}
+ .political-outcome-status{grid-column:1;grid-row:auto;justify-self:start;margin-top:5px}
+ .political-check-numbers{grid-template-columns:auto 1fr auto auto}
+}
+
+.road-life-context{margin-top:8px;padding-top:7px;border-top:1px dotted rgba(80,80,80,.38);font-style:italic;opacity:.82}
+
+
+/* v1.5.24.15 — live road-condition colors on regional map SVGs */
+.shantium-road-network g.route-open .road-line,
+.blue-road-network g.route-open .road-line,
+.red-road-network g.route-open .road-line{stroke:#657b51}
+.shantium-road-network g.route-risky .road-line,
+.blue-road-network g.route-risky .road-line,
+.red-road-network g.route-risky .road-line{stroke:#a07a38}
+.shantium-road-network g.route-dangerous .road-line,
+.blue-road-network g.route-dangerous .road-line,
+.red-road-network g.route-dangerous .road-line{stroke:#914b42}
+
+.shantium-road-network g.route-open .road-highlight,
+.blue-road-network g.route-open .road-highlight,
+.red-road-network g.route-open .road-highlight{stroke:rgba(220,235,196,.62)}
+.shantium-road-network g.route-risky .road-highlight,
+.blue-road-network g.route-risky .road-highlight,
+.red-road-network g.route-risky .road-highlight{stroke:rgba(244,220,164,.58)}
+.shantium-road-network g.route-dangerous .road-highlight,
+.blue-road-network g.route-dangerous .road-highlight,
+.red-road-network g.route-dangerous .road-highlight{stroke:rgba(245,188,176,.54)}
+
+.shantium-road-network g.route-open .road-shadow,
+.blue-road-network g.route-open .road-shadow,
+.red-road-network g.route-open .road-shadow{stroke:rgba(55,72,44,.42)}
+.shantium-road-network g.route-risky .road-shadow,
+.blue-road-network g.route-risky .road-shadow,
+.red-road-network g.route-risky .road-shadow{stroke:rgba(95,67,31,.46)}
+.shantium-road-network g.route-dangerous .road-shadow,
+.blue-road-network g.route-dangerous .road-shadow,
+.red-road-network g.route-dangerous .road-shadow{stroke:rgba(102,42,37,.50)}
+
+#politicalCompanionNotice{transition:background .15s ease,border-color .15s ease,color .15s ease}
+
+
+/* v1.5.24.18 — Guardian Hall budget dashboard restoration */
+.budget-period-card{border:1px solid rgba(65,62,55,.34);background:rgba(255,255,255,.24);padding:11px}
+.budget-period-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:8px}
+.budget-period-head>b{font-size:1.05em}.budget-period-head>span{font-weight:800}
+.budget-metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:7px}
+.budget-metric-grid>div{background:rgba(255,255,255,.24);border:1px solid rgba(65,62,55,.18);padding:7px}
+.budget-metric-grid small{display:block;font-size:.72em;opacity:.72;margin-bottom:2px}
+.budget-metric-grid b{font-size:1.02em}
+.good-text{color:#326c38}.danger-text{color:#8a342f}
+.budget-breakdown-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:12px 0 16px}
+.budget-breakdown-card h4{margin:0 0 8px}
+.budget-category-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid rgba(65,62,55,.14)}
+.budget-category-row:last-child{border-bottom:0}
+.budget-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 16px}
+#hallBudgetToggleLedger{margin-bottom:8px}
+#hallBudgetLedger[hidden]{display:none}
+
+
+/* v1.5.24.20 — Region & Politics hub */
+.region-politics-glance{border:1px solid rgba(65,62,55,.32);background:rgba(255,255,255,.22);padding:10px;margin:8px 0 14px}
+.region-politics-glance-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.region-politics-glance-head span{font-size:.82em;opacity:.78}
+.region-politics-glance-row{display:grid;grid-template-columns:minmax(80px,130px) 1fr 28px;gap:8px;align-items:center;margin:5px 0}
+.region-politics-glance-bar{height:9px;border-radius:999px;background:rgba(70,70,70,.16);overflow:hidden}
+.region-politics-glance-bar i{display:block;height:100%;background:currentColor;opacity:.65}
+.region-politics-hub{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+
+
+/* v1.5.24.22 — meaningful Guardian Hall correspondence */
+.hall-mail-row.actionable{border-left:4px solid rgba(137,91,37,.8);background:rgba(255,245,218,.36)}
+.hall-mail-source{font-weight:700;opacity:.82}
+.hall-mail-impact-tag{font-weight:800;font-size:.76em;letter-spacing:.03em;color:#7d4b16}
+.hall-mail-preview{display:block;margin-top:4px;opacity:.78}
+.hall-mail-impact{margin:12px 0;padding:10px;border:1px solid rgba(91,73,48,.28);background:rgba(255,255,255,.22)}
+.hall-mail-impact h3{margin:0 0 6px}
+.hall-mail-impact ul{margin:0;padding-left:20px}
+
+
+/* v1.5.24.23 — correspondence institutional memory */
+.hall-mail-memory{margin:10px 0;padding:9px 10px;border-left:4px solid rgba(78,91,106,.65);background:rgba(230,237,244,.34)}
+.hall-mail-memory h3{margin:0 0 5px}
+.hall-mail-memory small{display:block;margin-top:4px;opacity:.78}
+
+
+/* v1.5.24.25 — extended Guardian Hall rest */
+#hallRestDays{margin:10px 0 6px}
+\n/* v1.5.25.1 — linked World Matters */\n.world-matter-link{margin:8px 0;padding:7px 9px;border-left:4px solid rgba(80,92,104,.58);background:rgba(231,237,242,.34);font-size:.9em}\n
+/* v1.5.25.3 — shared accounts/resources */
+.account-transaction-list{margin:8px 0 14px}.account-transaction-list .stat-row{font-size:.9em}
+
+
+/* v1.5.25.4 — shared intelligence */
+.intel-card{margin:8px 0}
+.intel-card p{margin:7px 0}
+.intel-card small{opacity:.76}
+
+
+/* v1.5.25.5 — incident aftermath */
+.combat-incident-aftermath{margin-top:10px}
+.combat-incident-aftermath h3{margin:0 0 6px}
+.combat-incident-aftermath ul{margin:4px 0 6px;padding-left:20px}
+
+
+/* v1.5.25.6 — shared world-query summaries */
+.world-situation-summary{margin:10px 0;padding:10px;border:1px solid rgba(90,90,90,.28);border-radius:8px}
+.world-situation-summary.compact{padding:8px}
+.world-situation-summary h4{margin:8px 0 4px}
+.world-situation-metrics{display:flex;flex-wrap:wrap;gap:6px 12px;margin:5px 0 7px;font-size:.9em;opacity:.82}
+
+/* v1.5.26.1.2 — Regional party browser */
+.regional-party-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0}
+.regional-party-card{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(92px,.72fr)!important;gap:7px!important;align-items:center!important;width:100%!important;min-height:54px!important;padding:7px 8px!important;text-align:left!important;border-width:2px!important}
+.regional-party-card>span{min-width:0}.regional-party-card b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.regional-party-card small{display:block;font-size:.72rem;line-height:1.15;opacity:.76;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.regional-party-meta{text-align:right}.regional-party-card.disposition-hostile{border-color:#9b4545!important;background:rgba(151,61,61,.11)!important}.regional-party-card.disposition-wary{border-color:#9a783d!important;background:rgba(154,120,61,.10)!important}.regional-party-card.disposition-neutral{border-color:#72777b!important;background:rgba(110,116,120,.08)!important}.regional-party-card.disposition-friendly{border-color:#4f7c59!important;background:rgba(65,124,78,.10)!important}
+@media(max-width:520px){.regional-party-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.regional-party-card{grid-template-columns:1fr!important;gap:2px!important;min-height:64px!important;padding:6px!important}.regional-party-meta{text-align:left}.regional-party-card b{font-size:.78rem}.regional-party-card small{font-size:.62rem;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}}
+
+/* v1.5.26.1.5 — Town Life local road contacts */
+.town-local-road-contacts{display:grid;gap:6px;padding:8px;border:1px solid var(--mid);background:rgba(255,255,255,.24)}
+.town-local-road-contacts>small{display:block;margin-bottom:2px}
+.town-local-road-contacts>button{text-align:left}
+
+/* v1.5.26.3 — safer covert-operation confirmation */
+.political-witness-choice button{text-align:center!important}
+.political-witness-choice button b,.political-witness-choice button small{display:block;text-align:center}
+
+/* v1.5.26.3 — political operation safety and navigation */
+[data-witnessmethod]{text-align:center!important;display:block;width:100%}
+[data-witnessmethod] b,[data-witnessmethod] small{display:block;text-align:center}
+[data-witnessmethod].selected,[data-prepparty].selected{outline:3px solid #333;background:#fff;font-weight:700}
+
+/* v1.5.26.3.1 — settlement arrival law enforcement */
+#lawArrivalSneak small,#lawArrivalOpen small,#lawArrivalOutside small,#lawArrivalPolitical small{display:block;margin-top:3px}
