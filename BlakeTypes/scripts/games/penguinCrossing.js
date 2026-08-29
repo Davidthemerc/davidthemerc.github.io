@@ -1,3 +1,4 @@
+import { hyperSoftShouldBypassTypingEvent } from "../core/accessibilityUtils.js";
 const PENGUIN_ROUTES = {
   channel: {
     name: "Classic Channel",
@@ -49,6 +50,7 @@ export class PenguinCrossingGame {
     this.route = PENGUIN_ROUTES[gameOptions.penguinRoute] || PENGUIN_ROUTES.channel;
     this.floeProgram = FLOE_PROGRAMS[gameOptions.penguinFloeProgram] || FLOE_PROGRAMS.standard;
     this.running = false;
+    this.finished = false;
     this.floes = [];
     this.current = null;
     this.routeChoices = null;
@@ -84,6 +86,7 @@ export class PenguinCrossingGame {
 
   start() {
     this.running = true;
+    this.finished = false;
     this.stage.innerHTML = `
       <div class="penguin-stage ${this.route.className}" id="penguinStage">
         <div class="penguin-route-label">${this.route.name} · ${this.floeProgram.name}</div>
@@ -201,6 +204,7 @@ export class PenguinCrossingGame {
   }
 
   handleKeydown(event) {
+    if (hyperSoftShouldBypassTypingEvent(event)) return;
     if (!this.running || event.ctrlKey || event.metaKey || event.altKey) return;
 
     if (/^[a-zA-Z]$/.test(event.key)) {
@@ -326,7 +330,7 @@ export class PenguinCrossingGame {
 
     if (this.completed >= this.targetCount) {
       this.engine.addScore(650);
-      this.finish({
+      this.complete({
         success: true,
         score: this.engine.score,
         title: "Crossing complete",
@@ -506,7 +510,7 @@ export class PenguinCrossingGame {
     if (this.current && this.current.x <= this.dangerEdge) {
       this.engine.totalTargets += 1;
       this.engine.totalChars += this.current.value.length;
-      this.finish({
+      this.complete({
         success: false,
         score: this.engine.score,
         title: "Penguin down",
@@ -524,6 +528,14 @@ export class PenguinCrossingGame {
 
     this.engine.updateHUD();
     this.animationId = requestAnimationFrame(next => this.frame(next));
+  }
+
+  complete(result) {
+    if (!this.running || this.finished) return false;
+    this.finished = true;
+    this.running = false;
+    this.finish(result);
+    return true;
   }
 
   stop() {

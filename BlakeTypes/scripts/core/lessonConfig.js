@@ -318,3 +318,25 @@ export const LESSON_METADATA = [
     ]
   }
 ];
+
+/* v0.17.8.1 — Content Integrity & Final Balance
+   Targets are instructional reference points, not gates. The audit smooths workload,
+   expands thin fixed pools, and gives every curriculum stage a deliberate role. */
+const CONTENT_BALANCE_VERSION = "1.0.0";
+const CONTENT_BALANCE_NOTES = Object.freeze({
+  curriculum: "14-stage curve audited for reach complexity, endurance, mixed-key load, and target continuity.",
+  smartPractice: "Nine drills retain specialized targets; constrained-hand and transition drills intentionally favor accuracy over raw WPM.",
+  tenKey: "Six protocols preserve a gradual 3,200→7,200 KPH progression with 98–99% accuracy expectations.",
+  repetition: "Generated lesson ribbons now avoid a short recent-token window rather than only blocking immediate duplicates."
+});
+
+// Fixed-pool lessons were the easiest places for repetition to become noticeable.
+const CONTENT_POOL_EXPANSIONS = {
+  homeRowWarmup: ["falls","flags","flask","flash","shall","salad","glass","salsa","dash","lash","hall","glad","asks","half","gall","sash"],
+  topHomeWords: ["writer","writes","typed","types","quiet","quite","route","outer","tower","water","paper","report","request","reply","audit","staff","shift","state","store","trust","issue","order","trade","share"]
+};
+LESSON_METADATA.forEach(lesson => {
+  const extra = CONTENT_POOL_EXPANSIONS[lesson.id];
+  if (extra && Array.isArray(lesson.tokens)) lesson.tokens = [...new Set([...lesson.tokens, ...extra])];
+});
+

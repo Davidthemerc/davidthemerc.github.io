@@ -1,3 +1,4 @@
+import { hyperSoftShouldBypassTypingEvent } from "../core/accessibilityUtils.js";
 export class CheckOutTimeGame {
   constructor({ stage, engine, finish, gameOptions = {} }) {
     this.stage = stage;
@@ -5,6 +6,7 @@ export class CheckOutTimeGame {
     this.finish = finish;
     this.options = gameOptions;
     this.running = false;
+    this.finished = false;
     this.items = [];
     this.buffer = "";
     this.spawnAccumulator = 0;
@@ -35,6 +37,7 @@ export class CheckOutTimeGame {
 
   start() {
     this.running = true;
+    this.finished = false;
     this.stage.innerHTML = `
       <div class="conveyor-stage" id="conveyorStage">
         <div class="checkout-store-sign">HYPERSOFT MARKET • ${this.lane.label}</div>
@@ -156,6 +159,7 @@ export class CheckOutTimeGame {
   }
 
   handleKeydown(event) {
+    if (hyperSoftShouldBypassTypingEvent(event)) return;
     if (!this.running) return;
     const entry = this.isAllowedEntryKey(event);
     if (entry === "blocked") {
@@ -294,7 +298,7 @@ export class CheckOutTimeGame {
     this.engine.updateHUD({ timerMs: remaining });
 
     if (this.missed >= this.lane.missLimit) {
-      this.finish({
+      this.complete({
         success: false,
         score: this.engine.score,
         variant: `${this.lane.label} / ${this.inputMode === "numpad" ? "Numpad Only" : "Any Numeric Keys"}`,
@@ -307,7 +311,7 @@ export class CheckOutTimeGame {
 
     if (remaining <= 0) {
       this.engine.addScore(this.scanned * 8 + Math.max(0, (this.lane.missLimit - this.missed) * 5));
-      this.finish({
+      this.complete({
         success: true,
         score: this.engine.score,
         variant: `${this.lane.label} / ${this.inputMode === "numpad" ? "Numpad Only" : "Any Numeric Keys"}`,
@@ -321,6 +325,14 @@ export class CheckOutTimeGame {
   }
 
   getHUDTime() { return Math.max(0, this.durationMs - this.engine.getElapsedMs()); }
+
+  complete(result) {
+    if (!this.running || this.finished) return false;
+    this.finished = true;
+    this.running = false;
+    this.finish(result);
+    return true;
+  }
 
   stop() {
     this.running = false;

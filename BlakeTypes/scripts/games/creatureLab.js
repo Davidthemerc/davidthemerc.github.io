@@ -1,3 +1,4 @@
+import { hyperSoftShouldBypassTypingEvent } from "../core/accessibilityUtils.js";
 const LAB_FAMILIES = [
   { id: "mossback", name: "Mossback", glyph: "M", note: "Broad-bodied and suspiciously comfortable in filing cabinets." },
   { id: "skyfin", name: "Skyfin", glyph: "S", note: "Long-limbed specimen with an aerodynamic interpretation of anatomy." },
@@ -18,6 +19,7 @@ export class CreatureLabGame {
     this.engine = engine;
     this.finish = finish;
     this.running = false;
+    this.finished = false;
     this.gameOptions = gameOptions;
 
     this.program = gameOptions.labProgram || "standard";
@@ -65,6 +67,7 @@ export class CreatureLabGame {
 
   start() {
     this.running = true;
+    this.finished = false;
     const profile = this.engine.getScaledDifficulty(0);
     this.strandLimitMs = 7600 * profile.timerFactor;
 
@@ -220,11 +223,9 @@ export class CreatureLabGame {
   }
 
   handleKeydown(event) {
+    if (hyperSoftShouldBypassTypingEvent(event, { allowedTargetSelector: "#strandInput" })) return;
     if (!this.running || this.resolving || this.input?.disabled) return;
     if (event.ctrlKey || event.metaKey || event.altKey) return;
-
-    if (event.target instanceof HTMLElement &&
-        event.target.matches("button, select, textarea, a[href], input:not(#strandInput)")) return;
 
     if (event.key === "Backspace") {
       event.preventDefault();
@@ -405,7 +406,7 @@ export class CreatureLabGame {
       const bonusCount = this.specimenResults.filter(item => item.bonus).length;
       window.setTimeout(() => {
         if (!this.running) return;
-        this.finish({
+        this.complete({
           success: true,
           score: this.engine.score,
           title: "Lab program complete",
@@ -449,6 +450,14 @@ export class CreatureLabGame {
   getHUDTime() {
     if (this.resolving) return 0;
     return Math.max(0, this.strandLimitMs - (performance.now() - this.strandStartedAt));
+  }
+
+  complete(result) {
+    if (!this.running || this.finished) return false;
+    this.finished = true;
+    this.running = false;
+    this.finish(result);
+    return true;
   }
 
   stop() {

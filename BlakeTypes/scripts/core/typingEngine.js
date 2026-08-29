@@ -1,9 +1,10 @@
 import { DIFFICULTY_CONFIG, WORD_LISTS } from "./config.js";
 
 export class TypingEngine {
-  constructor({ hudAdapter = null, soundEnabled = false } = {}) {
+  constructor({ hudAdapter = null, soundEnabled = false, soundVolume = "normal" } = {}) {
     this.hudAdapter = hudAdapter;
     this.soundEnabled = soundEnabled;
+    this.soundVolume = soundVolume;
     this.running = false;
     this.startedAt = 0;
     this.stoppedAt = 0;
@@ -270,18 +271,30 @@ export class TypingEngine {
     this.soundEnabled = Boolean(enabled);
   }
 
+  setSoundVolume(level = "normal") {
+    this.soundVolume = ["low", "normal", "high"].includes(level) ? level : "normal";
+  }
+
   playFeedback(correct) {
     if (!this.soundEnabled) return;
     try {
-      this.audioContext ??= new (window.AudioContext || window.webkitAudioContext)();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      this.audioContext ??= new AudioCtx();
+      if (this.audioContext.state === "suspended") this.audioContext.resume?.().catch(() => {});
       const oscillator = this.audioContext.createOscillator();
       const gain = this.audioContext.createGain();
-      oscillator.frequency.value = correct ? 560 : 180;
-      gain.gain.value = 0.035;
+      const now = this.audioContext.currentTime + 0.005;
+      const peak = { low: 0.025, normal: 0.055, high: 0.095 }[this.soundVolume] ?? 0.055;
+      oscillator.type = correct ? "triangle" : "sawtooth";
+      oscillator.frequency.value = correct ? 620 : 175;
+      gain.gain.setValueAtTime(.0001, now);
+      gain.gain.exponentialRampToValueAtTime(peak, now + .007);
+      gain.gain.exponentialRampToValueAtTime(.0001, now + (correct ? .065 : .09));
       oscillator.connect(gain);
       gain.connect(this.audioContext.destination);
-      oscillator.start();
-      oscillator.stop(this.audioContext.currentTime + 0.045);
+      oscillator.start(now);
+      oscillator.stop(now + (correct ? .075 : .105));
     } catch {
       // Sound is optional; unsupported or blocked audio should never stop gameplay.
     }

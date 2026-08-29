@@ -1,3 +1,4 @@
+import { hyperSoftShouldBypassTypingEvent } from "../core/accessibilityUtils.js";
 const SHARK_SCENARIOS = {
   open: {
     name: "Open Water",
@@ -113,6 +114,7 @@ export class SharkAttackGame {
     this.predator = SHARK_PREDATORS[gameOptions.sharkPredator] || SHARK_PREDATORS.reef;
     this.length = SHARK_LENGTHS[gameOptions.sharkLength] || SHARK_LENGTHS.standard;
     this.running = false;
+    this.finished = false;
     this.text = "";
     this.index = 0;
     this.mistakes = new Set();
@@ -140,6 +142,7 @@ export class SharkAttackGame {
 
   start() {
     this.running = true;
+    this.finished = false;
     this.text = this.buildParagraph();
     this.checkpointIndexes = Array.from({ length: this.checkpointCount }, (_, index) =>
       Math.max(1, Math.floor(this.text.length * ((index + 1) / (this.checkpointCount + 1))))
@@ -199,6 +202,7 @@ export class SharkAttackGame {
   }
 
   handleKeydown(event) {
+    if (hyperSoftShouldBypassTypingEvent(event)) return;
     if (!this.running || event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.key.length !== 1) return;
 
@@ -290,7 +294,7 @@ export class SharkAttackGame {
     this.engine.correctTargets += 1;
     this.engine.totalTargets += 1;
     this.engine.addScore(650 + this.checkpointsReached * 70);
-    this.finish({
+    this.complete({
       success: true,
       score: this.engine.score,
       title: "Shore reached",
@@ -371,7 +375,7 @@ export class SharkAttackGame {
       elapsed >= this.gracePeriodMs &&
       this.sharkProgress + this.catchDistance >= this.swimmerProgress
     ) {
-      this.finish({
+      this.complete({
         success: false,
         score: this.engine.score,
         title: `${this.predator.name} catches up`,
@@ -393,6 +397,14 @@ export class SharkAttackGame {
   renderRace() {
     if (this.swimmer) this.swimmer.style.left = `${this.swimmerProgress}%`;
     if (this.shark) this.shark.style.left = `${this.sharkProgress}%`;
+  }
+
+  complete(result) {
+    if (!this.running || this.finished) return false;
+    this.finished = true;
+    this.running = false;
+    this.finish(result);
+    return true;
   }
 
   stop() {

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- SuperService v1.1 modular GitHub Pages build -->
+<!-- SuperService v1.1.6.2 modular GitHub Pages build -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>SuperService v1.1 — IT Service Desk Career Simulator</title>
+<title>SuperService v1.1.6.2 — IT Service Desk Career Simulator</title>
 <link rel="stylesheet" href="assets/css/styles.css">
 
 </head>
@@ -32,6 +32,8 @@
   <main class="workspace" id="workspaceMain" tabindex="-1">
     <nav class="rail" aria-label="Service desk navigation">
       <button class="railbtn active" id="railTickets" type="button" title="Tickets" aria-label="Tickets">▤</button>
+      <button class="railbtn" id="railAddTicket" type="button" title="Add Freeplay Ticket" aria-label="Add a Freeplay ticket">＋</button>
+      <button class="railbtn" id="railTyping" type="button" title="Typing Practice" aria-label="Typing Practice">⌨</button>
       <button class="railbtn" id="railKB" type="button" title="Knowledge Base" aria-label="Knowledge Base">?</button>
       <button class="railbtn" id="railReports" type="button" title="Shift / Career" aria-label="Career Center">▥</button>
       <button class="railbtn" id="railPeople" type="button" title="Employee Directory" aria-label="Employee Directory">◫</button>
@@ -88,10 +90,10 @@
       <div class="hero"><h3>Welcome to the desk.</h3><p>Work the queue like a real service agent: ask useful questions, use tools, document your work, protect security, and escalate when the issue genuinely belongs elsewhere.</p></div>
       <div class="formgrid">
         <div class="field"><label for="difficultySelect">Difficulty</label><select id="difficultySelect"><option>Trainee</option><option selected>Service Agent</option><option>Senior Agent</option><option>Chaos Desk</option></select><div class="small" style="margin-top:5px">Higher difficulties favor more complex tickets, stricter efficiency, and heavier operational pressure.</div></div>
-        <div class="field"><label for="sessionSelect">Session</label><select id="sessionSelect"><option value="5">Quick Shift — 5 tickets</option><option value="10" selected>Standard Shift — 10 tickets</option><option value="20">Full Shift — 20 tickets</option><option value="endless">Endless Desk</option></select></div>
+        <div class="field"><label for="sessionSelect">Desk Mode / Session</label><select id="sessionSelect"><option value="5">Quick Shift — 5 tickets</option><option value="10" selected>Standard Shift — 10 tickets</option><option value="20">Full Shift — 20 tickets</option><option value="endless">Endless Desk</option><option value="freeplay">Freeplay — empty desk; add tickets yourself</option></select><div class="small" id="sessionModeHint" style="margin-top:5px">Career shifts generate a queue and feed supervisor/career progression.</div></div>
       </div>
     </div>
-    <div class="mf"><button class="primary" id="startShiftBtn">Clock In</button></div>
+    <div class="mf"><button class="secondary" type="button" onclick="showTypingPractice()">Typing Practice</button><button class="primary" id="startShiftBtn">Clock In</button></div>
   </div>
 </div>
 

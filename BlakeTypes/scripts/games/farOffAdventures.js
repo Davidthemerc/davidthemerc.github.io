@@ -1,3 +1,4 @@
+import { hyperSoftShouldBypassTypingEvent } from "../core/accessibilityUtils.js";
 export class FarOffAdventuresGame {
   constructor({ stage, engine, finish, gameOptions = {} }) {
     this.stage = stage;
@@ -5,6 +6,7 @@ export class FarOffAdventuresGame {
     this.finish = finish;
     this.options = gameOptions;
     this.running = false;
+    this.finished = false;
     this.altitude = 48;
     this.sequence = "";
     this.index = 0;
@@ -38,6 +40,7 @@ export class FarOffAdventuresGame {
 
   start() {
     this.running = true;
+    this.finished = false;
     this.sequence = Array.from({ length: 18 }, () => this.engine.generateWord()).join(" ");
     this.weather = this.route.weather[0];
     this.stage.innerHTML = `
@@ -86,6 +89,7 @@ export class FarOffAdventuresGame {
   }
 
   handleKeydown(event) {
+    if (hyperSoftShouldBypassTypingEvent(event)) return;
     if (!this.running || event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1) return;
     event.preventDefault();
     const expected = this.sequence[this.index];
@@ -226,7 +230,7 @@ export class FarOffAdventuresGame {
     const remaining = Math.max(0, this.durationMs - elapsed);
     this.engine.updateHUD({ timerMs: remaining });
     if (this.altitude <= 0) {
-      this.finish({
+      this.complete({
         success: false,
         score: this.engine.score,
         variant: `${this.route.label} / ${this.getRhythmLabel()}`,
@@ -239,7 +243,7 @@ export class FarOffAdventuresGame {
     if (remaining <= 0) {
       const cleared = this.checkpointResults.filter(Boolean).length;
       this.engine.addScore(Math.round(this.altitude * 4 + cleared * 90));
-      this.finish({
+      this.complete({
         success: true,
         score: this.engine.score,
         variant: `${this.route.label} / ${this.getRhythmLabel()}`,
@@ -253,6 +257,14 @@ export class FarOffAdventuresGame {
   }
 
   getHUDTime() { return Math.max(0, this.durationMs - this.engine.getElapsedMs()); }
+
+  complete(result) {
+    if (!this.running || this.finished) return false;
+    this.finished = true;
+    this.running = false;
+    this.finish(result);
+    return true;
+  }
 
   stop() {
     this.running = false;

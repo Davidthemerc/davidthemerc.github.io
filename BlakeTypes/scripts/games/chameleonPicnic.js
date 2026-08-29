@@ -1,3 +1,4 @@
+import { hyperSoftShouldBypassTypingEvent } from "../core/accessibilityUtils.js";
 const PICNIC_PROGRAMS = {
   classic: {
     label: "Classic Feeding",
@@ -52,6 +53,7 @@ export class ChameleonPicnicGame {
     this.program = PICNIC_PROGRAMS[gameOptions.picnicProgram] ?? PICNIC_PROGRAMS.classic;
     this.site = PICNIC_SITES[gameOptions.picnicSite] ?? PICNIC_SITES.lawn;
     this.running = false;
+    this.finished = false;
     this.durationMs = 65000;
     this.ants = [];
     this.buffer = "";
@@ -85,6 +87,7 @@ export class ChameleonPicnicGame {
 
   start() {
     this.running = true;
+    this.finished = false;
     this.stage.innerHTML = `
       <div class="picnic-stage ${this.site.className}" id="picnicStage">
         <div class="picnic-lane lane-0"><span>${LANE_NAMES[0]}</span></div>
@@ -180,6 +183,7 @@ export class ChameleonPicnicGame {
   }
 
   handleKeydown(event) {
+    if (hyperSoftShouldBypassTypingEvent(event)) return;
     if (!this.running || event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.key === "Escape") {
       this.buffer = "";
@@ -352,7 +356,7 @@ export class ChameleonPicnicGame {
     this.engine.updateHUD({ timerMs: remaining });
 
     if (this.missed >= this.escapeLimit) {
-      this.finish({
+      this.complete({
         success: false,
         score: this.engine.score,
         title: "Picnic overrun",
@@ -370,7 +374,7 @@ export class ChameleonPicnicGame {
 
     if (remaining <= 0) {
       this.engine.addScore(Math.max(0, this.escapeLimit - this.missed) * 35 + this.bestCombo * 3);
-      this.finish({
+      this.complete({
         success: true,
         score: this.engine.score,
         title: "Picnic complete",
@@ -392,6 +396,14 @@ export class ChameleonPicnicGame {
 
   getHUDTime() {
     return Math.max(0, this.durationMs - this.engine.getElapsedMs());
+  }
+
+  complete(result) {
+    if (!this.running || this.finished) return false;
+    this.finished = true;
+    this.running = false;
+    this.finish(result);
+    return true;
   }
 
   stop() {

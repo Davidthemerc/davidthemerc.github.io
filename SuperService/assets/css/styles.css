@@ -280,3 +280,125 @@ button:disabled,input:disabled,textarea:disabled,select:disabled{cursor:not-allo
 .fulfillmentcard{border:1px solid #b9d8c9;background:#f2faf6;border-radius:7px;padding:9px;font-size:9px;line-height:1.45}
 .kickbackcard{border:1px solid #e5c5a0;background:#fff8ec;border-radius:7px;padding:9px;font-size:9px;line-height:1.45}
 @media(max-width:760px){.cataloggrid,.requestfields{grid-template-columns:1fr}.requestsummary{grid-template-columns:1fr 1fr}}
+
+
+/* v1.1.1 Freeplay + Typing Practice */
+.freeplaytag{background:#f0efff!important;color:#594b91!important;border-color:#cbc5e7!important}
+.freeplayempty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:26px 12px;text-align:center;color:#71808a}
+.freeplayempty b{color:#35434c;font-size:12px}
+.freeplaytools{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.freeplaytools input,.freeplaytools select{height:34px;border:1px solid #cbd6dc;border-radius:5px;padding:0 8px;font-size:9px;background:#fff}
+.freeplaytools input{flex:1 1 220px}
+.freeplaylist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:8px}
+.freeplaycard{border:1px solid #dbe3e7;background:#fff;border-radius:7px;padding:8px;font-size:9px;line-height:1.4}
+.freeplaycard h4{font-size:10px;margin:2px 0 4px}
+.freeplaymeta{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+.freeplaystats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+.freeplaynote{border:1px solid #cdc9e6;background:#f8f7ff;border-radius:6px;padding:8px;font-size:9px;line-height:1.45}
+.typing-shell{display:grid;gap:9px}
+.typing-controls{display:grid;grid-template-columns:1fr 1fr auto;gap:7px;align-items:end}
+.typing-controls label{font-size:8px;font-weight:800;color:#687781;display:grid;gap:3px}
+.typing-controls select{height:34px;border:1px solid #cbd6dc;border-radius:5px;padding:0 7px;background:#fff;font-size:9px}
+.typing-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.typing-stat{border:1px solid #dce4e8;background:#fafcfc;border-radius:6px;padding:7px;text-align:center}
+.typing-stat b{display:block;font-size:15px;color:#35434c}.typing-stat span{font-size:7px;text-transform:uppercase;color:#71808a}
+.typing-target{min-height:122px;max-height:210px;overflow:auto;border:1px solid #ccd8de;border-radius:7px;background:#fbfcfd;padding:12px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:16px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.typing-target .typed-ok{background:#e8f7ee;color:#205b40}.typing-target .typed-bad{background:#ffe9eb;color:#9d3340;text-decoration:underline}.typing-target .typing-current{background:#dcecff;border-bottom:2px solid #3a7db7}.typing-target .typing-pending{color:#66747d}
+.typing-input{width:100%;min-height:105px;resize:vertical;border:2px solid #b9c7ce;border-radius:7px;padding:10px;font:14px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
+.typing-input:focus{border-color:#4a8ac0}
+.typing-result{border:1px solid #b9d8c9;background:#f2faf6;border-radius:7px;padding:10px;font-size:10px;line-height:1.5}
+.typing-best{font-size:8px;color:#71808a}
+@media(max-width:760px){
+ .freeplaylist{grid-template-columns:1fr}.freeplaystats,.typing-stats{grid-template-columns:1fr 1fr}.typing-controls{grid-template-columns:1fr 1fr}.typing-controls button{grid-column:1/-1;min-height:42px}
+ .typing-target{font-size:15px;min-height:150px}
+}
+
+
+/* v1.1.3 resolution polish / completion states / dangerous actions */
+.ticketrow.completed{background:#eef7f0;color:#77827c;opacity:.82}
+.ticketrow.completed:hover{background:#e6f3e9}
+.ticketrow.completed.active{background:#dff0e4;box-shadow:inset 3px 0 #5c9d73}
+.ticketrow.completed .subject{color:#65726b}
+.ticketrow.completed .ticketno{color:#5d7566}
+.ticketrow.completed .tmeta{color:#7c8881}
+.ticketrow.deleted-record{display:none}
+.completecheck{font-size:10px;color:#4f9567;font-weight:900;margin-left:4px}
+.dangerzone{margin-top:10px;border:1px dashed #d7a2a8;background:#fff7f7;border-radius:7px;padding:9px}
+.dangerzone h4{margin:0 0 5px;color:#8b3844;font-size:10px}
+.dangerzone p{margin:0 0 7px;font-size:8px;line-height:1.45;color:#785b60}
+.dangerzone .danger{font-size:8px}
+.malicious-result{border:1px solid #e1b7bc;background:#fff4f5;border-radius:7px;padding:10px;font-size:10px;line-height:1.55}
+.malicious-result.caught{border-color:#c8727c;background:#fff0f1}
+.malicious-result.escaped{border-color:#d9c79e;background:#fff9ec}
+.account-disabled{background:#fff0f1!important;color:#8f3e48!important;border-color:#e1b7bc!important}
+
+
+/* v1.1.4 Troubleshooting & Specialist Realism */
+.quickactions{display:grid!important;gap:6px;overflow:visible!important;padding-bottom:7px;scroll-snap-type:none!important}
+.actionrow{display:grid;grid-template-columns:88px minmax(0,1fr);gap:6px;align-items:center;min-width:0}
+.actionrowlabel{font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.45px;color:#6a7882;padding-left:2px}
+.actionscroll{display:flex;gap:5px;overflow-x:auto;padding:3px 3px 6px;scrollbar-width:thin;scroll-snap-type:x proximity;min-width:0}
+.actionscroll .actionbtn{flex:0 0 auto}
+.actionbtn.completed-action{background:#edf7f0;border-color:#afd1ba;color:#4d6957}
+.actionbtn.specialist-suggested{border-color:#7a94c9;background:#f0f4ff;color:#39558d;font-weight:900;box-shadow:0 0 0 1px rgba(69,96,151,.08)}
+.actionbtn.risky-action{border-style:dashed}
+.actionbtn.resolution-action{border-color:#58a99c;background:#eaf8f5;color:#235f56;font-weight:900}
+.specialisthint{border:1px solid #b7c7e4;background:#f3f6fd;border-radius:7px;padding:8px;margin:7px 0;font-size:9px;line-height:1.45}
+.specialisthint b{color:#405b91}
+.handoffbadge{display:inline-flex;align-items:center;border:1px solid #ced8dd;border-radius:4px;padding:2px 5px;font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.35px;background:#f7f9fa;color:#66747e}
+.handoffbadge.excellent{background:#eaf7ef;border-color:#acd5bc;color:#28704b}
+.handoffbadge.adequate{background:#eff7fb;border-color:#b8d3e2;color:#35657d}
+.handoffbadge.thin{background:#fff7df;border-color:#e4cd8c;color:#84620d}
+.handoffbadge.poor,.handoffbadge.wrong-team,.handoffbadge.blocked{background:#fff0f1;border-color:#e0b4b9;color:#8e3b46}
+.teamtemper{font-size:7px;color:#7b8992}
+.teammercy{border:1px solid #c8dacd;background:#f3faf5;border-radius:6px;padding:7px;margin-top:6px;font-size:8px;line-height:1.4}
+@media(max-width:760px){
+ .actionrow{grid-template-columns:1fr;gap:2px}
+ .actionrowlabel{padding:0 2px}
+ .actionscroll{padding-bottom:8px}
+}
+
+
+/* v1.1.5 Coworkers & Ticket Reassignment */
+.coworkergrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.coworkercard{border:1px solid #d7e0e5;background:#fff;border-radius:7px;padding:8px;font-size:9px;line-height:1.4}
+.coworkercard b{font-size:10px}.coworkeractions{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.coworkeractions button{font-size:8px;padding:5px 7px}
+.coworkertrust{font-size:8px;color:#677781}.coworkerowner{border:1px solid #c8d4df;background:#f5f8fb;border-radius:7px;padding:9px;font-size:9px;line-height:1.45}
+.msg.coworker{max-width:88%;margin:7px auto;align-items:flex-start}.msg.coworker .bubble{background:#f6f0ff;border-color:#d9c9ef;color:#594775}.msg.coworker .msgmeta{color:#796c8a}
+.ticketrow.coworker-owned{background:#f7f4fb}.ticketrow.shared-owned{background:#faf7ef}
+@media(max-width:760px){.coworkergrid{grid-template-columns:1fr}}
+
+
+/* v1.1.6 Desperation, Misconduct & Outrun the Audit */
+.auditheat{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid #dfc2a1;background:#fff9ed;border-radius:7px;padding:8px;margin:7px 0}
+.auditheat b{font-size:11px}.heatbar{height:7px;background:#eee2d0;border-radius:10px;overflow:hidden;margin-top:5px}.heatbar i{display:block;height:100%;background:currentColor}
+.auditstage{font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.4px}
+.auditstage.clear{color:#47745a}.auditstage.warning{color:#9a6a13}.auditstage.coaching{color:#a45420}.auditstage.pip,.auditstage.final{color:#9b3342}
+.audit-shell{display:grid;gap:9px}.audit-brief{border:1px solid #d4c5dd;background:#faf6ff;border-radius:8px;padding:10px;font-size:10px;line-height:1.5}
+.audit-bars{display:grid;gap:7px}.audit-racerow{display:grid;grid-template-columns:72px 1fr 44px;gap:7px;align-items:center;font-size:8px;font-weight:900}
+.audit-track{height:14px;background:#e8ecef;border-radius:10px;overflow:hidden;position:relative}.audit-track i{display:block;height:100%;width:0;transition:width .12s linear;background:currentColor}
+.audit-player{color:#3f7aa5}.audit-computer{color:#9a5060}
+.audit-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.audit-stat{border:1px solid #dbe3e7;background:#fff;border-radius:6px;padding:7px;text-align:center}.audit-stat b{display:block;font-size:14px}.audit-stat span{font-size:7px;text-transform:uppercase;color:#71808a}
+.audit-target{min-height:95px;max-height:160px;overflow:auto;border:1px solid #ccd8de;border-radius:7px;background:#fbfcfd;padding:10px;font:14px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.audit-input{width:100%;min-height:90px;resize:none;border:2px solid #b9c7ce;border-radius:7px;padding:9px;font:14px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
+.audit-result{border:1px solid #d8c9a4;background:#fff9e9;border-radius:7px;padding:10px;font-size:10px;line-height:1.5}.audit-result.clean{border-color:#aad0b7;background:#f0f8f3}.audit-result.narrow{border-color:#ddc47f;background:#fff9e8}.audit-result.caught{border-color:#d69aa2;background:#fff1f2}
+.desperationgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.desperationcard{border:1px solid #e0c9cc;background:#fff8f8;border-radius:7px;padding:8px;font-size:8px;line-height:1.4}.desperationcard b{display:block;font-size:9px;margin-bottom:3px}.desperationcard button{width:100%;margin-top:6px}
+.audit-history{display:grid;gap:5px;max-height:180px;overflow:auto}.audit-history-item{border-left:3px solid #d9c2a0;padding:5px 7px;background:#fafafa;font-size:8px;line-height:1.4}
+@media(max-width:760px){.desperationgrid{grid-template-columns:1fr}.audit-stats{grid-template-columns:1fr 1fr}.audit-racerow{grid-template-columns:58px 1fr 40px}}
+
+
+/* v1.1.6.2 Requester Response & Legitimate Closure */
+.responsepolicy{border:1px solid #cbd8df;background:#f6fafc;border-radius:8px;padding:9px;margin:8px 0;font-size:9px;line-height:1.45}
+.responsepolicy h4{margin:0 0 5px;font-size:10px;color:#405a67}
+.responsepolicy.eligible{border-color:#9bc6aa;background:#f0f8f3}
+.responsepolicy.slow{border-color:#d7c18b;background:#fff9e9}
+.responsepolicy .policygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:7px}
+.responsepolicy .policycell{border:1px solid #dce4e8;background:#fff;border-radius:5px;padding:5px;text-align:center}
+.responsepolicy .policycell b{display:block;font-size:10px}.responsepolicy .policycell span{font-size:7px;color:#71808a;text-transform:uppercase}
+.responseactions{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.responseactions button{font-size:8px;padding:5px 7px}
+.followup-valid{border-color:#8fb9a0!important;background:#eef8f2!important}.followup-soon{border-color:#d9c48b!important;background:#fff9ea!important}
+.supervisormsg{max-width:88%;margin:7px auto;align-items:flex-start}.supervisormsg .bubble{background:#f1f5fb;border-color:#bdcce0;color:#40556f}.supervisormsg .msgmeta{color:#647a96}
+.reopen-route{border:1px solid #cbd8df;background:#f7fafb;border-radius:7px;padding:8px;margin-top:10px;font-size:9px;line-height:1.4}
+.policytag{display:inline-flex;align-items:center;border:1px solid #9fc6ab;background:#eef8f1;color:#39714a;border-radius:4px;padding:2px 5px;font-size:7px;font-weight:900;text-transform:uppercase}
+@media(max-width:760px){.responsepolicy .policygrid{grid-template-columns:1fr 1fr}}

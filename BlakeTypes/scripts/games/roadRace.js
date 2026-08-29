@@ -1,3 +1,4 @@
+import { hyperSoftShouldBypassTypingEvent } from "../core/accessibilityUtils.js";
 const ROAD_TRACKS = {
   city: { name: "Downtown Loop", className: "city" },
   desert: { name: "Desert Straight", className: "desert" },
@@ -27,6 +28,7 @@ export class RoadRaceGame {
     this.engine = engine;
     this.finish = finish;
     this.running = false;
+    this.finished = false;
     this.gameOptions = gameOptions;
 
     this.trackConfig = ROAD_TRACKS[gameOptions.roadTrack] || ROAD_TRACKS.city;
@@ -50,6 +52,7 @@ export class RoadRaceGame {
 
   start() {
     this.running = true;
+    this.finished = false;
     this.stage.innerHTML = `
       <div class="race-stage" data-track="${this.trackConfig.className}">
         <div class="road-marking"></div>
@@ -171,9 +174,8 @@ export class RoadRaceGame {
   }
 
   handleKeydown(event) {
+    if (hyperSoftShouldBypassTypingEvent(event, { allowedTargetSelector: "#raceInput" })) return;
     if (!this.running || event.ctrlKey || event.metaKey || event.altKey) return;
-    if (event.target instanceof HTMLElement &&
-        event.target.matches("button, select, textarea, a[href], input:not(#raceInput)")) return;
 
     if (event.key === "Backspace") {
       event.preventDefault();
@@ -340,7 +342,7 @@ export class RoadRaceGame {
   checkFinish() {
     if (this.playerProgress >= 100) {
       this.engine.addScore(this.lengthConfig.name === "Endurance" ? 800 : this.lengthConfig.name === "Sprint" ? 350 : 500);
-      this.finish({
+      this.complete({
         success: true,
         score: this.engine.score,
         title: `Victory on ${this.trackConfig.name}`,
@@ -352,7 +354,7 @@ export class RoadRaceGame {
     }
 
     if (this.opponentProgress >= 100) {
-      this.finish({
+      this.complete({
         success: false,
         score: this.engine.score,
         title: `${this.opponent.name} wins`,
@@ -363,6 +365,14 @@ export class RoadRaceGame {
       return true;
     }
     return false;
+  }
+
+  complete(result) {
+    if (!this.running || this.finished) return false;
+    this.finished = true;
+    this.running = false;
+    this.finish(result);
+    return true;
   }
 
   stop() {

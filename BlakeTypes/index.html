@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="no-referrer" />
   <meta
     name="description"
     content="Blake Breacher Teaches Typing — an original browser typing-game suite inspired by classic educational typing software."
@@ -11,9 +12,32 @@
   <link rel="stylesheet" href="./styles/main.css" />
 </head>
 <body>
+  <a class="skip-link" href="#appMain">Skip to current module</a>
+  <div class="sr-only" id="screenChangeAnnouncer" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <div class="startup-overlay" id="startupOverlay" aria-live="polite" aria-busy="true">
+    <div class="startup-launcher" role="status" aria-label="HyperSoft startup sequence">
+      <div class="startup-disc" aria-hidden="true"><span>HS</span><small>DELUXE</small></div>
+      <div class="startup-copy">
+        <div class="startup-brandline"><span class="brand-mark">HB</span><div><strong>HyperSoft Learning Systems</strong><small>Keyboarding Division • Deluxe Training Suite</small></div></div>
+        <div class="startup-edition">Blake Breacher Teaches Typing <strong>v1.0.2</strong></div>
+        <h1>Preparing your training workstation...</h1>
+        <p id="startupStatus">Reading learner profile...</p>
+        <div class="startup-progress" aria-hidden="true"><span id="startupProgressFill"></span></div>
+        <div class="startup-modules" aria-hidden="true">
+          <span>LESSONS</span><span>SMART PRACTICE</span><span>TYPING ARCADE</span><span>REPORTS</span>
+        </div>
+        <button class="startup-skip" id="startupSkipButton" type="button">Skip Startup</button>
+      </div>
+    </div>
+  </div>
   <div class="app-shell retro-app-shell">
     <div class="app-window">
-    <header class="topbar">
+    <div class="window-title-strip">
+      <div class="window-title-text"><span class="window-app-icon">HB</span><strong>Blake Breacher Teaches Typing</strong><span>— HyperSoft Deluxe Training Suite</span></div>
+      <div class="window-controls" aria-hidden="true"><span>_</span><span>□</span><span>×</span></div>
+    </div>
+    <header class="topbar" id="hyper98Sidebar">
       <button class="brand-button" id="brandButton" type="button" aria-label="Go to title screen">
         <span class="brand-mark">HB</span>
         <span>
@@ -22,93 +46,181 @@
         </span>
       </button>
 
-      <div class="menu-strip" aria-hidden="true">File &nbsp; Edit &nbsp; Blake &nbsp; Profiles &nbsp; Lessons &nbsp; Games &nbsp; Progress &nbsp; Achievements &nbsp; Reports &nbsp; Help</div>
+      <section class="hyper98-sidebar-profile" id="hyper98SidebarProfile" aria-label="HyperSoft coach and active learner">
+        <button class="hyper98-drawer-close" id="hyper98DrawerClose" type="button" aria-label="Close module navigation">×</button>
+        <div class="hyper98-wordmark">HYPERSOFT<sup>®</sup></div>
+        <div class="hyper98-portrait-shell"><img src="./assets/common/blake.png" alt="Blake, HyperSoft typing coach" /></div>
+        <div class="hyper98-welcome">Welcome back,<strong id="hyper98WelcomeName">Player 1</strong></div>
+      </section>
+      <div class="hyper98-sidebar-footer" aria-hidden="true">
+        <div class="hyper98-monitor"><span></span></div>
+        <strong>HyperSoft</strong>
+        <span>Typing Excellence Since 1998</span>
+      </div>
+
+      <div class="menu-strip" aria-hidden="true">File &nbsp; Edit &nbsp; Blake &nbsp; Profiles &nbsp; Daily Plan &nbsp; Learning Center &nbsp; Lessons &nbsp; Practice &nbsp; Applied Lab &nbsp; Accuracy &nbsp; Timed Tests &nbsp; Games &nbsp; Progress &nbsp; Achievements &nbsp; Reports &nbsp; Help</div>
       <button class="profile-quick" id="profileQuickButton" type="button" aria-label="Open profiles"><span id="profileQuickAvatar">P1</span><strong id="profileQuickName">Player 1</strong></button>
-      <nav class="topnav" aria-label="Main navigation">
-        <button data-nav="title" type="button">Home</button>
-        <button data-nav="office" type="button">Blake</button>
-        <button data-nav="profiles" type="button">Profiles</button>
-        <button data-nav="lessons" type="button">Lessons</button>
-        <button data-nav="menu" type="button">Games</button>
-        <button data-nav="progress" type="button">Progress</button>
-        <button data-nav="achievements" type="button">Achievements</button>
-        <button data-nav="reports" type="button">Reports</button>
-        <button data-nav="scoreboard" type="button">Scoreboard</button>
-        <button data-nav="settings" type="button">Settings</button>
+      <nav class="topnav" id="mainNavigation" aria-label="Main navigation">
+        <div class="hyper98-nav-group" data-nav-group="start" data-label="Start" role="group" aria-label="Start">
+          <button data-nav="title" data-nav-group-label="Start" data-icon="⌂" data-nav-group="start" type="button">Home</button>
+          <button data-nav="trainee" data-icon="⌨" data-nav-group="start" type="button">Keyboard Trainee</button>
+          <button data-nav="assessment" data-icon="✓" data-nav-group="start" type="button">Assessment</button>
+        </div>
+        <div class="hyper98-nav-group" data-nav-group="guidance" data-label="Guidance" role="group" aria-label="Guidance">
+          <button data-nav="technique" data-nav-group-label="Guidance" data-icon="◇" data-nav-group="guidance" type="button">Technique Coach</button>
+          <button data-nav="dailyPlan" data-icon="☷" data-nav-group="guidance" type="button">Daily Plan</button>
+          <button data-nav="theory" data-icon="?" data-nav-group="guidance" type="button">Learning Center</button>
+        </div>
+        <div class="hyper98-nav-group" data-nav-group="training" data-label="Training" role="group" aria-label="Training">
+          <button data-nav="lessons" data-nav-group-label="Training" data-icon="▣" data-nav-group="training" type="button">Lessons</button>
+          <button data-nav="smartPractice" data-icon="💡" data-nav-group="training" type="button">Smart Practice</button>
+          <button data-nav="customPractice" data-icon="⚒" data-nav-group="training" type="button">Practice Builder</button>
+        </div>
+        <div class="hyper98-nav-group" data-nav-group="specialty" data-label="Specialty" role="group" aria-label="Specialty">
+          <button data-nav="realWorld" data-nav-group-label="Specialty" data-icon="▤" data-nav-group="specialty" type="button">Real-World Lab</button>
+          <button data-nav="accuracyClinic" data-icon="✓" data-nav-group="specialty" type="button">Accuracy Clinic</button>
+          <button data-nav="tenKey" data-icon="#" data-nav-group="specialty" type="button">10-Key Academy</button>
+          <button data-nav="punctuation" data-icon=";" data-nav-group="specialty" type="button">Punctuation Lab</button>
+        </div>
+        <div class="hyper98-nav-group" data-nav-group="measure" data-label="Test & Play" role="group" aria-label="Test and play">
+          <button data-nav="certification" data-nav-group-label="Test & Play" data-icon="T" data-nav-group="measure" type="button">Timed Tests</button>
+          <button data-nav="menu" data-icon="✣" data-nav-group="measure" type="button">Arcade</button>
+        </div>
+        <div class="hyper98-nav-group" data-nav-group="records" data-label="Records" role="group" aria-label="Records">
+          <button data-nav="progress" data-nav-group-label="Records" data-icon="↗" data-nav-group="records" type="button">Progress</button>
+          <button data-nav="reports" data-icon="▤" data-nav-group="records" type="button">Reports</button>
+          <button data-nav="achievements" data-icon="★" data-nav-group="records" type="button">Achievements</button>
+          <button data-nav="scoreboard" data-icon="#" data-nav-group="records" type="button" class="hyper98-secondary-nav">Scoreboard</button>
+        </div>
+        <div class="hyper98-nav-group" data-nav-group="system" data-label="HyperSoft" role="group" aria-label="HyperSoft">
+          <button data-nav="office" data-nav-group-label="HyperSoft" data-icon="B" data-nav-group="system" type="button">Blake's Office</button>
+          <button data-nav="profiles" data-icon="●" data-nav-group="system" type="button">Profiles</button>
+          <button data-nav="settings" data-icon="⚙" data-nav-group="system" type="button">Settings</button>
+        </div>
       </nav>
     </header>
+    <div class="hyper98-nav-scrim" id="hyper98NavScrim" aria-hidden="true"></div>
+    <div class="workspace-chrome" aria-label="Current workspace status">
+      <button class="hyper98-mobile-nav-toggle" id="hyper98NavToggle" type="button" aria-controls="hyper98Sidebar" aria-expanded="false"><span aria-hidden="true">☰</span><b>Modules</b></button>
+      <div class="workspace-location">
+        <span class="hyper98-module-icon" id="hyper98ModuleIcon" aria-hidden="true">⌨</span>
+        <span class="workspace-label">Module</span>
+        <span class="workspace-title-stack"><strong id="currentScreenLabel">Home</strong><span id="currentScreenDetail">HyperSoft Deluxe launcher</span></span>
+      </div>
+      <div class="workspace-meters" aria-hidden="true">
+        <span><b>LEVEL</b><strong id="workspaceDifficulty">Normal</strong></span>
+        <span><b>WORDS</b><strong id="workspaceWordList">General</strong></span>
+      </div>
+      <div class="hyper98-header-actions">
+        <button class="hyper98-curriculum-toggle" id="hyper98CurriculumToggle" type="button" aria-label="Toggle between curriculum lessons and Smart Practice">
+          <span>Curriculum Mode</span><strong id="hyper98CurriculumState">OFF</strong>
+        </button>
+        <button class="hyper98-how-button" id="hyper98HowButton" type="button"><span class="hyper98-help-orb">?</span> How It Works (F1)</button>
+        <button class="hyper98-blake-button" id="hyper98BlakeTipsButton" type="button">
+          <img src="./assets/common/blake.png" alt="" /><span>Blake's Tips</span>
+        </button>
+      </div>
+      <button class="context-help-button" id="helpButton" type="button" title="Context Help (F1)" aria-keyshortcuts="F1"><span aria-hidden="true">?</span> Help</button>
+    </div>
 
-    <main id="appMain">
+    <main id="appMain" tabindex="-1">
       <section class="screen title-screen is-active" id="titleScreen" aria-labelledby="gameTitle">
-        <div class="title-card retro-card">
-          <div class="title-copy">
-            <span class="eyebrow">HyperSoft proudly presents</span>
-            <div class="deluxe-ribbon">Deluxe Training Suite</div>
-            <h1 id="gameTitle">Blake Breacher<br />Teaches Typing</h1>
-            <div class="title-subbrand">Classic Office Keyboarding System</div>
-            <p class="title-lede">
-              The office's fastest typist. The office's least reliable custodian of unattended workstations.
-            </p>
-            <div class="blake-quote" id="titleQuote">
-              “Lock my computer? I was only gone for forty-five minutes.”
+        <div class="title-card retro-card home-dashboard-shell">
+          <section class="home-hero" aria-label="HyperSoft home overview">
+            <div class="home-hero-copy">
+              <span class="eyebrow">HyperSoft proudly presents</span>
+              <div class="deluxe-ribbon">Deluxe Training Suite • Retro Workstation Edition</div>
+              <h1 id="gameTitle">Blake Breacher<br />Teaches Typing</h1>
+              <div class="title-subbrand">Classic Office Keyboarding System</div>
+              <p class="title-lede">
+                The office's fastest typist. The office's least reliable custodian of unattended workstations.
+              </p>
+              <div class="blake-quote" id="titleQuote">
+                “Lock my computer? I was only gone for forty-five minutes.”
+              </div>
             </div>
-            <button class="active-profile-banner" id="activeProfileBanner" type="button"></button>
-            <div class="personality-home-grid">
-              <article class="personality-card blake-tip-home">
-                <div class="personality-card-heading"><span>Blake's Productivity Tip</span><button class="tiny-retro-button" id="newHomeTipButton" type="button">Another</button></div>
-                <p id="homeBlakeTip"></p>
-                <div class="compliance-rebuttal"><strong>HyperSoft Compliance:</strong><span id="homeComplianceReply"></span></div>
-              </article>
-              <article class="personality-card corporate-notice-home">
-                <div class="personality-card-heading"><span>Corporate Bulletin</span><button class="tiny-retro-button" id="newHomeNoticeButton" type="button">Next</button></div>
-                <strong id="homeNoticeTitle"></strong>
-                <p id="homeNoticeBody"></p>
-                <small id="homeNoticeDepartment"></small>
-              </article>
-            </div>
-            <div class="backup-reminder" id="backupReminderBanner" hidden>
-              <div><strong>HyperSoft Backup Reminder</strong><span>Your learner file has enough progress to be worth backing up.</span></div>
-              <button class="small-action" id="backupReminderButton" type="button">Back Up Profile</button>
-            </div>
-            <div class="feature-pill-row">
-              <span class="retro-pill">14 Lessons + 8 Smart Drills + 8 Games</span>
-              <span class="retro-pill">Typing Progress</span>
-              <span class="retro-pill">Achievements</span>
-              <span class="retro-pill">Certificates &amp; Reports</span>
-              <span class="retro-pill">Blake Guidance</span>
-              <span class="retro-pill">Compliance Rebuttals</span>
-            </div>
-            <div class="button-row">
-              <button class="primary" id="startSuiteButton" type="button">Start Lessons</button>
-              <button class="secondary" data-nav="menu" type="button">Typing Games</button>
-              <button class="secondary" data-nav="progress" type="button">View Progress</button>
-              <button class="secondary" data-nav="achievements" type="button">Achievements</button>
-              <button class="secondary" data-nav="reports" type="button">Certificates &amp; Reports</button>
-              <button class="secondary" data-nav="office" type="button">Blake's Office</button>
-              <button class="secondary" data-nav="profiles" type="button">Profiles</button>
-              <button class="secondary" data-nav="scoreboard" type="button">View Scores</button>
-            </div>
+
+            <aside class="home-hero-side" aria-label="Learner and Blake summary">
+              <button class="active-profile-banner" id="activeProfileBanner" type="button"></button>
+              <div class="blake-panel home-blake-card" aria-label="Blake">
+                <div class="portrait-frame">
+                  <img src="./assets/common/blake.png" alt="Blake, HyperSoft's typing champion" />
+                </div>
+                <div class="home-blake-copy">
+                  <div class="portrait-caption">Meet Blake: smug, fast, and profoundly unsafe around unattended records.</div>
+                  <div class="employee-badge">
+                    <strong>BLAKE</strong>
+                    <span>Typing Champion</span>
+                    <span class="warning">Security training overdue</span>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </section>
+
+          <div class="backup-reminder home-backup-reminder" id="backupReminderBanner" hidden>
+            <div><strong>HyperSoft Backup Reminder</strong><span>Your learner file has enough progress to be worth backing up.</span></div>
+            <button class="small-action" id="backupReminderButton" type="button">Back Up Profile</button>
           </div>
 
-          <div class="blake-panel" aria-label="Blake">
-            <div class="portrait-frame">
-              <img src="./assets/common/blake.png" alt="Blake, HyperSoft's typing champion" />
-            </div>
-            <div class="portrait-caption">Meet Blake: smug, fast, and profoundly unsafe around unattended records.</div>
-            <div class="employee-badge">
-              <strong>BLAKE</strong>
-              <span>Typing Champion</span>
-              <span class="warning">Security training overdue</span>
-            </div>
+          <div class="home-main-grid">
+            <section class="integration-home-panel home-dashboard-panel" aria-labelledby="homePathHeading">
+              <div class="integration-home-heading">
+                <div><span class="eyebrow">v0.16 integrated launcher</span><h2 id="homePathHeading">Recommended Path</h2><p>HyperSoft turns the full suite into a short next-step path instead of asking you to pick from two dozen buttons.</p></div>
+                <button class="secondary" id="onboardingLaunchButton" type="button">Set My Training Goal</button>
+              </div>
+              <div class="home-recommended-path" id="homeRecommendedPath"></div>
+              <div class="button-row integration-primary-actions">
+                <button class="primary" id="startSuiteButton" type="button">Start Keyboard Trainee</button>
+                <button class="secondary" id="homeDailyPlanButton" type="button">Open Today's Plan</button>
+                <button class="secondary" id="homeAssessmentButton" type="button">Placement Assessment</button>
+              </div>
+            </section>
+
+            <section class="navigation-quick-access home-dashboard-panel" id="navigationQuickAccess" aria-labelledby="quickAccessHeading">
+              <div class="navigation-quick-heading"><div><span class="eyebrow">Personal launcher</span><h2 id="quickAccessHeading">Your HyperSoft Shortcuts</h2><p>Resume, pin favorites, or reopen recently used modules without hunting through the full program.</p></div></div>
+              <div class="home-continue-panel" id="homeContinuePanel"></div>
+              <div class="home-quick-grid">
+                <section class="home-quick-section" aria-labelledby="favoritesHeading"><div class="home-quick-section-heading"><strong id="favoritesHeading">Favorite Modules</strong><button class="tiny-retro-button" type="button" data-module-view-jump="favorites">Manage</button></div><div class="home-favorite-modules" id="homeFavoriteModules"></div></section>
+                <section class="home-quick-section" aria-labelledby="recentHeading"><div class="home-quick-section-heading"><strong id="recentHeading">Recently Used</strong><button class="tiny-retro-button" type="button" data-module-view-jump="recent">View All</button></div><div class="home-recent-modules" id="homeRecentModules"></div></section>
+              </div>
+            </section>
+
+            <section class="home-personality-panel home-dashboard-panel" aria-labelledby="homePersonalityHeading">
+              <div class="home-personality-heading"><span class="eyebrow">HyperSoft desk feed</span><h2 id="homePersonalityHeading">Blake & Corporate</h2></div>
+              <div class="personality-home-grid">
+                <article class="personality-card blake-tip-home">
+                  <div class="personality-card-heading"><span>Blake's Productivity Tip</span><button class="tiny-retro-button" id="newHomeTipButton" type="button">Another</button></div>
+                  <p id="homeBlakeTip"></p>
+                  <div class="compliance-rebuttal"><strong>HyperSoft Compliance:</strong><span id="homeComplianceReply"></span></div>
+                </article>
+                <article class="personality-card corporate-notice-home">
+                  <div class="personality-card-heading"><span>Corporate Bulletin</span><button class="tiny-retro-button" id="newHomeNoticeButton" type="button">Next</button></div>
+                  <strong id="homeNoticeTitle"></strong>
+                  <p id="homeNoticeBody"></p>
+                  <small id="homeNoticeDepartment"></small>
+                </article>
+              </div>
+            </section>
           </div>
+
+          <section class="module-explorer home-module-explorer" aria-labelledby="moduleExplorerHeading">
+            <div class="module-explorer-heading"><div><span class="eyebrow">Program Guide</span><h2 id="moduleExplorerHeading">Find a Module</h2><p class="home-module-explorer-note">Search directly or scan the horizontal module groups below.</p></div><label><span class="sr-only">Search HyperSoft modules</span><input id="moduleExplorerSearch" type="search" autocomplete="off" placeholder="Search modules: accuracy, 10-key, reports... (press /)" /></label></div>
+            <div class="module-explorer-controls" id="moduleExplorerControls" role="group" aria-label="Module Explorer view">
+              <button class="secondary" type="button" data-module-view="all" aria-pressed="true">All Modules</button>
+              <button class="secondary" type="button" data-module-view="recommended" aria-pressed="false">Recommended</button>
+              <button class="secondary" type="button" data-module-view="favorites" aria-pressed="false">★ Favorites</button>
+              <button class="secondary" type="button" data-module-view="recent" aria-pressed="false">Recently Used</button>
+            </div>
+            <div class="module-explorer-content" id="moduleExplorerContent"></div>
+          </section>
         </div>
       </section>
-
 
       <section class="screen" id="officeScreen" aria-labelledby="officeHeading">
         <div class="screen-heading">
           <div>
-            <span class="eyebrow">HyperSoft employee feature • v0.12</span>
+            <span class="eyebrow">HyperSoft employee feature • v1.0.2</span>
             <div class="section-banner">Typing champion, productivity theorist, recurring compliance topic</div>
             <h2 id="officeHeading">Blake's Office</h2>
             <p class="lesson-framework-note">A completely unnecessary archive of Blake advice, HyperSoft corrections, corporate notices, and selected entries from a fictional incident file.</p>
@@ -121,7 +233,7 @@
       <section class="screen" id="profilesScreen" aria-labelledby="profilesHeading">
         <div class="screen-heading">
           <div>
-            <span class="eyebrow">Local learner profiles • v0.12</span>
+            <span class="eyebrow">Local learner profiles • v1.0.2</span>
             <div class="section-banner">Separate progress, records, adaptive data, and preferences</div>
             <h2 id="profilesHeading">Profiles</h2>
             <p class="lesson-framework-note">Each learner keeps an independent local training record. Guest mode is temporary and is discarded when you switch away or reload the page.</p>
@@ -137,7 +249,7 @@
         <section class="backup-panel" aria-labelledby="backupHeading">
           <div class="backup-panel-heading">
             <div>
-              <span class="eyebrow">Save management • v0.12</span>
+              <span class="eyebrow">Save management • v1.0.2</span>
               <h3 id="backupHeading">Backup &amp; Restore</h3>
               <p>Export portable JSON learner files before moving browsers, clearing site data, or trusting Blake with a laptop.</p>
             </div>
@@ -176,25 +288,510 @@
         </section>
       </section>
 
+      <section class="screen trainee-screen" id="traineeScreen" aria-labelledby="traineeHeading">
+        <div class="screen-heading trainee-heading">
+          <div>
+            <span class="eyebrow">HyperSoft Foundations Program • Start Here</span>
+            <div class="section-banner">Learn what competent touch typing is supposed to feel like before chasing WPM</div>
+            <h2 id="traineeHeading">Keyboard Trainee</h2>
+            <p class="lesson-framework-note">A short fundamentals course for learners who have never seriously practiced touch typing—or who have years of fast bad habits. Complete the stations in order, then move into Lessons and Smart Practice.</p>
+          </div>
+          <div class="trainee-heading-actions">
+            <button class="secondary" id="traineeResetButton" type="button">Reset Trainee Progress</button>
+            <button class="primary" id="traineeLessonsButton" type="button">Continue to Lessons</button>
+          </div>
+        </div>
+        <div class="trainee-progress-panel">
+          <div><strong>Foundation Progress</strong><span id="traineeProgressText">0 of 8 stations complete</span></div>
+          <div class="trainee-progress-track" aria-hidden="true"><span id="traineeProgressFill"></span></div>
+          <p id="traineeReadinessText">Start with Workstation Setup. Speed comes later.</p>
+        </div>
+        <div class="trainee-layout">
+          <nav class="trainee-station-list" id="traineeStationList" aria-label="Keyboard Trainee stations"></nav>
+          <article class="trainee-workstation" id="traineeWorkstation" aria-live="polite"></article>
+        </div>
+      </section>
+
+
+      <section class="screen assessment-screen" id="assessmentScreen" aria-labelledby="assessmentHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">HyperSoft Placement Center • v1.0.2</span>
+            <div class="section-banner">A sustained diagnostic for speed, accuracy, keyboard range, rhythm, and hesitation</div>
+            <h2 id="assessmentHeading">Typing Assessment &amp; Placement</h2>
+            <p class="lesson-framework-note">Use this after Keyboard Trainee—or anytime you are unsure where to resume training. The assessment is not pass/fail. HyperSoft uses the result to recommend the most useful next module.</p>
+          </div>
+          <div class="profile-toolbar">
+            <button class="primary" id="assessmentStartButton" type="button">Start Placement Assessment</button>
+            <button class="secondary" id="assessmentRecommendedButton" type="button" hidden>Follow Recommendation</button>
+          </div>
+        </div>
+        <div class="assessment-intro-grid">
+          <article><span>01</span><strong>Sustainable WPM</strong><p>Measures pace across complete passages rather than a short burst.</p></article>
+          <article><span>02</span><strong>First-Attempt Accuracy</strong><p>Wrong keys count even when immediately corrected.</p></article>
+          <article><span>03</span><strong>Rhythm Consistency</strong><p>Looks at variation and long hesitations between correct keystrokes.</p></article>
+          <article><span>04</span><strong>Keyboard Range</strong><p>Includes capitals, punctuation, symbols, numbers, and sustained prose.</p></article>
+        </div>
+        <div id="assessmentLatest"></div>
+        <section class="assessment-history-panel">
+          <div class="assessment-history-heading"><div><strong>Assessment History</strong><span>Most recent placement diagnostics for this learner</span></div><small>Stored locally with this profile</small></div>
+          <div id="assessmentHistory"></div>
+        </section>
+      </section>
+
+      <section class="screen technique-screen" id="techniqueScreen" aria-labelledby="techniqueHeading">
+        <div class="screen-heading technique-heading">
+          <div>
+            <span class="eyebrow">HyperSoft Technique Coach • v1.0.2</span>
+            <div class="section-banner">Analyze how you type—not just the final WPM number</div>
+            <h2 id="techniqueHeading">Technique Coach</h2>
+            <p class="lesson-framework-note">Technique Coach combines your latest Placement Assessment with recent training, weak-key history, and troublesome transitions. It looks for accuracy tradeoffs, rhythm breaks, correction habits, mixed-key slowdown, awkward transitions, and unsustainable speed.</p>
+          </div>
+          <div class="technique-heading-actions">
+            <button class="secondary" id="techniqueAssessmentButton" type="button">Retake Assessment</button>
+            <button class="primary" id="techniquePrimaryActionButton" type="button">Start Recommended Work</button>
+          </div>
+        </div>
+        <div id="techniqueSummary"></div>
+        <section class="technique-section">
+          <div class="technique-section-heading"><div><strong>Technique Signals</strong><span>Six coaching dimensions built from locally recorded typing evidence</span></div><small>Not a medical or ergonomic diagnosis</small></div>
+          <div class="technique-metric-grid" id="techniqueMetrics"></div>
+        </section>
+        <section class="technique-plan-panel">
+          <div class="technique-section-heading"><div><strong>Today's Technique Plan</strong><span>Highest-value next steps based on the current learner profile</span></div><small>Recommendations never lock other modules</small></div>
+          <div class="technique-plan" id="techniquePlan"></div>
+        </section>
+        <section class="technique-evidence-panel" id="techniqueWeaknesses"></section>
+      </section>
+
+      <section class="screen daily-plan-screen" id="dailyPlanScreen" aria-labelledby="dailyPlanHeading">
+        <div class="screen-heading daily-plan-heading">
+          <div>
+            <span class="eyebrow">HyperSoft Adaptive Program • v1.0.2</span>
+            <div class="section-banner">Stop deciding what to practice. Let the learner profile decide.</div>
+            <h2 id="dailyPlanHeading">Daily Training Plan</h2>
+            <p class="lesson-framework-note">HyperSoft combines placement, Technique Coach, curriculum progress, weak keys and pairs, Accuracy Clinic, punctuation, 10-Key, Real-World Lab, and Timed Test history into one guided session for today.</p>
+          </div>
+          <div class="daily-plan-controls">
+            <label><span>Plan length</span><select id="dailyPlanDurationSelect"><option value="10">10 minutes</option><option value="20" selected>20 minutes</option><option value="30">30 minutes</option></select></label>
+            <button class="secondary" id="dailyPlanGenerateButton" type="button">Regenerate Plan</button>
+            <button class="primary" id="dailyPlanStartNextButton" type="button">Start Today's Plan</button>
+          </div>
+        </div>
+
+        <div class="daily-plan-principles">
+          <div><strong>Highest need first</strong><span>Accuracy, foundations, weak transitions, or mixed-key control outrank generic speed work when the evidence says they should.</span></div>
+          <div><strong>Balanced progression</strong><span>Longer plans can combine remediation, formal curriculum, applied typing, numeric rotation, and benchmarking.</span></div>
+          <div><strong>Profile-specific</strong><span>The plan and its completion history belong to the active learner and are included in profile/full-backup data.</span></div>
+        </div>
+
+        <div class="daily-plan-summary" id="dailyPlanSummary"></div>
+
+        <section class="daily-plan-runner panel">
+          <div class="daily-plan-section-heading"><div><strong>Today's Sequence</strong><span>Complete the steps in order or launch any open step directly</span></div><small>Activity completion checks itself off automatically</small></div>
+          <div class="daily-plan-steps" id="dailyPlanSteps"></div>
+        </section>
+
+        <section class="daily-plan-evidence panel" id="dailyPlanEvidence"></section>
+
+        <section class="daily-plan-history panel">
+          <div class="daily-plan-section-heading"><div><strong>Completed Daily Plans</strong><span>Recent days where every recommended step was completed</span></div><small>Pacific day boundaries</small></div>
+          <div id="dailyPlanHistory"></div>
+        </section>
+      </section>
+
+      <section class="screen theory-screen" id="theoryScreen" aria-labelledby="theoryHeading">
+        <div class="screen-heading theory-screen-heading">
+          <div>
+            <span class="eyebrow">HyperSoft Learning Center • v1.0.2</span>
+            <div class="section-banner">Understand the skill instead of memorizing a score</div>
+            <h2 id="theoryHeading">Typing Theory Library</h2>
+            <p class="lesson-framework-note">A practical reference for touch typing, WPM and adjusted WPM, accuracy, rhythm, motor learning, Shift and punctuation, 10-Key theory, real-world transcription, ergonomics fundamentals, practice design, and how the HyperSoft training system fits together.</p>
+          </div>
+          <div class="theory-library-controls">
+            <label><span>Section</span><select id="theoryCategorySelect"><option value="all">All Topics</option><option value="foundations">Foundations</option><option value="measurement">Measurement</option><option value="technique">Technique</option><option value="special">Special Skills</option><option value="practice">Practice &amp; Comfort</option><option value="system">Using HyperSoft</option></select></label>
+            <label><span>Find a topic</span><input id="theorySearchInput" type="search" placeholder="WPM, rhythm, Shift, 10-key..." autocomplete="off" /></label>
+          </div>
+        </div>
+
+        <div class="theory-principle-strip">
+          <div><strong>Learn the why</strong><span>Each topic explains the reasoning behind the technique, not just the rule.</span></div>
+          <div><strong>See an example</strong><span>Concepts are tied to actual typing situations and HyperSoft measurements.</span></div>
+          <div><strong>Check understanding</strong><span>Optional one-question checks are for recall, not grades or certification.</span></div>
+          <div><strong>Put it into practice</strong><span>Every topic links directly to the training modules where that concept matters.</span></div>
+        </div>
+
+        <div class="theory-summary" id="theorySummary"></div>
+
+        <div class="theory-library-layout">
+          <aside class="theory-topic-panel panel" aria-label="Learning Center topics">
+            <div class="theory-panel-heading"><strong>Topic Library</strong><span>Reviewed topics are saved to this learner profile</span></div>
+            <div class="theory-topic-list" id="theoryTopicList"></div>
+          </aside>
+          <section class="theory-article-panel" id="theoryArticle" aria-live="polite"></section>
+        </div>
+
+        <section class="theory-glossary panel" id="theoryGlossary"></section>
+      </section>
+
       <section class="screen" id="lessonsScreen" aria-labelledby="lessonSelectHeading">
         <div class="screen-heading">
           <div>
-            <span class="eyebrow">Typing instruction • v0.12</span>
-            <div class="section-banner">Full keyboard curriculum + smart adaptive practice</div>
+            <span class="eyebrow">Typing instruction • v1.0.2</span>
+            <div class="section-banner">Fourteen-step formal keyboard curriculum</div>
             <h2 id="lessonSelectHeading">Choose a typing lesson</h2>
-            <p class="lesson-framework-note">Work from home row through the full keyboard, then use Smart Practice and Weak-Key Workshop to target keyboard geometry, weak keys, and troublesome transitions.</p>
+            <p class="lesson-framework-note">Work from home row through the full keyboard. Smart Practice now has its own dedicated module for targeted drills and adaptive keyboard work.</p>
           </div>
           <div class="difficulty-chip" id="lessonDifficultyChip">Normal</div>
         </div>
         <div class="weak-key-summary" id="weakKeySummary"></div>
-        <div id="smartPracticeLab"></div>
         <div class="lesson-grid" id="lessonGrid"></div>
+      </section>
+
+      <section class="screen hyper98-smart-screen" id="smartPracticeScreen" aria-labelledby="smartPracticeHeading">
+        <div class="screen-heading smart-practice-screen-heading">
+          <div>
+            <span class="eyebrow">Targeted practice • v1.0.2</span>
+            <div class="section-banner">Keyboard-aware drills and adaptive transition training</div>
+            <h2 id="smartPracticeHeading">Smart Practice</h2>
+            <p class="lesson-framework-note">Target specific movement patterns, hand balance, troublesome transitions, and word difficulty without changing formal curriculum completion.</p>
+          </div>
+          <div class="difficulty-chip">Smart Drills</div>
+        </div>
+        <div class="weak-key-summary" id="smartPracticeWeakKeySummary"></div>
+        <div id="smartPracticeLab"></div>
+      </section>
+
+
+      <section class="screen custom-practice-screen" id="customPracticeScreen" aria-labelledby="customPracticeHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">Build-your-own training • v1.0.2</span>
+            <div class="section-banner">Choose exactly what HyperSoft should make you type</div>
+            <h2 id="customPracticeHeading">Practice Builder</h2>
+            <p class="lesson-framework-note">Create a timed session around your weak keys, troublesome transitions, custom characters, punctuation, number row, vocabulary family, and personal speed/accuracy targets. Custom Practice improves adaptive data without changing formal curriculum completion.</p>
+          </div>
+          <div class="difficulty-chip">Custom Lab</div>
+        </div>
+
+        <div class="custom-practice-layout">
+          <form class="custom-practice-form panel" id="customPracticeForm">
+            <div class="custom-builder-title"><div><strong>Session Configuration</strong><span>Every control can be changed independently</span></div><button class="secondary" id="customPracticeResetButton" type="button">Reset</button></div>
+
+            <div class="custom-quick-presets" aria-label="Quick practice presets">
+              <button type="button" data-custom-quick="weakKeys">My Weak Keys</button>
+              <button type="button" data-custom-quick="troublePairs">Trouble Pairs</button>
+              <button type="button" data-custom-quick="punctuation">Punctuation</button>
+              <button type="button" data-custom-quick="numberRow">Number Row</button>
+              <button type="button" data-custom-quick="accuracy">Accuracy Clinic</button>
+              <button type="button" data-custom-quick="mixed">Full Keyboard Mix</button>
+            </div>
+
+            <div class="custom-builder-grid">
+              <label>
+                <span>Training focus</span>
+                <select id="customPracticeFocusSelect">
+                  <option value="balanced">Balanced Keyboard</option>
+                  <option value="weakKeys">My Weak Keys</option>
+                  <option value="troublePairs">My Trouble Pairs</option>
+                  <option value="custom">Custom Keys &amp; Pairs</option>
+                </select>
+                <small>Weak-key and trouble-pair modes use this profile's accumulated adaptive history.</small>
+              </label>
+
+              <label>
+                <span>Vocabulary family</span>
+                <select id="customPracticeWordListSelect">
+                  <option value="profile">Use Profile Default</option>
+                  <option value="general">General</option>
+                  <option value="office">Office</option>
+                  <option value="technical">Technical</option>
+                </select>
+                <small>Changes the base word pool before focus weighting is applied.</small>
+              </label>
+
+              <label>
+                <span>Minimum word length</span>
+                <input id="customPracticeMinLength" type="number" inputmode="numeric" min="2" max="15" value="3" />
+                <small>2–15 letters.</small>
+              </label>
+
+              <label>
+                <span>Maximum word length</span>
+                <input id="customPracticeMaxLength" type="number" inputmode="numeric" min="2" max="18" value="10" />
+                <small>2–18 letters; HyperSoft repairs inverted ranges.</small>
+              </label>
+
+              <label class="custom-builder-wide">
+                <span>Custom focus keys</span>
+                <input id="customPracticeKeysInput" type="text" maxlength="80" placeholder="Example: e r t ; / 7" autocomplete="off" />
+                <small>Used when Training focus is Custom. Enter individual letters, digits, or punctuation; spaces/commas are ignored.</small>
+              </label>
+
+              <label class="custom-builder-wide">
+                <span>Custom two-letter pairs</span>
+                <input id="customPracticePairsInput" type="text" maxlength="120" placeholder="Example: th, er, ou, tr" autocomplete="off" />
+                <small>Comma- or space-separated alphabetic pairs. HyperSoft accepts up to 12.</small>
+              </label>
+
+              <label>
+                <span>Session duration</span>
+                <select id="customPracticeDurationSelect">
+                  <option value="1">1 minute</option>
+                  <option value="2">2 minutes</option>
+                  <option value="3" selected>3 minutes</option>
+                  <option value="5">5 minutes</option>
+                  <option value="7">7 minutes</option>
+                  <option value="10">10 minutes</option>
+                </select>
+                <small>The ribbon runs on the clock rather than a fixed word count.</small>
+              </label>
+
+              <label>
+                <span>Target WPM</span>
+                <input id="customPracticeTargetWpm" type="number" inputmode="numeric" min="10" max="140" value="35" />
+                <small>Practice target only; missing it never locks anything.</small>
+              </label>
+
+              <label>
+                <span>Accuracy target</span>
+                <select id="customPracticeAccuracySelect">
+                  <option value="90">90%</option>
+                  <option value="93">93%</option>
+                  <option value="95" selected>95%</option>
+                  <option value="97">97%</option>
+                  <option value="98">98%</option>
+                  <option value="99">99%</option>
+                  <option value="100">100%</option>
+                </select>
+                <small>Use 98–100% for deliberate accuracy work.</small>
+              </label>
+
+              <div class="custom-content-options">
+                <span>Additional keyboard content</span>
+                <label class="toggle-row"><span><strong>Capital letters</strong><small>Include Shift work.</small></span><input id="customPracticeCapitalsToggle" type="checkbox" checked /></label>
+                <label class="toggle-row"><span><strong>Punctuation</strong><small>Quotes, commas, apostrophes, slashes, and related marks.</small></span><input id="customPracticePunctuationToggle" type="checkbox" /></label>
+                <label class="toggle-row"><span><strong>Number row</strong><small>Numbers, currency, dates, decimals, and numeric forms.</small></span><input id="customPracticeNumberRowToggle" type="checkbox" /></label>
+              </div>
+            </div>
+
+            <div class="custom-builder-actions">
+              <button class="primary" id="customPracticeStartButton" type="submit">Start Custom Practice</button>
+              <div class="custom-save-row">
+                <input id="customPracticePresetName" type="text" maxlength="28" placeholder="Preset name" aria-label="Saved preset name" />
+                <button class="secondary" id="customPracticeSavePresetButton" type="button">Save Preset</button>
+              </div>
+            </div>
+          </form>
+
+          <aside class="custom-practice-side">
+            <section class="custom-practice-preview panel" id="customPracticePreview" aria-live="polite"></section>
+
+            <section class="custom-adaptive-panel panel">
+              <div class="custom-builder-title"><div><strong>Adaptive Sources</strong><span>Available to this learner right now</span></div></div>
+              <div class="custom-adaptive-grid">
+                <article><span>Weak Keys</span><strong id="customWeakKeyCount">Profile data</strong><p>Practice Builder reads the same established key weaknesses used by Weak-Key Workshop.</p></article>
+                <article><span>Trouble Pairs</span><strong id="customPairCount">Profile data</strong><p>First-attempt adjacent-letter history can be turned into a dedicated timed session.</p></article>
+              </div>
+            </section>
+
+            <section class="custom-saved-panel panel">
+              <div class="custom-builder-title"><div><strong>Saved Presets</strong><span>Up to eight per learner profile</span></div></div>
+              <div id="customPracticeSavedPresets"></div>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+
+      <section class="screen realworld-screen" id="realWorldScreen" aria-labelledby="realWorldHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">Applied keyboarding • v1.0.2</span>
+            <div class="section-banner">Practice the structured material people actually type</div>
+            <h2 id="realWorldHeading">Real-World Typing Lab</h2>
+            <p class="lesson-framework-note">Bridge typing-tutor technique and everyday keyboard work with fictional emails, memos, addresses, file paths, web references, forms, numbers, and document transcription. Every simulation is local and uses invented training data.</p>
+          </div>
+          <div class="difficulty-chip">Applied Lab</div>
+        </div>
+
+        <div class="realworld-intro-strip">
+          <div><strong>Exact-entry training</strong><span>Capitalization, punctuation, symbols, digits, spaces, and line breaks all count.</span></div>
+          <div><strong>Adaptive evidence</strong><span>Weak keys and troublesome transitions continue learning from these sessions.</span></div>
+          <div><strong>Not curriculum credit</strong><span>Applied labs do not change the 14 formal lesson requirements.</span></div>
+        </div>
+
+        <div class="realworld-summary" id="realWorldSummary"></div>
+        <div class="realworld-mode-grid" id="realWorldGrid"></div>
+
+        <section class="realworld-history-panel panel">
+          <div class="realworld-history-heading">
+            <div><strong>Applied Typing History</strong><span>Recent Real-World Lab sessions for this learner profile</span></div>
+            <small>Difficulty scales each lab's WPM and accuracy standard</small>
+          </div>
+          <div id="realWorldHistory"></div>
+        </section>
+      </section>
+
+
+      <section class="screen accuracy-clinic-screen" id="accuracyClinicScreen" aria-labelledby="accuracyClinicHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">Precision training • v1.0.2</span>
+            <div class="section-banner">Stop trading accuracy for speed</div>
+            <h2 id="accuracyClinicHeading">Accuracy Clinic</h2>
+            <p class="lesson-framework-note">Precision-first protocols for typists who can already move but lose too many characters along the way. HyperSoft tracks first-attempt misses, clean streaks, substitution patterns, pace surges, weak keys, and troublesome transitions.</p>
+          </div>
+          <div class="difficulty-chip">Precision Lab</div>
+        </div>
+
+        <div class="accuracy-clinic-principles">
+          <div><strong>First attempt counts</strong><span>A wrong key is recorded even though the passage stays on the expected character.</span></div>
+          <div><strong>Strict gates, no lockouts</strong><span>95–100% precision targets are coaching objectives; every protocol can still be completed.</span></div>
+          <div><strong>Remediate the pattern</strong><span>Clinic results feed adaptive weak-key and trouble-pair history for targeted follow-up.</span></div>
+        </div>
+
+        <div class="accuracy-clinic-summary" id="accuracyClinicSummary"></div>
+
+        <div class="accuracy-protocol-grid" id="accuracyClinicGrid"></div>
+
+        <section class="accuracy-review-panel panel" id="accuracyClinicReview"></section>
+
+        <section class="accuracy-history-panel panel">
+          <div class="accuracy-history-heading">
+            <div><strong>Precision Session History</strong><span>Recent Accuracy Clinic runs for this learner profile</span></div>
+            <small>Gate standards scale slightly with selected difficulty</small>
+          </div>
+          <div id="accuracyClinicHistory"></div>
+        </section>
+      </section>
+
+
+      <section class="screen tenkey-academy-screen" id="tenKeyScreen" aria-labelledby="tenKeyHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">Numeric keypad training • v1.0.2</span>
+            <div class="section-banner">Learn the keypad as a real touch-entry system</div>
+            <h2 id="tenKeyHeading">10-Key Academy</h2>
+            <p class="lesson-framework-note">Dedicated numeric-entry training for keypad home position, vertical finger columns, zero and decimal control, Enter rhythm, accounting-style values, and a two-minute proficiency test. HyperSoft reports KPH separately from ordinary typing WPM.</p>
+          </div>
+          <div class="difficulty-chip">Numeric Skills</div>
+        </div>
+
+        <div class="tenkey-theory-strip">
+          <div><strong>Home row: 4 · 5 · 6</strong><span>Right index on 4, middle on 5, ring on 6. Use the tactile marker on 5 when your keypad has one.</span></div>
+          <div><strong>Vertical finger columns</strong><span>Index 1/4/7 · Middle 2/5/8 · Ring 3/6/9 · Thumb 0.</span></div>
+          <div><strong>KPH, not WPM</strong><span>Numeric entry is measured as keystrokes per hour so it stays separate from prose-typing speed.</span></div>
+          <div><strong>Numpad discipline</strong><span>Top-row digits remain available, but advanced protocols track how much input actually comes from the numeric keypad.</span></div>
+        </div>
+
+        <div class="tenkey-summary" id="tenKeySummary"></div>
+
+        <div class="tenkey-protocol-grid" id="tenKeyGrid"></div>
+
+        <section class="tenkey-keymap-panel panel" id="tenKeyKeyMap"></section>
+
+        <section class="tenkey-history-panel panel">
+          <div class="tenkey-history-heading">
+            <div><strong>Numeric Entry History</strong><span>Recent 10-Key Academy sessions for this learner profile</span></div>
+            <small>KPH is not mixed into ordinary WPM analytics</small>
+          </div>
+          <div id="tenKeyHistory"></div>
+        </section>
+      </section>
+
+      <section class="screen punctuation-lab-screen" id="punctuationScreen" aria-labelledby="punctuationHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">Business keyboarding • v1.0.2</span>
+            <div class="section-banner">Make punctuation part of the typing rhythm</div>
+            <h2 id="punctuationHeading">Punctuation &amp; Business Writing Lab</h2>
+            <p class="lesson-framework-note">A guided progression through opposite-hand Shift technique, capitals, apostrophes, quotation marks, semicolons, colons, parentheses, slashes, web/email characters, number-row symbols, and punctuation-rich professional prose.</p>
+          </div>
+          <div class="difficulty-chip">Business Writing</div>
+        </div>
+
+        <div class="punct-theory-strip">
+          <div><strong>Opposite-hand Shift</strong><span>Use the Shift key opposite the letter when practical, then release it immediately.</span></div>
+          <div><strong>Phrase rhythm</strong><span>Read ahead so commas, quotes, and marks feel attached to the phrase rather than separate events.</span></div>
+          <div><strong>Exact symbols</strong><span>URLs, email addresses, currency, percentages, paths, and reference strings require character-level accuracy.</span></div>
+          <div><strong>Separate review</strong><span>HyperSoft tracks symbol-family accuracy so alphabetic fluency cannot hide punctuation problems.</span></div>
+        </div>
+
+        <div class="punct-summary" id="punctuationSummary"></div>
+        <div class="punct-protocol-grid" id="punctuationGrid"></div>
+        <section class="punct-review-panel panel" id="punctuationReview"></section>
+        <section class="punct-history-panel panel">
+          <div class="punct-history-heading"><div><strong>Business Writing History</strong><span>Recent punctuation-focused sessions for this learner profile</span></div><small>Symbol accuracy is recorded separately from overall accuracy</small></div>
+          <div id="punctuationHistory"></div>
+        </section>
+      </section>
+
+
+      <section class="screen certification-screen" id="certificationScreen" aria-labelledby="certificationHeading">
+        <div class="screen-heading">
+          <div>
+            <span class="eyebrow">Formal timed testing • v1.0.2</span>
+            <div class="section-banner">Measure sustained typing under a repeatable clock</div>
+            <h2 id="certificationHeading">Timed Certification Tests</h2>
+            <p class="lesson-framework-note">Run standardized 1-, 3-, 5-, or 10-minute copy tests with Gross WPM, Adjusted WPM, first-attempt accuracy, raw errors, personal records, selectable prose families, and printable HyperSoft result sheets.</p>
+          </div>
+          <div class="difficulty-chip">Timed Testing</div>
+        </div>
+
+        <div class="certification-disclaimer">
+          <strong>HyperSoft training documentation</strong>
+          <span>These tests provide repeatable local training measurements. They are not third-party typing credentials, employment tests, or proof of qualification for a job requirement.</span>
+        </div>
+
+        <div class="certification-controls panel">
+          <label>
+            <span>Training standard</span>
+            <select id="certificationStandardSelect">
+              <option value="learning">Learning — 25 WPM / 95%</option>
+              <option value="general" selected>General Office — 35 WPM / 97%</option>
+              <option value="professional">Professional — 45 WPM / 98%</option>
+              <option value="advanced">Advanced — 55 WPM / 98%</option>
+              <option value="custom">Custom Standard</option>
+            </select>
+            <small>Passing uses Adjusted WPM plus first-attempt accuracy.</small>
+          </label>
+          <label>
+            <span>Test material</span>
+            <select id="certificationContentSelect">
+              <option value="general" selected>General Prose</option>
+              <option value="business">Business Prose</option>
+              <option value="technical">Technical Prose</option>
+            </select>
+            <small>The duration and scoring method stay the same across all three passage families.</small>
+          </label>
+          <div class="certification-custom-fields" id="certificationCustomFields" hidden>
+            <label><span>Custom adjusted WPM</span><input id="certificationCustomWpm" type="number" min="5" max="150" value="40" inputmode="numeric" /></label>
+            <label><span>Custom accuracy</span><input id="certificationCustomAccuracy" type="number" min="80" max="100" step="0.1" value="97" inputmode="decimal" /></label>
+          </div>
+          <div class="certification-formula">
+            <strong>Scoring</strong>
+            <span><b>Gross WPM</b> = physical character attempts ÷ 5 ÷ minutes</span>
+            <span><b>Adjusted WPM</b> = Gross WPM − raw errors per minute</span>
+          </div>
+        </div>
+
+        <div class="certification-summary" id="certificationSummary"></div>
+        <div class="certification-grid" id="certificationGrid"></div>
+
+        <section class="certification-history-panel panel">
+          <div class="certification-history-heading">
+            <div><strong>Timed Test History</strong><span>Recent certification-style results for this learner profile</span></div>
+            <small>Use Reports to print an individual result sheet</small>
+          </div>
+          <div id="certificationHistory"></div>
+        </section>
       </section>
 
       <section class="screen" id="menuScreen" aria-labelledby="gameSelectHeading">
         <div class="screen-heading">
           <div>
-            <span class="eyebrow">Training arcade • v0.12</span>
+            <span class="eyebrow">Training arcade • v1.0.2</span>
             <div class="section-banner">Games, records, random challenges, and HyperSoft tournaments</div>
             <h2 id="gameSelectHeading">Typing Arcade</h2>
             <p class="lesson-framework-note">Play any game normally, take a randomized challenge, or chain several games together in a Typing Tournament. Arcade records are tracked separately for each mode and difficulty.</p>
@@ -216,24 +813,30 @@
           <button class="guide-link" id="guidedLinkButton" type="button">Guided Link: mode notes</button>
         </div>
 
-        <div class="hud" aria-label="Typing statistics">
+        <div class="arcade-console-bar"><span id="arcadeConsoleMode">HYPERSOFT ARCADE STATION</span><span id="arcadeConsoleStatus">READY</span></div>
+
+        <div class="hud arcade-hud" aria-label="Typing statistics">
           <div class="hud-item"><span>WPM</span><strong id="hudWpm">0</strong></div>
           <div class="hud-item"><span>Accuracy</span><strong id="hudAccuracy">100%</strong></div>
           <div class="hud-item"><span>Time</span><strong id="hudTimer">0:00</strong></div>
           <div class="hud-item"><span>Score</span><strong id="hudScore">0</strong></div>
         </div>
 
-        <div class="game-stage" id="gameStage" tabindex="-1"></div>
+        <div class="arcade-stage-shell" id="arcadeStageShell" data-game="none">
+          <div class="arcade-stage-bezel"><span>HYPERSOFT INTERACTIVE TRAINING DISPLAY</span><span id="arcadeStageReadout">ARCADE CHANNEL 01</span></div>
+          <div class="game-stage" id="gameStage" tabindex="-1"></div>
+          <div class="arcade-stage-footer"><span id="arcadeInputHint">Keyboard input active</span><span>F1 HELP • ESC/BACK TO EXIT</span></div>
+        </div>
       </section>
 
 
       <section class="screen" id="progressScreen" aria-labelledby="progressHeading">
         <div class="screen-heading">
           <div>
-            <span class="eyebrow">HyperSoft learner record • v0.12</span>
+            <span class="eyebrow">HyperSoft learner record • v1.0.2</span>
             <div class="section-banner">Graphs, trends, lesson mastery, and adaptive typing analysis</div>
             <h2 id="progressHeading">Typing Progress</h2>
-            <p class="lesson-framework-note">The active profile’s training history stays in this browser. Long-term graphs, mastery records, difficulty statistics, personal-best history, and the keyboard accuracy heatmap remain available in v0.12.</p>
+            <p class="lesson-framework-note">The active profile’s training history stays in this browser. Long-term graphs, mastery records, difficulty statistics, personal-best history, and the keyboard accuracy heatmap remain available in v1.0.2.</p>
           </div>
           <button class="secondary" id="progressLessonsButton" type="button">Continue Lessons</button>
         </div>
@@ -244,7 +847,7 @@
       <section class="screen" id="achievementsScreen" aria-labelledby="achievementsHeading">
         <div class="screen-heading">
           <div>
-            <span class="eyebrow">HyperSoft recognition cabinet • v0.12</span>
+            <span class="eyebrow">HyperSoft recognition cabinet • v1.0.2</span>
             <div class="section-banner">Profile-specific achievements and long-term milestones</div>
             <h2 id="achievementsHeading">Achievements</h2>
             <p class="lesson-framework-note">Achievements belong to the active learner profile. Previously earned milestones are retained even if scoreboard records are later cleared.</p>
@@ -262,7 +865,7 @@
       <section class="screen" id="reportsScreen" aria-labelledby="reportsHeading">
         <div class="screen-heading">
           <div>
-            <span class="eyebrow">HyperSoft document center • v0.12</span>
+            <span class="eyebrow">HyperSoft document center • v1.0.2</span>
             <div class="section-banner">Printable certificates, assessments, and progress summaries</div>
             <h2 id="reportsHeading">Certificates &amp; Reports</h2>
             <p class="lesson-framework-note">Generate documents from the active learner profile. Use your browser's Print command to print them or choose “Save as PDF.” Nothing is uploaded anywhere.</p>
@@ -337,16 +940,54 @@
               <option value="officeBeige">Office Beige</option>
               <option value="midnight">Midnight Terminal</option>
               <option value="plumDeluxe">Plum Deluxe</option>
+              <option value="hyper98">HyperSoft 98</option>
             </select>
             <small>Changes the full HyperSoft shell, menus, panels, buttons, and game chrome.</small>
           </label>
 
-          <label class="toggle-row">
+          <label id="hyper98PaletteField">
+            <span>HyperSoft 98 color scheme</span>
+            <select id="hyper98PaletteSelect" name="hyper98Palette">
+              <option value="blue">Classic Blue</option>
+              <option value="teal">Teal 98</option>
+              <option value="beige">Office Beige</option>
+              <option value="midnight">Midnight Terminal</option>
+              <option value="plum">Plum Deluxe</option>
+            </select>
+            <small>Recolors the HyperSoft 98 dashboard while keeping its sidebar, module header, Blake portrait, and 1998 layout intact.</small>
+          </label>
+
+          <label class="toggle-row sound-setting-row">
             <span>
               <strong>Sound effects</strong>
-              <small>Simple browser-generated tones. No external audio files.</small>
+              <small>Typing feedback, interface clicks, notices, completions, and achievement fanfares. Synthesized locally—no audio files.</small>
             </span>
             <input id="soundToggle" name="sound" type="checkbox" />
+          </label>
+
+          <label>
+            <span>Sound level</span>
+            <select id="soundVolumeSelect" name="soundVolume">
+              <option value="low">Low</option>
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+            </select>
+            <small>Selecting Low, Normal, or High automatically enables Sound Effects. Use the checkbox above when you explicitly want audio off.</small>
+          </label>
+
+          <div class="sound-test-panel">
+            <button class="secondary" id="soundTestButton" type="button">Test HyperSoft Sounds</button>
+            <span id="soundTestStatus" role="status">Sound test is available even before saving Settings.</span>
+          </div>
+
+          <label>
+            <span>Multimedia intensity</span>
+            <select id="multimediaSelect" name="multimedia">
+              <option value="quiet">Low Multimedia</option>
+              <option value="standard">Standard Multimedia</option>
+              <option value="full">Full Multimedia</option>
+            </select>
+            <small>Controls interface chirps, Blake popups, fanfares, and CD-ROM-style presentation effects. Audio remains synthesized locally.</small>
           </label>
 
           <label class="toggle-row">
@@ -357,26 +998,75 @@
             <input id="backupReminderToggle" name="backupReminder" type="checkbox" />
           </label>
 
+          <label>
+            <span>Motion preference</span>
+            <select id="motionPreferenceSelect" name="motionPreference">
+              <option value="system">Follow system reduced-motion setting</option>
+              <option value="reduced">Always reduce motion</option>
+            </select>
+            <small>Reduced mode suppresses decorative animation, smooth scrolling, error flashes, and startup motion. HyperSoft never overrides an operating-system request to reduce motion.</small>
+          </label>
+
+          <label class="toggle-row">
+            <span>
+              <strong>HyperSoft startup sequence</strong>
+              <small>Show the brief CD-ROM-style launcher when this learner opens the suite. It can always be skipped.</small>
+            </span>
+            <input id="startupToggle" name="startup" type="checkbox" />
+          </label>
+
+          <label class="toggle-row">
+            <span>
+              <strong>Lesson keyboard coach</strong>
+              <small>Show the visual QWERTY keyboard, next-key highlight, hand/finger guidance, and Shift cues during Lessons and Smart Practice.</small>
+            </span>
+            <input id="lessonKeyboardCoachToggle" name="lessonKeyboardCoach" type="checkbox" />
+          </label>
+
           <div class="settings-preview" id="difficultyPreview"></div>
 
           <div class="button-row">
             <button class="primary" type="submit">Save Settings</button>
             <button class="secondary" id="resetSettingsButton" type="button">Reset defaults</button>
             <button class="secondary" id="resetAdaptiveButton" type="button">Reset adaptive profile</button>
+            <button class="secondary" id="aboutButton" type="button">About HyperSoft...</button>
           </div>
         </form>
+
+        <section class="diagnostics-panel panel" aria-labelledby="diagnosticsHeading">
+          <div class="diagnostics-heading"><div><span class="eyebrow">Integration &amp; support</span><h3 id="diagnosticsHeading">HyperSoft Diagnostics</h3><p>Check the build, learner storage, expected training components, navigation wiring, and state integrity without changing any progress.</p></div><div class="diagnostics-actions"><button class="secondary" id="runDiagnosticsButton" type="button">Run Diagnostics</button><button class="primary" id="runTortureTestButton" type="button">Run Torture Test</button></div></div>
+          <div id="diagnosticsResults" class="diagnostics-results" aria-live="polite"></div>
+          <div class="torture-test-intro"><strong>System Torture Test</strong><span>Runs synthetic corrupt-state cases, route/catalog checks, report resolution, Daily Plan validation, preset integrity, and recovery probes entirely in memory.</span></div>
+          <div id="tortureTestResults" class="torture-test-results" aria-live="polite"><div class="empty-state">Torture test has not been run in this session.</div></div>
+        </section>
       </section>
     </main>
+    <div class="polish-release-note" role="note">v1.0.2 accessibility milestone: dialog focus return, keyboard-safe typing capture, navigation keys, reduced motion, live announcements, and focus hardening.</div>
     <footer class="status-bar">
-      <span>HyperSoft Learning Suite • v0.12 Smart Typing Edition</span>
+      <span>HyperSoft Learning Suite • v1.0.2 Typing Workstation Edition</span>
       <span id="activeProfileStatus">Profile: Player 1</span>
-      <span>Blake Breacher Teaches Typing v0.12 • Smart Content + Adaptive Vocabulary</span>
+      <span>Blake Breacher Teaches Typing v1.0.2 • System Diagnostics & Torture Test</span>
     </footer>
     </div>
   </div>
 
 
-  <dialog class="modal profile-dialog" id="profileDialog">
+  <dialog class="modal onboarding-dialog" id="onboardingDialog" aria-labelledby="onboardingDialogTitle">
+    <form class="modal-inner onboarding-card" id="onboardingForm">
+      <div class="modal-header">
+        <div><span class="eyebrow">HyperSoft First-Run Advisor</span><h2 id="onboardingDialogTitle">Choose a sensible starting path</h2></div>
+        <button class="icon-button" id="onboardingCloseButton" type="button" aria-label="Close onboarding">×</button>
+      </div>
+      <div class="onboarding-intro"><img src="./assets/common/blake.png" alt="Blake" /><div><strong>There are a lot of buttons now.</strong><p>Answer three short questions and HyperSoft will recommend where to begin. Nothing is locked, and you can reopen this advisor from Home at any time.</p></div></div>
+      <fieldset><legend>How familiar are you with touch typing?</legend><label class="onboarding-choice"><input type="radio" name="onboardingExperience" value="new" /><span><strong>New to it</strong><small>I still look for keys or have never learned formal finger zones.</small></span></label><label class="onboarding-choice"><input type="radio" name="onboardingExperience" value="some" checked data-dialog-initial-focus /><span><strong>Some experience</strong><small>I can type without hunting constantly, but technique is inconsistent.</small></span></label><label class="onboarding-choice"><input type="radio" name="onboardingExperience" value="confident" /><span><strong>Comfortable typist</strong><small>I mostly want measurement, refinement, or targeted training.</small></span></label></fieldset>
+      <fieldset><legend>What is your main goal right now?</legend><select id="onboardingGoalSelect" name="onboardingGoal"><option value="general">General improvement</option><option value="accuracy">Fewer mistakes / better accuracy</option><option value="speed">Higher sustainable speed</option><option value="work">Workplace / real-world typing</option><option value="numeric">10-key / numeric entry</option><option value="fun">Games and practice variety</option></select></fieldset>
+      <fieldset><legend>Typical practice session</legend><div class="onboarding-duration-row"><label><input type="radio" name="onboardingMinutes" value="10" /><span>10 min</span></label><label><input type="radio" name="onboardingMinutes" value="20" checked /><span>20 min</span></label><label><input type="radio" name="onboardingMinutes" value="30" /><span>30 min</span></label></div></fieldset>
+      <div class="onboarding-preview" id="onboardingPreview" aria-live="polite"></div>
+      <div class="button-row"><button class="primary" type="submit">Save &amp; Show My Path</button><button class="secondary" id="onboardingSkipButton" type="button">Skip Advisor</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="modal profile-dialog" id="profileDialog" aria-labelledby="profileDialogTitle">
     <form class="modal-inner profile-editor" id="profileForm">
       <div class="modal-header">
         <div>
@@ -387,7 +1077,7 @@
       </div>
       <label>
         <span>Profile name</span>
-        <input id="profileNameInput" type="text" maxlength="28" autocomplete="off" required />
+        <input id="profileNameInput" data-dialog-initial-focus type="text" maxlength="28" autocomplete="off" required />
         <small>Stored only in this browser.</small>
       </label>
       <label>
@@ -409,12 +1099,12 @@
     </form>
   </dialog>
 
-  <dialog class="modal tournament-dialog" id="tournamentDialog">
+  <dialog class="modal tournament-dialog" id="tournamentDialog" aria-labelledby="tournamentDialogTitle">
     <div class="modal-inner tournament-modal-inner">
       <div class="modal-header">
         <div>
           <span class="eyebrow">HyperSoft Typing Arcade</span>
-          <h2>Typing Tournament</h2>
+          <h2 id="tournamentDialogTitle">Typing Tournament</h2>
         </div>
         <button class="icon-button" id="tournamentDialogClose" type="button" aria-label="Close tournament setup">×</button>
       </div>
@@ -423,7 +1113,7 @@
         <div><strong>Blake's tournament rules</strong><p>Several arcade games, one continuous competition, randomized game variants, and a scoring formula carefully designed so I can claim it resembles professional athletics.</p></div>
       </div>
       <div class="host-option-grid tournament-option-grid">
-        <label><span>Tournament format</span><select id="tournamentFormatSelect">
+        <label><span>Tournament format</span><select id="tournamentFormatSelect" data-dialog-initial-focus>
           <option value="quick">Quick Cup — 3 games</option>
           <option value="standard" selected>Standard Cup — 5 games</option>
           <option value="grand">Grand Tour — all 8 games</option>
@@ -441,7 +1131,7 @@
     </div>
   </dialog>
 
-  <dialog class="modal host-dialog" id="hostDialog">
+  <dialog class="modal host-dialog" id="hostDialog" aria-labelledby="hostTitle">
     <div class="modal-inner host-modal-inner">
       <div class="host-dialog-grid">
         <div class="host-portrait-frame">
@@ -455,7 +1145,7 @@
           <div class="host-options" id="hostOptions" hidden></div>
           <div class="host-compliance-note" id="hostComplianceNote"><strong>HyperSoft Compliance</strong><span id="hostComplianceMessage"></span></div>
           <div class="button-row">
-            <button class="primary" id="hostStartButton" type="button">Start Lesson</button>
+            <button class="primary" id="hostStartButton" data-dialog-initial-focus type="button">Start Lesson</button>
             <button class="secondary" id="hostCancelButton" type="button">Not Yet</button>
           </div>
         </div>
@@ -463,12 +1153,12 @@
     </div>
   </dialog>
 
-  <dialog class="modal" id="guideDialog">
+  <dialog class="modal" id="guideDialog" aria-labelledby="guideTitle">
     <div class="modal-inner">
       <div class="modal-header">
         <div>
           <span class="eyebrow">Guided Link</span>
-          <h2 id="guideTitle">Mode notes</h2>
+          <h2 id="guideTitle" tabindex="-1" data-dialog-initial-focus>Mode notes</h2>
         </div>
         <button class="icon-button" id="closeGuideButton" type="button" aria-label="Close guide">×</button>
       </div>
@@ -476,11 +1166,44 @@
     </div>
   </dialog>
 
-  <dialog class="modal" id="resultDialog">
+
+
+  <dialog class="modal help-dialog" id="helpDialog" aria-labelledby="helpDialogTitle">
+    <div class="modal-inner help-modal-inner">
+      <div class="modal-header">
+        <div>
+          <span class="eyebrow">HyperSoft Help Center</span>
+          <h2 id="helpDialogTitle" tabindex="-1" data-dialog-initial-focus>Context Help</h2>
+        </div>
+        <button class="icon-button" id="closeHelpButton" type="button" aria-label="Close help">×</button>
+      </div>
+      <div class="help-location-line"><span>Current module:</span><strong id="helpModuleName">Home</strong></div>
+      <p id="helpDialogIntro"></p>
+      <ul class="help-topic-list" id="helpTopicList"></ul>
+      <section class="help-reference-center" aria-labelledby="helpReferenceHeading">
+        <div class="help-reference-heading"><div><span class="eyebrow">Quick reference</span><h3 id="helpReferenceHeading">What do you need?</h3></div><small>These guides never change scores or training progress.</small></div>
+        <div class="help-reference-nav" id="helpReferenceNav" role="group" aria-label="Help Center guides">
+          <button class="secondary is-selected" type="button" data-help-reference="context" aria-pressed="true">This Module</button>
+          <button class="secondary" type="button" data-help-reference="start" aria-pressed="false">Getting Started</button>
+          <button class="secondary" type="button" data-help-reference="return" aria-pressed="false">Returning After a Break</button>
+          <button class="secondary" type="button" data-help-reference="recovery" aria-pressed="false">Backup &amp; Recovery</button>
+          <button class="secondary" type="button" data-help-reference="modules" aria-pressed="false">Module Directory</button>
+        </div>
+        <div class="help-reference-panel" id="helpReferencePanel" aria-live="polite"></div>
+      </section>
+      <div class="help-keyboard-note"><strong>Keyboard:</strong><span>Press F1 for context help; during an active typing activity, F1 opens that activity’s guide. Escape closes ordinary dialogs. Arrow keys move between items when focus is in the main navigation. On Home, press / to jump to module search.</span></div>
+      <div class="button-row"><button class="primary" id="helpCloseButton" type="button">OK</button></div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="resultDialog" aria-labelledby="resultTitle">
     <div class="modal-inner result-modal">
       <span class="eyebrow">Training complete</span>
-      <h2 id="resultTitle">Session complete</h2>
+      <h2 id="resultTitle" tabindex="-1" data-dialog-initial-focus>Session complete</h2>
       <p id="resultMessage"></p>
+      <section class="result-next-step" id="resultNextStep" hidden aria-label="Recommended next module">
+        <div class="result-next-step-head"><div><span class="eyebrow">HyperSoft handoff</span><strong id="resultNextStepTitle">Recommended next step</strong><small id="resultNextStepReason"></small></div><button class="primary" id="resultNextStepButton" type="button">Open Next Module</button></div>
+      </section>
       <div class="result-host-panel" id="resultHostPanel" hidden>
         <img src="./assets/common/blake.png" alt="Blake" />
         <div>
@@ -503,9 +1226,23 @@
     </div>
   </dialog>
 
+
+  <dialog class="modal hypersoft-about" id="aboutDialog" aria-labelledby="aboutDialogTitle">
+    <div class="modal-inner about-card">
+      <div class="about-logo"><span class="brand-mark">HB</span><div><strong>HyperSoft Deluxe</strong><small>Multimedia Training Division</small></div></div>
+      <h2 id="aboutDialogTitle" tabindex="-1" data-dialog-initial-focus>Blake Breacher Teaches Typing</h2>
+      <p><strong>Version 1.0.2 — Stable Release</strong></p>
+      <p>Typing instruction, arcade training, adaptive practice, questionable productivity advice, and substantially more corporate chrome than necessary.</p>
+      <div class="about-credits"><strong>Featuring</strong><span>Blake Breacher — Lead Typing Champion</span><span>HyperSoft Compliance — Persistent Adult Supervision</span><span>You — Hopefully locking your workstation</span></div>
+      <p class="did-you-know" id="aboutTip"></p>
+      <div class="button-row"><button class="primary" id="aboutTipButton" type="button">Did You Know?</button><button class="secondary" id="aboutCloseButton" type="button">OK</button></div>
+    </div>
+  </dialog>
+  <div class="blake-notification" id="blakeNotification" hidden aria-live="polite"><img src="./assets/common/blake.png" alt=""/><div><strong id="blakeNotificationTitle">Blake says...</strong><span id="blakeNotificationText"></span></div><button id="blakeNotificationClose" type="button" aria-label="Close">×</button></div>
+
   <div class="loading-overlay" id="loadingOverlay" hidden aria-live="polite" aria-busy="true">
     <div class="loading-card">
-      <div class="loading-brand"><span class="brand-mark">HB</span><div><strong>HyperSoft</strong><small>Deluxe Training Suite v0.12</small></div></div>
+      <div class="loading-brand"><span class="brand-mark">HB</span><div><strong>HyperSoft</strong><small>Deluxe Training Suite v1.0.2</small></div></div>
       <div class="loading-progress" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
       <h2 id="loadingTitle">Preparing Training Activity</h2>
       <p id="loadingMessage">Calibrating keyboard velocity...</p>
@@ -515,5 +1252,79 @@
   </div>
 
   <script type="module" src="./scripts/core/gameManager.js"></script>
+
+  <script>
+    // v0.16.9 adaptive HyperSoft navigation drawer.
+    (function () {
+      const root = document.documentElement;
+      const sidebar = document.getElementById("hyper98Sidebar");
+      const toggle = document.getElementById("hyper98NavToggle");
+      const closeButton = document.getElementById("hyper98DrawerClose");
+      const scrim = document.getElementById("hyper98NavScrim");
+      const nav = document.getElementById("mainNavigation");
+      const mobileQuery = window.matchMedia("(max-width: 900px)");
+      let returnFocus = null;
+
+      const isHyper98Mobile = () => root.dataset.theme === "hyper98" && mobileQuery.matches;
+      const isOpen = () => root.dataset.hs98NavOpen === "true";
+
+      function syncDrawerA11y() {
+        const mobile = isHyper98Mobile();
+        const open = mobile && isOpen();
+        toggle?.setAttribute("aria-expanded", String(open));
+        if (sidebar && "inert" in sidebar) sidebar.inert = mobile && !open;
+        if (!mobile) {
+          delete root.dataset.hs98NavOpen;
+          toggle?.setAttribute("aria-expanded", "false");
+        }
+      }
+
+      function setOpen(open, { restoreFocus = false } = {}) {
+        if (!isHyper98Mobile()) open = false;
+        if (open) {
+          returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : toggle;
+          root.dataset.hs98NavOpen = "true";
+        } else {
+          delete root.dataset.hs98NavOpen;
+        }
+        syncDrawerA11y();
+        if (open) {
+          window.requestAnimationFrame(() => {
+            const current = nav?.querySelector('[aria-current="page"]') || nav?.querySelector('button[data-nav]');
+            current?.focus({ preventScroll: true });
+          });
+        } else if (restoreFocus && returnFocus instanceof HTMLElement) {
+          window.requestAnimationFrame(() => returnFocus.focus({ preventScroll: true }));
+        }
+      }
+
+      toggle?.addEventListener("click", () => setOpen(!isOpen(), { restoreFocus: isOpen() }));
+      closeButton?.addEventListener("click", () => setOpen(false, { restoreFocus: true }));
+      scrim?.addEventListener("click", () => setOpen(false, { restoreFocus: true }));
+      nav?.addEventListener("click", event => {
+        if (event.target.closest("button[data-nav]") && isHyper98Mobile()) setOpen(false);
+      });
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && isOpen()) {
+          event.preventDefault();
+          setOpen(false, { restoreFocus: true });
+        }
+      });
+      mobileQuery.addEventListener?.("change", syncDrawerA11y);
+      window.addEventListener("resize", syncDrawerA11y, { passive: true });
+      new MutationObserver(syncDrawerA11y).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+      syncDrawerA11y();
+    })();
+  </script>
+  <script>
+    // v1.0.2 local-file guard: the Direct build intentionally runs under file://.
+    // Block accidental empty-link navigation; downloads use Blob URLs explicitly.
+    document.addEventListener("click", function (event) {
+      const a = event.target.closest && event.target.closest("a");
+      if (!a) return;
+      const href = a.getAttribute("href");
+      if (href == null || href === "" || href === "#") event.preventDefault();
+    }, true);
+  </script>
 </body>
 </html>

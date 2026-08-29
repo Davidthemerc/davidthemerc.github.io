@@ -67,6 +67,27 @@ export const SMART_PRACTICE_MODES = [
     ]
   },
   {
+    id: "smartDifficult",
+    number: "Smart Drill",
+    category: "Targeted Practice Lab",
+    title: "Difficult-Word Clinic",
+    subtitle: "Words ranked by keyboard complexity: length, row travel, and awkward finger transitions.",
+    tags: ["Difficult Words", "Geometry", "Accuracy"],
+    source: "smart",
+    smartStrategy: "difficult",
+    baseWords: 76,
+    targetWpm: 32,
+    targetAccuracy: 96,
+    isSmartPractice: true,
+    guide: [
+      "This drill ranks words by typing difficulty rather than simply by character count.",
+      "Longer words score higher, but row changes and same-finger transitions also raise keyboard complexity.",
+      "A shorter awkward word can therefore outrank an easy long word.",
+      "Slow down enough to preserve clean movement through the hardest transitions.",
+      "The classifier is deterministic and runs entirely on the vocabulary already stored in the application."
+    ]
+  },
+  {
     id: "smartLeftHand",
     number: "Smart Drill",
     category: "Targeted Practice Lab",
@@ -257,7 +278,8 @@ export function analyzeWord(word) {
     alternationRatio: handTransitions ? alternating / handTransitions : 0,
     rowChangeRatio: rowTransitions ? rowChanges / rowTransitions : 0,
     sameFingerTransitions,
-    pairs
+    pairs,
+    complexity: letters.length * 0.45 + sameFingerTransitions * 1.35 + (rowTransitions ? (rowChanges / rowTransitions) * 2.2 : 0) + (handTransitions ? (1 - alternating / handTransitions) * 0.8 : 0)
   };
 }
 
@@ -293,6 +315,10 @@ function strategyCandidates(pool, strategy, focusPairs) {
   switch (strategy) {
     case "short": return pool.filter(item => item.length >= 3 && item.length <= 5);
     case "long": return pool.filter(item => item.length >= 9);
+    case "difficult": {
+      const ranked = [...pool].sort((a, b) => b.complexity - a.complexity);
+      return ranked.slice(0, Math.max(8, Math.ceil(ranked.length * 0.35)));
+    }
     case "left": {
       const pure = pool.filter(item => item.leftRatio >= 0.999);
       return pure.length >= 6 ? pure : pool.filter(item => item.leftRatio >= 0.68);
@@ -346,6 +372,7 @@ export function selectSmartWord({
   const weights = {
     short: item => 1 + (6 - Math.min(5, item.length)) * 0.1,
     long: item => 1 + Math.min(8, item.length - 8) * 0.08,
+    difficult: item => 0.5 + item.complexity,
     left: item => 0.5 + item.leftRatio * 2,
     right: item => 0.5 + item.rightRatio * 2,
     alternating: item => 0.5 + item.alternationRatio * 2.5,
@@ -362,6 +389,7 @@ export function getSmartPoolStats({ listName = "general", focusPairs = [] } = {}
     total: source.length,
     short: strategyCandidates(source, "short", pairs).length,
     long: strategyCandidates(source, "long", pairs).length,
+    difficult: strategyCandidates(source, "difficult", pairs).length,
     left: strategyCandidates(source, "left", pairs).length,
     right: strategyCandidates(source, "right", pairs).length,
     alternating: strategyCandidates(source, "alternating", pairs).length,

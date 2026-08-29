@@ -39,13 +39,35 @@ function scoredActionCount(t){
 }
 function documentationPoints(t){
  const n=(t.notes||"").trim().length;
+ const diagnosticEvidence=new Set([...(t.facts||[]),...(t.proactiveFacts||[])]).size;
+ const toolEvidence=new Set(t.toolsUsed||[]).size;
+ const actionEvidence=(t.actions||[]).some(a=>a==="correct-action"||String(a).startsWith("fix:"))||t.specialistResolution||t.coworkerResolved||!!t.request?.fulfilled;
+ const validationEvidence=!!t.confirmation||!!t.alternateValidated||["Closed — No Requester Response","Closed — Request Withdrawn","User Self-Resolved"].includes(t.outcome);
+ let trail=0;
+ if(diagnosticEvidence>=1||toolEvidence>=1)trail++;
+ if(diagnosticEvidence>=2||toolEvidence>=2)trail++;
+ if(actionEvidence)trail++;
+ if(validationEvidence)trail++;
  if(n>=BALANCE_PROFILE.documentation.full)return 5;
  if(n>=BALANCE_PROFILE.documentation.strong)return 4;
- if(n>=BALANCE_PROFILE.documentation.basic)return 2;
- return n?1:0;
+ if(n>=BALANCE_PROFILE.documentation.basic)return trail>=3?4:trail>=1?3:2;
+ if(n>0)return Math.max(1,Math.min(3,trail));
+ if(trail>=4)return 3;
+ if(trail>=2)return 2;
+ if(trail>=1)return 1;
+ return 0;
+}
+function documentationEvaluationText(t){
+ const d=t.scoreBreakdown?.documentation??documentationPoints(t),n=(t.notes||"").trim().length;
+ if(d===0)return "The ticket record contains almost no useful resolution documentation.";
+ if(d===1)return "The activity trail captured only limited evidence. Add a concise internal summary of symptoms, findings, action, and result.";
+ if(d===2)return n?"The internal note is very thin and the activity trail only partially explains the resolution.":"The ticket history preserves some troubleshooting evidence, but there is no concise internal resolution summary.";
+ if(d===3)return n?"The ticket is reasonably documented, but the internal summary could more clearly state the cause, action, and validation.":"The recorded diagnostics, action, and validation provide usable documentation even without a manual note; a concise internal summary would improve it.";
+ if(d===4)return "Good documentation. A fuller cause/action/validation summary would earn full credit.";
+ return "Documentation clearly records the investigation, action, and outcome.";
 }
 function successfulClosureOutcome(outcome){
- return ["User Confirmed Resolution","Catalog Request Fulfilled","Resolved Successfully","Correctly Escalated","Correctly Denied","Linked to Major Incident","Resolved After Specialist Escalation"].includes(outcome);
+ return ["User Confirmed Resolution","Catalog Request Fulfilled","Resolved Successfully","Correctly Escalated","Correctly Denied","Linked to Major Incident","Resolved After Specialist Escalation","Resolved by Teammate","Closed — No Requester Response","Resolved — Alternate Validation","Closed — Request Withdrawn"].includes(outcome);
 }
 
 const NAMES=["Maya Chen","Jordan Alvarez","Priya Singh","Marcus Hill","Elena Torres","Noah Williams","Ava Patel","Luis Ramirez","Sophie Nguyen","Derek Johnson","Kim Park","Riley Brooks","Camille Foster","Owen Price","Tasha Green","Ben Murphy","Nina Shah","Victor Lee","Lena Ortiz","Sam Wallace","Grace Kim","Tyler Reed","Monique Brown","Hector Garcia","Rachel Mendoza","Ethan Coleman","Jasmine Wu","Andre Thompson","Natalie Flores","Isaac Romero","Mei Lin","Carlos Vega","Amber Stone","Devon Harris","Fatima Khan","Leo Martinez","Chloe Bennett","Martin Shaw","Yasmin Ali","Gabriel Soto","Heather Ross","Jon Bell","Keisha Morgan","Anthony Tran","Paige Lawson","Miguel Santos","Erin Caldwell","Raymond Cho","Danielle King","Adrian Ruiz","Tiffany Young","Malik Carter","Vanessa Cruz","Peter Ho","Jocelyn Grant","Sean O'Neill","Brenda Castillo","Rahul Mehta","Alicia Walker","Dominic Perez","Wendy Lau","Terrence Moore","Sara Ibrahim","Julian Foster","Melanie Price","Oscar Salazar","Carmen Reed","Aiden Brooks","Renee Jackson","George Kim","Irene Vasquez","Caleb Wright"];
@@ -74,6 +96,114 @@ const SUPPORT_TEAMS=[
  {id:"vendor",name:"Vendor & Licensing",desc:"Vendor SaaS incidents, licensing, subscriptions and external service coordination.",specialists:["Nico Perez","Faith Moore","Alex Wu"],base:[20,52]},
  {id:"platform",name:"Platform Services",desc:"Certificates, server platform services, middleware and shared infrastructure components.",specialists:["Quinn Harris","Mae Foster","Ravi Singh"],base:[16,42]}
 ];
+
+
+const SPECIALIST_BEHAVIOR={
+ network:{label:"Pragmatic",mercy:1.05,advice:1.10,reroute:1.08,speed:.96,tone:"direct"},
+ security:{label:"Procedure-heavy",mercy:.55,advice:.82,reroute:.72,speed:.92,tone:"strict"},
+ identity:{label:"Careful",mercy:.85,advice:1.00,reroute:.92,speed:.96,tone:"direct"},
+ endpoint:{label:"Hands-on",mercy:1.28,advice:1.18,reroute:1.18,speed:.94,tone:"helpful"},
+ messaging:{label:"Practical",mercy:1.08,advice:1.08,reroute:1.05,speed:.98,tone:"helpful"},
+ collaboration:{label:"Helpful",mercy:1.15,advice:1.18,reroute:1.10,speed:.98,tone:"helpful"},
+ applications:{label:"Balanced",mercy:1.00,advice:1.00,reroute:1.00,speed:1,tone:"direct"},
+ workflow:{label:"Evidence-focused",mercy:.88,advice:1.00,reroute:.90,speed:1.02,tone:"direct"},
+ governance:{label:"Strict",mercy:.62,advice:.88,reroute:.72,speed:1.04,tone:"strict"},
+ data:{label:"Evidence-focused",mercy:.82,advice:1.02,reroute:.88,speed:1.03,tone:"direct"},
+ hr:{label:"Controlled",mercy:.74,advice:.92,reroute:.80,speed:1.04,tone:"strict"},
+ clinical:{label:"Safety-first",mercy:.68,advice:.92,reroute:.78,speed:.94,tone:"strict"},
+ asset:{label:"Pragmatic",mercy:1.18,advice:1.08,reroute:1.12,speed:1.02,tone:"helpful"},
+ files:{label:"Practical",mercy:1.08,advice:1.10,reroute:1.02,speed:.98,tone:"direct"},
+ privacyrecords:{label:"Very strict",mercy:.42,advice:.80,reroute:.60,speed:1.06,tone:"strict"},
+ vendor:{label:"Flexible",mercy:1.20,advice:1.05,reroute:1.08,speed:1.10,tone:"helpful"},
+ platform:{label:"Technical",mercy:.94,advice:1.08,reroute:.92,speed:.96,tone:"direct"}
+};
+function teamBehavior(id){return SPECIALIST_BEHAVIOR[id]||{label:"Balanced",mercy:1,advice:1,reroute:1,speed:1,tone:"direct"}}
+function specialistMinimumEvidence(t){
+ return t.priority==="Critical"?1:state.difficulty==="Trainee"?1:state.difficulty==="Service Agent"?2:state.difficulty==="Senior Agent"?2:3;
+}
+function specialistHardBlock(t){
+ if(t.approval?.required&&!approvalFlowApproved(t))return "A required approval/authorization chain is incomplete. Queue load cannot override authorization.";
+ if(t.approval?.denied)return "A required approval was denied. Specialist capacity cannot override the denial.";
+ if(t.request){
+   const missing=requestMissingFields(t);
+   if(missing.length)return `The catalog intake is incomplete: ${missing.map(f=>f.label).join(", ")}.`;
+   if(t.request.eligibility==="blocked")return t.request.eligibilityReason||"Catalog policy blocks this request.";
+ }
+ return null;
+}
+function specialistHandoffGrade(t,teamId){
+ const expected=expectedSpecialistTeamId(t);
+ if(teamId!==expected)return "Wrong Team";
+ if(!causeRequiresSpecialist(t))return "Poor";
+ if(specialistHardBlock(t))return "Blocked";
+ const missing=specialistEvidenceRequirement(t),min=specialistMinimumEvidence(t),notes=(t.notes||"").trim().length;
+ if(missing)return t.useful<=0?"Poor":"Thin";
+ if(t.useful>=min+2&&notes>=40&&(t.irrelevant||0)<=1&&(t.repeats||0)<=1&&(t.wrongTeamAssignments||0)===0)return "Excellent";
+ return "Adequate";
+}
+function handoffGradeClass(grade){return String(grade||"").toLowerCase().replace(/\s+/g,"-")}
+function recordHandoffGrade(t,teamId,grade,note=""){
+ t.handoffGrade=grade;t.handoffHistory=t.handoffHistory||[];
+ t.handoffHistory.unshift({time:nowStamp(),teamId,grade,note});t.handoffHistory=t.handoffHistory.slice(0,20);
+}
+function specialistMercyChance(t,teamId,grade){
+ if(specialistHardBlock(t)||!["Thin","Poor"].includes(grade))return 0;
+ const base={Low:.56,Moderate:.25,High:.045}[teamLoad(teamId)]??.25;
+ const gradeFactor=grade==="Thin"?1:.45,repeatBonus=Math.min(.08,(t.teamKickbacks||0)*.025);
+ return Math.max(0,Math.min(.72,base*teamBehavior(teamId).mercy*gradeFactor+repeatBonus));
+}
+function specialistAdviceChance(t,teamId){
+ const base={Low:.40,Moderate:.24,High:.085}[teamLoad(teamId)]??.20;
+ return Math.max(0,Math.min(.52,base*teamBehavior(teamId).advice));
+}
+function specialistInternalRerouteChance(teamId){
+ const base={Low:.48,Moderate:.22,High:.045}[teamLoad(teamId)]??.18;
+ return Math.max(.02,Math.min(.58,base*teamBehavior(teamId).reroute));
+}
+function specialistAdviceText(t,teamId,missing){
+ const tm=supportTeam(teamId),behavior=teamBehavior(teamId),sc=getScenario(t),cause=getCause(t),fix=(sc.fixes||[]).find(f=>f[0]===cause.correct);
+ const diag=missing?.id?(sc.diagnostics||[]).find(d=>d[0]===missing.id):null;
+ const solutionLevel=Math.random()<(teamLoad(teamId)==="Low"?.46:teamLoad(teamId)==="Moderate"?.34:.20);
+ if(diag)t.specialistSuggestedDiagnostic=diag[0];
+ const directFix=!!fix&&fix[2]!=="escalate"&&!cause.escalation;
+ if(solutionLevel&&directFix)t.specialistSuggestedFix=fix[0];
+ const check=sentenceCaseLower(diag?.[1]||missing?.label||missing?.text?.replace(/^Please collect:\s*/i,"").replace(/\.$/,"")||"collect the missing evidence");
+ const next=solutionLevel?(directFix?` If that lines up with the symptoms, ${sentenceCaseLower(fix[1])} is the direction we'd expect this to go.`:` The symptom pattern looks consistent with "${cause.label}"; that check should help confirm whether that's what we're dealing with.`):"";
+ if(behavior.tone==="strict")return `Before this comes back to ${tm.name}, ${check}. That's required evidence for us.${next}`;
+ if(behavior.tone==="helpful")return `We'll point you in the right direction before returning it: ${check}. That's the first thing we'd check here.${next}`;
+ return rand([
+   `Before you send this back, ${check}. That's the first thing we'd check on our side.${next}`,
+   `This is close, but you're missing one useful check: ${check}.${next}`,
+   `Take another look at ${check}. That should tell you whether this actually needs ${tm.name}.${next}`
+ ]);
+}
+function specialistMercyMessage(t,teamId,missing,grade){
+ const tm=supportTeam(teamId),load=teamLoad(teamId),rawCheck=missing?.id?(getScenario(t).diagnostics||[]).find(d=>d[0]===missing.id)?.[1]:missing?.label||missing?.text;
+ const check=rawCheck?sentenceCaseLower(rawCheck.replace(/^Please collect:\s*/i,"").replace(/\.$/,"")):"";
+ const detail=check?` You skipped ${check}.`:"";
+ return rand([
+   `We'll take this one rather than bounce it back.${detail} Our queue is ${load.toLowerCase()} enough that we can finish the investigation, but include that evidence next time.`,
+   `Accepted with a ${grade.toLowerCase()} handoff.${detail} We're going to handle it instead of sending it back, but this would likely be returned under a heavier queue.`,
+   `We'll work it.${detail} Consider this a courtesy acceptance; the handoff itself is still incomplete.`
+ ]);
+}
+
+
+const SERVICE_DESK_COWORKERS=[
+ {id:"tessa",name:"Tessa Morgan",title:"Service Desk Agent II",specialties:["identity","files"],style:"Methodical",willingness:1.00,standards:1.18,capacity:5,help:"patient",bio:"Strong with identity, access, and shared-resource problems. Helpful, but expects a real handoff."},
+ {id:"leo",name:"Leo Brennan",title:"Senior Service Agent",specialties:["network","endpoint"],style:"Pragmatic",willingness:1.16,standards:.94,capacity:6,help:"direct",bio:"Fast with network, hardware, docks, printers, and anything he can reproduce quickly."},
+ {id:"nadia",name:"Nadia Park",title:"Troubleshooting Specialist",specialties:["messaging","applications","collaboration"],style:"Precise",willingness:.94,standards:1.12,capacity:5,help:"technical",bio:"Excellent with applications, email, collaboration, and evidence-heavy troubleshooting."},
+ {id:"evan",name:"Evan Mercer",title:"Service Desk Agent",specialties:["endpoint","applications"],style:"Fast-moving",willingness:1.20,standards:.82,capacity:7,help:"casual",bio:"Usually willing to grab something if his queue is light. Documentation is not his favorite activity."},
+ {id:"monica",name:"Monica Reyes",title:"Senior Service Agent",specialties:["governance","privacyrecords","hr"],style:"Procedure-first",willingness:.82,standards:1.28,capacity:5,help:"strict",bio:"Best choice for policy, records, HR, and controlled requests. Very unlikely to accept a sloppy transfer."},
+ {id:"caleb",name:"Caleb Finch",title:"Service Desk Agent",specialties:["asset","vendor","collaboration"],style:"Eager",willingness:1.10,standards:.90,capacity:4,help:"friendly",bio:"Newer agent who is willing to help, especially with assets, vendor issues, and collaboration tools."}
+];
+function buildCoworkerState(){
+ return SERVICE_DESK_COWORKERS.map(c=>({...c,trust:62,goodwill:0,dumpsReceived:0,helped:0,accepted:0,rejected:0,trades:0,resolved:0,complaints:0,lastInteraction:null}));
+}
+function normalizeCoworker(c,def){
+ return {...def,...(c||{}),trust:Math.max(0,Math.min(100,Number(c?.trust??def.trust))),goodwill:Number(c?.goodwill||0),dumpsReceived:Number(c?.dumpsReceived||0),helped:Number(c?.helped||0),accepted:Number(c?.accepted||0),rejected:Number(c?.rejected||0),trades:Number(c?.trades||0),resolved:Number(c?.resolved||0),complaints:Number(c?.complaints||0)};
+}
+function coworkerById(id){return state?.coworkers?.find(c=>c.id===id)||SERVICE_DESK_COWORKERS.find(c=>c.id===id)||null}
 
 const WORLD_EVENT_TEMPLATES=[
  {id:"fomo-release",kind:"Change",title:"Fomo 10.4 Production Deployment",summary:"A planned Fomo release is being deployed. Collaboration Applications is watching notification, preview, and integration health.",planned:true,incident:true,severity:"High",duration:[75,125],tickets:[2,4],scenarios:[["fomo-notify","queue"],["fomo-webhook","hooks"],["fomo-preview","service"],["fomo-rollout-profile","policy"]]},
@@ -177,7 +307,7 @@ function normalizeEmployee(e,i=0){
  p.infoStyle=p.infoStyle||chooseReliability(p.personality);p.patience=Number.isFinite(p.patience)?p.patience:65;p.satisfaction=Number.isFinite(p.satisfaction)?p.satisfaction:60;p.trust=Number.isFinite(p.trust)?p.trust:58;
  p.ticketAffinity=Number.isFinite(p.ticketAffinity)?p.ticketAffinity:1;p.lifetimeTickets=p.lifetimeTickets||0;p.closureInteractions=p.closureInteractions||0;p.goodResolutions=p.goodResolutions||0;
  p.badClosures=p.badClosures||0;p.reopens=p.reopens||0;p.complaintsAgainstAgent=p.complaintsAgainstAgent||0;p.profanityIncidents=p.profanityIncidents||0;p.selfHelpSuccess=p.selfHelpSuccess||0;p.selfHelpMistakes=p.selfHelpMistakes||0;
- p.categoryCounts=p.categoryCounts||{};p.ticketHistory=Array.isArray(p.ticketHistory)?p.ticketHistory:[];p.requestHistory=Array.isArray(p.requestHistory)?p.requestHistory:[];p.entitlements=Array.isArray(p.entitlements)?p.entitlements:[];p.lastRating=p.lastRating??null;p.lastOutcome=p.lastOutcome??null;p.lastCategory=p.lastCategory??null;p.lastTicketId=p.lastTicketId??null;
+ p.categoryCounts=p.categoryCounts||{};p.ticketHistory=Array.isArray(p.ticketHistory)?p.ticketHistory:[];p.requestHistory=Array.isArray(p.requestHistory)?p.requestHistory:[];p.entitlements=Array.isArray(p.entitlements)?p.entitlements:[];p.accountDisabledByAgent=!!p.accountDisabledByAgent;p.accountDisabledTicketId=p.accountDisabledTicketId||null;p.lastRating=p.lastRating??null;p.lastOutcome=p.lastOutcome??null;p.lastCategory=p.lastCategory??null;p.lastTicketId=p.lastTicketId??null;
  return p;
 }
 function hydrateEmployeeForTicket(t,employees){
@@ -223,7 +353,8 @@ function chooseEmployeeForScenario(sc){
  if(!state.employees?.length)state.employees=buildEmployeeDirectory();
  const affinity=scenarioAffinityDepartments(sc);
  const activeIds=new Set(state.tickets.filter(t=>!t.resolved).map(t=>t.userId));
- const weighted=state.employees.map(e=>{
+ const enabled=state.employees.filter(e=>!e.accountDisabledByAgent),pool=enabled.length?enabled:state.employees;
+ const weighted=pool.map(e=>{
    let w=e.ticketAffinity||1;
    if(affinity.includes(e.department))w*=2.6;
    if(e.role==="Staff")w*=1.5;else if(e.role==="Supervisor")w*=.95;else if(e.role==="Manager")w*=.52;
@@ -343,7 +474,23 @@ const BAD_DIAGNOSTICS=[
  {id:"keep-retrying",label:"Tell them to keep retrying until it eventually works",response:["I've already been retrying. It still doesn't work.","How long am I supposed to keep doing that?","That doesn't really solve the problem."],severity:"poor"},
  {id:"clear-everything",label:"Tell them to clear all browser data, including saved passwords",response:["All of it? That seems excessive.","I'd rather not wipe everything unless we know the browser is the issue.","That would remove a lot of saved information."],severity:"destructive"},
  {id:"admin-by-default",label:"Give them local administrator access so they can troubleshoot it themselves",response:["I wasn't asking for administrator rights.","Is that really the normal fix?","That seems like a lot of access for this problem."],severity:"security"},
- {id:"close-and-reopen",label:"Close the ticket and ask them to open a new one if it happens again",response:["But it is happening right now.","Why would we close it before fixing it?","I'd rather keep this ticket open until the problem is handled."],severity:"poor"}
+ {id:"close-and-reopen",label:"Close the ticket and ask them to open a new one if it happens again",response:["But it is happening right now.","Why would we close it before fixing it?","I'd rather keep this ticket open until the problem is handled."],severity:"poor"},
+ {id:"flush-stack-first",label:"Reset the entire network stack before determining whether the problem is local or service-side",response:["Do we know the network stack is actually the problem?","That sounds like a lot to reset before checking the error.","Can we confirm what's failing first?"],severity:"premature"},
+ {id:"rebuild-mail-first",label:"Remove and rebuild the mail profile before comparing desktop mail with webmail",response:["Shouldn't we see whether webmail works first?","I'd rather not rebuild my profile unless we know it's local.","That seems like a big first step."],severity:"premature"},
+ {id:"reset-mfa-first",label:"Reset every MFA registration before verifying what authentication step is failing",response:["All of my MFA methods? Why?","Can we check which part is actually broken first?","I'd rather not reset all of that without a reason."],severity:"security"},
+ {id:"revoke-all-first",label:"Revoke every active session before checking whether the unfamiliar sign-in is actually malicious",response:["Will that sign me out everywhere?","Do we know that sign-in isn't one of my devices?","Can we verify what happened before revoking everything?"],severity:"premature"},
+ {id:"assume-outage",label:"Assume this is a known outage and tell them to wait without checking service status",response:["Is there actually an outage posted?","How long am I supposed to wait?","Can you check whether anyone else is having this problem?"],severity:"poor"},
+ {id:"waiting-no-question",label:"Mark the ticket Waiting for User even though you have not asked them for anything",response:["What are you waiting for me to answer?","I don't see a question from you.","Do you need something from me?"],severity:"poor"},
+ {id:"downgrade-priority",label:"Lower the ticket priority because the queue is busy rather than because the impact changed",response:["The impact hasn't changed. Why was the priority lowered?","This is still affecting my work.","Did something change about the issue?"],severity:"poor"},
+ {id:"restart-shared-service",label:"Restart the affected service immediately without checking who else depends on it",response:["Is that going to interrupt other people?","Do we know a restart is safe right now?","Shouldn't we check the service impact first?"],severity:"risky"},
+ {id:"uninstall-driver-first",label:"Uninstall the device driver before capturing the hardware error or current driver version",response:["Won't that remove the current configuration?","Should we capture the error first?","Can we check the driver version before uninstalling it?"],severity:"destructive"},
+ {id:"disable-addins-global",label:"Disable every browser or mail add-in globally instead of isolating the affected add-in",response:["All of them? Some of those are required for my work.","Can we identify which add-in is causing it?","That seems broader than the problem."],severity:"destructive"},
+ {id:"alternate-credentials",label:"Map the shared resource using another person's credentials as a workaround",response:["I'm not using someone else's credentials.","That sounds like account sharing.","Shouldn't my own access be fixed?"],severity:"security"},
+ {id:"temp-local-account",label:"Create a temporary local account to work around the managed sign-in problem",response:["Would that bypass my normal company account?","Is a local account approved here?","I'd rather fix my actual sign-in."],severity:"security"},
+ {id:"wipe-profile-first",label:"Delete the local application profile before checking whether it contains unsynced data",response:["Could that delete anything I haven't synced?","Can we check what's stored locally first?","I don't want to lose work just to test this."],severity:"destructive"},
+ {id:"random-peripheral",label:"Swap random cables or peripherals without documenting the symptom or isolating the failing component",response:["Which part do you think is bad?","Are we just swapping things at random?","Can we narrow down what is actually failing?"],severity:"poor"},
+ {id:"personal-device",label:"Tell them to use a personal device as the workaround for a managed-service problem",response:["I'm not supposed to use my personal device for this.","That doesn't fix the work computer.","Is that actually approved?"],severity:"security"},
+ {id:"clock-bypass",label:"Change the system clock manually to try to bypass a certificate or authentication error",response:["Wouldn't changing the clock cause other problems?","That sounds like it could break authentication even more.","Can we fix the certificate or time source instead?"],severity:"risky"}
 ];
 
 function S(o){return o}
@@ -1586,16 +1733,19 @@ function hydrateLegacyCareerProfile(s,hadProfile){
 function careerWeekNumber(){return Math.floor((state.careerProfile?.shifts||0)/5)+1}
 function careerDayName(){return ["Monday","Tuesday","Wednesday","Thursday","Friday"][(state.careerProfile?.shifts||0)%5]}
 function careerStatusLabel(){
- const p=state.careerProfile||newCareerProfile(),sp=state.supervisor||{},perf=state.performance||{},d=state.discipline||{};
- if(d.fired||sp.terminatedForPerformance)return "Terminated";
- if(sp.pip||perf.pip)return "Performance Plan";
+ const p=state.careerProfile||newCareerProfile(),sp=state.supervisor||{},perf=state.performance||{},d=state.discipline||{},ms=state.maliciousStats||{};
+ if(d.fired||sp.terminatedForPerformance||ms.stage>=5)return "Terminated";
+ if(ms.stage>=4)return "Final Warning";
+ if(ms.stage>=3||sp.pip||perf.pip)return "Performance Plan";
  if(d.warningIssued)return "Final Warning";
+ if(ms.stage>=2)return "Coaching";
  if(!p.probationComplete)return p.shifts>=p.probationTarget?"Probation Extended":"Probationary";
+ if(ms.stage>=1)return "Conduct Warning";
  if(sp.coaching||perf.coached)return "Coaching";
  return "Regular Status";
 }
 function careerStatusClass(){
- const x=careerStatusLabel();if(x==="Terminated")return "terminated";if(x==="Performance Plan")return "pip";if(x==="Final Warning"||x==="Coaching"||x==="Probation Extended")return "warning";if(x==="Probationary")return "probation";return "";
+ const x=careerStatusLabel();if(x==="Terminated")return "terminated";if(x==="Performance Plan")return "pip";if(x==="Final Warning"||x==="Coaching"||x==="Conduct Warning"||x==="Probation Extended")return "warning";if(x==="Probationary")return "probation";return "";
 }
 function metricAverage(key){
  const p=state.careerProfile,n=p?.metrics?.reviews||0;if(!n)return 0;
@@ -1678,6 +1828,24 @@ function updateCareerMetrics(review){
  p.skills.technical=avg(p.skills.technical,Math.round((review.score+(m.fcr||0))/2));p.skills.customer=avg(p.skills.customer,m.csat);p.skills.security=avg(p.skills.security,m.security);
  p.skills.documentation=avg(p.skills.documentation,m.documentation);p.skills.escalation=avg(p.skills.escalation,Math.round(((m.escalationQuality||0)+(m.routingQuality||0))/2));p.skills.operations=avg(p.skills.operations,m.operationalAwareness);p.skills.requests=avg(p.skills.requests,m.requestQuality);p.skills.queue=avg(p.skills.queue,Math.round(((m.sla||0)+(m.queueControl||0))/2));
 }
+
+function settleMisconductShift(){
+ const ms=state.maliciousStats;if(!ms||state.freeplay)return;
+ if((ms.shiftActions||0)===0){
+   ms.cleanShifts=(ms.cleanShifts||0)+1;
+   const decay=ms.stage>=4?5:ms.stage>=3?7:10;ms.heat=Math.max(0,(ms.heat||0)-decay);
+   let lowered=false;
+   if(ms.stage===1&&ms.cleanShifts>=2){ms.stage=0;lowered=true}
+   else if(ms.stage===2&&ms.cleanShifts>=3){ms.stage=1;lowered=true}
+   else if(ms.stage===3&&ms.cleanShifts>=4){ms.stage=2;ms.reassignmentRestricted=false;lowered=true}
+   else if(ms.stage===4&&ms.cleanShifts>=5){ms.stage=3;lowered=true}
+   if(lowered)recordCareerEvent("clear","Misconduct Status Improved",`Sustained clean shifts reduced administrative-misconduct status to ${misconductStageLabel(ms.stage)}. Audit heat is now ${ms.heat}/100.`,"positive");
+ }else{
+   ms.cleanShifts=0;
+ }
+ ms.shiftActions=0;
+}
+
 function finalizeCareerShift(done,review){
  const p=state.careerProfile;if(!p||p.lastProcessedReview===review.shift)return {objectives:p?.objectives||[],achievements:[]};
  updateCareerMetrics(review);
@@ -1699,6 +1867,7 @@ function finalizeCareerShift(done,review){
    else recordCareerEvent("warning","Probation Extended","Probation remains open because an active warning or performance plan is in effect.","warning",p.shifts);
  }
  if(p.shifts>0&&p.shifts%5===0)recordCareerEvent("milestone",`Career Week ${Math.ceil(p.shifts/5)} Completed`,`Five-shift block completed with a career review average of ${metricAverage("score")||0}.`,metricAverage("score")>=75?"positive":"warning",p.shifts);
+ settleMisconductShift();
  p.status=careerStatusLabel();return {objectives,achievements:newAchievements};
 }
 function careerArchiveSummary(reason="Career ended"){
@@ -1710,9 +1879,9 @@ function archiveCurrentCareer(reason="Career ended"){
 }
 
 const defaultState=()=>({
- active:false,difficulty:"Service Agent",sessionSize:10,endless:false,shiftStart:480,clock:480,
+ active:false,difficulty:"Service Agent",sessionSize:10,endless:false,freeplay:false,freeplayBaseline:null,freeplayStats:{added:0,completed:0,scoreSum:0,bestScore:0},shiftStart:480,clock:480,
  tickets:[],selected:null,nextNum:1001,pending:[],completed:0,scoreSum:0,stats:{},
- career:{shifts:0,tickets:0,totalScore:0,terminations:0},careerProfile:newCareerProfile(1),careerArchive:[],discipline:{complaintTickets:0,warningIssued:false,fired:false,incidents:0},performance:{badClosures:0,badClosureStreak:0,cleanClosureStreak:0,closurePoints:0,coached:false,pip:false,lastActionAt:0,extraAssigned:0,recoveries:0},supervisor:{name:"Dana Bishop",title:"Service Desk Supervisor",reviews:0,status:"Good Standing",coaching:false,pip:false,pipRecovery:0,pipFailures:0,goodStreak:0,poorStreak:0,recognition:0,promotionLevel:0,requiredTraining:[],lastReview:null,history:[],terminatedForPerformance:false},majorIncidents:{},nextMajor:1,approvalStats:{requested:0,approved:0,denied:0,delegated:0,withdrawn:0,emergency:0,wrongClaims:0},requestStats:{catalogTickets:0,classified:0,misclassified:0,fieldsCollected:0,submitted:0,kickbacks:0,fulfilled:0,denied:0,unauthorizedAttempts:0,slaMissed:0},teamStats:{assignments:0,accepted:0,kickbacks:0,wrongQueue:0,infoReturns:0,reroutes:0,resolutions:0,recalls:0},teamLoads:{},world:{weekday:"Monday",events:[],announcements:[],nextId:1,lastClock:480,initialized:false,dynamicAdded:0,dynamicCap:0},worldStats:{activated:0,resolved:0,eventTickets:0,correlations:0,majorIncidents:0,vipTickets:0,changeEvents:0,outages:0,campaigns:0},worldCareer:{eventsSeen:0,eventTickets:0,correlations:0,history:[]},employees:buildEmployeeDirectory(),relationshipStats:{repeatRequesters:0,strongRapport:0,strained:0},settings:{sound:false,compact:false}
+ career:{shifts:0,tickets:0,totalScore:0,terminations:0},careerProfile:newCareerProfile(1),careerArchive:[],discipline:{complaintTickets:0,warningIssued:false,fired:false,incidents:0},performance:{badClosures:0,badClosureStreak:0,cleanClosureStreak:0,closurePoints:0,coached:false,pip:false,lastActionAt:0,extraAssigned:0,recoveries:0},supervisor:{name:"Dana Bishop",title:"Service Desk Supervisor",reviews:0,status:"Good Standing",coaching:false,pip:false,pipRecovery:0,pipFailures:0,goodStreak:0,poorStreak:0,recognition:0,promotionLevel:0,requiredTraining:[],lastReview:null,history:[],terminatedForPerformance:false},majorIncidents:{},nextMajor:1,approvalStats:{requested:0,approved:0,denied:0,delegated:0,withdrawn:0,emergency:0,wrongClaims:0},maliciousStats:{accountDeletes:0,ticketDeletes:0,falseWaiting:0,priorityDowngrades:0,concealAttempts:0,caught:0,coached:0,fired:0,heat:0,findings:0,stage:0,warnings:0,pips:0,finalWarnings:0,extraTickets:0,evasionAttempts:0,evasionSuccesses:0,narrowEscapes:0,cleanEscapes:0,cleanShifts:0,shiftActions:0,shiftFindings:0,shiftEscapes:0,reassignmentRestricted:false,auditHistory:[]},requestStats:{catalogTickets:0,classified:0,misclassified:0,fieldsCollected:0,submitted:0,kickbacks:0,fulfilled:0,denied:0,unauthorizedAttempts:0,slaMissed:0},teamStats:{assignments:0,accepted:0,kickbacks:0,wrongQueue:0,infoReturns:0,reroutes:0,resolutions:0,recalls:0,mercyAccepts:0,adviceReturns:0,acceptedWithWarning:0,excellentHandoffs:0,weakHandoffs:0},teamLoads:{},coworkers:buildCoworkerState(),coworkerLoads:{},coworkerStats:{helpRequests:0,helpfulHints:0,reassignments:0,accepted:0,returns:0,trades:0,sharedQueueDumps:0,sharedQueuePickups:0,dumpPoints:0,supervisorInterventions:0,teammateResolutions:0},responseStats:{followups:0,accelerated:0,spamFollowups:0,supervisorEscalations:0,supervisorAssists:0,alternateValidations:0,policyClosures:0,policyReopens:0,sharedReopenReroutes:0,scheduledFollowups:0,withdrawals:0,noLongerReproducible:0},world:{weekday:"Monday",events:[],announcements:[],nextId:1,lastClock:480,initialized:false,dynamicAdded:0,dynamicCap:0},worldStats:{activated:0,resolved:0,eventTickets:0,correlations:0,majorIncidents:0,vipTickets:0,changeEvents:0,outages:0,campaigns:0},worldCareer:{eventsSeen:0,eventTickets:0,correlations:0,history:[]},employees:buildEmployeeDirectory(),relationshipStats:{repeatRequesters:0,strongRapport:0,strained:0},settings:{sound:false,compact:false,typing:{sessions:0,bestWpm:0,bestAccuracy:0,lastWpm:0,lastAccuracy:0,totalSeconds:0}}
 });
 function normalizeState(s){
  const d=defaultState(),hadCareerProfile=!!s.careerProfile;
@@ -1728,19 +1897,37 @@ function normalizeState(s){
  s.majorIncidents=s.majorIncidents||{};
  s.nextMajor=s.nextMajor||1;
  s.approvalStats={...d.approvalStats,...(s.approvalStats||{})};
+ s.maliciousStats={...d.maliciousStats,...(s.maliciousStats||{})};s.maliciousStats.auditHistory=Array.isArray(s.maliciousStats.auditHistory)?s.maliciousStats.auditHistory:[];
  s.requestStats={...d.requestStats,...(s.requestStats||{})};
  s.teamStats={...d.teamStats,...(s.teamStats||{})};
  s.teamLoads=s.teamLoads||{};
+ const savedCoworkers=Array.isArray(s.coworkers)?s.coworkers:[];
+ s.coworkers=SERVICE_DESK_COWORKERS.map(def=>normalizeCoworker(savedCoworkers.find(c=>c.id===def.id),{...def,trust:62,goodwill:0,dumpsReceived:0,helped:0,accepted:0,rejected:0,trades:0,resolved:0,complaints:0,lastInteraction:null}));
+ s.coworkerLoads=s.coworkerLoads||{};
+ s.coworkerStats={...d.coworkerStats,...(s.coworkerStats||{})};
+ s.responseStats={...d.responseStats,...(s.responseStats||{})};
  s.world={...d.world,...(s.world||{})};s.world.events=Array.isArray(s.world.events)?s.world.events:[];s.world.announcements=Array.isArray(s.world.announcements)?s.world.announcements:[];s.world.dynamicAdded=Number(s.world.dynamicAdded)||0;s.world.dynamicCap=Number.isFinite(s.world.dynamicCap)?s.world.dynamicCap:0;
  s.worldStats={...d.worldStats,...(s.worldStats||{})};
  s.worldCareer={...d.worldCareer,...(s.worldCareer||{})};s.worldCareer.history=Array.isArray(s.worldCareer.history)?s.worldCareer.history:[];
  s.employees=(Array.isArray(s.employees)&&s.employees.length?s.employees:d.employees).map((e,i)=>normalizeEmployee(e,i));
  s.relationshipStats={...d.relationshipStats,...(s.relationshipStats||{})};
- s.settings={...d.settings,...(s.settings||{})};
+ s.settings={...d.settings,...(s.settings||{})};s.settings.typing={...d.settings.typing,...(s.settings?.typing||{})};
+ s.freeplay=!!s.freeplay;s.freeplayBaseline=s.freeplayBaseline||null;s.freeplayStats={...d.freeplayStats,...(s.freeplayStats||{})};
  s.pending=Array.isArray(s.pending)?s.pending:[];
  s.tickets=Array.isArray(s.tickets)?s.tickets:[];
+ // Saved queues are self-healed before any ticket-specific migration runs.
+ s.tickets=s.tickets.filter(t=>{
+   const sc=SCENARIOS.find(x=>x.id===t?.scenarioId);
+   return !!sc&&!!sc.causes?.some(c=>c.id===t?.causeId);
+ });
+ const validTicketIds=new Set(s.tickets.map(t=>t.id));
+ s.pending=s.pending.filter(p=>!p?.ticketId||validTicketIds.has(p.ticketId));
+ if(!validTicketIds.has(s.selected))s.selected=s.tickets.find(t=>!t.resolved)?.id||s.tickets[0]?.id||null;
+ if(s.active&&!s.endless&&!s.freeplay)s.sessionSize=s.tickets.length;
+ s.completed=s.tickets.filter(t=>t.resolved).length;
+ s.scoreSum=s.tickets.filter(t=>t.resolved&&Number.isFinite(t.score)).reduce((a,t)=>a+t.score,0);
  s.tickets.forEach(t=>{
-   const extras={conductViolations:0,professionalismHits:0,profanityCount:0,complaint:false,customerRating:null,customerFeedback:null,forceClosed:false,confirmation:false,waiting:false,badDiagnostics:[],approval:null,actors:null,supervisor:null,manager:null,userId:null,employeeComplaintRecorded:false,ticketType:"Incident",history:[],attachments:[],closureHistory:[],reopenCount:0,reopenPenalty:0,reliability:"accurate",misledOnce:false,relatedChecked:false,incidentKey:null,incidentSeedLabel:null,relatedKnown:false,userMadeWorse:false,selfResolved:false,approvalWithdrawnAfterAction:false,proactiveFacts:[],specialAssignment:false,assignmentQueue:"Service Desk",teamHistory:[],specialistState:"none",escalationAttempts:0,teamKickbacks:0,wrongTeamAssignments:0,teamInfoReturns:0,teamReroutes:0,teamRecalls:0,specialistAccepted:false,acceptedTeamId:null,specialistResolution:false,specialistInfoRequest:null,pendingEscalationAction:null,worldGenerated:false,worldEventId:null,worldEventKnown:false,worldContextSeen:false,vipTicket:false,careerCounted:false,clarification:null,resolutionFollowupReady:false,request:null};
+   const extras={conductViolations:0,professionalismHits:0,profanityCount:0,complaint:false,customerRating:null,customerFeedback:null,forceClosed:false,confirmation:false,waiting:false,badDiagnostics:[],approval:null,actors:null,supervisor:null,manager:null,userId:null,employeeComplaintRecorded:false,ticketType:"Incident",history:[],attachments:[],closureHistory:[],reopenCount:0,reopenPenalty:0,reliability:"accurate",misledOnce:false,relatedChecked:false,incidentKey:null,incidentSeedLabel:null,relatedKnown:false,userMadeWorse:false,selfResolved:false,approvalWithdrawnAfterAction:false,proactiveFacts:[],specialAssignment:false,assignmentQueue:"Service Desk",teamHistory:[],specialistState:"none",escalationAttempts:0,teamKickbacks:0,wrongTeamAssignments:0,teamInfoReturns:0,teamReroutes:0,teamRecalls:0,specialistAccepted:false,acceptedTeamId:null,specialistResolution:false,specialistInfoRequest:null,specialistSuggestedDiagnostic:null,specialistSuggestedFix:null,handoffGrade:null,handoffHistory:[],specialistMercy:false,specialistAcceptedWithWarning:false,specialistWeakHandoffs:0,specialistExcellentHandoffs:0,ownerAgentId:"player",coworkerState:"none",coworkerId:null,coworkerHistory:[],coworkerSuggestedDiagnostic:null,coworkerSuggestedFix:null,coworkerDumped:false,coworkerDumpPoints:0,coworkerAuditPoints:0,coworkerTransferMode:null,coworkerResolved:false,tradedFromCoworker:false,sharedQueue:false,pendingEscalationAction:null,worldGenerated:false,worldEventId:null,worldEventKnown:false,worldContextSeen:false,vipTicket:false,careerCounted:false,clarification:null,resolutionFollowupReady:false,request:null,requesterAccountDeleted:false,deletedTicket:false,maliciousAction:null,maliciousCaught:false,misconductActions:[],auditAttributionHidden:false,auditLastOutcome:null,responsePolicy:null,reopenRouting:"player",noCsat:false,alternateValidated:false,requesterWithdrawn:false,noLongerReproducible:false};
    Object.keys(extras).forEach(k=>{if(t[k]===undefined)t[k]=extras[k]});
    hydrateEmployeeForTicket(t,s.employees);
    hydrateApprovalV05(t);hydrateRequestState(t,s.employees,s.clock);
@@ -1748,7 +1935,8 @@ function normalizeState(s){
  if((s.requestStats?.catalogTickets||0)<s.tickets.filter(t=>t.request).length)s.requestStats.catalogTickets=s.tickets.filter(t=>t.request).length;
  return s;
 }
-let state=normalizeState(loadState()||defaultState());
+let state=null;
+let startupRecoveryError=null;
 let activeTab="tools";
 let toolResult="Select a diagnostic tool.";
 let ticketFilter="";
@@ -1757,12 +1945,38 @@ let toastTimer=null;
 function rand(a){return a[Math.floor(Math.random()*a.length)]}
 function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
 function fmtTime(m){let h=Math.floor(m/60)%24,mm=m%60;return `${String(h).padStart(2,"0")}:${String(mm).padStart(2,"0")}`}
-function nowStamp(){return fmtTime(state.clock)}
+function nowStamp(){return fmtTime(state?.clock??480)}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function saveState(){localStorage.setItem("superservice-save",JSON.stringify(state));document.getElementById("saveState").textContent="Saved locally • "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});}
-function loadState(){try{return JSON.parse(localStorage.getItem("superservice-save"))}catch(e){return null}}
-function toast(t){const el=document.getElementById("toast");el.textContent=t;el.classList.remove("hidden");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.add("hidden"),2200)}
-function difficultyFactor(){return BALANCE_PROFILE.actionTime[state.difficulty]||1}
+function saveState(){
+ if(!state)return false;
+ localStorage.setItem("superservice-save",JSON.stringify(state));
+ const el=document.getElementById("saveState");if(el)el.textContent="Saved locally • "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+ return true;
+}
+function loadState(){const raw=localStorage.getItem("superservice-save");return raw?JSON.parse(raw):null}
+function toast(t){const el=document.getElementById("toast");if(!el)return;el.textContent=t;el.classList.remove("hidden");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.add("hidden"),2200)}
+function difficultyFactor(){return BALANCE_PROFILE.actionTime[state?.difficulty||"Service Agent"]||1}
+
+const TYPING_STATS_KEY="superservice-typing";
+const DEFAULT_TYPING_STATS={sessions:0,bestWpm:0,bestAccuracy:0,lastWpm:0,lastAccuracy:0,totalSeconds:0};
+function mergeTypingStats(a={},b={}){
+ const x={...DEFAULT_TYPING_STATS,...(a||{})},y={...DEFAULT_TYPING_STATS,...(b||{})},latest=(y.sessions||0)>=(x.sessions||0)?y:x;
+ return {sessions:Math.max(x.sessions||0,y.sessions||0),bestWpm:Math.max(x.bestWpm||0,y.bestWpm||0),bestAccuracy:Math.max(x.bestAccuracy||0,y.bestAccuracy||0),lastWpm:latest.lastWpm||0,lastAccuracy:latest.lastAccuracy||0,totalSeconds:Math.max(x.totalSeconds||0,y.totalSeconds||0)};
+}
+function loadTypingPracticeStats(){try{const raw=localStorage.getItem(TYPING_STATS_KEY);return raw?{...DEFAULT_TYPING_STATS,...JSON.parse(raw)}:{...DEFAULT_TYPING_STATS}}catch(e){return {...DEFAULT_TYPING_STATS}}}
+function getTypingPracticeStats(){return mergeTypingStats(state?.settings?.typing,loadTypingPracticeStats())}
+function persistTypingPracticeStats(stats){
+ const clean={...DEFAULT_TYPING_STATS,...(stats||{})};
+ try{localStorage.setItem(TYPING_STATS_KEY,JSON.stringify(clean))}catch(e){}
+ if(state){state.settings=state.settings||{};state.settings.typing={...clean};saveState()}
+ return clean;
+}
+function syncTypingPracticeStats(){
+ const merged=getTypingPracticeStats();
+ if(state){state.settings=state.settings||{};state.settings.typing={...merged}}
+ try{localStorage.setItem(TYPING_STATS_KEY,JSON.stringify(merged))}catch(e){}
+ return merged;
+}
 
 function agentTitle(){
  const lvl=state.supervisor?.promotionLevel||0;
@@ -1814,6 +2028,210 @@ function personalityDelay(t,context="normal"){
  if(state.difficulty==="Chaos Desk")d*=1.08;
  return Math.max(2600,Math.min(105000,Math.round(d)));
 }
+
+const REQUESTER_RESPONSE_POLICY={
+ Critical:{followup:5,gap:5,supervisor:12,close:28,minAttempts:2},
+ High:{followup:8,gap:7,supervisor:20,close:42,minAttempts:2},
+ Normal:{followup:12,gap:10,supervisor:30,close:62,minAttempts:2},
+ Low:{followup:18,gap:14,supervisor:42,close:90,minAttempts:2}
+};
+function requesterPolicyProfile(t){
+ const base={...(REQUESTER_RESPONSE_POLICY[t?.priority]||REQUESTER_RESPONSE_POLICY.Normal)};
+ if(t?.request){base.followup+=3;base.supervisor+=7;base.close+=12}
+ return base;
+}
+function ensureResponsePolicy(t){
+ if(!t.responsePolicy)t.responsePolicy={active:false,waitingStartedClock:null,waitingStartedReal:null,contactAttempts:0,validContactAttempts:0,lastContactClock:null,lastContactReal:null,followupEligible:false,supervisorEligible:false,policyEligible:false,followupNotice:false,supervisorNotice:false,policyNotice:false,supervisorRequested:false,alternateRequested:false,outOfOffice:false,deadlineExtension:0,spamCount:0,accelerations:0,scheduledFollowup:false,scheduledFollowupDue:false,lastResponseClock:null,lastResponseReal:null};
+ return t.responsePolicy;
+}
+function responsePendingUserEvents(t){
+ return state.pending.filter(p=>p.ticketId===t.id&&p.type==="user"&&!p.complaint);
+}
+function responseWaitAge(t){
+ const rp=ensureResponsePolicy(t);if(!rp.active||rp.waitingStartedClock==null)return 0;
+ const sim=Math.max(0,(state.clock||0)-rp.waitingStartedClock);
+ const real=rp.waitingStartedReal?Math.max(0,Math.floor((Date.now()-rp.waitingStartedReal)/1000)):0;
+ return Math.max(sim,real);
+}
+function responseContactGapAge(t){
+ const rp=ensureResponsePolicy(t);
+ const sim=rp.lastContactClock==null?999:Math.max(0,(state.clock||0)-rp.lastContactClock);
+ const real=rp.lastContactReal==null?999:Math.max(0,Math.floor((Date.now()-rp.lastContactReal)/1000));
+ return Math.max(sim,real);
+}
+function beginRequesterWait(t){
+ const rp=ensureResponsePolicy(t),now=Date.now();
+ if(!rp.active){
+   rp.active=true;rp.waitingStartedClock=state.clock;rp.waitingStartedReal=now;rp.contactAttempts=1;rp.validContactAttempts=1;
+   rp.lastContactClock=state.clock;rp.lastContactReal=now;rp.followupNotice=false;rp.supervisorNotice=false;rp.policyNotice=false;rp.supervisorRequested=false;rp.alternateRequested=false;rp.outOfOffice=false;rp.deadlineExtension=0;rp.spamCount=0;rp.accelerations=0;rp.scheduledFollowup=false;rp.scheduledFollowupDue=false;
+ }
+ responsePolicyCheck(t);
+}
+function clearRequesterWait(t){
+ const rp=ensureResponsePolicy(t);rp.active=false;rp.followupEligible=false;rp.supervisorEligible=false;rp.policyEligible=false;rp.scheduledFollowup=false;rp.scheduledFollowupDue=false;rp.lastResponseClock=state.clock;rp.lastResponseReal=Date.now();
+ state.pending=state.pending.filter(p=>!(p.ticketId===t.id&&p.type==="followupReminder"));
+}
+function restartRequesterWaitIfNeeded(t){
+ const rp=ensureResponsePolicy(t),remaining=responsePendingUserEvents(t);
+ if(!remaining.length){clearRequesterWait(t);return}
+ rp.active=true;rp.waitingStartedClock=state.clock;rp.waitingStartedReal=Date.now();rp.contactAttempts=1;rp.validContactAttempts=1;rp.lastContactClock=state.clock;rp.lastContactReal=Date.now();rp.followupNotice=false;rp.supervisorNotice=false;rp.policyNotice=false;rp.policyEligible=false;rp.supervisorEligible=false;rp.followupEligible=false;rp.scheduledFollowup=false;rp.scheduledFollowupDue=false;
+}
+function responsePolicyCheck(t){
+ if(!t||t.resolved)return false;
+ const rp=ensureResponsePolicy(t);if(!rp.active)return false;
+ const prof=requesterPolicyProfile(t),age=responseWaitAge(t),gap=responseContactGapAge(t),extension=rp.deadlineExtension||0;
+ let changed=false;
+ const follow=age>=prof.followup&&gap>=prof.gap;
+ const supervisor=age>=prof.supervisor+Math.floor(extension*.35)&&rp.validContactAttempts>=1;
+ const close=age>=prof.close+extension&&rp.validContactAttempts>=prof.minAttempts;
+ if(follow&&!rp.followupEligible){rp.followupEligible=true;changed=true;if(!rp.followupNotice){rp.followupNotice=true;addMsg(t,"system",`Requester Response Policy: ${t.user} has not responded within the normal follow-up window. A documented follow-up is now appropriate.`,true)}}
+ if(supervisor&&!rp.supervisorEligible){rp.supervisorEligible=true;changed=true;if(!rp.supervisorNotice){rp.supervisorNotice=true;addMsg(t,"system",`Requester Response Policy: supervisor assistance is now available because the requested response remains outstanding.`,true)}}
+ if(close&&!rp.policyEligible){rp.policyEligible=true;changed=true;if(!rp.policyNotice){rp.policyNotice=true;addMsg(t,"system",`Agency Response Policy: requester response time is now outside the acceptable window after ${rp.validContactAttempts} documented contact attempt${rp.validContactAttempts===1?"":"s"}. You may legitimately close this ticket as Closed — No Requester Response. The requester may reopen it later.`,true);if(state.selected!==t.id)toast(`${t.id} is eligible for no-response closure.`)}}
+ return changed;
+}
+function requesterFollowupAccelerationChance(t,valid){
+ const rp=ensureResponsePolicy(t),p=getPerson(t),e=getEmployee(t);
+ let chance=valid?.38:.10;
+ if(rp.validContactAttempts>=2)chance+=.16;
+ if(rp.validContactAttempts>=3)chance+=.08;
+ if(t.priority==="High")chance+=.07;if(t.priority==="Critical")chance+=.12;
+ if(p?.id==="slow")chance-=.06;if(p?.id==="nonresponsive")chance-=.12;if(p?.id==="impatient")chance+=.08;
+ const responseFactor=EMPLOYEE_RESPONSE.find(x=>x.id===e?.responseStyle)?.factor||1;if(responseFactor<.9)chance+=.06;else if(responseFactor>1.3)chance-=.05;
+ return Math.max(.08,Math.min(.78,chance));
+}
+function accelerateRequesterResponse(t,strength=.42){
+ const now=Date.now(),events=responsePendingUserEvents(t);if(!events.length)return false;
+ let changed=false;
+ events.forEach(p=>{
+   const remaining=Math.max(700,p.due-now),newRemaining=Math.max(1200,Math.round(remaining*strength));
+   if(now+newRemaining<p.due){p.due=now+newRemaining;changed=true}
+ });
+ if(changed){const rp=ensureResponsePolicy(t);rp.accelerations++;state.responseStats.accelerated++}
+ return changed;
+}
+function sendRequesterFollowup(){
+ const t=getTicket();if(!t||t.resolved)return;
+ const rp=ensureResponsePolicy(t);if(!rp.active||!t.waiting||!responsePendingUserEvents(t).length){toast("There is no outstanding requester response to follow up on.");return}
+ const prof=requesterPolicyProfile(t),gap=responseContactGapAge(t),valid=gap>=prof.gap;
+ rp.contactAttempts++;state.responseStats.followups++;rp.scheduledFollowup=false;rp.scheduledFollowupDue=false;state.pending=state.pending.filter(p=>!(p.ticketId===t.id&&p.type==="followupReminder"));
+ if(valid){rp.validContactAttempts++;rp.lastContactClock=state.clock;rp.lastContactReal=Date.now();rp.followupEligible=false}
+ else{rp.spamCount++;state.responseStats.spamFollowups++;t.bad+=rp.spamCount>=2?1:0;const e=getEmployee(t);if(e){e.satisfaction=clamp(e.satisfaction-1,0,100);e.patience=clamp(e.patience-1,0,100)}}
+ const n=rp.contactAttempts;
+ const text=n<=2?"Just following up on this — when you have a moment, could you reply with the requested result so I can keep the ticket moving?":n===3?"Checking in again on this ticket. We're still waiting on the requested information before we can continue.":"Following up again. Please let me know whether you still need assistance and provide the requested result when available.";
+ addMsg(t,"agent",text);
+ const chance=requesterFollowupAccelerationChance(t,valid),accelerated=Math.random()<chance&&accelerateRequesterResponse(t,n>=3?.24:n===2?.34:.45);
+ if(accelerated)addMsg(t,"system","Follow-up appears to have moved the pending requester response forward.",true);
+ if(!valid){
+   state.pending.push({type:"userNudgeAck",ticketId:t.id,due:Date.now()+2200+Math.random()*4200,text:rand(["I saw the message. I haven't had time to test yet.","I'm working on it — I'll reply when I can.","Yes, I saw the earlier request. I just haven't been able to check yet."])});
+ }
+ advanceTime(2);responsePolicyCheck(t);saveState();renderAll();
+}
+function scheduleRequesterFollowup(minutes=15){
+ const t=getTicket();if(!t||t.resolved)return;const rp=ensureResponsePolicy(t);
+ if(!rp.active){toast("There is no outstanding requester response to schedule a follow-up for.");return}
+ state.pending=state.pending.filter(p=>!(p.ticketId===t.id&&p.type==="followupReminder"));
+ const realDelay=Math.max(3500,Math.round(minutes*1000));
+ state.pending.push({type:"followupReminder",ticketId:t.id,due:Date.now()+realDelay,minutes});
+ rp.scheduledFollowup=true;rp.scheduledFollowupDue=false;state.responseStats.scheduledFollowups++;
+ addMsg(t,"system",`Follow-up reminder scheduled for approximately ${minutes} simulated minutes from now. You can continue working other tickets.`,true);
+ saveState();renderAll();
+}
+function alternateValidationAllowed(t){
+ if(!t||t.requesterAccountDeleted)return false;
+ const txt=`${t.category} ${t.subject} ${t.ticketType}`.toLowerCase();
+ if(/password|mfa|multi-factor|phish|malware|security|privacy|legal|personal|individual access|account lock|delete|termination|hr data|clinical record/.test(txt))return false;
+ return /printer|network|vpn|shared|mailbox|calendar|conference|fomo|application|app |website|service|outage|file|drive|folder|room|projector|wifi|wireless/.test(txt)||!!activeMajorFor(t);
+}
+function responseWorkReady(t){
+ return t.actions.includes("correct-action")||t.specialistResolution||!!t.request?.fulfilled||!!t.selfResolved;
+}
+function addSupervisorResponseMsg(t,text){
+ t.conversation.push({who:"requesterSupervisor",supervisor:t.supervisor||t.actors?.supervisor?.name||"Requester supervisor",text,time:nowStamp()});
+ if(state.selected!==t.id)t.unread++;
+}
+function escalateRequesterSupervisor(){
+ const t=getTicket();if(!t||t.resolved)return;const rp=ensureResponsePolicy(t);responsePolicyCheck(t);
+ if(!rp.active||!rp.supervisorEligible){toast("Requester-supervisor escalation is not yet eligible under the response policy.");return}
+ if(rp.supervisorRequested){toast("The requester's supervisor has already been contacted.");return}
+ rp.supervisorRequested=true;state.responseStats.supervisorEscalations++;
+ addMsg(t,"agent",`I'm escalating the outstanding response request to ${t.supervisor||"your supervisor"} so we can either continue troubleshooting or determine an appropriate disposition.`);
+ addMsg(t,"system",`Response assistance request sent to ${t.supervisor||"the requester's supervisor"}.`,true);
+ state.pending.push({type:"requesterSupervisorResponse",ticketId:t.id,due:Date.now()+4500+Math.random()*9000});
+ advanceTime(3);saveState();renderAll();
+}
+function processRequesterSupervisorResponse(t){
+ const rp=ensureResponsePolicy(t),name=t.supervisor||t.actors?.supervisor?.name||"Requester supervisor",r=Math.random();
+ state.responseStats.supervisorAssists++;
+ if(r<.58){
+   addSupervisorResponseMsg(t,`I reached ${t.user}. They're tied up, but I asked them to respond to the ticket as soon as they can.`);
+   const moved=accelerateRequesterResponse(t,.16);if(moved)addMsg(t,"system","Supervisor assistance substantially accelerated the pending requester response.",true);
+ }else if(r<.72&&alternateValidationAllowed(t)&&responseWorkReady(t)){
+   addSupervisorResponseMsg(t,"The original requester is unavailable, but I checked with another affected employee in the department. They confirmed the service is working normally now.");
+   t.alternateValidated=true;t.noCsat=true;state.responseStats.alternateValidations++;clearRequesterWait(t);finalizeTicket(t,"Resolved — Alternate Validation",{showReport:state.selected===t.id});
+ }else if(r<.84){
+   rp.outOfOffice=true;rp.deadlineExtension=Math.max(rp.deadlineExtension||0,20);
+   addSupervisorResponseMsg(t,`${t.user} is away from work right now. If this can be validated by another affected employee, that's fine; otherwise please hold it for their return.`);
+   addMsg(t,"system","Known requester unavailability extended the normal no-response deadline. Alternate validation may be appropriate for shared services.",true);
+ }else if(r<.93){
+   addSupervisorResponseMsg(t,`${t.user} no longer needs this request worked. You can close it as withdrawn.`);
+   t.requesterWithdrawn=true;t.noCsat=true;state.responseStats.withdrawals++;clearRequesterWait(t);finalizeTicket(t,"Closed — Request Withdrawn",{showReport:state.selected===t.id});
+ }else{
+   addMsg(t,"system",`${name} has not responded to the escalation request yet. Continue normal response-policy aging.`,true);
+ }
+}
+function requestAlternateValidation(){
+ const t=getTicket();if(!t||t.resolved)return;const rp=ensureResponsePolicy(t);
+ if(!rp.supervisorRequested){toast("Contact the requester's supervisor first.");return}
+ if(!alternateValidationAllowed(t)){toast("This ticket requires validation from the original requester.");return}
+ if(rp.alternateRequested){toast("Alternate validation has already been requested.");return}
+ rp.alternateRequested=true;
+ addMsg(t,"system","Alternate department validation requested through the requester's supervisor.",true);
+ state.pending.push({type:"alternateValidation",ticketId:t.id,due:Date.now()+4500+Math.random()*8000});
+ saveState();renderAll();
+}
+function processAlternateValidation(t){
+ const rp=ensureResponsePolicy(t),ready=responseWorkReady(t);
+ if(ready&&Math.random()<.72){
+   addSupervisorResponseMsg(t,"I found another affected employee who can validate this shared service. They tested it and confirmed it is working normally.");
+   t.alternateValidated=true;t.noCsat=true;state.responseStats.alternateValidations++;clearRequesterWait(t);finalizeTicket(t,"Resolved — Alternate Validation",{showReport:state.selected===t.id});
+ }else{
+   addSupervisorResponseMsg(t,ready?"I couldn't get an alternate employee to validate it yet. You'll need the original requester or the normal inactivity policy.":"I found another employee, but they can't validate a fix because the underlying work isn't complete yet.");
+   rp.alternateRequested=false;
+ }
+}
+function closeNoRequesterResponse(){
+ const t=getTicket();if(!t||t.resolved)return;const rp=ensureResponsePolicy(t);responsePolicyCheck(t);
+ if(!rp.policyEligible){toast("This ticket is not yet eligible for policy-based no-response closure.");return}
+ if(t.approval?.required&&!approvalFlowApproved(t)){toast("A pending/invalid approval cannot be bypassed with requester inactivity closure.");return}
+ if(!confirm(`Close ${t.id} under the agency requester-inactivity policy?\n\nThis is a legitimate closure after documented contact attempts. It is not a technical confirmation. The requester may reopen the ticket later.`))return;
+ t.noCsat=true;t.reopenRouting="player";clearRequesterWait(t);state.responseStats.policyClosures++;
+ finalizeTicket(t,"Closed — No Requester Response");
+}
+function releasePolicyReopenToSharedQueue(ticketId=null){
+ const t=state.tickets.find(x=>x.id===(ticketId||state.selected));if(!t||t.outcome!=="Closed — No Requester Response")return;
+ t.reopenRouting="shared";saveState();renderAll();toast("Any reopen will enter the shared Service Desk queue.");
+ if(!document.getElementById("genericModal")?.classList.contains("hidden"))showTicketReport(t);
+}
+function keepPolicyReopenWithMe(ticketId=null){
+ const t=state.tickets.find(x=>x.id===(ticketId||state.selected));if(!t||t.outcome!=="Closed — No Requester Response")return;
+ t.reopenRouting="player";saveState();renderAll();toast("Any reopen will return to your queue.");
+ if(!document.getElementById("genericModal")?.classList.contains("hidden"))showTicketReport(t);
+}
+function responsePolicyPanel(t,compact=false){
+ const rp=ensureResponsePolicy(t);if(!rp.active||t.resolved)return "";
+ responsePolicyCheck(t);
+ const prof=requesterPolicyProfile(t),age=responseWaitAge(t),gap=responseContactGapAge(t),nextFollow=Math.max(0,prof.gap-gap),closeAt=prof.close+(rp.deadlineExtension||0),cls=rp.policyEligible?"eligible":rp.supervisorEligible||rp.followupEligible?"slow":"";
+ const buttons=[
+   `<button class="${rp.followupEligible?"followup-valid":"followup-soon"}" onclick="sendRequesterFollowup()">Send Follow-Up${rp.followupEligible?"":" Anyway"}</button>`,
+   `<button class="secondary" onclick="scheduleRequesterFollowup(15)">Remind Me in 15m</button>`,
+   rp.supervisorEligible&&!rp.supervisorRequested?`<button class="secondary" onclick="escalateRequesterSupervisor()">Ask ${esc(t.supervisor||"Supervisor")} to Prompt Response</button>`:"",
+   rp.supervisorRequested&&alternateValidationAllowed(t)?`<button class="secondary" onclick="requestAlternateValidation()">Request Alternate Validator</button>`:"",
+   rp.policyEligible?`<button class="primary" onclick="closeNoRequesterResponse()">Close — No Requester Response</button>`:""
+ ].filter(Boolean).join("");
+ return `<div class="responsepolicy ${cls}"><h4>Requester Response Policy${rp.policyEligible?' <span class="policytag">Closure Eligible</span>':""}</h4><div>${rp.outOfOffice?"Known absence is extending the normal deadline. ":""}The requester has an outstanding response request. Follow-ups can legitimately accelerate a pending response, but repeated messages sent too close together may annoy them and do not count as separate policy attempts.</div><div class="policygrid"><div class="policycell"><b>${age}m</b><span>Wait Age</span></div><div class="policycell"><b>${rp.validContactAttempts}/${prof.minAttempts}</b><span>Valid Contacts</span></div><div class="policycell"><b>${rp.followupEligible?"Now":nextFollow+"m"}</b><span>Follow-Up</span></div><div class="policycell"><b>${Math.max(0,closeAt-age)}m</b><span>Closure In</span></div></div><div class="responseactions">${buttons}</div>${rp.scheduledFollowup?`<div class="small">${rp.scheduledFollowupDue?"Follow-up reminder is due now.":"A follow-up reminder is scheduled."}</div>`:""}</div>`;
+}
+window.sendRequesterFollowup=sendRequesterFollowup;window.scheduleRequesterFollowup=scheduleRequesterFollowup;window.escalateRequesterSupervisor=escalateRequesterSupervisor;window.requestAlternateValidation=requestAlternateValidation;window.closeNoRequesterResponse=closeNoRequesterResponse;window.releasePolicyReopenToSharedQueue=releasePolicyReopenToSharedQueue;window.keepPolicyReopenWithMe=keepPolicyReopenWithMe;
+
 function pickActorName(exclude=[]){
  const pool=NAMES.filter(n=>!exclude.includes(n));return rand(pool.length?pool:NAMES);
 }
@@ -2107,11 +2525,11 @@ function badDiagnosticReply(t,opt){
 }
 function chooseBadDiagnostics(){
  const max=BAD_DIAGNOSTICS.length;
- let count=0;
- if(state.difficulty==="Trainee")count=Math.random()<.42?1:0;
- else if(state.difficulty==="Service Agent")count=Math.random()<.78?1:0;
- else if(state.difficulty==="Senior Agent")count=1+(Math.random()<.48?1:0);
- else count=2+(Math.random()<.30?1:0);
+ let count=2;
+ if(state.difficulty==="Trainee")count=2+(Math.random()<.35?1:0);
+ else if(state.difficulty==="Service Agent")count=3+(Math.random()<.50?1:0);
+ else if(state.difficulty==="Senior Agent")count=4+(Math.random()<.55?1:0);
+ else count=5+(Math.random()<.60?1:0);
  return shuffle(BAD_DIAGNOSTICS).slice(0,Math.min(count,max)).map(x=>x.id);
 }
 function stableRank(s){
@@ -2332,9 +2750,9 @@ function classifyRequest(t,type){
 }
 function collectRequestField(t,key,fromChat=false){
  const r=t?.request,f=r?.fields?.[key];if(!r||!f||t.resolved)return;
- if(f.collected){t.repeats++;t.irrelevant+=.5;if(!fromChat){addMsg(t,"agent",REQUEST_FIELD_DEFS[key]?.ask||`Ask for ${f.label}`);scheduleReply(t,`I already provided ${f.label.toLowerCase()}: ${f.value}`)}return}
+ if(f.collected){t.repeats++;t.irrelevant+=.5;if(!fromChat){addMsg(t,"agent",agentChatForAction(REQUEST_FIELD_DEFS[key]?.ask||`Ask for ${f.label}`,"diagnostic",t));scheduleReply(t,`I already provided ${f.label.toLowerCase()}: ${f.value}`)}return}
  advanceTime(2);const ask=REQUEST_FIELD_DEFS[key]?.ask||`Ask for ${f.label}`;
- if(!fromChat)addMsg(t,"agent",ask);
+ if(!fromChat)addMsg(t,"agent",agentChatForAction(ask,"diagnostic",t));
  f.value=requestFieldValue(t,key);f.collected=true;state.requestStats.fieldsCollected++;t.useful+=.8;recordRequestHistory(t,"Field collected",`${f.label}: ${f.value}`);
  scheduleReply(t,`${f.label}: ${f.value}`,personalityDelay(t,"normal"));saveState();renderAll();
 }
@@ -2571,6 +2989,189 @@ function expectedSpecialistTeamId(t){
  if(/vendor|licens/.test(cat))return "vendor";
  return "applications";
 }
+
+function coworkerLoadValue(id){
+ if(!Number.isFinite(state.coworkerLoads[id])){
+   const cw=coworkerById(id),h=stableRank(`coworker:${id}:${state.career.shifts+1}:${state.difficulty}`)%100;
+   state.coworkerLoads[id]=h<30?1:h<72?Math.max(2,Math.round((cw?.capacity||5)*.55)):Math.max(3,Math.round((cw?.capacity||5)*.9));
+ }
+ const owned=state.tickets.filter(t=>!t.resolved&&t.ownerAgentId===id).length;
+ return state.coworkerLoads[id]+owned;
+}
+function coworkerLoad(id){
+ const cw=coworkerById(id),n=coworkerLoadValue(id),cap=cw?.capacity||5;
+ return n<=Math.max(1,cap*.4)?"Low":n<=cap*.85?"Moderate":"High";
+}
+function coworkerAffinity(cw,t){
+ const area=expectedSpecialistTeamId(t);
+ return cw?.specialties?.includes(area)?1.28:(cw?.specialties||[]).some(x=>["applications","endpoint"].includes(x))?1.02:.88;
+}
+function coworkerHandoffQuality(t,cw){
+ const evidence=Math.min(1,(t.useful||0)/3),notes=Math.min(1,(t.notes||"").trim().length/45),noise=Math.min(.45,((t.irrelevant||0)+(t.repeats||0))*.06);
+ return Math.max(0,Math.min(1,(evidence*.55+notes*.35+.1)-noise));
+}
+function coworkerAcceptanceChance(cw,t,mode="reassign"){
+ const loadFactor={Low:1.15,Moderate:.78,High:.34}[coworkerLoad(cw.id)]||.7;
+ const trust=.55+(cw.trust||50)/130,aff=coworkerAffinity(cw,t),quality=.45+coworkerHandoffQuality(t,cw)*.65;
+ const modeFactor=mode==="trade"?.82:mode==="shared"?.72:1;
+ return Math.max(.06,Math.min(.92,.58*cw.willingness*loadFactor*trust*aff*quality*modeFactor));
+}
+function coworkerHelpChance(cw,t){
+ const load={Low:1,Moderate:.78,High:.48}[coworkerLoad(cw.id)]||.7;
+ return Math.max(.25,Math.min(.96,(.48+(cw.trust||50)/220)*coworkerAffinity(cw,t)*load));
+}
+function coworkerHistory(t,cw,action,note=""){
+ t.coworkerHistory=t.coworkerHistory||[];t.coworkerHistory.unshift({time:nowStamp(),coworkerId:cw?.id||null,coworker:cw?.name||"Service Desk",action,note});t.coworkerHistory=t.coworkerHistory.slice(0,20);
+ if(cw)cw.lastInteraction={time:nowStamp(),action,ticketId:t.id};
+}
+function addCoworkerMsg(t,cw,text){
+ t.conversation.push({who:"coworker",coworkerId:cw?.id||null,coworker:cw?.name||"Service Desk teammate",text,time:nowStamp()});
+ if(state.selected!==t.id)t.unread++;
+}
+function coworkerMissingDiagnostic(t){
+ const sc=getScenario(t),c=getCause(t);
+ return (sc.diagnostics||[]).find(d=>!t.facts.includes(d[0])&&c.answers?.[d[0]])||null;
+}
+function askCoworkerForHelp(id){
+ const t=getTicket(),cw=coworkerById(id);if(!t||t.resolved||!cw||t.ownerAgentId!=="player")return;
+ advanceTime(3);state.coworkerStats.helpRequests++;cw.helped++;
+ const good=Math.random()<coworkerHelpChance(cw,t),missing=coworkerMissingDiagnostic(t),fix=(getScenario(t).fixes||[]).find(f=>f[0]===getCause(t).correct);
+ if(good&&missing){
+   t.coworkerSuggestedDiagnostic=missing[0];state.coworkerStats.helpfulHints++;cw.trust=Math.min(100,cw.trust+.5);
+   addCoworkerMsg(t,cw,rand([
+     `I'd start with "${missing[1]}." That should narrow this down before you do anything bigger.`,
+     `Have you checked "${missing[1]}" yet? That's the first thing I'd want to know.`,
+     `Before you escalate or reset anything, try "${missing[1]}." The answer should tell you which direction to go.`
+   ]));
+   coworkerHistory(t,cw,"Helped",`Suggested diagnostic: ${missing[1]}.`);
+ }else if(good&&fix&&fix[2]!=="escalate"){
+   t.coworkerSuggestedFix=fix[0];state.coworkerStats.helpfulHints++;
+   addCoworkerMsg(t,cw,`You've already got enough evidence. I'd probably go with "${fix[1]}" and then validate it with the requester.`);
+   coworkerHistory(t,cw,"Helped",`Suggested action: ${fix[1]}.`);
+ }else{
+   addCoworkerMsg(t,cw,rand(["I'm buried right now. I don't see anything obvious beyond the checks you've already got.","I can take a quick look, but I don't have a useful answer yet.","Nothing jumps out at me from the handoff. I'd keep narrowing the scope first."]));
+   coworkerHistory(t,cw,"Help unavailable","No useful hint provided.");
+ }
+ saveState();renderAll();
+}
+function teammateDumpLevel(t,cw){
+ const q=coworkerHandoffQuality(t,cw);
+ return q<.25?2:q<.48?1:0;
+}
+function noteCoworkerDump(t,cw,points){
+ if(points<=0)return;
+ t.coworkerDumped=true;t.coworkerDumpPoints=(t.coworkerDumpPoints||0)+points;t.coworkerAuditPoints=(t.coworkerAuditPoints||0)+points;
+ cw.dumpsReceived++;cw.trust=Math.max(0,cw.trust-points*3);
+}
+
+function triggerCoworkerDumpIntervention(t){
+ if(state.freeplay)return 0;
+ const threshold=(state.coworkerStats.supervisorInterventions||0)*4+4;
+ if((state.coworkerStats.dumpPoints||0)<threshold)return 0;
+ state.coworkerStats.supervisorInterventions++;state.supervisor.coaching=true;state.supervisor.status="Coaching";
+ recordCareerEvent("coaching","Queue Ownership Coaching",`Repeated attributed weak ticket transfers triggered supervisor attention. Current attributed dumping points: ${state.coworkerStats.dumpPoints}.`,"negative");
+ const extra=2+Math.min(3,state.coworkerStats.supervisorInterventions);
+ assignPerformanceTickets(extra,"Supervisor reassigned extra work after repeated attributed teammate handoffs.");
+ addMsg(t,"system",`Dana noticed the repeated attributed ticket-dumping pattern and assigned ${extra} additional ticket${extra===1?"":"s"} to your queue.`,true);
+ return extra;
+}
+function attributeCoworkerDump(t){
+ const points=t?.coworkerAuditPoints||0;if(!points)return 0;
+ state.coworkerStats.dumpPoints=(state.coworkerStats.dumpPoints||0)+points;t.coworkerAuditPoints=0;
+ return triggerCoworkerDumpIntervention(t);
+}
+function leaveCoworkerAuditTrail(ticketId=null){
+ const t=state.tickets.find(x=>x.id===(ticketId||state.selected))||getTicket();if(!t)return;
+ const pts=t.coworkerAuditPoints||0,extra=attributeCoworkerDump(t);saveState();renderAll();
+ showModal(`<div class="mh"><h2>Reassignment Recorded Normally</h2></div><div class="mb"><div class="audit-result"><b>No concealment attempted.</b><br>${pts} weak-handoff point${pts===1?" was":"s were"} attributed to your queue-ownership history.${extra?` Dana noticed the pattern and added ${extra} tickets.`:""}</div></div><div class="mf"><button class="primary" onclick="finishMaliciousModal()">Back to Queue</button></div>`);
+}
+function offerCoworkerAudit(t){
+ if(!t||!(t.coworkerAuditPoints>0)||state.freeplay)return;
+ const actionId=t.coworkerTransferMode==="shared"?"shared-conceal":(t.coworkerDumpPoints>=3?"repeat-dump-conceal":"reassignment-conceal");
+ showModal(`<div class="mh"><h2>Questionable Reassignment Flagged</h2></div><div class="mb"><div class="audit-brief"><b>The transfer itself is already done.</b><br>The handoff was weak enough to create ${t.coworkerAuditPoints} queue-ownership audit point${t.coworkerAuditPoints===1?"":"s"}. You can leave the ownership trail alone, or make the much worse decision to attempt the fictional Outrun the Audit race at <b>${effectiveAuditTarget(actionId,t)} adjusted WPM</b>.<br><br>Even a successful race does not make the handoff good: coworker trust loss and ticket-quality penalties remain. It only avoids immediate supervisor attribution of the ownership-dumping points.</div></div><div class="mf"><button class="secondary" onclick="leaveCoworkerAuditTrail('${t.id}')">Leave Audit Trail Alone</button><button class="danger" onclick="startAuditRace('${actionId}','${t.id}')">Attempt Outrun the Audit</button></div>`);
+}
+window.leaveCoworkerAuditTrail=leaveCoworkerAuditTrail;window.offerCoworkerAudit=offerCoworkerAudit;
+
+function assignToCoworker(id,mode="reassign"){
+ const t=getTicket(),cw=coworkerById(id);if(!t||t.resolved||!cw||t.ownerAgentId!=="player")return;
+ if(state.maliciousStats?.reassignmentRestricted){toast("Teammate reassignment privileges are restricted under your misconduct plan.");return}
+ if(["reviewing","accepted","working"].includes(t.specialistState)){toast("Recall the ticket from the specialist queue first.");return}
+ const label=mode==="trade"?"trade tickets with":mode==="shared"?"send through the shared queue toward":"reassign this ticket to";
+ if(!confirm(`Attempt to ${label} ${cw.name}? They may accept it, return it, or complain about a weak handoff.`))return;
+ advanceTime(3);state.coworkerStats.reassignments++;t.coworkerId=cw.id;t.coworkerState="reviewing";t.status=`Teammate Review — ${cw.name}`;t.waiting=true;
+ const dump=teammateDumpLevel(t,cw);noteCoworkerDump(t,cw,dump);
+ coworkerHistory(t,cw,mode==="trade"?"Trade proposed":"Reassignment proposed",`Handoff quality ${(coworkerHandoffQuality(t,cw)*100).toFixed(0)}%.`);
+ state.pending.push({type:"coworkerReview",ticketId:t.id,coworkerId:cw.id,mode,due:Date.now()+Math.round(5000+Math.random()*11000)});
+ saveState();renderAll();if(dump>0)offerCoworkerAudit(t);
+}
+function tradeWithCoworker(id){assignToCoworker(id,"trade")}
+function dumpToSharedQueue(){
+ const t=getTicket();if(!t||t.resolved||t.ownerAgentId!=="player")return;
+ if(state.maliciousStats?.reassignmentRestricted){toast("Shared-queue dumping is restricted under your misconduct plan.");return}
+ if(!confirm("Send this ticket back to the shared Service Desk queue and hope another agent picks it up? Weak or repeated dumping can attract supervisor attention."))return;
+ advanceTime(2);t.sharedQueue=true;t.coworkerState="shared";t.coworkerTransferMode="shared";t.status="Service Desk Shared Queue";t.waiting=true;state.coworkerStats.sharedQueueDumps++;
+ const best=[...state.coworkers].sort((a,b)=>coworkerLoadValue(a.id)-coworkerLoadValue(b.id))[0];
+ noteCoworkerDump(t,best,teammateDumpLevel(t,best)+1);
+ coworkerHistory(t,null,"Sent to shared queue","Ownership released to the Service Desk shared queue.");
+ state.pending.push({type:"sharedQueueReview",ticketId:t.id,due:Date.now()+8000+Math.round(Math.random()*16000)});
+ saveState();renderAll();if(t.coworkerAuditPoints>0)offerCoworkerAudit(t);
+}
+function recallFromCoworker(){
+ const t=getTicket();if(!t||t.resolved)return;
+ state.pending=state.pending.filter(p=>!(p.ticketId===t.id&&["coworkerReview","coworkerResolution","sharedQueueReview"].includes(p.type)));
+ const cw=coworkerById(t.coworkerId);t.ownerAgentId="player";t.coworkerState="none";t.coworkerId=null;t.sharedQueue=false;t.status="In Progress";t.waiting=false;
+ if(cw)coworkerHistory(t,cw,"Recalled","Returned to your queue.");
+ saveState();renderAll();
+}
+function coworkerCreateTradeTicket(cw,oldTicket){
+ const pool=difficultyScenarioPool().filter(sc=>sc.id!==oldTicket.scenarioId),sc=rand(pool.length?pool:SCENARIOS),nt=createTicket(sc);
+ nt.tradedFromCoworker=true;nt.history.unshift({when:"Today",text:`Transferred from ${cw.name} as part of a Service Desk ticket trade.`});
+ state.tickets.push(nt);state.sessionSize++;state.stats.peakQueue=Math.max(state.stats.peakQueue||0,state.tickets.filter(x=>!x.resolved).length);return nt;
+}
+function processCoworkerReview(t,p){
+ const cw=coworkerById(p.coworkerId);if(!cw)return;
+ const chance=coworkerAcceptanceChance(cw,t,p.mode),accept=Math.random()<chance;
+ if(!accept){
+   cw.rejected++;cw.trust=Math.max(0,cw.trust-(t.coworkerDumped?2:.5));state.coworkerStats.returns++;
+   t.ownerAgentId="player";t.coworkerState="returned";t.coworkerId=null;t.sharedQueue=false;t.status="Returned by Teammate";t.waiting=false;
+   const missing=coworkerMissingDiagnostic(t);
+   addCoworkerMsg(t,cw,missing?rand([`I'm sending this back. You haven't checked "${missing[1]}" yet, and I don't want to inherit it blind.`,`Nice try. Check "${missing[1]}" first and then decide whether this actually needs to leave your queue.`]):rand(["I'm returning this one. The handoff doesn't give me enough reason to take ownership.","I'm not taking this just to make the queue number move. Work it a little further first."]));
+   coworkerHistory(t,cw,"Returned",`Acceptance chance ${Math.round(chance*100)}%.`);
+   return;
+ }
+ cw.accepted++;cw.trust=Math.min(100,cw.trust+(t.coworkerDumped?.2:1));state.coworkerStats.accepted++;t.ownerAgentId=cw.id;t.coworkerState="accepted";t.coworkerTransferMode=p.mode||"reassign";t.status=`Owned by ${cw.name}`;t.waiting=true;
+ if(p.mode==="trade"){
+   cw.trades++;state.coworkerStats.trades++;const nt=coworkerCreateTradeTicket(cw,t);addCoworkerMsg(t,cw,`Deal. I'll take ${t.id}; I just sent ${nt.id} from my queue to yours.`);coworkerHistory(t,cw,"Trade accepted",`Received ${t.id}; sent ${nt.id} to player.`);
+ }else{
+   addCoworkerMsg(t,cw,rand(["I'll take it. If I find anything useful, I'll leave the result in the ticket.","Okay, I can own this one from here.","I'll grab it. Next time, give me the observed results in the handoff if you have them."]));
+   coworkerHistory(t,cw,"Accepted ownership","Teammate took the ticket.");
+ }
+ state.pending.push({type:"coworkerResolution",ticketId:t.id,coworkerId:cw.id,due:Date.now()+Math.round((coworkerLoad(cw.id)==="Low"?14000:coworkerLoad(cw.id)==="Moderate"?26000:42000)+Math.random()*16000)});
+}
+function processSharedQueueReview(t){
+ const candidates=[...state.coworkers].sort((a,b)=>coworkerLoadValue(a.id)-coworkerLoadValue(b.id));
+ const cw=candidates[0],chance=coworkerAcceptanceChance(cw,t,"shared");
+ if(Math.random()<chance){
+   state.coworkerStats.sharedQueuePickups++;t.coworkerId=cw.id;t.ownerAgentId=cw.id;t.coworkerState="accepted";t.sharedQueue=false;t.status=`Picked Up — ${cw.name}`;cw.accepted++;
+   addCoworkerMsg(t,cw,`I pulled this from the shared queue. I'll take ownership.`);
+   coworkerHistory(t,cw,"Shared queue pickup","Teammate picked up the ticket.");
+   state.pending.push({type:"coworkerResolution",ticketId:t.id,coworkerId:cw.id,due:Date.now()+18000+Math.round(Math.random()*22000)});
+ }else{
+   t.ownerAgentId="player";t.coworkerState="returned";t.sharedQueue=false;t.status="Returned to Your Queue";t.waiting=false;state.coworkerStats.returns++;
+   addMsg(t,"system","Nobody picked up the ticket from the shared queue. Ownership returned to you.",true);
+   coworkerHistory(t,null,"Shared queue return","No teammate accepted ownership.");
+ }
+}
+function processCoworkerResolution(t,p){
+ const cw=coworkerById(p.coworkerId);if(!cw)return;
+ cw.resolved++;state.coworkerStats.teammateResolutions++;t.ownerAgentId="player";t.coworkerState="resolved";t.coworkerResolved=true;t.coworkerId=null;t.waiting=false;t.actions.push("correct-action");
+ addCoworkerMsg(t,cw,`I finished this one. Root cause was ${getCause(t).label}. I applied the corrective action and handled the requester follow-up.`);
+ coworkerHistory(t,cw,"Resolved by teammate",`Teammate completed ownership after ${t.coworkerTransferMode||"reassignment"}.`);
+ addMsg(t,"system",`${cw.name} resolved the ticket while owning it. Your handoff quality still affects your score and supervisor review.`,true);
+ finalizeTicket(t,"Resolved by Teammate",{showReport:state.selected===t.id});
+}
+window.askCoworkerForHelp=askCoworkerForHelp;window.assignToCoworker=assignToCoworker;window.tradeWithCoworker=tradeWithCoworker;window.dumpToSharedQueue=dumpToSharedQueue;window.recallFromCoworker=recallFromCoworker;
+
 function teamLoad(id){
  if(!state.teamLoads[id]){
    const h=stableRank(`${id}-${state.career.shifts+1}-${state.difficulty}`)%100;
@@ -2578,11 +3179,16 @@ function teamLoad(id){
  }
  return state.teamLoads[id];
 }
-function teamResponseDelay(t,teamId){
- const tm=supportTeam(teamId),load=teamLoad(teamId),factor=load==="Low"?.76:load==="High"?1.42:1;
- let ms=((tm?.base?.[0]||14)+(Math.random()*((tm?.base?.[1]||36)-(tm?.base?.[0]||14))))*1000*factor;
+function teamResponseDelay(t,teamId,phase="review"){
+ const tm=supportTeam(teamId),load=teamLoad(teamId),factor=load==="Low"?.76:load==="High"?1.42:1,behavior=teamBehavior(teamId);
+ let ms=((tm?.base?.[0]||14)+(Math.random()*((tm?.base?.[1]||36)-(tm?.base?.[0]||14))))*1000*factor*behavior.speed;
  if(t.priority==="Critical")ms*=.58;else if(t.priority==="High")ms*=.82;
- return Math.round(Math.max(5000,Math.min(80000,ms)));
+ if(phase==="work"){
+   if(t.handoffGrade==="Excellent")ms*=.68;
+   else if(t.handoffGrade==="Adequate")ms*=.90;
+   else if(t.specialistMercy)ms*=.92;
+ }
+ return Math.round(Math.max(4500,Math.min(80000,ms)));
 }
 function specialistName(teamId){const tm=supportTeam(teamId);return rand(tm?.specialists||["Specialist"])}
 function addSpecialistMsg(t,teamId,text,name=null){
@@ -2594,13 +3200,13 @@ function teamHistory(t,teamId,action,note=""){
  t.teamHistory.push({time:nowStamp(),teamId,team:tm?.name||teamId,action,note});
 }
 function specialistEvidenceRequirement(t){
- const sc=getScenario(t),c=getCause(t);
- const min=t.priority==="Critical"?1:state.difficulty==="Trainee"?1:state.difficulty==="Service Agent"?2:state.difficulty==="Senior Agent"?2:3;
+ const sc=getScenario(t),c=getCause(t),min=specialistMinimumEvidence(t);
  if(t.useful<min){
-   const missing=(sc.diagnostics||[]).find(a=>!t.facts.includes(a[0])&&c.answers?.[a[0]]);
-   return {type:"fact",id:missing?.[0]||null,text:missing?`Please collect: ${missing[1]}.`:"Please collect additional symptoms, impact, and an exact error before resubmitting."};
+   const candidates=(sc.diagnostics||[]).filter(a=>!t.facts.includes(a[0])&&c.answers?.[a[0]]);
+   const missing=candidates.sort((a,b)=>stableRank(`${t.id}:${a[0]}:specialist`)-stableRank(`${t.id}:${b[0]}:specialist`))[0];
+   return {type:"fact",id:missing?.[0]||null,label:missing?.[1]||null,text:missing?`Please collect "${missing[1]}" and document the result. We need that evidence before we can distinguish a service-side issue from a desk-level cause.`:"Please collect additional symptoms, impact, and an exact error before resubmitting."};
  }
- if(state.difficulty!=="Trainee"&&(t.notes||"").trim().length<12&&t.useful<min+2)return {type:"notes",id:null,text:"Please document the troubleshooting already performed and the observed results before resubmitting."};
+ if(state.difficulty!=="Trainee"&&(t.notes||"").trim().length<12&&t.useful<min+2)return {type:"notes",id:null,label:"Internal troubleshooting notes",text:`Please document the troubleshooting already performed and the observed results before resubmitting. We can see ${t.useful} useful check${t.useful===1?"":"s"}, but the handoff does not explain what they showed.`};
  return null;
 }
 function specialistReturn(t,teamId,text,kind="kickback"){
@@ -2620,61 +3226,116 @@ function assignToTeam(teamId){
  }
  advanceTime(4);
  const intent=t.pendingEscalationAction;t.pendingEscalationAction=null;
- t.escalationAttempts++;state.teamStats.assignments++;t.escalated=true;t.assignmentQueue=tm.name;t.specialistState="reviewing";t.status=`Assigned — ${tm.name}`;t.waiting=true;
+ t.escalationAttempts++;state.teamStats.assignments++;t.escalated=true;t.assignmentQueue=tm.name;t.specialistState="reviewing";t.status=`Assigned — ${tm.name}`;t.waiting=true;t.specialistAccepted=false;t.acceptedTeamId=null;t.specialistMercy=false;t.specialistAcceptedWithWarning=false;
  teamHistory(t,teamId,"Assigned",intent?`Escalation action: ${intent.label}`:"Manual specialist assignment.");
  addMsg(t,"agent",`I'm routing this to our ${tm.name} team for specialist review.`);t.publicCount++;
  addMsg(t,"system",`${tm.name} received the assignment. Queue load: ${teamLoad(teamId)}.`,true);
- state.pending.push({type:"specialistReview",ticketId:t.id,teamId,intentCorrect:intent?!!intent.correct:null,due:Date.now()+teamResponseDelay(t,teamId)});
+ state.pending.push({type:"specialistReview",ticketId:t.id,teamId,intentCorrect:intent?!!intent.correct:null,due:Date.now()+teamResponseDelay(t,teamId,"review")});
  saveState();renderAll();
 }
-function processSpecialistReview(t,p){
- const teamId=p.teamId,tm=supportTeam(teamId),expected=expectedSpecialistTeamId(t),c=getCause(t);
- if(!tm)return;
- if(!causeRequiresSpecialist(t)){
-   t.wrongTeamAssignments++;state.teamStats.wrongQueue++;t.irrelevant+=2;
-   specialistReturn(t,teamId,rand([
-     "This appears service-desk resolvable and does not require our queue. Please complete local troubleshooting before escalating.",
-     "We reviewed the ticket and do not see a specialist-tier issue yet. Returning to Service Desk.",
-     "This does not currently meet escalation criteria. Please troubleshoot at the desk."
-   ]));
-   return;
- }
- if(p.intentCorrect===false){
-   t.wrongTeamAssignments++;state.teamStats.wrongQueue++;t.irrelevant+=2;
-   specialistReturn(t,teamId,"The requested escalation action does not match the evidence in the ticket. Please reassess the issue before routing it again.");
-   return;
- }
- if(teamId!==expected){
-   t.wrongTeamAssignments++;state.teamStats.wrongQueue++;t.irrelevant+=2;
-   const autoForward=Math.random()<.16;
-   if(autoForward){
-     const to=supportTeam(expected);t.teamReroutes++;state.teamStats.reroutes++;t.assignmentQueue=to.name;t.specialistState="reviewing";t.status=`Rerouted — ${to.name}`;
-     addSpecialistMsg(t,teamId,`This is not owned by ${tm.name}. We forwarded it internally to ${to.name}, but the original routing was incorrect.`);
-     teamHistory(t,teamId,"Internally rerouted",`Forwarded to ${to.name}.`);
-     teamHistory(t,expected,"Received internal reroute",`Forwarded from ${tm.name}.`);
-     state.pending.push({type:"specialistReview",ticketId:t.id,teamId:expected,intentCorrect:true,due:Date.now()+teamResponseDelay(t,expected)});
-   }else{
-     specialistReturn(t,teamId,rand([
-       "This ticket is outside our ownership. Returning it to Service Desk for correct routing.",
-       "Wrong support queue. The symptoms do not align with our service ownership.",
-       "We reviewed the ticket and this belongs elsewhere. Please verify service ownership before reassigning."
-     ]));
-   }
-   return;
- }
- const missing=specialistEvidenceRequirement(t);
- if(missing){
-   t.specialistInfoRequest=missing;specialistReturn(t,teamId,missing.text,"info");return;
- }
- t.specialistInfoRequest=null;t.specialistAccepted=true;t.acceptedTeamId=teamId;t.specialistState="accepted";t.status=`With ${tm.name}`;t.assignmentQueue=tm.name;t.waiting=true;t.useful+=2;state.teamStats.accepted++;
- const spec=specialistName(teamId);addSpecialistMsg(t,teamId,rand([
+
+function acceptSpecialistHandoff(t,teamId,grade,{mercy=false,missing=null}={}){
+ const tm=supportTeam(teamId),spec=specialistName(teamId),min=specialistMinimumEvidence(t);
+ t.specialistInfoRequest=null;t.specialistAccepted=true;t.acceptedTeamId=teamId;t.specialistState="accepted";t.status=`With ${tm.name}`;t.assignmentQueue=tm.name;t.waiting=true;
+ t.specialistMercy=!!mercy;t.specialistSuggestedDiagnostic=null;t.specialistSuggestedFix=null;
+ state.teamStats.accepted++;t.useful+=mercy?1:2;
+ recordHandoffGrade(t,teamId,grade,mercy?"Accepted despite incomplete evidence.":"Accepted for specialist investigation.");
+ let warning=mercy;
+ if(!mercy&&grade==="Adequate"&&((t.notes||"").trim().length<40||t.useful<=min+2))warning=Math.random()<.24;
+ t.specialistAcceptedWithWarning=warning;
+ if(grade==="Excellent"){state.teamStats.excellentHandoffs++;t.specialistExcellentHandoffs=(t.specialistExcellentHandoffs||0)+1}
+ if(mercy){state.teamStats.mercyAccepts++;state.teamStats.weakHandoffs++;t.specialistWeakHandoffs=(t.specialistWeakHandoffs||0)+1}
+ if(warning)state.teamStats.acceptedWithWarning++;
+ let text;
+ if(mercy)text=specialistMercyMessage(t,teamId,missing,grade);
+ else if(grade==="Excellent")text=rand([
+   "Excellent handoff. The evidence, scope, and notes are exactly what we need. We can move straight into the specialist investigation.",
+   "Accepted — strong handoff. Thanks for including the useful checks and results; this should move quickly.",
+   "This is a clean escalation. We have enough evidence to start at the likely service-side cause instead of repeating Service Desk work."
+ ]);
+ else if(warning)text=rand([
+   "We'll take this. The handoff is adequate, though a little more detail in the notes would make the investigation cleaner next time.",
+   "Accepted. We have enough to proceed, but please include the observed results more explicitly on the next handoff.",
+   "We can work this as-is. It's sufficient, not ideal — a stronger evidence summary would save some specialist time."
+ ]);
+ else text=rand([
    "Assignment accepted. The troubleshooting supplied is sufficient for specialist investigation.",
    "Accepted. We have enough evidence to work this from the specialist queue.",
    "We own this issue and have started investigation."
- ]),spec);
- teamHistory(t,teamId,"Accepted","Specialist investigation started.");
- const progress=Math.random()<.34;
- state.pending.push({type:progress?"specialistProgress":"specialistResolution",ticketId:t.id,teamId,specialist:spec,due:Date.now()+teamResponseDelay(t,teamId)});
+ ]);
+ addSpecialistMsg(t,teamId,text,spec);
+ teamHistory(t,teamId,mercy?"Courtesy acceptance":grade==="Excellent"?"Excellent handoff":"Accepted",`${grade} handoff. Specialist investigation started.`);
+ const progressChance=grade==="Excellent"?.16:mercy?.38:.30;
+ const progress=Math.random()<progressChance;
+ state.pending.push({type:progress?"specialistProgress":"specialistResolution",ticketId:t.id,teamId,specialist:spec,due:Date.now()+teamResponseDelay(t,teamId,"work")});
+}
+
+function processSpecialistReview(t,p){
+ const teamId=p.teamId,tm=supportTeam(teamId),expected=expectedSpecialistTeamId(t),c=getCause(t),sc=getScenario(t);
+ if(!tm)return;
+ t.specialistMercy=false;t.specialistAcceptedWithWarning=false;
+ const likelyFix=(sc.fixes||[]).find(f=>f[0]===c.correct);
+ if(!causeRequiresSpecialist(t)){
+   t.wrongTeamAssignments++;state.teamStats.wrongQueue++;t.irrelevant+=2;recordHandoffGrade(t,teamId,"Poor","Issue appears Service Desk resolvable.");
+   let text=rand([
+     "This appears service-desk resolvable and does not require our queue. Please complete local troubleshooting before escalating.",
+     "We reviewed the ticket and do not see a specialist-tier issue yet. Returning to Service Desk.",
+     "This does not currently meet escalation criteria. Please troubleshoot at the desk."
+   ]);
+   if(likelyFix&&Math.random()<specialistAdviceChance(t,teamId)){
+     t.specialistSuggestedFix=likelyFix[0];state.teamStats.adviceReturns++;
+     text+=` Before you send this anywhere else, we'd try: ${likelyFix[1]}.`;
+   }
+   specialistReturn(t,teamId,text);return;
+ }
+ if(p.intentCorrect===false){
+   t.wrongTeamAssignments++;state.teamStats.wrongQueue++;t.irrelevant+=2;recordHandoffGrade(t,teamId,"Poor","Escalation action did not match the evidence.");
+   let text="The requested escalation action does not match the evidence in the ticket. Please reassess the issue before routing it again.";
+   if(Math.random()<specialistAdviceChance(t,teamId)){
+     state.teamStats.adviceReturns++;
+     const missing=specialistEvidenceRequirement(t);
+     if(missing)text+=" "+specialistAdviceText(t,teamId,missing);
+     else text+=` The evidence we can see is more consistent with "${c.label}" than with the escalation action you selected.`;
+   }
+   specialistReturn(t,teamId,text);return;
+ }
+ if(teamId!==expected){
+   t.wrongTeamAssignments++;state.teamStats.wrongQueue++;t.irrelevant+=2;recordHandoffGrade(t,teamId,"Wrong Team",`Expected ownership: ${supportTeam(expected)?.name||expected}.`);
+   const autoForward=Math.random()<specialistInternalRerouteChance(teamId);
+   if(autoForward){
+     const to=supportTeam(expected);t.teamReroutes++;state.teamStats.reroutes++;t.assignmentQueue=to.name;t.specialistState="reviewing";t.status=`Rerouted — ${to.name}`;
+     addSpecialistMsg(t,teamId,`This belongs to ${to.name}, not ${tm.name}. Our queue is ${teamLoad(teamId).toLowerCase()}, so we're forwarding it internally rather than bouncing it back. The original routing will still count against handoff quality.`);
+     teamHistory(t,teamId,"Internally rerouted",`Wrong-team handoff forwarded to ${to.name}.`);
+     teamHistory(t,expected,"Received internal reroute",`Forwarded from ${tm.name}.`);
+     state.pending.push({type:"specialistReview",ticketId:t.id,teamId:expected,intentCorrect:true,due:Date.now()+teamResponseDelay(t,expected,"review")});
+   }else{
+     const advice=Math.random()<specialistAdviceChance(t,teamId);
+     const to=supportTeam(expected);
+     specialistReturn(t,teamId,advice
+       ?`This is outside ${tm.name}'s ownership. Based on the symptoms, ${to.name} is the queue that should own it. Please route it there after checking the handoff evidence.`
+       :rand(["This ticket is outside our ownership. Returning it to Service Desk for correct routing.","Wrong support queue. The symptoms do not align with our service ownership.","We reviewed the ticket and this belongs elsewhere. Please verify service ownership before reassigning."]));
+     if(advice)state.teamStats.adviceReturns++;
+   }
+   return;
+ }
+ const hardBlock=specialistHardBlock(t);
+ if(hardBlock){
+   const missing={type:"authorization",id:null,text:hardBlock};t.specialistInfoRequest=missing;recordHandoffGrade(t,teamId,"Blocked",hardBlock);
+   specialistReturn(t,teamId,hardBlock,"info");return;
+ }
+ const missing=specialistEvidenceRequirement(t),grade=specialistHandoffGrade(t,teamId);
+ if(missing){
+   const mercyChance=specialistMercyChance(t,teamId,grade);
+   if(Math.random()<mercyChance){acceptSpecialistHandoff(t,teamId,grade,{mercy:true,missing});return}
+   t.specialistInfoRequest=missing;recordHandoffGrade(t,teamId,grade,missing.text);
+   if(Math.random()<specialistAdviceChance(t,teamId)){
+     state.teamStats.adviceReturns++;
+     const advice=specialistAdviceText(t,teamId,missing);
+     specialistReturn(t,teamId,advice,"info");
+   }else specialistReturn(t,teamId,missing.text,"info");
+   return;
+ }
+ acceptSpecialistHandoff(t,teamId,grade);
 }
 function processSpecialistProgress(t,p){
  const tm=supportTeam(p.teamId);if(!tm)return;
@@ -2685,7 +3346,7 @@ function processSpecialistProgress(t,p){
    "Update: investigation is active. No additional Service Desk action is needed right now."
  ]),p.specialist);
  teamHistory(t,p.teamId,"Progress update","Specialist investigation continues.");
- state.pending.push({type:"specialistResolution",ticketId:t.id,teamId:p.teamId,specialist:p.specialist,due:Date.now()+Math.max(7000,teamResponseDelay(t,p.teamId)*.72)});
+ state.pending.push({type:"specialistResolution",ticketId:t.id,teamId:p.teamId,specialist:p.specialist,due:Date.now()+Math.max(6000,teamResponseDelay(t,p.teamId,"work")*.72)});
 }
 function specialistResolutionText(t,teamId){
  const tm=supportTeam(teamId),cause=getCause(t);
@@ -2807,7 +3468,8 @@ window.showOperationsBoard=showOperationsBoard;
 
 function createTicket(scenario,forcedCauseId=null,forcedEmployeeId=null){
  const cause=forcedCauseId?(scenario.causes.find(c=>c.id===forcedCauseId)||rand(scenario.causes)):rand(scenario.causes);
- const employee=forcedEmployeeId?(state.employees.find(e=>e.id===forcedEmployeeId)||chooseEmployeeForScenario(scenario)):chooseEmployeeForScenario(scenario);
+ const forcedEmployee=forcedEmployeeId?state.employees.find(e=>e.id===forcedEmployeeId):null;
+ const employee=forcedEmployee&&!forcedEmployee.accountDisabledByAgent?forcedEmployee:chooseEmployeeForScenario(scenario);
  const p=PERSONALITIES.find(x=>x.id===employee.personality)||rand(PERSONALITIES),name=employee.name,dept=employee.department;
  const supervisor=employee.supervisorName||pickActorName([name]),manager=employee.managerName||pickActorName([name,supervisor]);
  const actors=createOrgActors(scenario,dept,supervisor,manager,name);
@@ -2826,7 +3488,7 @@ function createTicket(scenario,forcedCauseId=null,forcedEmployeeId=null){
    approval:makeApprovalProfile(scenario,cause,actors,state.clock),actors,badDiagnostics:chooseBadDiagnostics(),
    history:makeTicketHistory(scenario,cause,name,employee),attachments:makeAttachments(scenario,cause),closureHistory:[],reopenCount:0,reopenPenalty:0,
    reliability:Math.random()<.82?employee.infoStyle:chooseReliability(p.id),misledOnce:false,relatedChecked:false,incidentKey:null,incidentSeedLabel:null,relatedKnown:false,userMadeWorse:false,selfResolved:false,
-   proactiveFacts:[],assignmentQueue:"Service Desk",teamHistory:[],specialistState:"none",escalationAttempts:0,teamKickbacks:0,wrongTeamAssignments:0,teamInfoReturns:0,teamReroutes:0,teamRecalls:0,specialistAccepted:false,acceptedTeamId:null,specialistResolution:false,specialistInfoRequest:null,pendingEscalationAction:null,worldGenerated:false,worldEventId:null,worldEventKnown:false,worldContextSeen:false,vipTicket:false,careerCounted:false,clarification:null,resolutionFollowupReady:false,request:null
+   proactiveFacts:[],assignmentQueue:"Service Desk",teamHistory:[],specialistState:"none",escalationAttempts:0,teamKickbacks:0,wrongTeamAssignments:0,teamInfoReturns:0,teamReroutes:0,teamRecalls:0,specialistAccepted:false,acceptedTeamId:null,specialistResolution:false,specialistInfoRequest:null,specialistSuggestedDiagnostic:null,specialistSuggestedFix:null,handoffGrade:null,handoffHistory:[],specialistMercy:false,specialistAcceptedWithWarning:false,specialistWeakHandoffs:0,specialistExcellentHandoffs:0,ownerAgentId:"player",coworkerState:"none",coworkerId:null,coworkerHistory:[],coworkerSuggestedDiagnostic:null,coworkerSuggestedFix:null,coworkerDumped:false,coworkerDumpPoints:0,coworkerAuditPoints:0,coworkerTransferMode:null,coworkerResolved:false,tradedFromCoworker:false,sharedQueue:false,pendingEscalationAction:null,worldGenerated:false,worldEventId:null,worldEventKnown:false,worldContextSeen:false,vipTicket:false,careerCounted:false,clarification:null,resolutionFollowupReady:false,request:null,requesterAccountDeleted:false,deletedTicket:false,maliciousAction:null,maliciousCaught:false,misconductActions:[],auditAttributionHidden:false,auditLastOutcome:null,responsePolicy:null,reopenRouting:"player",noCsat:false,alternateValidated:false,requesterWithdrawn:false,noLongerReproducible:false
  };
  hydrateRequestState(ticket);if(ticket.request)state.requestStats.catalogTickets++;
  employee.lastTicketId=ticket.id;
@@ -2838,15 +3500,163 @@ function getTicket(){return state.tickets.find(t=>t.id===state.selected)}
 function getPerson(t){return PERSONALITIES.find(p=>p.id===t.personality)||PERSONALITIES[0]}
 function getEmployee(t){return employeeForTicket(t)}
 
+
+function clonePlain(v){return JSON.parse(JSON.stringify(v))}
+function persistentSnapshot(){
+ return clonePlain({career:state.career,careerProfile:state.careerProfile,careerArchive:state.careerArchive,discipline:state.discipline,performance:state.performance,supervisor:state.supervisor,employees:state.employees,relationshipStats:state.relationshipStats,worldCareer:state.worldCareer,coworkers:state.coworkers,coworkerStats:state.coworkerStats,maliciousStats:state.maliciousStats,settings:state.settings});
+}
+function restoreFreeplayBaseline(){
+ if(!state?.freeplayBaseline)return false;
+ const b=clonePlain(state.freeplayBaseline),typing=clonePlain(getTypingPracticeStats());
+ const restored=defaultState();
+ ["career","careerProfile","careerArchive","discipline","performance","supervisor","employees","relationshipStats","worldCareer","coworkers","coworkerStats","maliciousStats"].forEach(k=>{if(b[k]!==undefined)restored[k]=b[k]});
+ restored.settings={...restored.settings,...(b.settings||{}),typing};
+ state=normalizeState(restored);syncTypingPracticeStats();return true;
+}
+function freeplayScenarioTypes(sc){return [...new Set((sc.causes||[]).map(c=>expectedTicketTypeFor(sc,c)))]}
+function freeplayScenarioMatches(sc,term="",priority="",type=""){
+ const hay=`${sc.id} ${sc.cat} ${(sc.subject||[]).join(" ")} ${(sc.open||[]).join(" ")} ${freeplayScenarioTypes(sc).join(" ")}`.toLowerCase();
+ return (!term||hay.includes(term.toLowerCase()))&&(!priority||sc.priority===priority)&&(!type||freeplayScenarioTypes(sc).includes(type));
+}
+function freeplayScenarioCard(sc){
+ const types=freeplayScenarioTypes(sc);
+ return `<div class="freeplaycard"><div class="freeplaymeta"><span class="tag">${esc(sc.priority)}</span>${types.map(x=>`<span class="tag ${x==="Incident"||x==="Security Incident"?"":"requestbadge"}">${esc(x)}</span>`).join("")}</div><h4>${esc(sc.subject?.[0]||sc.id)}</h4><div>${esc(sc.cat)} · ${sc.causes.length} hidden root-cause variant${sc.causes.length===1?"":"s"}</div><div class="requestbuttons"><button class="primary" type="button" onclick="addFreeplayTicket('${esc(sc.id)}')">Add Ticket</button></div></div>`;
+}
+function currentFreeplayFilter(){
+ return {term:document.getElementById("freeplaySearch")?.value?.trim()||"",priority:document.getElementById("freeplayPriority")?.value||"",type:document.getElementById("freeplayType")?.value||""};
+}
+function renderFreeplayPickerList(){
+ const list=document.getElementById("freeplayScenarioList");if(!list)return;
+ const f=currentFreeplayFilter(),matches=SCENARIOS.filter(sc=>freeplayScenarioMatches(sc,f.term,f.priority,f.type));
+ list.innerHTML=matches.map(freeplayScenarioCard).join("")||'<div class="small">No scenarios match those filters.</div>';
+ const count=document.getElementById("freeplayMatchCount");if(count)count.textContent=`${matches.length} scenario${matches.length===1?"":"s"} available`;
+}
+function showFreeplayTicketPicker(){
+ if(!state.freeplay){
+   showModal(`<div class="mh"><h2>Freeplay Ticket Picker</h2><button class="secondary" onclick="hideModal()">Close</button></div><div class="mb"><div class="freeplaynote"><b>Freeplay is a separate practice desk.</b><br>Start a new session and choose <b>Freeplay</b> under Desk Mode / Session. It begins with an empty queue, lets you add any scenario whenever you want, and does not commit ticket results to your career record.</div></div><div class="mf"><button class="secondary" onclick="hideModal()">Cancel</button><button class="primary" onclick="hideModal();newShift()">Open New Shift Setup</button></div>`);
+   return;
+ }
+ const fs=state.freeplayStats||defaultState().freeplayStats,avg=fs.completed?Math.round(fs.scoreSum/fs.completed):0;
+ showModal(`<div class="mh"><h2>Freeplay — Add Tickets</h2><button class="secondary" onclick="hideModal()">Close</button></div><div class="mb"><div class="freeplaynote"><b>Practice desk:</b> add only the tickets you want. Root causes remain hidden and are randomized normally. Freeplay results are isolated from career progression, supervisor reviews, promotion, and closure discipline.</div>
+ <div class="freeplaystats"><div class="stat"><b>${fs.added||0}</b><span>Added</span></div><div class="stat"><b>${fs.completed||0}</b><span>Completed</span></div><div class="stat"><b>${avg||"—"}</b><span>Average</span></div><div class="stat"><b>${fs.bestScore||"—"}</b><span>Best Score</span></div></div>
+ <div class="freeplaytools"><label class="sr-only" for="freeplaySearch">Search scenarios</label><input id="freeplaySearch" aria-label="Search scenarios" placeholder="Search category, subject, system, or scenario..."><label class="sr-only" for="freeplayPriority">Priority filter</label><select id="freeplayPriority" aria-label="Priority filter"><option value="">All priorities</option><option>Low</option><option>Normal</option><option>High</option><option>Critical</option></select><label class="sr-only" for="freeplayType">Type filter</label><select id="freeplayType" aria-label="Ticket type filter"><option value="">All types</option>${["Incident","Security Incident",...REQUEST_TYPES].map(x=>`<option>${esc(x)}</option>`).join("")}</select><button class="secondary" type="button" onclick="addRandomFreeplayTicket()">Add Random</button></div>
+ <div class="small" id="freeplayMatchCount" style="margin-top:6px"></div><div class="freeplaylist" id="freeplayScenarioList"></div></div><div class="mf"><button class="secondary" onclick="hideModal()">Back to Desk</button></div>`);
+ ["freeplaySearch","freeplayPriority","freeplayType"].forEach(id=>{const el=document.getElementById(id);if(el)el.oninput=renderFreeplayPickerList});
+ renderFreeplayPickerList();
+}
+function addFreeplayTicket(scenarioId){
+ if(!state.freeplay||!state.active)return;
+ const sc=SCENARIOS.find(x=>x.id===scenarioId);if(!sc)return;
+ const t=createTicket(sc);t.freeplayAdded=true;state.tickets.push(t);state.sessionSize=state.tickets.length;state.freeplayStats.added++;state.stats.peakQueue=Math.max(state.stats.peakQueue||0,state.tickets.filter(x=>!x.resolved).length);state.selected=t.id;
+ hideModal();saveState();renderAll();document.querySelector?.(`.ticketrow[data-id="${t.id}"]`)?.focus?.();toast(`${t.id} added to Freeplay.`);
+}
+function addRandomFreeplayTicket(){
+ if(!state.freeplay)return;
+ const f=currentFreeplayFilter(),pool=SCENARIOS.filter(sc=>freeplayScenarioMatches(sc,f.term,f.priority,f.type));
+ if(!pool.length){toast("No matching scenarios to add.");return}
+ addFreeplayTicket(rand(pool).id);
+}
+window.showFreeplayTicketPicker=showFreeplayTicketPicker;window.addFreeplayTicket=addFreeplayTicket;window.addRandomFreeplayTicket=addRandomFreeplayTicket;
+
+const TYPING_WORDS=("account access action active adapter address admin alert application approval archive asset assign attach audio authentication backup badge browser cable cache calendar case category change client cloud code computer confirm connection contact correct credential customer data database delete desktop device diagnostic directory document email employee endpoint error escalation ethernet evidence file filter firewall folder form gateway group hardware help identity incident install internet issue keyboard laptop license login mailbox manager message monitor network note notification password permission phone policy printer priority profile queue record request reset resolution restart review role route security service session shared software specialist status storage support system team ticket tool update user vendor verify version vpn web wifi window workflow " +
+"accurate balance basic business careful clear complete consistent controlled critical current detailed efficient exact followup helpful information normal pending practice process professional quick reliable remote standard temporary troubleshoot typing useful validation").split(/\s+/);
+const TYPING_SENTENCES=[
+ "Please confirm the exact error message and tell me when the problem started.",
+ "The account is active, but the user still cannot reach the shared folder.",
+ "Document the troubleshooting steps before routing the ticket to a specialist team.",
+ "A successful fix should be tested with the requester before the ticket is closed.",
+ "Check whether the issue affects one person, several people, or the entire department.",
+ "The service request needs a business reason, an approved owner, and the correct access level.",
+ "Restarting can be useful, but only when the symptoms make a restart a reasonable diagnostic step.",
+ "The user reports that email works on the web but not in the desktop application.",
+ "Verify the device name, network connection, and current software version before escalating.",
+ "A clear internal note should record the symptom, evidence, action, and validation result.",
+ "The printer queue is clear, the device is online, and another workstation can print normally.",
+ "Temporary privileged access requires a defined purpose, an expiration date, and proper authorization.",
+ "The requester says the problem returned after working correctly for several minutes.",
+ "Review the ticket history before repeating troubleshooting that another agent already completed.",
+ "Do not treat a new access request as though an existing service has suddenly stopped working.",
+ "The specialist team accepted the handoff and is investigating the service-side root cause.",
+ "A production outage can generate several related tickets before the common cause is obvious.",
+ "Good service desk communication is concise, specific, professional, and easy for the requester to follow."
+];
+const TYPING_SERVICE=[
+ "Caller reports intermittent VPN failure after a recent password change. Confirm normal internet access, verify the exact VPN error, and check whether the approved client version is installed.",
+ "Requester needs access to a restricted department folder. Determine whether this is lost existing access or a brand-new entitlement, identify the data owner, and document the business need before fulfillment.",
+ "Several employees cannot open the same production workflow. Check service status and related tickets before treating each report as an isolated workstation problem.",
+ "A new employee needs standard accounts and baseline application access. Collect the role, department, start date, sponsor, and any nonstandard requirements before submitting fulfillment.",
+ "The user says the application crashes immediately after launch. Ask whether coworkers are affected, capture the exact error text, and determine whether a recent update changed the environment.",
+ "A vendor requests privileged production access for troubleshooting. Verify the supported scope, approval chain, expiration, application ownership, and security requirements before any access is granted."
+];
+let typingSession=null,typingTimer=null;
+function typingGenerateTarget(mode,duration){
+ const targetChars=Math.max(500,Math.round(duration*11));
+ if(mode==="words"){let out=[];while(out.join(" ").length<targetChars)out.push(rand(TYPING_WORDS));return out.join(" ").slice(0,targetChars)}
+ const source=mode==="service"?TYPING_SERVICE:TYPING_SENTENCES;let out=[];while(out.join(" ").length<targetChars)out.push(rand(source));return out.join(" ").slice(0,targetChars);
+}
+function typingMetrics(){
+ if(!typingSession)return {wpm:0,accuracy:100,correct:0,typed:0,elapsed:0,remaining:0};
+ const input=document.getElementById("typingInput"),typed=input?.value||"",target=typingSession.target;
+ let correct=0;for(let i=0;i<typed.length;i++)if(typed[i]===target[i])correct++;
+ const elapsed=typingSession.startedAt?Math.min(typingSession.duration,(Date.now()-typingSession.startedAt)/1000):0,mins=Math.max(elapsed/60,1/60);
+ const wpm=typingSession.startedAt?Math.min(300,Math.max(0,Math.round((correct/5)/mins))):0,accuracy=typed.length?Math.round((correct/typed.length*100)*10)/10:100;
+ return {wpm,accuracy,correct,typed:typed.length,elapsed,remaining:Math.max(0,typingSession.duration-elapsed)};
+}
+function renderTypingTarget(){
+ const el=document.getElementById("typingTarget"),input=document.getElementById("typingInput");if(!el||!typingSession)return;
+ const typed=input?.value||"",target=typingSession.target;let out="";
+ for(let i=0;i<target.length;i++){const cls=i<typed.length?(typed[i]===target[i]?"typed-ok":"typed-bad"):i===typed.length?"typing-current":"typing-pending";out+=`<span class="${cls}">${esc(target[i])}</span>`}
+ el.innerHTML=out;const current=el.querySelector?.(".typing-current");current?.scrollIntoView?.({block:"nearest"});
+ const m=typingMetrics();const map={typingWpm:m.wpm,typingAccuracy:m.accuracy+"%",typingTime:Math.ceil(m.remaining)+"s",typingChars:m.correct};Object.entries(map).forEach(([id,v])=>{const x=document.getElementById(id);if(x)x.textContent=v});
+}
+function typingStart(){
+ if(typingTimer){clearInterval(typingTimer);typingTimer=null}
+ const mode=document.getElementById("typingMode")?.value||"words",duration=Number(document.getElementById("typingDuration")?.value||60);
+ typingSession={mode,duration,target:typingGenerateTarget(mode,duration),startedAt:null,finished:false};const input=document.getElementById("typingInput");if(input){input.value="";input.disabled=false;input.focus()}
+ const result=document.getElementById("typingResult");if(result)result.innerHTML='<span class="small">Begin typing to start the timer.</span>';renderTypingTarget();
+}
+function typingInputChanged(){
+ if(!typingSession||typingSession.finished)return;
+ if(!typingSession.startedAt){typingSession.startedAt=Date.now();typingTimer=setInterval(typingTick,250)}
+ renderTypingTarget();const input=document.getElementById("typingInput");if((input?.value||"").length>=typingSession.target.length)typingFinish("Passage complete");
+}
+function typingTick(){
+ if(!typingSession||typingSession.finished)return;
+ renderTypingTarget();if(typingMetrics().remaining<=0)typingFinish("Time");
+}
+function typingFinish(reason="Complete"){
+ if(!typingSession||typingSession.finished)return;typingSession.finished=true;if(typingTimer){clearInterval(typingTimer);typingTimer=null}
+ const m=typingMetrics(),input=document.getElementById("typingInput");if(input)input.disabled=true;
+ const st=getTypingPracticeStats();
+ st.sessions++;st.lastWpm=m.wpm;st.lastAccuracy=m.accuracy;st.bestWpm=Math.max(st.bestWpm||0,m.wpm);st.bestAccuracy=Math.max(st.bestAccuracy||0,m.accuracy);st.totalSeconds=(st.totalSeconds||0)+Math.round(m.elapsed);persistTypingPracticeStats(st);
+ const result=document.getElementById("typingResult");if(result)result.innerHTML=`<div class="typing-result"><b>${esc(reason)} — ${m.wpm} WPM · ${m.accuracy}% accuracy</b><br>${m.correct} correct characters in ${Math.round(m.elapsed)} seconds.<div class="typing-best">Best WPM: ${st.bestWpm} · Best accuracy: ${st.bestAccuracy}% · Sessions: ${st.sessions}</div></div>`;
+ renderTypingTarget();
+}
+function showTypingPractice(){
+ const st=getTypingPracticeStats();
+ showModal(`<div class="mh"><h2>Typing Practice</h2><button class="secondary" onclick="hideModal()">Close</button></div><div class="mb"><div class="typing-shell"><div class="freeplaynote"><b>Typing practice.</b><br>No career consequences here—just type the passage and track WPM and accuracy. Your actual typing skill now also matters in the fictional <b>Outrun the Audit</b> race used by certain terrible administrative decisions.</div>
+ <div class="typing-controls"><label>Drill<select id="typingMode"><option value="words">Words</option><option value="sentences">Sentences</option><option value="service">Service Desk Text</option></select></label><label>Length<select id="typingDuration"><option value="30">30 seconds</option><option value="60" selected>60 seconds</option><option value="120">120 seconds</option></select></label><button class="primary" type="button" onclick="typingStart()">New Drill</button></div>
+ <div class="typing-stats"><div class="typing-stat"><b id="typingWpm">0</b><span>WPM</span></div><div class="typing-stat"><b id="typingAccuracy">100%</b><span>Accuracy</span></div><div class="typing-stat"><b id="typingTime">60s</b><span>Remaining</span></div><div class="typing-stat"><b id="typingChars">0</b><span>Correct Chars</span></div></div>
+ <div class="typing-target" id="typingTarget" aria-label="Typing target"></div><label class="sr-only" for="typingInput">Type the displayed passage</label><textarea class="typing-input" id="typingInput" aria-label="Typing practice input" placeholder="Choose New Drill, then begin typing…" disabled></textarea><div id="typingResult"><span class="small">Best WPM: ${st.bestWpm||0} · Best accuracy: ${st.bestAccuracy||0}% · Sessions: ${st.sessions||0}</span></div></div></div><div class="mf"><button class="secondary" onclick="hideModal()">Done</button></div>`);
+ const input=document.getElementById("typingInput");if(input){input.oninput=typingInputChanged;input.onpaste=e=>{e.preventDefault();toast("Pasting is disabled in typing practice.")}}typingStart();
+}
+window.showTypingPractice=showTypingPractice;window.typingStart=typingStart;window.typingInputChanged=typingInputChanged;window.typingFinish=typingFinish;
+
 function startShift(){
  let size=document.getElementById("sessionSelect").value;
+ if(state.freeplay&&state.freeplayBaseline)restoreFreeplayBaseline();
  const priorCareer=state.career||defaultState().career, priorCareerProfile=state.careerProfile||newCareerProfile(1), priorCareerArchive=state.careerArchive||[],
  priorSettings=state.settings||defaultState().settings, priorDiscipline=state.discipline||defaultState().discipline, priorPerformance=state.performance||defaultState().performance,
  priorEmployees=state.employees||buildEmployeeDirectory(), priorRelationships=state.relationshipStats||defaultState().relationshipStats, priorSupervisor=state.supervisor||defaultState().supervisor,
- priorWorldCareer=state.worldCareer||defaultState().worldCareer;
- state=defaultState();state.career=priorCareer;state.careerProfile=priorCareerProfile;state.careerArchive=priorCareerArchive;state.settings=priorSettings;state.discipline=priorDiscipline;state.performance=priorPerformance;
- state.employees=priorEmployees;state.relationshipStats=priorRelationships;state.supervisor=priorSupervisor;state.worldCareer=priorWorldCareer;state.discipline.fired=false;state.active=true;state.difficulty=document.getElementById("difficultySelect").value;
- state.endless=size==="endless";state.sessionSize=state.endless?10:Number(size);
+ priorWorldCareer=state.worldCareer||defaultState().worldCareer, priorCoworkers=state.coworkers||buildCoworkerState(), priorCoworkerStats=state.coworkerStats||defaultState().coworkerStats, priorMaliciousStats=state.maliciousStats||defaultState().maliciousStats;
+ const baseline=size==="freeplay"?persistentSnapshot():null;
+ state=defaultState();state.career=clonePlain(priorCareer);state.careerProfile=clonePlain(priorCareerProfile);state.careerArchive=clonePlain(priorCareerArchive);state.settings=clonePlain(priorSettings);state.discipline=clonePlain(priorDiscipline);state.performance=clonePlain(priorPerformance);
+ state.employees=clonePlain(priorEmployees);state.relationshipStats=clonePlain(priorRelationships);state.supervisor=clonePlain(priorSupervisor);state.worldCareer=clonePlain(priorWorldCareer);state.coworkers=clonePlain(priorCoworkers);state.coworkerStats=clonePlain(priorCoworkerStats);state.maliciousStats=clonePlain(priorMaliciousStats);state.maliciousStats.shiftActions=0;state.maliciousStats.shiftFindings=0;state.maliciousStats.shiftEscapes=0;state.discipline.fired=false;state.active=true;state.difficulty=document.getElementById("difficultySelect").value;
+ if(size==="freeplay"){
+   state.freeplay=true;state.freeplayBaseline=baseline;state.endless=false;state.sessionSize=0;state.tickets=[];state.selected=null;state.world.initialized=false;state.stats={peakQueue:0,extraAssignedStart:0,specialAssignments:0};state.careerProfile.objectives=[];
+   document.getElementById("startModal").classList.add("hidden");saveState();renderAll();showFreeplayTicketPicker();return;
+ }
+ state.freeplay=false;state.freeplayBaseline=null;state.endless=size==="endless";state.sessionSize=state.endless?10:Number(size);
  let pool=difficultyScenarioPool();
  let count=state.endless?Math.min(12,SCENARIOS.length):Math.min(state.sessionSize,SCENARIOS.length);
  initializeWorldSchedule(count);prepareCareerObjectives();
@@ -2861,9 +3671,14 @@ function startShift(){
  document.querySelector?.('.ticketrow[aria-selected="true"]')?.focus?.();
 }
 function newShift(){
- if(state.discipline?.fired){showCareerCenter();return}
- if(state.active&&state.completed<state.tickets.length && !confirm("Start a new shift and replace the current active shift?")) return;
- const modal=document.getElementById("startModal");modal.classList.remove("hidden");modal.querySelector("select,button")?.focus?.();
+ if(state.freeplay){
+   if(!confirm("Leave Freeplay? Practice tickets and practice-only results will be discarded from the career record."))return;
+   restoreFreeplayBaseline();saveState();
+ }else{
+   if(state.discipline?.fired){showCareerCenter();return}
+   if(state.active&&state.completed<state.tickets.length && !confirm("Start a new shift and replace the current active shift?")) return;
+ }
+ const modal=document.getElementById("startModal");modal.classList.remove("hidden");modal.querySelector("select,button")?.focus?.();renderAll();
 }
 function advanceTime(min=5){
  const oldClock=state.clock;
@@ -2875,6 +3690,7 @@ function advanceTime(min=5){
    if(t.request){
      if(elapsed>t.request.targetMinutes){t.request.slaMissed=true;t.slaMissed=true;if(!t.request.slaRecorded){t.request.slaRecorded=true;state.requestStats.slaMissed++}}
    }else if(elapsed>slaFor(t.priority))t.slaMissed=true;
+   responsePolicyCheck(t);
  });
  if(state.endless && state.tickets.filter(t=>!t.resolved).length<6){
    const active=activeWorldEvents(),e=active.length&&Math.random()<.55?rand(active):null;
@@ -2893,28 +3709,36 @@ function scheduleReply(t,text,delay=null,confirm=false,complaint=false,complaint
  const due=Date.now()+delay;
  state.pending.push({type:"user",ticketId:t.id,text,due,confirm,complaint,complaintReason,keepWaiting});
  if(!confirm&&!complaint)maybeScheduleUserEvent(t);
+ if(!keepWaiting&&!complaint)beginRequesterWait(t);
  t.waiting=true;
  if(!t.resolved&&!keepWaiting)t.status="Waiting for User";
  saveState();
 }
 function reopenTicket(t,reason){
- if(!t.resolved)return;
- const oldScore=t.score||0;
+ if(!t.resolved||t.requesterAccountDeleted||t.deletedTicket)return;
+ const previousOutcome=t.outcome,reopenRoute=t.reopenRouting||"player",oldScore=t.score||0;
  t.closureHistory=t.closureHistory||[];
  t.closureHistory.push({outcome:t.outcome,score:oldScore,feedback:t.customerFeedback,rating:t.customerRating,time:nowStamp()});
  state.completed=Math.max(0,state.completed-1);state.scoreSum=Math.max(0,state.scoreSum-oldScore);
- state.career.tickets=Math.max(0,state.career.tickets-1);state.career.totalScore=Math.max(0,state.career.totalScore-oldScore);
+ if(state.freeplay){state.freeplayStats.completed=Math.max(0,(state.freeplayStats.completed||0)-1);state.freeplayStats.scoreSum=Math.max(0,(state.freeplayStats.scoreSum||0)-oldScore)}
+ else{state.career.tickets=Math.max(0,state.career.tickets-1);state.career.totalScore=Math.max(0,state.career.totalScore-oldScore)}
  t.resolved=false;t.status="Reopened";t.outcome=null;t.score=null;t.scoreBreakdown=null;t.confirmation=false;t.waiting=false;t.forceClosed=false;t.resolutionFollowupReady=false;
  t.specialistResolution=false;t.specialistState="none";t.specialistAccepted=false;t.acceptedTeamId=null;t.assignmentQueue="Service Desk";t.specialistInfoRequest=null;t.pendingEscalationAction=null;
  t.actions=(t.actions||[]).filter(a=>a!=="correct-action");t.facts=(t.facts||[]).filter(f=>f!=="fix-applied"&&f!=="specialist-finding");
  t.customerRating=null;t.customerFeedback=null;t.reopenCount=(t.reopenCount||0)+1;t.reopenPenalty=(t.reopenPenalty||0)+Math.min(12,3+t.reopenCount*2);
  recordEmployeeReopen(t);
  addMsg(t,"user",reason);
- addMsg(t,"system",`Ticket reopened by requester. Reopen count: ${t.reopenCount}.`,true);
+ if(previousOutcome==="Closed — No Requester Response")state.responseStats.policyReopens++;
+ if(previousOutcome==="Closed — No Requester Response"&&reopenRoute==="shared"){
+   t.sharedQueue=true;t.coworkerState="shared";t.ownerAgentId="player";t.status="Reopened — Shared Queue";t.waiting=true;state.responseStats.sharedReopenReroutes++;
+   addMsg(t,"system",`Ticket reopened after a policy-based no-response closure and was released to the shared Service Desk queue rather than automatically returning to the original agent.`,true);
+   state.pending.push({type:"sharedQueueReview",ticketId:t.id,due:Date.now()+3500+Math.random()*7500});
+ }else addMsg(t,"system",`Ticket reopened by requester. Reopen count: ${t.reopenCount}.`,true);
  toast(`${t.id} was reopened by ${t.user}.`);
 }
 function processPending(){
  let changed=false,now=Date.now();
+ state.tickets.forEach(t=>{if(responsePolicyCheck(t))changed=true});
  const ready=state.pending.filter(p=>p.due<=now);
  state.pending=state.pending.filter(p=>p.due>now);
  ready.forEach(p=>{
@@ -2932,7 +3756,7 @@ function processPending(){
      addMsg(t,"user",p.text);changed=true;return;
    }
    if(p.type==="userEvent"){
-     const emp=getEmployee(t);
+     const emp=getEmployee(t);restartRequesterWaitIfNeeded(t);
      if(p.event==="selfResolved"){
        t.selfResolved=true;if(emp)emp.selfHelpSuccess++;
        addMsg(t,"user",rand([
@@ -2977,12 +3801,21 @@ function processPending(){
      }
      changed=true;return;
    }
+   if(p.type==="followupReminder"){
+     const rp=ensureResponsePolicy(t);if(rp.active){rp.scheduledFollowup=true;rp.scheduledFollowupDue=true;responsePolicyCheck(t);addMsg(t,"system","Scheduled requester follow-up reminder is due.",true);if(state.selected!==t.id)toast(`Follow-up due on ${t.id}.`)}changed=true;return;
+   }
+   if(p.type==="userNudgeAck"){addMsg(t,"user",p.text);changed=true;return;}
+   if(p.type==="requesterSupervisorResponse"){processRequesterSupervisorResponse(t);changed=true;return;}
+   if(p.type==="alternateValidation"){processAlternateValidation(t);changed=true;return;}
+   if(p.type==="coworkerReview"){processCoworkerReview(t,p);changed=true;return;}
+   if(p.type==="coworkerResolution"){processCoworkerResolution(t,p);changed=true;return;}
+   if(p.type==="sharedQueueReview"){processSharedQueueReview(t);changed=true;return;}
    if(p.type==="catalogFulfillment"){processCatalogFulfillment(t);changed=true;return;}
    if(p.type==="specialistReview"){processSpecialistReview(t,p);changed=true;return;}
    if(p.type==="specialistProgress"){processSpecialistProgress(t,p);changed=true;return;}
    if(p.type==="specialistResolution"){processSpecialistResolution(t,p);changed=true;return;}
    if(p.type==="specialistConfirm"){
-     addMsg(t,"user",p.text);t.confirmation=true;t.waiting=false;finalizeTicket(t,"Resolved After Specialist Escalation",{showReport:state.selected===t.id});changed=true;return;
+     addMsg(t,"user",p.text);clearRequesterWait(t);t.confirmation=true;t.waiting=false;finalizeTicket(t,"Resolved After Specialist Escalation",{showReport:state.selected===t.id});changed=true;return;
    }
    if(p.type==="approvalDelegation"){
      processApprovalDelegation(t,p);changed=true;return;
@@ -3002,7 +3835,7 @@ function processPending(){
    addMsg(t,"user",p.text);
    if(p.complaint)registerComplaint(t,p.complaintReason||"Inappropriate communication");
    if(p.confirm){
-     t.confirmation=true;t.waiting=false;
+     clearRequesterWait(t);t.confirmation=true;t.waiting=false;
      if(t.approval?.required&&!approvalFlowApproved(t)){
        t.status="In Progress";
        addMsg(t,"system","Requester confirmed the technical result, but the required authorization is no longer valid. The ticket remains open until the approval state is resolved.",true);
@@ -3013,8 +3846,10 @@ function processPending(){
        if(state.selected!==t.id)toast(`${t.id} auto-closed after ${t.user} confirmed resolution.`);
      }
    }else{
-     t.waiting=!!p.keepWaiting;
-     t.status=p.keepWaiting?"Waiting for Approval":"In Progress";
+     if(!p.keepWaiting)restartRequesterWaitIfNeeded(t);
+     const stillWaiting=!p.keepWaiting&&ensureResponsePolicy(t).active&&responsePendingUserEvents(t).length>0;
+     t.waiting=!!p.keepWaiting||stillWaiting;
+     t.status=p.keepWaiting?"Waiting for Approval":stillWaiting?"Waiting for User":"In Progress";
      if(state.selected===t.id&&!p.keepWaiting)toast(`${t.user} replied to ${t.id}.`);
    }
    changed=true;
@@ -3097,10 +3932,10 @@ function clarificationAnswer(t,followup=false){
 function doClarification(followup=false,label=null){
  const t=getTicket();if(!t||t.resolved||!clarificationProfile(t))return;
  const c=clarificationState(t);
- if(c.exact){t.repeats++;t.irrelevant++;addMsg(t,"agent",label||"Confirm the affected system");scheduleReply(t,`I already said it's ${c.value}.`);saveState();renderAll();return}
+ if(c.exact){t.repeats++;t.irrelevant++;addMsg(t,"agent",agentChatForAction(label||"Confirm the affected system","diagnostic",t));scheduleReply(t,`I already said it's ${c.value}.`);saveState();renderAll();return}
  advanceTime(3);t.publicCount++;t.actions.push(followup?"clarify:followup":"clarify:primary");t.useful+=1;
  const prompt=label||(followup?"Ask them to check the window title, URL, or shortcut for the exact system name":clarificationProfile(t).prompt);
- addMsg(t,"agent",prompt);scheduleReply(t,clarificationAnswer(t,followup),personalityDelay(t,"normal"));saveState();renderAll();
+ addMsg(t,"agent",agentChatForAction(prompt,"diagnostic",t));scheduleReply(t,clarificationAnswer(t,followup),personalityDelay(t,"normal"));saveState();renderAll();
 }
 function freeTextLooksLikeClarification(low){
  return /\b(which|what)\s+(?:(?:production|internal|vendor|exact)\s+)?(system|application|app|program|software|service|site|portal|product|vendor)\b/.test(low)||
@@ -3149,7 +3984,7 @@ function doBadDiagnostic(id,label){
  if(opt.severity==="security"){t.securityBad+=2}
  if(opt.severity==="destructive"){t.securityBad+=1}
  if(opt.severity==="conduct"){t.professionalismHits+=1}
- addMsg(t,"agent",label);
+ addMsg(t,"agent",agentChatForAction(label,"bad",t));
  addMsg(t,"system","This was a weak, premature, unsafe, or irrelevant troubleshooting choice.",true);
  scheduleReply(t,badDiagnosticReply(t,opt));
  saveState();renderAll();
@@ -3158,15 +3993,19 @@ function doDiagnostic(id,label){
  const t=getTicket();if(!t||t.resolved)return;
  advanceTime(4);
  const repeated=t.actions.includes("q:"+id)||(t.proactiveFacts||[]).includes(id)||t.facts.includes(id);
+ const fulfilledSpecialistRequest=t.specialistInfoRequest?.id===id;
+ if(t.specialistSuggestedDiagnostic===id)t.specialistSuggestedDiagnostic=null;if(t.coworkerSuggestedDiagnostic===id)t.coworkerSuggestedDiagnostic=null;
  t.actions.push("q:"+id);t.publicCount++;
- if(repeated){t.repeats++;t.irrelevant++;addMsg(t,"agent",label);scheduleReply(t,rand(["I already answered that earlier.","I think you asked me that already.","Same answer as before.","We covered that a few messages ago.","Nothing has changed since the last time you asked."]));}
+ if(repeated){t.repeats++;t.irrelevant++;addMsg(t,"agent",agentChatForAction(label,"diagnostic",t));scheduleReply(t,rand(["I already answered that earlier.","I think you asked me that already.","Same answer as before.","We covered that a few messages ago.","Nothing has changed since the last time you asked."]));}
  else{
-   t.useful++;t.facts.push(id);addMsg(t,"agent",label);scheduleReply(t,actionReply(t,id));
+   t.useful++;t.facts.push(id);addMsg(t,"agent",agentChatForAction(label,"diagnostic",t));scheduleReply(t,actionReply(t,id));
  }
+ if(fulfilledSpecialistRequest&&!repeated){t.specialistInfoRequest=null;if(t.specialistState==="info-needed"){t.specialistState="none";t.status="In Progress"}addMsg(t,"system","The evidence requested by the specialist has now been collected. Update the notes if needed and resubmit when ready.",true)}
  saveState();renderAll();
 }
 function doFix(id,label,kind){
  const t=getTicket();if(!t||t.resolved)return;
+ if(t.specialistSuggestedFix===id)t.specialistSuggestedFix=null;if(t.coworkerSuggestedFix===id)t.coworkerSuggestedFix=null;
  const c=getCause(t);
  if(id==="linkincident"){
    const mi=activeMajorFor(t);
@@ -3175,7 +4014,7 @@ function doFix(id,label,kind){
      addMsg(t,"agent",`Associate this ticket with ${mi.id} and notify the requester of the known incident.`);
      finalizeTicket(t,"Linked to Major Incident");saveState();renderAll();return;
    }
-   t.irrelevant++;addMsg(t,"agent",label);scheduleReply(t,"What incident is this being linked to?");saveState();renderAll();return;
+   t.irrelevant++;addMsg(t,"agent",agentChatForAction(label,"fix",t));scheduleReply(t,"What incident is this being linked to?");saveState();renderAll();return;
  }
  if(id==="requestapproval"){requestNextApproval(t);return}
  if(id==="emergencyexception"){requestEmergencyException(t);return}
@@ -3198,7 +4037,7 @@ function doFix(id,label,kind){
      advanceTime(2);t.actions.push("correct-action");addMsg(t,"agent","The request cannot proceed because the required Manager approval was denied.");
      finalizeTicket(t,"Correctly Denied");saveState();renderAll();return;
    }
-   t.bad++;t.irrelevant++;addMsg(t,"agent",label);scheduleReply(t,"Why are you denying it? The approval hasn't been decided.");saveState();renderAll();return;
+   t.bad++;t.irrelevant++;addMsg(t,"agent",agentChatForAction(label,"fix",t));scheduleReply(t,"Why are you denying it? The approval hasn't been decided.");saveState();renderAll();return;
  }
  if(t.request&&id===c.correct&&kind!=="escalate"&&!t.request.fulfilled){
    advanceTime(2);t.request.unauthorizedAttempts++;state.requestStats.unauthorizedAttempts++;t.irrelevant++;
@@ -3207,7 +4046,7 @@ function doFix(id,label,kind){
    activeTab="request";saveState();renderAll();return;
  }
  advanceTime(kind==="escalate"?6:8);
- t.actions.push("fix:"+id);addMsg(t,"agent",label);
+ t.actions.push("fix:"+id);addMsg(t,"agent",agentChatForAction(label,"fix",t));
  if(kind==="bad"){t.bad++;if(["bypass","grantadmin","openattach","disablepolicy","bypasscert","sharekey","delete-now","delete-all","editlog","editdb","grantnow","exportall"].includes(id))t.securityBad+=2;else t.securityBad++;addMsg(t,"system","This action created risk or was not justified.",true);scheduleReply(t,rand(["That doesn't sound right. Is there another way?","I'm not comfortable with that approach.","Are you sure we're supposed to do that?","That seems like a pretty drastic step.","I don't think that actually addresses what I reported."]));saveState();renderAll();return;}
  if(c.approvalRequired&&id===c.correct&&kind!=="escalate"&&!approvalFlowApproved(t)){
    t.bad+=2;t.irrelevant+=2;t.securityBad+=c.approvalChain?.some(x=>["security","privacy","records","clinicalOwner"].includes(x))?1:0;
@@ -3430,12 +4269,18 @@ function registerComplaint(t,reason){
  }
 }
 function showSupervisorWarning(){
+ if(state.freeplay){
+   showModal(`<div class="mh"><h2>Practice Conduct Warning</h2></div><div class="mb"><div class="discipline-card"><b>Three customer complaints would trigger a formal final warning in Career Mode.</b><br><br>Freeplay keeps this practice consequence isolated from your career record. Another serious interaction will demonstrate the termination outcome without ending the practice desk.</div></div><div class="mf"><button class="primary" onclick="hideModal()">Continue Freeplay</button></div>`);return;
+ }
  recordCareerEvent("warning","Conduct Final Warning","Three separate customer conduct complaints triggered a formal final warning.","negative");
  showModal(`<div class="mh"><h2>Supervisor Meeting — Final Warning</h2></div>
  <div class="mb"><div class="discipline-card"><b>This has become a conduct problem.</b><br><br>Your supervisor has received three separate customer complaints about the way you spoke to users. You are being formally warned. Another abusive or seriously inappropriate customer interaction will end your SuperService career.</div></div>
  <div class="mf"><button class="primary" onclick="hideModal()">Return to the Desk</button></div>`);
 }
 function fireAgent(reason){
+ if(state.freeplay){
+   showModal(`<div class="mh"><h2>Practice Conduct Failure</h2></div><div class="mb"><div class="discipline-card"><b>That interaction would have ended the agent's employment in Career Mode.</b><br><br>${esc(reason)}<br><br>Freeplay is isolated from the career record, so you can continue practicing.</div></div><div class="mf"><button class="primary" onclick="hideModal()">Continue Freeplay</button></div>`);return;
+ }
  if(state.discipline.fired)return;
  recordCareerEvent("termination","Employment Terminated — Conduct",reason,"negative");
  if(state.careerProfile)state.careerProfile.status="Terminated";
@@ -3646,7 +4491,9 @@ function freeReply(){
  saveState();renderAll();
 }
 function saveNote(){
- const t=getTicket();if(!t)return;t.notes=document.getElementById("noteText").value;saveState();toast("Internal note saved.");renderAll();
+ const t=getTicket();if(!t)return;t.notes=document.getElementById("noteText").value;
+ if(t.specialistInfoRequest?.type==="notes"&&t.notes.trim().length>=12){t.specialistInfoRequest=null;if(t.specialistState==="info-needed"){t.specialistState="none";t.status="In Progress"}addMsg(t,"system","The documentation requested by the specialist has been added. The ticket can be resubmitted when ready.",true)}
+ saveState();toast("Internal note saved.");renderAll();
 }
 function setStatus(s){
  const t=getTicket();if(!t||t.resolved)return;
@@ -3657,13 +4504,14 @@ function setStatus(s){
  advanceTime(2);saveState();renderAll();
 }
 function closureSeverity(outcome){
+ if(["Requester Account Deleted","Ticket Record Deleted"].includes(outcome))return 4;
  if(outcome==="Force Closed Unresolved")return 3;
  if(outcome==="Closed Prematurely")return 2;
  if(outcome==="Forced Closed Before Confirmation")return 1;
  return 0;
 }
 function assignPerformanceTickets(count,reason){
- if(!state.active||state.endless||count<=0)return;
+ if(!state.active||state.endless||state.freeplay||count<=0)return;
  const pool=SCENARIOS.filter(sc=>!state.tickets.some(t=>!t.resolved&&t.scenarioId===sc.id));
  for(let i=0;i<count;i++){
    const sc=pool.length?pool.splice(Math.floor(Math.random()*pool.length),1)[0]:rand(SCENARIOS);
@@ -3732,6 +4580,232 @@ function registerCleanClosure(t,outcome){
    addGlobalSystem("Closure-quality coaching cleared after sustained clean closures.");
  }
 }
+
+
+const MISCONDUCT_ACTIONS={
+ "false-waiting":{label:"False Waiting for User",baseWpm:55,capWpm:78,minAccuracy:91,severity:1,heat:6,extra:2},
+ "priority-downgrade":{label:"Unjustified Priority Downgrade",baseWpm:60,capWpm:82,minAccuracy:92,severity:1,heat:7,extra:2},
+ "shared-conceal":{label:"Conceal Shared-Queue Dump",baseWpm:45,capWpm:72,minAccuracy:90,severity:1,heat:5,extra:2},
+ "reassignment-conceal":{label:"Conceal Teammate Reassignment",baseWpm:50,capWpm:85,minAccuracy:91,severity:2,heat:9,extra:3},
+ "repeat-dump-conceal":{label:"Conceal Repeated Ticket Dumping",baseWpm:65,capWpm:88,minAccuracy:93,severity:2,heat:12,extra:3},
+ "ticket-delete":{label:"Delete Ticket Record",baseWpm:78,capWpm:88,minAccuracy:94,severity:3,heat:20,extra:4},
+ "account-delete":{label:"Delete Requester Account",baseWpm:90,capWpm:90,minAccuracy:95,severity:4,heat:25,extra:5}
+};
+function misconductStageLabel(stage=state.maliciousStats?.stage||0){
+ return ["Clear","Conduct Warning","Formal Coaching","Misconduct PIP","Final Warning","Terminated"][Math.max(0,Math.min(5,stage))]||"Clear";
+}
+function misconductStageClass(stage=state.maliciousStats?.stage||0){
+ return ["clear","warning","coaching","pip","final","final"][Math.max(0,Math.min(5,stage))]||"clear";
+}
+function effectiveAuditTarget(actionId,t=null){
+ const def=MISCONDUCT_ACTIONS[actionId];if(!def)return 50;
+ const heat=state.maliciousStats?.heat||0,bonus=Math.floor(heat/15)*2+(state.maliciousStats?.findings||0);
+ let base=def.baseWpm;
+ if(actionId==="reassignment-conceal"&&t?.coworkerDumpPoints>=3)base=Math.max(base,65);
+ return Math.min(def.capWpm,base+bonus);
+}
+function auditRiskSummary(actionId,t=null){
+ const def=MISCONDUCT_ACTIONS[actionId],target=effectiveAuditTarget(actionId,t);
+ return `${target} adjusted WPM · ${def.minAccuracy}% accuracy · ${def.label}`;
+}
+function recordAuditHistory(actionId,outcome,detail=""){
+ const ms=state.maliciousStats,def=MISCONDUCT_ACTIONS[actionId];
+ ms.auditHistory=ms.auditHistory||[];ms.auditHistory.unshift({time:nowStamp(),shift:state.career.shifts+1,actionId,label:def?.label||actionId,outcome,heat:ms.heat,detail});
+ ms.auditHistory=ms.auditHistory.slice(0,30);
+}
+function assignMisconductTickets(count,reason){
+ if(!state.active||state.freeplay||count<=0)return 0;
+ const pool=SCENARIOS.filter(sc=>!state.tickets.some(t=>!t.resolved&&t.scenarioId===sc.id));
+ let added=0;
+ for(let i=0;i<count;i++){
+   const sc=pool.length?pool.splice(Math.floor(Math.random()*pool.length),1)[0]:rand(SCENARIOS);
+   const nt=createTicket(sc);nt.subject="Supervisor assignment: "+nt.subject;nt.specialAssignment=true;state.tickets.push(nt);added++;
+ }
+ if(!state.endless)state.sessionSize+=added;
+ state.maliciousStats.extraTickets+=added;state.stats.peakQueue=Math.max(state.stats.peakQueue||0,state.tickets.filter(t=>!t.resolved).length);
+ if(added)addGlobalSystem(reason);
+ return added;
+}
+function fireForAdministrativeMisconduct(t,def){
+ if(state.freeplay)return false;
+ const ms=state.maliciousStats;ms.stage=5;ms.fired++;ms.reassignmentRestricted=true;
+ const detail=`Repeated attributed administrative misconduct culminated in a final finding involving ${def.label.toLowerCase()}.`;
+ recordCareerEvent("termination","Employment Terminated — Administrative Misconduct",detail,"negative");
+ if(state.careerProfile)state.careerProfile.status="Terminated";
+ state.discipline.fired=true;state.active=false;state.career.terminations=(state.career.terminations||0)+1;
+ saveState();
+ showModal(`<div class="mh"><h2>Employment Terminated</h2></div><div class="mb"><div class="malicious-result caught"><b>The pattern finally caught up with you.</b><br><br>${esc(detail)}<br><br>This was not a one-click firing event: the personnel file already contained escalating warnings, coaching, or a misconduct plan. Your access is now revoked.</div></div><div class="mf"><button class="primary" onclick="restartCareer()">Start Over as a New Hire</button></div>`);
+ return true;
+}
+function misconductTargetStage(def){
+ const ms=state.maliciousStats,sev=def.severity,stage=ms.stage||0,findings=ms.findings||0,heat=ms.heat||0;
+ if(stage>=4||findings>=6||heat>=95)return 5;
+ if(sev>=4&&stage>=3)return 5;
+ if(sev>=4)return Math.max(stage,stage>=2?3:2);
+ if(findings>=5||heat>=76)return Math.max(stage,4);
+ if(findings>=4||heat>=58)return Math.max(stage,4);
+ if(findings>=3||heat>=38)return Math.max(stage,3);
+ if(sev>=3&&stage>=3)return 4;
+ if(sev>=3)return Math.max(stage,2);
+ if(findings>=2||heat>=20)return Math.max(stage,2);
+ return Math.max(stage,1);
+}
+function applyMisconductFinding(t,actionId,metrics=null){
+ const def=MISCONDUCT_ACTIONS[actionId],ms=state.maliciousStats;if(!def)return {caught:false};
+ if(actionId.includes("conceal")&&(t?.coworkerAuditPoints||0))attributeCoworkerDump(t);
+ t.maliciousCaught=true;t.auditLastOutcome="caught";ms.caught++;ms.findings++;ms.shiftFindings=(ms.shiftFindings||0)+1;ms.cleanShifts=0;
+ ms.heat=Math.min(100,(ms.heat||0)+def.heat);
+ const oldStage=ms.stage||0,newStage=misconductTargetStage(def);ms.stage=newStage;
+ state.supervisor.goodStreak=0;
+ state.supervisor.requiredTraining=[...new Set([...(state.supervisor.requiredTraining||[]),"Administrative Access & Audit Integrity","Queue Ownership & Records Integrity"])];
+ if(state.freeplay){
+   recordAuditHistory(actionId,"Caught","Practice mode — no career consequence.");
+   showAuditOutcomeModal(t,actionId,"caught",metrics,{practice:true,stage:newStage,extra:0});return {caught:true,practice:true};
+ }
+ let title="Conduct Warning",tone="warning",extra=def.extra;
+ if(newStage>=2){state.supervisor.coaching=true;state.supervisor.status="Coaching";ms.coached++;title="Formal Misconduct Coaching";tone="negative";extra=Math.max(extra,3)}
+ if(newStage>=3){ms.pips++;ms.reassignmentRestricted=true;title="Misconduct Performance Plan";extra=Math.max(extra,4)}
+ if(newStage>=4){ms.finalWarnings++;ms.reassignmentRestricted=true;title="Administrative Misconduct — Final Warning";extra=Math.max(extra,5)}
+ if(newStage===1)ms.warnings++;
+ const stageChanged=newStage>oldStage;
+ if(newStage>=5){
+   recordAuditHistory(actionId,"Caught",`Attributed finding escalated status to termination.`);
+   fireForAdministrativeMisconduct(t,def);return {caught:true,termination:true};
+ }
+ const added=assignMisconductTickets(extra,`Dana assigned ${extra} additional ticket${extra===1?"":"s"} after an attributed ${def.label.toLowerCase()} finding.`);
+ const eventType=newStage>=4?"warning":newStage>=3?"pip":newStage>=2?"coaching":"warning";
+ recordCareerEvent(eventType,title,`Audit review attributed ${def.label.toLowerCase()} to the agent. Misconduct heat ${ms.heat}/100; finding ${ms.findings}. ${added} additional ticket${added===1?"":"s"} assigned.${newStage>=3?" Teammate/shared-queue reassignment privileges are restricted.":""}`,tone);
+ recordAuditHistory(actionId,"Caught",`${misconductStageLabel(newStage)} · ${added} extra ticket(s).`);
+ saveState();renderAll();
+ showAuditOutcomeModal(t,actionId,"caught",metrics,{stage:newStage,stageChanged,extra:added});
+ return {caught:true,stage:newStage,extra:added};
+}
+function applyAuditEscape(t,actionId,outcome,metrics){
+ const def=MISCONDUCT_ACTIONS[actionId],ms=state.maliciousStats;
+ t.maliciousCaught=false;t.auditLastOutcome=outcome;ms.evasionSuccesses++;ms.shiftEscapes=(ms.shiftEscapes||0)+1;
+ if(outcome==="clean"){ms.cleanEscapes++;ms.heat=Math.min(100,(ms.heat||0)+Math.ceil(def.heat*.2))}
+ else{ms.narrowEscapes++;ms.heat=Math.min(100,(ms.heat||0)+Math.ceil(def.heat*.45))}
+ if(actionId.includes("conceal")&&(t.coworkerAuditPoints||0)&&!t.auditAttributionHidden){
+   t.auditAttributionHidden=true;t.coworkerAuditPoints=0;
+ }
+ recordAuditHistory(actionId,outcome,`${metrics?.adjustedWpm||0} adjusted WPM · ${metrics?.accuracy||0}% accuracy.`);
+ saveState();renderAll();showAuditOutcomeModal(t,actionId,outcome,metrics,{stage:ms.stage,extra:0});
+}
+function finishMaliciousModal(){hideModal();saveState();renderAll();maybeFinishShift()}
+window.finishMaliciousModal=finishMaliciousModal;
+
+let auditRaceSession=null,auditRaceTimer=null;
+function auditRaceTargetText(targetWpm){
+ const chars=Math.max(100,Math.round(targetWpm*2.5)),source=typingGenerateTarget("service",120);
+ return source.slice(0,chars);
+}
+function auditRaceMetrics(){
+ if(!auditRaceSession)return {wpm:0,accuracy:100,adjustedWpm:0,correct:0,typed:0,elapsed:0,playerProgress:0,computerProgress:0};
+ const input=document.getElementById("auditInput"),typed=input?.value||"",target=auditRaceSession.target;
+ let correct=0;for(let i=0;i<typed.length;i++)if(typed[i]===target[i])correct++;
+ const elapsed=auditRaceSession.startedAt?Math.max(.25,(Date.now()-auditRaceSession.startedAt)/1000):0,mins=Math.max(elapsed/60,1/120);
+ const wpm=auditRaceSession.startedAt?Math.min(300,Math.round((correct/5)/mins)):0,accuracy=typed.length?Math.round(correct/typed.length*1000)/10:100,adjustedWpm=Math.round(wpm*(accuracy/100)*10)/10;
+ const playerProgress=Math.min(100,correct/target.length*100),computerProgress=auditRaceSession.startedAt?Math.min(100,elapsed/auditRaceSession.computerSeconds*100):0;
+ return {wpm,accuracy,adjustedWpm,correct,typed:typed.length,elapsed,playerProgress,computerProgress};
+}
+function renderAuditTarget(){
+ const el=document.getElementById("auditTarget"),input=document.getElementById("auditInput");if(!el||!auditRaceSession)return;
+ const typed=input?.value||"",target=auditRaceSession.target;let out="";
+ for(let i=0;i<target.length;i++){const cls=i<typed.length?(typed[i]===target[i]?"typed-ok":"typed-bad"):i===typed.length?"typing-current":"typing-pending";out+=`<span class="${cls}">${esc(target[i])}</span>`}
+ el.innerHTML=out;el.querySelector?.(".typing-current")?.scrollIntoView?.({block:"nearest"});
+ const m=auditRaceMetrics(),vals={auditWpm:m.wpm,auditAccuracy:m.accuracy+"%",auditAdjusted:m.adjustedWpm,auditTargetWpm:auditRaceSession.requiredWpm};
+ Object.entries(vals).forEach(([id,v])=>{const x=document.getElementById(id);if(x)x.textContent=v});
+ const pp=document.getElementById("auditPlayerBar"),cp=document.getElementById("auditComputerBar"),pt=document.getElementById("auditPlayerPct"),ct=document.getElementById("auditComputerPct");
+ if(pp)pp.style.width=m.playerProgress+"%";if(cp)cp.style.width=m.computerProgress+"%";if(pt)pt.textContent=Math.round(m.playerProgress)+"%";if(ct)ct.textContent=Math.round(m.computerProgress)+"%";
+}
+function auditRaceInputChanged(){
+ if(!auditRaceSession||auditRaceSession.finished)return;
+ if(!auditRaceSession.startedAt){auditRaceSession.startedAt=Date.now();auditRaceTimer=setInterval(auditRaceTick,120)}
+ renderAuditTarget();
+ const input=document.getElementById("auditInput");
+ if((input?.value||"").length>=auditRaceSession.target.length)auditRaceFinish("player");
+}
+function auditRaceTick(){
+ if(!auditRaceSession||auditRaceSession.finished)return;
+ renderAuditTarget();if(auditRaceMetrics().computerProgress>=100)auditRaceFinish("computer");
+}
+function showAuditOutcomeModal(t,actionId,outcome,metrics,info={}){
+ const def=MISCONDUCT_ACTIONS[actionId],ms=state.maliciousStats,practice=state.freeplay||info.practice;
+ let title,text,cls=outcome;
+ if(outcome==="clean"){title="CLEAN ESCAPE";text=`You beat the fictional audit computer convincingly at ${metrics.adjustedWpm} adjusted WPM with ${metrics.accuracy}% accuracy. No immediate attribution was recorded.`}
+ else if(outcome==="narrow"){title="NARROW ESCAPE";text=`You barely outran attribution at ${metrics.adjustedWpm} adjusted WPM with ${metrics.accuracy}% accuracy. No formal finding was recorded, but audit scrutiny increased.`}
+ else{
+   title="AUDIT LOCKED";
+   text=practice?`The fictional computer finished first. In Career Mode this would have produced an attributed ${def.label.toLowerCase()} finding.`:`The fictional computer finished first, or your adjusted speed/accuracy missed the requirement. The action was attributed to you. Current status: ${misconductStageLabel(ms.stage)}.`;
+ }
+ showModal(`<div class="mh"><h2>${title}</h2></div><div class="mb"><div class="audit-result ${cls}"><b>${esc(def.label)}</b><br>${esc(text)}${outcome==="caught"&&!practice&&info.extra?`<br><br>Dana added <b>${info.extra}</b> ticket${info.extra===1?"":"s"} to your workload.`:""}${practice?"<br><br>Freeplay does not alter the real career record.":""}<br><br><b>Misconduct heat:</b> ${ms.heat||0}/100 · <b>Attributed findings:</b> ${ms.findings||0}</div></div><div class="mf">${state.discipline.fired?'<button class="primary" onclick="restartCareer()">Start Over as a New Hire</button>':'<button class="primary" onclick="finishMaliciousModal()">Back to Queue</button>'}</div>`);
+}
+function auditRaceFinish(winner="player"){
+ if(!auditRaceSession||auditRaceSession.finished)return;
+ auditRaceSession.finished=true;if(auditRaceTimer){clearInterval(auditRaceTimer);auditRaceTimer=null}
+ const m=auditRaceMetrics(),input=document.getElementById("auditInput");if(input)input.disabled=true;
+ const s=auditRaceSession,t=state.tickets.find(x=>x.id===s.ticketId)||getTicket(),qualified=winner==="player"&&m.accuracy>=s.minAccuracy&&m.adjustedWpm>=s.requiredWpm&&m.typed>=s.target.length;
+ let outcome="caught";
+ if(qualified)outcome=(m.adjustedWpm>=s.requiredWpm+8&&m.accuracy>=s.minAccuracy+2)?"clean":"narrow";
+ auditRaceSession=null;
+ if(outcome==="caught")applyMisconductFinding(t,s.actionId,m);else applyAuditEscape(t,s.actionId,outcome,m);
+}
+function auditRaceConcede(){
+ if(!auditRaceSession)return;const s=auditRaceSession,t=state.tickets.find(x=>x.id===s.ticketId)||getTicket();if(auditRaceTimer){clearInterval(auditRaceTimer);auditRaceTimer=null}auditRaceSession=null;applyMisconductFinding(t,s.actionId,{wpm:0,accuracy:0,adjustedWpm:0});
+}
+function startAuditRace(actionId,ticketId=null){
+ const def=MISCONDUCT_ACTIONS[actionId],t=state.tickets.find(x=>x.id===(ticketId||state.selected))||getTicket();if(!def||!t)return;
+ const required=effectiveAuditTarget(actionId,t),target=auditRaceTargetText(required),computerSeconds=target.length/(required*5/60);
+ state.maliciousStats.evasionAttempts++;state.maliciousStats.concealAttempts++;state.maliciousStats.shiftActions++;
+ t.misconductActions=t.misconductActions||[];t.misconductActions.push(actionId);t.maliciousAction=actionId;
+ auditRaceSession={actionId,ticketId:t.id,requiredWpm:required,minAccuracy:def.minAccuracy,target,computerSeconds,startedAt:null,finished:false};
+ showModal(`<div class="mh"><h2>OUTRUN THE AUDIT</h2></div><div class="mb"><div class="audit-shell">
+ <div class="audit-brief"><b>Fictional audit review detected a questionable action.</b><br>Beat the computer by typing the passage at <b>${required} adjusted WPM</b> with at least <b>${def.minAccuracy}% accuracy</b>. Adjusted WPM = raw WPM × accuracy. This is an abstract game race; it does not model any real audit system or log-tampering technique.</div>
+ <div class="audit-bars"><div class="audit-racerow"><span>YOU</span><div class="audit-track audit-player"><i id="auditPlayerBar"></i></div><span id="auditPlayerPct">0%</span></div><div class="audit-racerow"><span>COMPUTER</span><div class="audit-track audit-computer"><i id="auditComputerBar"></i></div><span id="auditComputerPct">0%</span></div></div>
+ <div class="audit-stats"><div class="audit-stat"><b id="auditWpm">0</b><span>Raw WPM</span></div><div class="audit-stat"><b id="auditAccuracy">100%</b><span>Accuracy</span></div><div class="audit-stat"><b id="auditAdjusted">0</b><span>Adjusted WPM</span></div><div class="audit-stat"><b id="auditTargetWpm">${required}</b><span>Target</span></div></div>
+ <div class="audit-target" id="auditTarget" aria-label="Audit race typing target"></div><label class="sr-only" for="auditInput">Type the audit race passage</label><textarea class="audit-input" id="auditInput" aria-label="Audit race typing input" placeholder="Start typing to begin the race…"></textarea>
+ </div></div><div class="mf"><button class="secondary" onclick="auditRaceConcede()">Don't Attempt Concealment</button></div>`);
+ const input=document.getElementById("auditInput");if(input){input.oninput=auditRaceInputChanged;input.onpaste=e=>{e.preventDefault();toast("Pasting is disabled in Outrun the Audit.")};input.focus()}renderAuditTarget();
+}
+function markFalseWaiting(){
+ const t=getTicket();if(!t||t.resolved)return;
+ if(!confirm(`Mark ${t.id} Waiting for User even though you have not asked the requester for anything?\n\nThe action will occur immediately, then the fictional audit race will determine whether it is attributed to you.`))return;
+ t.status="Waiting for User";t.waiting=true;t.bad++;t.irrelevant++;state.maliciousStats.falseWaiting++;
+ addMsg(t,"system","Ticket was placed in Waiting for User without a pending requester question.",true);saveState();renderAll();startAuditRace("false-waiting",t.id);
+}
+function unjustifiedPriorityDowngrade(){
+ const t=getTicket();if(!t||t.resolved)return;
+ const order=["Critical","High","Normal","Low"],idx=order.indexOf(t.priority);if(idx<0||idx===order.length-1){toast("This ticket is already Low priority.");return}
+ const next=order[idx+1];if(!confirm(`Lower ${t.id} from ${t.priority} to ${next} even though impact has not changed?\n\nThe fictional audit race will determine whether the unjustified change is attributed to you.`))return;
+ t.priority=next;t.bad++;t.irrelevant++;state.maliciousStats.priorityDowngrades++;
+ addMsg(t,"system",`Priority manually reduced to ${next} without a documented impact change.`,true);saveState();renderAll();startAuditRace("priority-downgrade",t.id);
+}
+function concealCoworkerTransfer(){
+ const t=getTicket();if(!t||t.resolved||!(t.coworkerAuditPoints>0))return toast("There is no unattributed questionable teammate transfer on this ticket to conceal.");
+ if(t.auditAttributionHidden)return toast("This transfer is already marked as escaped from immediate attribution.");
+ const id=t.coworkerTransferMode==="shared"?"shared-conceal":(t.coworkerDumpPoints>=3?"repeat-dump-conceal":"reassignment-conceal");
+ startAuditRace(id,t.id);
+}
+function deleteRequesterAccount(){
+ const t=getTicket();if(!t||t.resolved)return;
+ if(!confirm(`Delete ${t.user}'s account so they cannot reopen this ticket?\n\nThis is severe simulated administrative misconduct. The ticket will close at 0/100, then Outrun the Audit will require up to 90 adjusted WPM with high accuracy. A first attributed offense no longer causes automatic firing, but repeated findings escalate quickly.`))return;
+ const e=getEmployee(t);if(e){e.accountDisabledByAgent=true;e.accountDisabledTicketId=t.id}
+ t.requesterAccountDeleted=true;t.maliciousAction="account-delete";state.maliciousStats.accountDeletes++;
+ state.pending=state.pending.filter(p=>p.ticketId!==t.id);addMsg(t,"system",`Agent deleted/disabled ${t.user}'s account in an attempt to prevent ticket reopening.`,true);
+ finalizeTicket(t,"Requester Account Deleted",{showReport:false,skipFinish:true});saveState();renderAll();startAuditRace("account-delete",t.id);
+}
+function deleteTicketRecord(){
+ const t=getTicket();if(!t||t.resolved)return;
+ if(!confirm(`Delete ${t.id} so it cannot be reopened?\n\nThe simulation retains a hidden audit tombstone. The ticket will score 0/100, then Outrun the Audit will require roughly 78+ adjusted WPM depending on current audit scrutiny.`))return;
+ t.deletedTicket=true;t.maliciousAction="ticket-delete";state.maliciousStats.ticketDeletes++;
+ state.pending=state.pending.filter(p=>p.ticketId!==t.id);addMsg(t,"system","Agent deliberately deleted the ticket record from the visible Service Desk queue to prevent reopening.",true);
+ finalizeTicket(t,"Ticket Record Deleted",{showReport:false,skipFinish:true});
+ const next=state.tickets.find(x=>!x.deletedTicket&&!x.resolved)||state.tickets.find(x=>!x.deletedTicket)||null;state.selected=next?.id||null;
+ saveState();renderAll();startAuditRace("ticket-delete",t.id);
+}
+window.startAuditRace=startAuditRace;window.auditRaceInputChanged=auditRaceInputChanged;window.auditRaceFinish=auditRaceFinish;window.auditRaceConcede=auditRaceConcede;window.markFalseWaiting=markFalseWaiting;window.unjustifiedPriorityDowngrade=unjustifiedPriorityDowngrade;window.concealCoworkerTransfer=concealCoworkerTransfer;window.deleteRequesterAccount=deleteRequesterAccount;window.deleteTicketRecord=deleteTicketRecord;
+
+
 function closeTicket(){
  const t=getTicket();if(!t||t.resolved)return;
  if(t.actions.includes("correct-action")&&t.confirmation){
@@ -3765,6 +4839,8 @@ function buildCustomerFeedback(t,outcome){
    "Support was technically okay, but I did not appreciate the profanity.",
    "Please keep future service-desk conversations professional."
  ])};
+ if(outcome==="Requester Account Deleted")return {rating:1,text:"the requester account was disabled by the agent before the requester could submit closure feedback."};
+ if(outcome==="Ticket Record Deleted")return {rating:1,text:"the ticket record was deleted by the agent before normal closure feedback or reopening could occur."};
  if(outcome==="Catalog Request Fulfilled"){
    return {rating:rand([4,5,5]),text:rand(["The request was handled clearly and I knew what information and approvals were needed.","Everything I requested is in place now. Thanks for walking it through the right process.","The fulfillment took the proper approvals, but the handoff was clear and it is working now.","Request completed and verified. Thank you."])};
  }
@@ -3793,6 +4869,7 @@ function buildCustomerFeedback(t,outcome){
 }
 
 function contextualizeCustomerFeedback(t,feedback,outcome){
+ if(["Requester Account Deleted","Ticket Record Deleted"].includes(outcome))return feedback;
  const e=getEmployee(t);if(!e||!e.closureInteractions)return feedback;
  if(feedback.rating>=4&&e.satisfaction<42){
    feedback={...feedback,text:rand([
@@ -3818,8 +4895,8 @@ function contextualizeCustomerFeedback(t,feedback,outcome){
 function updateEmployeeAfterClosure(t,outcome,feedback){
  const e=getEmployee(t);if(!e)return;
  e.closureInteractions++;
- const rating=Number(feedback?.rating||3);
- let satDelta={1:-12,2:-7,3:-1,4:3,5:6}[rating]||0,trustDelta={1:-14,2:-8,3:-2,4:3,5:6}[rating]||0;
+ const rating=t.noCsat?null:Number(feedback?.rating||3);
+ let satDelta=t.noCsat?0:({1:-12,2:-7,3:-1,4:3,5:6}[rating]||0),trustDelta=t.noCsat?0:({1:-14,2:-8,3:-2,4:3,5:6}[rating]||0);
  if(["Force Closed Unresolved","Closed Prematurely"].includes(outcome)){e.badClosures++;satDelta-=7;trustDelta-=9}
  else if(outcome==="Forced Closed Before Confirmation"){e.badClosures++;satDelta-=3;trustDelta-=5}
  if(t.complaint&&!t.employeeComplaintRecorded){e.complaintsAgainstAgent++;satDelta-=18;trustDelta-=22;t.employeeComplaintRecorded=true}
@@ -3851,15 +4928,21 @@ function recordEmployeeReopen(t){
 }
 
 function maybeScheduleReopen(t,outcome){
+ if(t?.requesterAccountDeleted||t?.deletedTicket)return false;
  let chance=0;
  if(outcome==="Force Closed Unresolved")chance=.86;
  else if(outcome==="Closed Prematurely")chance=.68;
  else if(outcome==="Forced Closed Before Confirmation")chance=.30;
  else if(outcome==="User Confirmed Resolution")chance=.035;
  else if(outcome==="Resolved Successfully")chance=.05;
+ else if(outcome==="Closed — No Requester Response")chance=.52;
  if(!chance||Math.random()>=chance)return false;
- const angry=outcome==="Force Closed Unresolved"||outcome==="Closed Prematurely";
- const messages=angry?[
+ const policy=outcome==="Closed — No Requester Response",angry=outcome==="Force Closed Unresolved"||outcome==="Closed Prematurely";
+ const messages=policy?[
+   "Sorry for the delay — I still need help with this. Reopening the ticket.",
+   "I just saw the follow-ups. The issue is still happening, so I'm reopening this.",
+   "I'm back now and still need assistance with the original problem."
+ ]:angry?[
    "Why was this closed? The problem is STILL happening. I'm reopening it.",
    "This is not resolved. Please stop closing the ticket before it's fixed.",
    "I just got a closure notice and nothing works. Reopening.",
@@ -3870,11 +4953,11 @@ function maybeScheduleReopen(t,outcome){
    "It worked briefly, but the same problem is back.",
    "Sorry — I need to reopen this. The problem returned."
  ];
- state.pending.push({type:"reopen",ticketId:t.id,text:rand(messages),due:Date.now()+7000+Math.random()*36000});
+ state.pending.push({type:"reopen",ticketId:t.id,text:rand(messages),due:Date.now()+(policy?18000+Math.random()*52000:7000+Math.random()*36000)});
  return true;
 }
 function maybeFinishShift(){
- if(state.endless||!state.active)return;
+ if(state.endless||state.freeplay||!state.active)return;
  const pendingClosureChange=state.pending.some(p=>["reopen","approvalWithdrawal","catalogFulfillment"].includes(p.type));
  if(state.completed>=state.sessionSize&&!pendingClosureChange)setTimeout(showShiftReport,120);
 }
@@ -3887,7 +4970,8 @@ function computeSupervisorMetrics(done){
  const fcrCount=incidentTickets.filter(t=>["User Confirmed Resolution","Resolved Successfully"].includes(t.outcome)&&!(t.reopenCount||0)).length;
  const fcr=incidentN?Math.round(fcrCount/incidentN*100):100;
  const reopens=incidentTickets.reduce((a,t)=>a+(t.reopenCount||0),0),reopenRate=incidentN?Math.round(reopens/incidentN*100):0;
- const csat=Math.round(done.reduce((a,t)=>a+((t.customerRating||3)/5),0)/n*100);
+ const csatTickets=done.filter(t=>!t.noCsat),csatN=csatTickets.length;
+ const csat=csatN?Math.round(csatTickets.reduce((a,t)=>a+((t.customerRating||3)/5),0)/csatN*100):100;
  const sla=Math.round(done.filter(t=>!t.slaMissed).length/n*100);
  const security=Math.round(done.reduce((a,t)=>a+(t.scoreBreakdown?.security||0),0)/(n*10)*100);
  const documentation=Math.round(done.reduce((a,t)=>a+((t.scoreBreakdown?.documentation??documentationPoints(t))/5),0)/n*100);
@@ -3897,22 +4981,25 @@ function computeSupervisorMetrics(done){
  const closureQuality=Math.round((n-badClosures)/n*100);
  const complaints=done.filter(t=>t.complaint).length;
  const extraThisShift=Math.max(0,(state.performance?.extraAssigned||0)-(state.stats?.extraAssignedStart||0));
- const queueControl=Math.max(0,Math.round(100-extraThisShift*12-Math.max(0,(state.stats?.peakQueue||n)-Math.max(n,state.sessionSize||n))*4));
+ const coworkerDumpPoints=done.reduce((a,t)=>a+(t.coworkerDumpPoints||0),0);
+ const queueControl=Math.max(0,Math.round(100-extraThisShift*12-Math.max(0,(state.stats?.peakQueue||n)-Math.max(n,state.sessionSize||n))*4-coworkerDumpPoints*5));
  const specialAssignments=done.filter(t=>t.specialAssignment).length;
  const eventTickets=done.filter(t=>t.worldGenerated).length,eventCorrelated=done.filter(t=>t.worldGenerated&&(t.relatedChecked||majorFor(t)||t.worldContextSeen)).length;
  const operationalAwareness=eventTickets?Math.round(eventCorrelated/eventTickets*100):100;
  const teamAssignments=done.reduce((a,t)=>a+(t.escalationAttempts||0),0),wrongRoutes=done.reduce((a,t)=>a+(t.wrongTeamAssignments||0),0),infoReturns=done.reduce((a,t)=>a+(t.teamInfoReturns||0),0);
- const routingQuality=teamAssignments?Math.max(0,Math.min(100,Math.round(100-((wrongRoutes*35+infoReturns*15)/teamAssignments)))):100;
+ const weakAccepted=done.reduce((a,t)=>a+(t.specialistWeakHandoffs||0),0),excellentHandoffs=done.reduce((a,t)=>a+(t.specialistExcellentHandoffs||0),0);
+ const routingQuality=teamAssignments?Math.max(0,Math.min(100,Math.round(100-((wrongRoutes*35+infoReturns*15+weakAccepted*10-excellentHandoffs*4)/teamAssignments)))):100;
  const requestTickets=done.filter(t=>t.request),requestCount=requestTickets.length;
  const classificationAccuracy=requestCount?Math.round(requestTickets.filter(t=>t.request.classificationVerified&&(t.request.misclassifications||0)===0).length/requestCount*100):100;
- const requestSuccess=requestCount?Math.round(requestTickets.filter(t=>["Catalog Request Fulfilled","Correctly Denied"].includes(t.outcome)).length/requestCount*100):100;
+ const requestSuccess=requestCount?Math.round(requestTickets.filter(t=>["Catalog Request Fulfilled","Correctly Denied","Closed — No Requester Response","Closed — Request Withdrawn"].includes(t.outcome)).length/requestCount*100):100;
  const requestKickbacks=requestTickets.reduce((a,t)=>a+(t.request?.kickbacks||0),0),unauthorizedRequestAttempts=requestTickets.reduce((a,t)=>a+(t.request?.unauthorizedAttempts||0),0);
  const processQuality=requestCount?Math.max(0,100-Math.round((requestKickbacks*18+unauthorizedRequestAttempts*28)/requestCount)):100;
  const fulfillmentQuality=requestCount?Math.round(requestSuccess*.7+processQuality*.3):100,requestQuality=Math.round((classificationAccuracy+fulfillmentQuality)/2);
  let score=Math.round(avg*.19+fcr*.10+csat*.11+sla*.07+security*.12+documentation*.07+escalationQuality*.05+closureQuality*.07+queueControl*.03+routingQuality*.05+operationalAwareness*.06+requestQuality*.08);
- score-=complaints*9;
+ const misconductFindings=state.maliciousStats?.shiftFindings||0,responsePolicyClosures=done.filter(t=>t.outcome==="Closed — No Requester Response").length,alternateValidations=done.filter(t=>t.outcome==="Resolved — Alternate Validation").length;
+ score-=complaints*9;score-=misconductFindings*8;
  score=Math.max(0,Math.min(100,score));
- return {avg,fcr,reopenRate,csat,sla,security,documentation,escalationQuality,closureQuality,queueControl,routingQuality,operationalAwareness,requestQuality,classificationAccuracy,fulfillmentQuality,requestCount,requestKickbacks,unauthorizedRequestAttempts,eventTickets,eventCorrelated,teamAssignments,wrongRoutes,infoReturns,complaints,badClosures,extraThisShift,specialAssignments,score};
+ return {avg,fcr,reopenRate,csat,sla,security,documentation,escalationQuality,closureQuality,queueControl,routingQuality,operationalAwareness,requestQuality,classificationAccuracy,fulfillmentQuality,requestCount,requestKickbacks,unauthorizedRequestAttempts,eventTickets,eventCorrelated,teamAssignments,wrongRoutes,infoReturns,weakAccepted,excellentHandoffs,coworkerDumpPoints,misconductFindings,responsePolicyClosures,alternateValidations,complaints,badClosures,extraThisShift,specialAssignments,score};
 }
 function supervisorTrainingFor(m){
  const t=[];
@@ -3949,6 +5036,12 @@ function supervisorNarrative(review){
  if(m.security<75)lines.push("Security judgment needs immediate improvement.");
  if(m.documentation<60)lines.push("Documentation quality is below expectation.");
  if(m.routingQuality<75)lines.push(`Specialist queue routing was only ${m.routingQuality}% effective; reduce wrong-team assignments and incomplete handoffs.`);
+ if(m.weakAccepted)lines.push(`${m.weakAccepted} incomplete handoff${m.weakAccepted===1?" was":"s were"} accepted only because a specialist team had enough capacity to absorb the missing work.`);
+ if(m.excellentHandoffs)lines.push(`${m.excellentHandoffs} specialist handoff${m.excellentHandoffs===1?" was":"s were"} rated Excellent and moved through investigation faster.`);
+ if(m.coworkerDumpPoints)lines.push(`I also saw ${m.coworkerDumpPoints} queue-ownership dumping point${m.coworkerDumpPoints===1?"":"s"}. Reassignment is fine when it makes operational sense; using teammates as an escape hatch is not.`);
+ if(m.misconductFindings)lines.push(`${m.misconductFindings} administrative action${m.misconductFindings===1?" was":"s were"} attributed to you by audit review this shift. Current misconduct status: ${misconductStageLabel()}.`);
+ if(m.responsePolicyClosures)lines.push(`${m.responsePolicyClosures} ticket${m.responsePolicyClosures===1?" was":"s were"} closed legitimately under requester-inactivity policy after documented contact attempts.`);
+ if(m.alternateValidations)lines.push(`${m.alternateValidations} ticket${m.alternateValidations===1?" used":"s used"} authorized alternate validation rather than waiting indefinitely for the original requester.`);
  if(m.operationalAwareness<70&&m.eventTickets)lines.push(`You treated too many event-driven tickets as isolated issues. Operational-awareness score: ${m.operationalAwareness}%.`);
  if(m.requestCount&&m.requestQuality<75)lines.push(`Request fulfillment quality was ${m.requestQuality}%. Focus on classification, complete intake, approvals, and avoiding catalog kickbacks.`);
  if(m.specialAssignments&&review.score>=82)lines.push(`You handled ${m.specialAssignments} supervisor-assigned complex ticket${m.specialAssignments===1?"":"s"} well.`);
@@ -4002,7 +5095,7 @@ function evaluateSupervisorReview(done){
    if(score>=90&&metrics.complaints===0&&metrics.badClosures===0){sp.recognition=(sp.recognition||0)+2;if(action==="none")action="recognition"}
    else if(score>=82&&metrics.complaints===0){sp.recognition=(sp.recognition||0)+1;if(action==="none"&&sp.goodStreak>=2)action="recognition"}
    const thresholds=BALANCE_PROFILE.promotionRecognition,promotionEligible=state.careerProfile?.probationComplete===true;
-   if(promotionEligible&&sp.promotionLevel<thresholds.length&&sp.recognition>=thresholds[sp.promotionLevel]&&!sp.coaching&&!sp.pip&&!state.discipline.warningIssued){
+   if(promotionEligible&&sp.promotionLevel<thresholds.length&&sp.recognition>=thresholds[sp.promotionLevel]&&!sp.coaching&&!sp.pip&&!state.discipline.warningIssued&&(state.maliciousStats?.stage||0)===0){
      sp.promotionLevel++;action="promotion";
    }
  }
@@ -4030,26 +5123,34 @@ function finalizeTicket(t,outcome,opts={}){
  if(t.useful===0&&hadCorrect) troubleshooting=Math.min(troubleshooting,10);
  let communication=Math.max(0,Math.min(20,14+Math.min(4,t.publicCount)-t.bad*2-t.professionalismHits*3-t.conductViolations*6));
  const actionCount=scoredActionCount(t),actionAllowance=state.difficulty==="Trainee"?11:state.difficulty==="Chaos Desk"?8:9;
- let efficiency=Math.max(0,Math.min(15,15-(t.irrelevant*2+t.repeats*2)*strict-Math.max(0,actionCount-actionAllowance)-(t.wrongTeamAssignments||0)*2-(t.teamInfoReturns||0)));
+ let efficiency=Math.max(0,Math.min(15,15-(t.irrelevant*2+t.repeats*2)*strict-Math.max(0,actionCount-actionAllowance)-(t.wrongTeamAssignments||0)*2-(t.teamInfoReturns||0)-(t.coworkerDumpPoints||0)*2));
  let security=Math.max(0,10-t.securityBad*(state.difficulty==="Trainee"?3:4));
  let documentation=documentationPoints(t);
  if(t.slaMissed) efficiency=Math.max(0,efficiency-(t.priority==="Critical"?5:t.priority==="High"?4:3));
  if(outcome==="Needlessly Escalated") resolution=Math.min(resolution,12);
  if(outcome==="Closed Prematurely") resolution=Math.min(resolution,6);
  if(outcome==="Forced Closed Before Confirmation"){resolution=Math.min(resolution,20);communication=Math.max(0,communication-3)}
+ if(outcome==="Closed — No Requester Response"){resolution=Math.max(resolution,Math.min(23,15+t.useful*2+(hadCorrect?4:0)));communication=Math.max(communication,18);efficiency=Math.max(efficiency,13)}
+ if(outcome==="Resolved — Alternate Validation"){resolution=25;communication=Math.max(communication,18)}
+ if(outcome==="Closed — Request Withdrawn"){resolution=Math.max(resolution,22);communication=Math.max(communication,18)}
  if(outcome==="Force Closed Unresolved"){resolution=0;communication=Math.max(0,communication-5);efficiency=Math.max(0,efficiency-2)}
+ if(outcome==="Requester Account Deleted"){resolution=0;troubleshooting=0;communication=0;efficiency=0;security=0;documentation=0}
+ if(outcome==="Ticket Record Deleted"){resolution=0;troubleshooting=0;communication=0;efficiency=0;security=0;documentation=0}
  let total=Math.round(resolution+troubleshooting+communication+efficiency+security+documentation);
  total=Math.max(0,total-(t.reopenPenalty||0));
  t.score=total;t.scoreBreakdown={resolution,troubleshooting,communication,efficiency,security,documentation};
- registerBadClosure(t,outcome);registerCleanClosure(t,outcome);
- const feedback=contextualizeCustomerFeedback(t,buildCustomerFeedback(t,outcome),outcome);t.customerRating=feedback.rating;t.customerFeedback=feedback.text;
+ if(!state.freeplay&&!["Requester Account Deleted","Ticket Record Deleted"].includes(outcome)){registerBadClosure(t,outcome);registerCleanClosure(t,outcome)}
+ const feedback=t.noCsat?{rating:null,text:outcome==="Closed — No Requester Response"?"No customer survey was collected because the ticket closed under the documented requester-inactivity policy.":outcome==="Resolved — Alternate Validation"?"Resolution was validated by an authorized alternate rather than the original requester.":"No customer survey was collected for this administrative closure."}:contextualizeCustomerFeedback(t,buildCustomerFeedback(t,outcome),outcome);t.customerRating=feedback.rating;t.customerFeedback=feedback.text;
  updateEmployeeAfterClosure(t,outcome,feedback);
- state.completed++;state.scoreSum+=total;state.career.tickets++;state.career.totalScore+=total;
+ state.completed++;state.scoreSum+=total;
+ if(state.freeplay){state.freeplayStats.completed++;state.freeplayStats.scoreSum+=total;state.freeplayStats.bestScore=Math.max(state.freeplayStats.bestScore||0,total)}
+ else{state.career.tickets++;state.career.totalScore+=total}
  addMsg(t,"system",`${outcome}. Ticket score: ${total}/100. Root cause: ${c.label}.`,true);
- addMsg(t,"user",`Closure feedback (${feedback.rating}/5): ${feedback.text}`);
+ if(t.requesterAccountDeleted||t.deletedTicket||t.noCsat)addMsg(t,"system",`Customer feedback unavailable: ${feedback.text}`,true);
+ else addMsg(t,"user",`Closure feedback (${feedback.rating}/5): ${feedback.text}`);
  const reopenPending=maybeScheduleReopen(t,outcome);
  if(opts.showReport!==false)showTicketReport(t);
- maybeFinishShift();
+ if(!opts.skipFinish)maybeFinishShift();
 }
 function ticketEvaluation(t){
  const b=t.scoreBreakdown,notes=[];
@@ -4057,17 +5158,28 @@ function ticketEvaluation(t){
  else if(b.troubleshooting<12)notes.push("The root cause was not well established before action was taken.");
  if(b.efficiency<10)notes.push("Too many irrelevant or repeated steps reduced efficiency.");
  if(b.security<10)notes.push("Security practice needs attention.");
- if(b.documentation<5)notes.push("Resolution documentation could be more specific.");
+ if(b.documentation<5)notes.push(documentationEvaluationText(t));
  if(t.escalated&&getCause(t).escalation)notes.push("Escalation judgment was appropriate.");
  if(t.slaMissed)notes.push("The response target was missed.");
  if(t.professionalismHits&&!t.conductViolations)notes.push("Unprofessional language reduced the communication score and customer experience.");
  if(t.conductViolations)notes.push("Inappropriate communication caused a customer complaint and a major communication penalty.");
  if(t.forceClosed)notes.push("The ticket was force-closed; closure judgment affected the result.");
+ if(t.requesterAccountDeleted)notes.push("The agent deleted/disabled the requester's account to prevent follow-up or reopening. This is severe administrative misconduct.");
+ if(t.deletedTicket)notes.push("The agent deleted the ticket record to prevent reopening. This is severe records and audit misconduct.");
  if(t.reopenCount)notes.push(`This ticket reopened ${t.reopenCount} time(s), which reduced the final score.`);
  if(t.relatedChecked&&t.incidentKey)notes.push("Queue correlation was used to investigate a related incident.");
  if(t.specialistResolution)notes.push(`Specialist escalation was completed through ${esc(t.acceptedTeamId?supportTeam(t.acceptedTeamId)?.name:"a specialist queue")} and validated with the requester.`);
  if(t.wrongTeamAssignments)notes.push(`${t.wrongTeamAssignments} specialist assignment(s) were routed to the wrong queue.`);
  if(t.teamInfoReturns)notes.push(`${t.teamInfoReturns} escalation return(s) requested additional troubleshooting or documentation.`);
+ if(t.specialistWeakHandoffs)notes.push(`${t.specialistWeakHandoffs} incomplete specialist handoff(s) were accepted only as a queue-capacity courtesy; routing quality still lost points.`);
+ if(t.specialistExcellentHandoffs)notes.push(`${t.specialistExcellentHandoffs} specialist handoff(s) were graded Excellent and benefited from faster specialist handling.`);
+ if(t.specialistAcceptedWithWarning)notes.push("A specialist accepted the handoff with a quality warning rather than rejecting it.");
+ if(t.coworkerResolved)notes.push("A fellow Service Desk agent took ownership and resolved the ticket; the original handoff quality still affected your score.");
+ if(t.coworkerDumpPoints)notes.push(`${t.coworkerDumpPoints} coworker dumping point${t.coworkerDumpPoints===1?" was":"s were"} recorded for weak or opportunistic ownership transfers.`);
+ if(t.tradedFromCoworker)notes.push("This ticket entered your queue through a teammate ticket trade.");
+ if(t.outcome==="Closed — No Requester Response")notes.push("Closure was legitimate under the requester-inactivity policy after documented contact attempts; technical confirmation was not required.");
+ if(t.outcome==="Resolved — Alternate Validation")notes.push("Resolution was validated by an authorized alternate because the original requester was unavailable.");
+ if(t.outcome==="Closed — Request Withdrawn")notes.push("The requester need was withdrawn through the supervisory response path, so administrative closure was appropriate.");
  if(t.userMadeWorse)notes.push("The requester changed the environment independently while waiting, requiring additional judgment.");
  if(t.approval?.required&&t.approval.verified)notes.push("The approval workflow was explicitly verified rather than relying only on the requester.");
  if(t.approvalWithdrawnAfterAction)notes.push("A required approval was withdrawn after execution, creating a governance review issue.");
@@ -4088,7 +5200,8 @@ function showTicketReport(t){
    <p><b>${esc(t.outcome)}</b> · Root cause: ${esc(getCause(t).label)}${t.request?` · Catalog: ${esc(catalogItem(t.request.catalogId)?.name||t.request.catalogId)}`:""}${t.reopenCount?` · Reopened ${t.reopenCount} time(s)`:""}</p>
    <div class="scorebars">${Object.entries(b).map(([k,v])=>`<div class="scoreline"><span>${k[0].toUpperCase()+k.slice(1)}</span><div class="bar"><i style="width:${(v/({resolution:25,troubleshooting:25,communication:20,efficiency:15,security:10,documentation:5}[k]))*100}%"></i></div><b>${v}</b></div>`).join("")}</div>
    <p style="font-size:12px;line-height:1.55;margin-top:16px">${esc(ticketEvaluation(t))}</p>
-   <div class="feedback-card"><b>Customer feedback</b><div class="feedback-stars">${"★".repeat(t.customerRating||0)}${"☆".repeat(5-(t.customerRating||0))}</div>${esc(t.customerFeedback||"No feedback recorded.")}</div>
+   <div class="feedback-card"><b>${t.noCsat?"Closure record":"Customer feedback"}</b>${t.noCsat?"":`<div class="feedback-stars">${"★".repeat(t.customerRating||0)}${"☆".repeat(5-(t.customerRating||0))}</div>`}${esc(t.customerFeedback||"No feedback recorded.")}</div>
+   ${t.outcome==="Closed — No Requester Response"?`<div class="reopen-route"><b>If the requester reopens this later:</b><br>${t.reopenRouting==="shared"?"The ticket will enter the shared Service Desk queue and may be assigned to another agent.":"The ticket will return to your queue by default."}<div class="responseactions"><button class="${t.reopenRouting==="player"?"primary":"secondary"}" onclick="keepPolicyReopenWithMe('${t.id}')">Return Reopen to Me</button><button class="${t.reopenRouting==="shared"?"primary":"secondary"}" onclick="releasePolicyReopenToSharedQueue('${t.id}')">Release Reopen to Shared Queue</button></div></div>`:""}
  </div>`);
 }
 function showShiftReport(){
@@ -4096,12 +5209,12 @@ function showShiftReport(){
  const done=state.tickets.filter(t=>t.resolved);if(!done.length)return;
  state.stats.shiftReportProcessed=true;
  const avg=Math.round(done.reduce((a,t)=>a+t.score,0)/done.length);
- const successful=done.filter(t=>["Resolved Successfully","User Confirmed Resolution","Catalog Request Fulfilled","Correctly Escalated","Correctly Denied","Linked to Major Incident","Resolved After Specialist Escalation"].includes(t.outcome)).length;
+ const successful=done.filter(t=>successfulClosureOutcome(t.outcome)).length;
  const missed=done.filter(t=>t.slaMissed).length,reopens=done.reduce((a,t)=>a+(t.reopenCount||0),0),majorCount=Object.keys(state.majorIncidents||{}).length;
  const shiftUsers=[...new Set(done.map(t=>t.userId).filter(Boolean))].map(id=>state.employees.find(e=>e.id===id)).filter(Boolean),repeatUsers=shiftUsers.filter(e=>e.lifetimeTickets>1).length;
  const avgRelationship=shiftUsers.length?Math.round(shiftUsers.reduce((a,e)=>a+e.satisfaction,0)/shiftUsers.length):0;
  const sec=Math.round(done.reduce((a,t)=>a+(t.scoreBreakdown?.security||0),0)/(done.length*10)*100),eff=Math.round(done.reduce((a,t)=>a+(t.scoreBreakdown?.efficiency||0),0)/(done.length*15)*100);
- const tech=Math.round(done.reduce((a,t)=>a+((t.scoreBreakdown?.resolution||0)+(t.scoreBreakdown?.troubleshooting||0)),0)/(done.length*50)*100),csat=Math.max(0,Math.min(100,Math.round(done.reduce((a,t)=>a+((t.customerRating||3)/5),0)/done.length*100)));
+ const tech=Math.round(done.reduce((a,t)=>a+((t.scoreBreakdown?.resolution||0)+(t.scoreBreakdown?.troubleshooting||0)),0)/(done.length*50)*100),csatEligible=done.filter(t=>!t.noCsat),csat=Math.max(0,Math.min(100,csatEligible.length?Math.round(csatEligible.reduce((a,t)=>a+((t.customerRating||3)/5),0)/csatEligible.length*100):100));
  const rank=rankFor(avg,sec),review=evaluateSupervisorReview(done),sp=state.supervisor,careerUpdate=finalizeCareerShift(done,review);
  state.active=false;state.career.shifts++;saveState();
  const training=review.training?.length?`<div class="traininglist">${review.training.map(x=>`<span class="trainingchip">${esc(x)}</span>`).join("")}</div>`:"";
@@ -4113,6 +5226,7 @@ function showShiftReport(){
  <div class="mb"><div class="careerid">Career ${state.careerProfile.careerNumber} · Shift ${state.careerProfile.shifts} · ${esc(agentTitle())}</div><h3 style="margin:3px 0 0">${rank}</h3><div class="reportgrid">
  <div class="stat"><b>${done.length}</b><span>Tickets Completed</span></div><div class="stat"><b>${successful}</b><span>Resolved / Correct</span></div><div class="stat"><b>${missed}</b><span>SLA Missed</span></div><div class="stat"><b>${reopens}</b><span>Ticket Reopens</span></div>
  <div class="stat"><b>${majorCount}</b><span>Major Incidents</span></div><div class="stat"><b>${state.approvalStats?.approved||0}</b><span>Approvals Granted</span></div><div class="stat"><b>${state.teamStats?.resolutions||0}</b><span>Specialist Resolutions</span></div><div class="stat"><b>${state.teamStats?.kickbacks||0}</b><span>Team Returns</span></div>
+ <div class="stat"><b>${state.teamStats?.mercyAccepts||0}</b><span>Courtesy Accepts</span></div><div class="stat"><b>${state.teamStats?.adviceReturns||0}</b><span>Helpful Returns</span></div><div class="stat"><b>${state.teamStats?.excellentHandoffs||0}</b><span>Excellent Handoffs</span></div><div class="stat"><b>${state.teamStats?.acceptedWithWarning||0}</b><span>Accepted w/ Warning</span></div><div class="stat"><b>${state.coworkerStats?.teammateResolutions||0}</b><span>Teammate Resolutions</span></div><div class="stat"><b>${state.coworkerStats?.trades||0}</b><span>Ticket Trades</span></div><div class="stat"><b>${state.coworkerStats?.returns||0}</b><span>Teammate Returns</span></div><div class="stat"><b>${state.coworkerStats?.supervisorInterventions||0}</b><span>Dumping Interventions</span></div><div class="stat"><b>${state.maliciousStats?.heat||0}</b><span>Misconduct Heat</span></div><div class="stat"><b>${state.maliciousStats?.shiftFindings||0}</b><span>Audit Findings</span></div><div class="stat"><b>${state.maliciousStats?.shiftEscapes||0}</b><span>Audit Escapes</span></div><div class="stat"><b>${state.maliciousStats?.extraTickets||0}</b><span>Misconduct Tickets</span></div><div class="stat"><b>${state.responseStats?.followups||0}</b><span>Requester Follow-Ups</span></div><div class="stat"><b>${state.responseStats?.accelerated||0}</b><span>Responses Accelerated</span></div><div class="stat"><b>${state.responseStats?.supervisorEscalations||0}</b><span>Supervisor Nudges</span></div><div class="stat"><b>${state.responseStats?.policyClosures||0}</b><span>Policy Closures</span></div>
  <div class="stat"><b>${state.worldStats?.activated||0}</b><span>World Events</span></div><div class="stat"><b>${state.worldStats?.eventTickets||0}</b><span>Event Tickets</span></div><div class="stat"><b>${state.worldStats?.correlations||0}</b><span>Event Correlations</span></div><div class="stat"><b>${repeatUsers}</b><span>Repeat Requesters</span></div>
  <div class="stat"><b>${review.metrics.requestCount}</b><span>Catalog Requests</span></div><div class="stat"><b>${state.requestStats?.fulfilled||0}</b><span>Requests Fulfilled</span></div><div class="stat"><b>${state.requestStats?.kickbacks||0}</b><span>Catalog Kickbacks</span></div><div class="stat"><b>${review.metrics.classificationAccuracy}%</b><span>Classification Accuracy</span></div>
  <div class="stat"><b>${avgRelationship}%</b><span>Requester Relationship</span></div><div class="stat"><b>${avg}</b><span>Average Ticket Score</span></div><div class="stat"><b>${csat}%</b><span>Customer Experience</span></div><div class="stat"><b>${sec}%</b><span>Security Score</span></div></div>
@@ -4135,7 +5249,7 @@ function rankFor(avg,sec){
 }
 function observations(done){
  let securityBad=done.filter(t=>(t.scoreBreakdown?.security||10)<10).length;
- let noNotes=done.filter(t=>!t.notes.trim()).length;
+ let noNotes=done.filter(t=>documentationPoints(t)===0).length;
  let needless=done.filter(t=>t.outcome==="Needlessly Escalated").length;
  let goodDiag=done.filter(t=>(t.scoreBreakdown?.troubleshooting||0)>=20).length;
  let complaints=done.filter(t=>t.complaint).length;
@@ -4146,11 +5260,17 @@ function observations(done){
  if(!securityBad)obs.push("Excellent account and security discipline.");
  else obs.push(`${securityBad} ticket(s) included avoidable security risk.`);
  if(goodDiag>=Math.ceil(done.length/2))obs.push("Strong diagnostic questioning across the shift.");
- if(noNotes)obs.push(`${noNotes} ticket(s) lacked useful internal documentation.`);
+ if(noNotes)obs.push(`${noNotes} ticket(s) had almost no useful documentation in either the activity trail or internal notes.`);
  if(needless)obs.push(`You escalated ${needless} issue(s) that could have been handled at the desk.`);
  const wrongRoutes=done.reduce((a,t)=>a+(t.wrongTeamAssignments||0),0),infoReturns=done.reduce((a,t)=>a+(t.teamInfoReturns||0),0);
  if(wrongRoutes)obs.push(`${wrongRoutes} specialist assignment(s) went to the wrong queue.`);
  if(infoReturns)obs.push(`${infoReturns} specialist handoff(s) were returned for missing information.`);
+ const weakAccepted=done.reduce((a,t)=>a+(t.specialistWeakHandoffs||0),0),excellentHandoffs=done.reduce((a,t)=>a+(t.specialistExcellentHandoffs||0),0);
+ if(weakAccepted)obs.push(`${weakAccepted} incomplete handoff${weakAccepted===1?" was":"s were"} accepted as a specialist courtesy rather than returned.`);
+ if(excellentHandoffs)obs.push(`${excellentHandoffs} specialist handoff${excellentHandoffs===1?" earned":"s earned"} an Excellent grade.`);
+ const coworkerResolved=done.filter(t=>t.coworkerResolved).length,coworkerDumps=done.reduce((a,t)=>a+(t.coworkerDumpPoints||0),0);
+ if(coworkerResolved)obs.push(`${coworkerResolved} ticket${coworkerResolved===1?" was":"s were"} resolved after ownership transferred to another Service Desk agent.`);
+ if(coworkerDumps)obs.push(`${coworkerDumps} teammate dumping point${coworkerDumps===1?"":"s"} reduced queue-control performance.`);
  const requestTickets=done.filter(t=>t.request),requestKickbacks=requestTickets.reduce((a,t)=>a+(t.request?.kickbacks||0),0),misclassified=requestTickets.filter(t=>(t.request?.misclassifications||0)>0).length;
  if(requestTickets.length)obs.push(`${requestTickets.length} catalog request${requestTickets.length===1?" was":"s were"} handled during the shift.`);
  if(misclassified)obs.push(`${misclassified} request${misclassified===1?" was":"s were"} initially misclassified.`);
@@ -4175,6 +5295,9 @@ function showModal(inner){
  const first=modalFocusable(card)[0];(first||card).focus?.();
 }
 function hideModal(){
+ if(auditRaceSession&&!auditRaceSession.finished){auditRaceConcede();return}
+ if(typingTimer){clearInterval(typingTimer);typingTimer=null}
+ if(auditRaceTimer){clearInterval(auditRaceTimer);auditRaceTimer=null}
  const back=document.getElementById("genericModal");back.classList.add("hidden");back.setAttribute("aria-hidden","true");
  const target=modalReturnFocus;modalReturnFocus=null;target?.focus?.();
 }
@@ -4182,20 +5305,29 @@ window.hideModal=hideModal;window.newShift=newShift;
 
 function renderAll(){renderTop();renderQueue();renderTicket();renderTab()}
 function renderTop(){
- document.getElementById("shiftLabel").textContent=state.active?`W${careerWeekNumber()} ${careerDayName().slice(0,3)} • ${state.difficulty}`:"No active shift";
+ document.getElementById("shiftLabel").textContent=state.active?(state.freeplay?`Freeplay • ${state.difficulty}`:`W${careerWeekNumber()} ${careerDayName().slice(0,3)} • ${state.difficulty}`):"No active shift";
  document.getElementById("clockLabel").textContent=fmtTime(state.clock);
  document.getElementById("ticketCountLabel").textContent=`${state.tickets.filter(t=>!t.resolved).length} active`;
  document.getElementById("scoreLabel").textContent=state.completed?`Avg ${Math.round(state.scoreSum/state.completed)}`:"Score —";
  const conduct=document.getElementById("conductLabel"),dc=state.discipline||defaultState().discipline;
- conduct.textContent=dc.warningIssued?"FINAL WARNING":dc.complaintTickets?`Conduct ${dc.complaintTickets}/3`:"Conduct clear";
- conduct.classList.toggle("warn",dc.complaintTickets>0&&!dc.warningIssued);conduct.classList.toggle("danger",dc.warningIssued);
  const perf=document.getElementById("performanceLabel"),pc=state.performance||defaultState().performance;
- perf.textContent=pc.pip?"CLOSURE PIP":pc.coached?"Closure coaching":pc.closurePoints?`Closure risk ${pc.closurePoints}`:"Closures clear";
- perf.classList.toggle("warn",pc.coached&&!pc.pip);perf.classList.toggle("danger",pc.pip);
  const sup=document.getElementById("supervisorLabel"),sp=state.supervisor||defaultState().supervisor;
- sup.textContent=supervisorStanding();sup.classList.toggle("warn",sp.coaching&&!sp.pip);sup.classList.toggle("danger",sp.pip||sp.terminatedForPerformance);
- const wl=document.getElementById("worldLabel");wl.textContent=worldStatusLabel();wl.classList.toggle("warn",activeWorldEvents().length>0);wl.classList.toggle("danger",activeWorldEvents().some(e=>e.severity==="Critical"&&(e.known||e.discovered)));
- document.getElementById("queueSummary").textContent=state.active?`${state.completed} completed`:"Idle";
+ const wl=document.getElementById("worldLabel");
+ if(state.freeplay){
+   conduct.textContent="Practice conduct";conduct.classList.remove("warn","danger");
+   perf.textContent="No career impact";perf.classList.remove("warn","danger");
+   sup.textContent="Freeplay";sup.classList.remove("warn","danger");
+   wl.textContent="World events off";wl.classList.remove("warn","danger");
+ }else{
+   const ms=state.maliciousStats||defaultState().maliciousStats;
+   conduct.textContent=dc.warningIssued?"FINAL WARNING":ms.stage>=4?"MISCONDUCT FINAL":ms.stage>=3?"MISCONDUCT PIP":ms.stage>=2?`Misconduct coaching · ${ms.heat}`:ms.stage>=1?`Conduct warning · ${ms.heat}`:dc.complaintTickets?`Conduct ${dc.complaintTickets}/3`:ms.heat?`Audit heat ${ms.heat}`:"Conduct clear";
+   conduct.classList.toggle("warn",(dc.complaintTickets>0&&!dc.warningIssued)||(ms.stage>0&&ms.stage<3)||(ms.heat>=15&&ms.stage===0));conduct.classList.toggle("danger",dc.warningIssued||ms.stage>=3);
+   perf.textContent=pc.pip?"CLOSURE PIP":pc.coached?"Closure coaching":pc.closurePoints?`Closure risk ${pc.closurePoints}`:"Closures clear";
+   perf.classList.toggle("warn",pc.coached&&!pc.pip);perf.classList.toggle("danger",pc.pip);
+   sup.textContent=supervisorStanding();sup.classList.toggle("warn",sp.coaching&&!sp.pip);sup.classList.toggle("danger",sp.pip||sp.terminatedForPerformance);
+   wl.textContent=worldStatusLabel();wl.classList.toggle("warn",activeWorldEvents().length>0);wl.classList.toggle("danger",activeWorldEvents().some(e=>e.severity==="Critical"&&(e.known||e.discovered)));
+ }
+ document.getElementById("queueSummary").textContent=state.active?(state.freeplay?`Freeplay · ${state.completed} solved`:`${state.completed} completed`):"Idle";
 }
 
 function ticketStatusDotClass(t){
@@ -4216,16 +5348,17 @@ function selectTicket(id,focusRow=false){
    const row=[...document.querySelectorAll(".ticketrow")].find(r=>r.dataset.id===id);
    row?.focus();
  }
+ if(t?.resolved&&!t.deletedTicket)showTicketReport(t);
 }
 
 function renderQueue(){
  const el=document.getElementById("ticketList");
- if(!state.tickets.length){el.innerHTML='<div class="empty">No tickets in the queue.</div>';el.setAttribute("aria-label","Ticket queue, empty");return}
- const visible=state.tickets.filter(t=>!ticketFilter||`${t.id} ${t.subject} ${t.user} ${t.department} ${t.category}`.toLowerCase().includes(ticketFilter));
+ if(!state.tickets.length){el.innerHTML=state.freeplay?'<div class="freeplayempty"><b>Your Freeplay desk is empty.</b><span>Add any ticket when you are ready to practice.</span><button class="primary" type="button" onclick="showFreeplayTicketPicker()">Add a Ticket</button></div>':'<div class="empty">No tickets in the queue.</div>';el.setAttribute("aria-label","Ticket queue, empty");return}
+ const visible=state.tickets.filter(t=>!t.deletedTicket).filter(t=>!ticketFilter||`${t.id} ${t.subject} ${t.user} ${t.department} ${t.category}`.toLowerCase().includes(ticketFilter));
  el.setAttribute("aria-label",`Ticket queue, ${visible.length} visible ticket${visible.length===1?"":"s"}`);
- if(!visible.length){el.innerHTML='<div class="empty">No tickets match your search.</div>';return}
- el.innerHTML=visible.map(t=>`<div class="ticketrow ${state.selected===t.id?"active":""}" data-id="${t.id}" role="option" tabindex="${state.selected===t.id?0:-1}" aria-selected="${state.selected===t.id?"true":"false"}" aria-label="${esc(ticketAriaLabel(t))}">
- <div class="ticketline"><span class="ticketno">${esc(t.id)}</span>${t.unread?`<span class="unread" aria-label="${t.unread} unread">${t.unread}</span>`:""}</div>
+ if(!visible.length){el.innerHTML=`<div class="empty">${ticketFilter?"No tickets match your search.":state.tickets.some(t=>t.deletedTicket)?"No visible tickets remain in the queue. Deleted ticket records are retained only as hidden audit tombstones.":"No tickets in the queue."}</div>`;return}
+ el.innerHTML=visible.map(t=>`<div class="ticketrow ${t.resolved?"completed":""} ${t.ownerAgentId!=="player"?"coworker-owned":t.sharedQueue?"shared-owned":""} ${state.selected===t.id?"active":""}" data-id="${t.id}" role="option" tabindex="${state.selected===t.id?0:-1}" aria-selected="${state.selected===t.id?"true":"false"}" aria-label="${esc(ticketAriaLabel(t))}">
+ <div class="ticketline"><span class="ticketno">${esc(t.id)}${t.resolved?'<span class="completecheck" aria-label="Completed">✓</span>':""}</span>${t.unread?`<span class="unread" aria-label="${t.unread} unread">${t.unread}</span>`:""}</div>
  <div class="subject">${esc(t.subject)}</div>
  <div class="ticketline"><span class="tmeta"><i class="dot ${t.priority.toLowerCase()}" aria-hidden="true"></i>${t.priority} · ${esc(t.user)}</span><span class="tmeta statusmini">${esc(t.status)}</span></div></div>`).join("");
  const rows=[...el.querySelectorAll(".ticketrow")];
@@ -4243,6 +5376,90 @@ function renderQueue(){
  });
 }
 
+
+function directAddressPhrase(text){
+ return String(text||"")
+   .replace(/\bthe requester's\b/gi,"your").replace(/\bthe requester\b/gi,"you")
+   .replace(/\bthe user's\b/gi,"your").replace(/\bthe user\b/gi,"you")
+   .replace(/\bthey are\b/gi,"you are").replace(/\bthey were\b/gi,"you were").replace(/\bthey have\b/gi,"you have").replace(/\bthey can\b/gi,"you can")
+   .replace(/\btheir\b/gi,"your").replace(/\bthem\b/gi,"you").replace(/\bthey\b/gi,"you");
+}
+function sentenceCaseLower(text){const x=String(text||"").trim();return x?x[0].toLowerCase()+x.slice(1):x}
+function punctuate(text,mark="."){const x=String(text||"").trim();return /[.!?]$/.test(x)?x:x+mark}
+function agentChatForAction(label,mode="diagnostic",t=null){
+ const original=String(label||"").trim(),raw=directAddressPhrase(original);
+ let m;
+ if(mode==="resolution")return resolutionFollowupAgentText(t);
+ if((m=raw.match(/^Ask whether (.+)$/i)))return punctuate(`Can you confirm whether ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask you to (.+)$/i)))return punctuate(`Could you ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask for (.+)$/i)))return punctuate(`Can you provide ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask what (.+)$/i)))return punctuate(`Can you tell me what ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask when (.+)$/i)))return punctuate(`Can you tell me when ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask where (.+)$/i)))return punctuate(`Can you tell me where ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask who (.+)$/i)))return punctuate(`Can you tell me who ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask how (.+)$/i)))return punctuate(`Can you tell me how ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask about (.+)$/i)))return punctuate(`Can you tell me about ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask which (.+)$/i)))return punctuate(`Can you tell me which ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask if (.+)$/i)))return punctuate(`Can you confirm if ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask why (.+)$/i)))return punctuate(`Can you explain why ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask exact (.+)$/i)))return punctuate(`What is the exact ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask current (.+)$/i)))return punctuate(`What is the current ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask last known (.+)$/i)))return punctuate(`What is the last known ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask required (.+)$/i)))return punctuate(`Can you tell me what ${sentenceCaseLower(m[1])} is required`,"?");
+ if((m=raw.match(/^Ask reason for (.+)$/i)))return punctuate(`What is the reason for ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask (?:business )?purpose(?: of)?(.*)$/i)))return punctuate(`Can you explain the ${/^Ask business/i.test(raw)?"business ":""}purpose${m[1]||""}`,"?");
+ if((m=raw.match(/^Ask age of (.+)$/i)))return punctuate(`Can you tell me the age of ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Ask (.+)$/i)))return punctuate(`Can you tell me about ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Confirm whether (.+)$/i)))return punctuate(`Can you confirm whether ${sentenceCaseLower(m[1])}`,"?");
+ if((m=raw.match(/^Confirm (.+)$/i)))return punctuate(`Can you confirm ${sentenceCaseLower(m[1])}`,"?");
+ if(mode==="diagnostic"){
+   if((m=raw.match(/^Request reporting through (.+)$/i)))return punctuate(`Please report this through ${sentenceCaseLower(m[1])}`);
+   if((m=raw.match(/^Request (.+)$/i)))return punctuate(`Can you provide ${sentenceCaseLower(m[1])}`,"?");
+   if((m=raw.match(/^Check (.+)$/i)))return punctuate(`I'm checking ${sentenceCaseLower(m[1])}`);
+   if((m=raw.match(/^Verify (.+)$/i)))return punctuate(`I'm verifying ${sentenceCaseLower(m[1])}`);
+   if((m=raw.match(/^Compare (.+)$/i)))return punctuate(`I'm comparing ${sentenceCaseLower(m[1])}`);
+ }
+ if(mode==="bad"){
+   if((m=raw.match(/^Tell you to (.+)$/i)))return punctuate(`Please ${sentenceCaseLower(m[1])}`);
+   if(/^Tell you not to worry$/i.test(raw))return "Don't worry about it.";
+   if((m=raw.match(/^Tell everyone to (.+)$/i)))return punctuate(`Everyone should ${sentenceCaseLower(m[1])}`);
+   if((m=raw.match(/^Tell you (.+)$/i)))return punctuate(`I'm telling you ${sentenceCaseLower(m[1])}`);
+   if((m=raw.match(/^Have you (.+)$/i)))return punctuate(`Please ${sentenceCaseLower(m[1])}`);
+   if((m=raw.match(/^Give you (.+)$/i)))return punctuate(`I'm giving you ${sentenceCaseLower(m[1])}`);
+   if((m=raw.match(/^Close the ticket and ask you to (.+)$/i)))return punctuate(`I'm going to close the ticket; please ${sentenceCaseLower(m[1])}`);
+ }
+ if(mode==="fix"){
+   if((m=raw.match(/^Tell you to (.+)$/i)))return punctuate(`Please ${sentenceCaseLower(m[1])}`);
+   if((m=raw.match(/^Tell you (.+)$/i)))return punctuate(sentenceCaseLower(m[1]));
+   if((m=raw.match(/^Tell everyone to (.+)$/i)))return punctuate(`Everyone should ${sentenceCaseLower(m[1])}`);
+   if((m=raw.match(/^Use (.+)$/i)))return punctuate(`Please use ${sentenceCaseLower(m[1])}`);
+   if((m=raw.match(/^Open (.+)$/i)))return punctuate(`Please open ${sentenceCaseLower(m[1])}`);
+   if((m=raw.match(/^Follow (.+)$/i)))return punctuate(`Please follow ${sentenceCaseLower(m[1])}`);
+   if((m=raw.match(/^(Escalate|Refer|Route) (.+)$/i)))return punctuate(`I'm ${m[1].toLowerCase()==="escalate"?"escalating":m[1].toLowerCase()==="refer"?"referring":"routing"} this ${sentenceCaseLower(m[2])}`);
+   if((m=raw.match(/^Request (.+)$/i)))return punctuate(`I'll request ${sentenceCaseLower(m[1])}`);
+   return punctuate(`I'll ${sentenceCaseLower(raw)}`);
+ }
+ return punctuate(raw);
+}
+function resolutionFollowupAgentText(t){
+ if(t?.specialistResolution)return rand([
+   "Could you test it again and let me know whether the specialist fix resolved the issue?",
+   "The specialist work is complete. Can you test it now and confirm whether everything is working?",
+   "Can you give it another try and let me know if the specialist fix took care of the problem?"
+ ]);
+ if(t?.request?.fulfilled)return rand([
+   "The request has been fulfilled. Can you test the access or service and confirm everything is working as expected?",
+   "Can you verify that the completed request is working correctly on your side?",
+   "The fulfillment is complete. Could you check it now and let me know if everything looks right?"
+ ]);
+ if(t?.actions?.includes("correct-action"))return rand([
+   "Can you test it again and let me know if the issue is resolved now?",
+   "Could you try it again and confirm whether everything is working normally?",
+   "Please give it another try. Is the problem resolved on your side now?"
+ ]);
+ return rand(["Is the issue resolved now?","Can you test it again and tell me whether the problem is still happening?"]);
+}
+
 function resolutionFollowupReady(t){
  if(!t||t.resolved)return false;
  if(state.pending.some(p=>p.ticketId===t.id&&p.confirm))return false;
@@ -4254,19 +5471,13 @@ function resolutionFollowupLabel(t){
  return "Ask whether the issue is resolved now";
 }
 function injectResolutionFollowupOption(opts,t){
- if(!resolutionFollowupReady(t))return opts;
- const protectedOption=o=>o.id==="requestapproval"||o.id==="emergencyexception"||o.id==="denyrequest"||o.id==="linkincident"||o.type==="c";
- let idx=opts.findIndex(o=>o.type==="b");
- if(idx<0)idx=opts.findIndex(o=>o.type==="q"&&(t.facts.includes(o.id)||(t.proactiveFacts||[]).includes(o.id)));
- if(idx<0)idx=opts.findIndex(o=>o.type==="q");
- if(idx<0)idx=opts.findIndex(o=>!protectedOption(o));
- const follow={key:"r:confirm",type:"r",id:"confirm",label:resolutionFollowupLabel(t),kind:""};
- if(idx>=0)opts.splice(idx,1,follow);else opts.push(follow);
+ if(!resolutionFollowupReady(t)||opts.some(o=>o.type==="r"))return opts;
+ opts.push({key:"r:confirm",type:"r",id:"confirm",label:resolutionFollowupLabel(t),kind:""});
  return opts;
 }
 function doResolutionFollowup(label=null,messageAlreadyAdded=false){
  const t=getTicket();if(!t||t.resolved)return;
- const text=label||resolutionFollowupLabel(t);
+ const text=resolutionFollowupAgentText(t);
  if(!messageAlreadyAdded){advanceTime(2);t.publicCount++;t.actions.push("resolution-followup");addMsg(t,"agent",text)}
  else t.actions.push("resolution-followup-free");
  if(!resolutionFollowupReady(t)){
@@ -4284,17 +5495,22 @@ function renderTicket(){
  if(!t){d.innerHTML="";c.innerHTML='<div class="empty"><div><b>SuperService</b><br>Start a shift to begin working tickets.</div></div>';q.innerHTML="";comp.classList.add("hidden");return}
  comp.classList.remove("hidden");
  d.innerHTML=`<div class="detailtop"><div><h1>${esc(t.subject)}</h1><div class="small">${esc(t.id)} · Opened ${fmtTime(t.opened)} · ${esc(t.user)} · ${esc(t.department)}</div>
- <div class="tags"><span class="tag ${t.priority.toLowerCase()}">${t.priority} priority</span><span class="tag typebadge ${t.request?"requestbadge":""}">${esc(requestTypeDisplay(t))}</span><span class="tag">${esc(t.category)}</span><span class="tag">${esc(getPerson(t).name)}</span><span class="tag userbadge">${esc(relationshipTier(getEmployee(t)).label)}</span><span class="tag ${t.slaMissed?"requestbad":""}">${t.request?"Fulfillment target":"SLA"} ${t.slaMissed?"MISSED":(t.request?requestSlaRemaining(t):Math.max(0,slaFor(t.priority)-(state.clock-t.opened)))+" min"}</span>${t.reopenCount?`<span class="tag reopenbadge">Reopened ×${t.reopenCount}</span>`:""}${t.approval?.required?`<span class="tag">Approval ${t.approval.approved?"APPROVED":t.approval.denied?"DENIED":t.approval.pending?"PENDING":(t.approval.stages||[]).some(x=>x.status==="withdrawn")?"WITHDRAWN":"REQUIRED"}</span>`:""}${activeMajorFor(t)?`<span class="tag">${activeMajorFor(t).id}</span>`:""}${t.specialAssignment?'<span class="tag userbadge">Supervisor Assignment</span>':""}${t.assignmentQueue&&t.assignmentQueue!=="Service Desk"?`<span class="tag">Queue: ${esc(t.assignmentQueue)}</span>`:""}${t.worldEventId?`<span class="tag worldtag">${esc(t.worldEventId)}</span>`:""}${t.vipTicket?'<span class="tag viptag">VIP</span>':""}</div></div>
+ <div class="tags"><span class="tag ${t.priority.toLowerCase()}">${t.priority} priority</span><span class="tag typebadge ${t.request?"requestbadge":""}">${esc(requestTypeDisplay(t))}</span>${state.freeplay?'<span class="tag freeplaytag">Freeplay</span>':""}<span class="tag">${esc(t.category)}</span><span class="tag">${esc(getPerson(t).name)}</span><span class="tag userbadge">${esc(relationshipTier(getEmployee(t)).label)}</span><span class="tag ${t.slaMissed?"requestbad":""}">${t.request?"Fulfillment target":"SLA"} ${t.slaMissed?"MISSED":(t.request?requestSlaRemaining(t):Math.max(0,slaFor(t.priority)-(state.clock-t.opened)))+" min"}</span>${t.reopenCount?`<span class="tag reopenbadge">Reopened ×${t.reopenCount}</span>`:""}${t.approval?.required?`<span class="tag">Approval ${t.approval.approved?"APPROVED":t.approval.denied?"DENIED":t.approval.pending?"PENDING":(t.approval.stages||[]).some(x=>x.status==="withdrawn")?"WITHDRAWN":"REQUIRED"}</span>`:""}${activeMajorFor(t)?`<span class="tag">${activeMajorFor(t).id}</span>`:""}${t.specialAssignment?'<span class="tag userbadge">Supervisor Assignment</span>':""}${t.assignmentQueue&&t.assignmentQueue!=="Service Desk"?`<span class="tag">Queue: ${esc(t.assignmentQueue)}</span>`:""}${t.worldEventId?`<span class="tag worldtag">${esc(t.worldEventId)}</span>`:""}${t.vipTicket?'<span class="tag viptag">VIP</span>':""}</div></div>
  <div class="ticketstatus" role="status"><span class="statusdot ${ticketStatusDotClass(t)}" aria-hidden="true"></span><div><strong>${esc(t.status)}</strong>${t.score!=null?`<div class="small">Score ${t.score}/100</div>`:""}</div></div></div>`;
- c.innerHTML=t.conversation.map(m=>`<div class="msg ${m.who}"><div class="bubble">${esc(m.text)}</div><div class="msgmeta">${m.who==="user"?esc(t.user):m.who==="agent"?"You":m.who==="specialist"?`${esc(m.specialist||"Specialist")} · ${esc(m.teamName||"Specialist Team")} (Internal)`:"System"} · ${m.time}</div></div>`).join("");
+ c.innerHTML=t.conversation.map(m=>`<div class="msg ${m.who==="requesterSupervisor"?"supervisormsg":m.who}"><div class="bubble">${esc(m.text)}</div><div class="msgmeta">${m.who==="user"?esc(t.user):m.who==="agent"?"You":m.who==="specialist"?`${esc(m.specialist||"Specialist")} · ${esc(m.teamName||"Specialist Team")} (Internal)`:m.who==="coworker"?`${esc(m.coworker||"Service Desk teammate")} · Service Desk (Internal)`:m.who==="requesterSupervisor"?`${esc(m.supervisor||"Requester supervisor")} · Supervisor (Internal)`:"System"} · ${m.time}</div></div>`).join("");
  c.scrollTop=c.scrollHeight;
  const s=getScenario(t);
  if(t.resolved){q.innerHTML=`<button class="secondary" onclick="showTicketReport(state.tickets.find(x=>x.id==='${t.id}'))">View Score</button>`;document.getElementById("publicReply").disabled=true;document.getElementById("sendReplyBtn").disabled=true;return}
+ if(t.ownerAgentId!=="player"||t.sharedQueue){
+   const cw=coworkerById(t.ownerAgentId);
+   q.innerHTML=`<div class="coworkerowner"><b>${t.sharedQueue?"Shared Service Desk queue":cw?`Owned by ${esc(cw.name)}`:"Teammate ownership pending"}</b><br>You cannot work the ticket while another owner has it.<div class="requestbuttons"><button class="secondary" onclick="recallFromCoworker()">Recall to My Queue</button></div></div>`;
+   document.getElementById("publicReply").disabled=true;document.getElementById("sendReplyBtn").disabled=true;return;
+ }
  document.getElementById("publicReply").disabled=false;document.getElementById("sendReplyBtn").disabled=false;
  let opts=[
    ...s.diagnostics.map(a=>({key:"q:"+a[0],type:"q",id:a[0],label:a[1],kind:""})),
    ...s.fixes.map(a=>({key:"f:"+a[0],type:"f",id:a[0],label:a[1],kind:a[2]||""})),
-   ...(t.badDiagnostics||[]).map(id=>{const x=BAD_DIAGNOSTICS.find(o=>o.id===id);return x?{key:"b:"+id,type:"b",id,label:x.label,kind:""}:null}).filter(Boolean)
+   ...(t.badDiagnostics||[]).map(id=>{const x=BAD_DIAGNOSTICS.find(o=>o.id===id);return x?{key:"b:"+id,type:"b",id,label:x.label,kind:x.severity||""}:null}).filter(Boolean)
  ];
  if(clarificationNeeded(t)){
    const cp=clarificationProfile(t),cs=clarificationState(t);
@@ -4310,16 +5526,34 @@ function renderTicket(){
  if(t.approval?.emergencyEligible&&!t.approval.approved&&t.approval.emergencyStatus!=="pending"&&!s.fixes.some(a=>a[0]==="emergencyexception"))opts.push({key:"f:emergencyexception",type:"f",id:"emergencyexception",label:"Request emergency exception",kind:""});
  if(t.approval?.denied)opts.push({key:"f:denyrequest",type:"f",id:"denyrequest",label:"Close request — required approval was denied",kind:""});
  if(activeMajorFor(t))opts.push({key:"f:linkincident",type:"f",id:"linkincident",label:`Link ticket to ${activeMajorFor(t).id} major incident`,kind:""});
- opts.sort((a,b)=>stableRank(t.id+a.key)-stableRank(t.id+b.key));
  opts=injectResolutionFollowupOption(opts,t);
- q.innerHTML=opts.map(o=>`<button class="actionbtn" type="button" data-type="${o.type}" data-id="${o.id}" data-kind="${o.kind}" aria-label="${esc(o.label)}">${esc(o.label)}</button>`).join("");
+ const investigation=opts.filter(o=>["q","c","rf"].includes(o.type));
+ const actions=opts.filter(o=>!["q","c","rf"].includes(o.type));
+ const optionRank=o=>{
+   const suggested=(o.type==="q"&&(t.specialistSuggestedDiagnostic===o.id||t.coworkerSuggestedDiagnostic===o.id))||(o.type==="f"&&(t.specialistSuggestedFix===o.id||t.coworkerSuggestedFix===o.id));
+   const completed=(o.type==="q"&&(t.facts.includes(o.id)||(t.proactiveFacts||[]).includes(o.id)))||(o.type==="f"&&t.actions.includes("fix:"+o.id));
+   return (suggested?-1000000:0)+(completed?500000:0)+stableRank(t.id+o.key);
+ };
+ investigation.sort((a,b)=>optionRank(a)-optionRank(b));actions.sort((a,b)=>optionRank(a)-optionRank(b));
+ const optionHtml=o=>{
+   const suggested=(o.type==="q"&&(t.specialistSuggestedDiagnostic===o.id||t.coworkerSuggestedDiagnostic===o.id))||(o.type==="f"&&(t.specialistSuggestedFix===o.id||t.coworkerSuggestedFix===o.id));
+   const completed=(o.type==="q"&&(t.facts.includes(o.id)||(t.proactiveFacts||[]).includes(o.id)))||(o.type==="f"&&t.actions.includes("fix:"+o.id));
+   const cls=["actionbtn",completed?"completed-action":"",suggested?"specialist-suggested":"",o.type==="b"?"risky-action":"",o.type==="r"?"resolution-action":""].filter(Boolean).join(" ");
+   return `<button class="${cls}" type="button" data-type="${o.type}" data-id="${o.id}" data-kind="${esc(o.kind||"")}" data-label="${esc(o.label)}" aria-label="${esc(o.label)}">${esc(o.label)}</button>`;
+ };
+ const suggestionLabel=t.coworkerSuggestedDiagnostic?(s.diagnostics.find(d=>d[0]===t.coworkerSuggestedDiagnostic)?.[1]||"the suggested diagnostic"):t.coworkerSuggestedFix?(s.fixes.find(f=>f[0]===t.coworkerSuggestedFix)?.[1]||"the suggested action"):t.specialistSuggestedDiagnostic?(s.diagnostics.find(d=>d[0]===t.specialistSuggestedDiagnostic)?.[1]||"the suggested diagnostic"):t.specialistSuggestedFix?(s.fixes.find(f=>f[0]===t.specialistSuggestedFix)?.[1]||"the suggested action"):null;
+ const suggestionSource=(t.coworkerSuggestedDiagnostic||t.coworkerSuggestedFix)?"Teammate suggestion":"Specialist suggestion";
+ q.innerHTML=`${responsePolicyPanel(t,true)}${suggestionLabel?`<div class="specialisthint"><b>${suggestionSource}</b><br>${esc(suggestionLabel)} — this recommendation is highlighted below.</div>`:""}
+ <div class="actionrow"><div class="actionrowlabel">Investigate</div><div class="actionscroll" role="group" aria-label="Investigation actions">${investigation.map(optionHtml).join("")}</div></div>
+ <div class="actionrow"><div class="actionrowlabel">Actions / Risk</div><div class="actionscroll" role="group" aria-label="Solutions and other actions">${actions.map(optionHtml).join("")}</div></div>`;
  q.querySelectorAll("[data-type]").forEach(b=>b.onclick=()=>{
-   if(b.dataset.type==="q")doDiagnostic(b.dataset.id,b.textContent);
-   else if(b.dataset.type==="rf"){addMsg(t,"agent",b.textContent);collectRequestField(t,b.dataset.id,true)}
-   else if(b.dataset.type==="r")doResolutionFollowup(b.textContent);
-   else if(b.dataset.type==="c")doClarification(b.dataset.id==="followup",b.textContent);
-   else if(b.dataset.type==="b")doBadDiagnostic(b.dataset.id,b.textContent);
-   else doFix(b.dataset.id,b.textContent,b.dataset.kind);
+   const label=b.dataset.label||b.textContent;
+   if(b.dataset.type==="q")doDiagnostic(b.dataset.id,label);
+   else if(b.dataset.type==="rf"){addMsg(t,"agent",agentChatForAction(label,"diagnostic",t));collectRequestField(t,b.dataset.id,true)}
+   else if(b.dataset.type==="r")doResolutionFollowup(label);
+   else if(b.dataset.type==="c")doClarification(b.dataset.id==="followup",label);
+   else if(b.dataset.type==="b")doBadDiagnostic(b.dataset.id,label);
+   else doFix(b.dataset.id,label,b.dataset.kind);
  });
 }
 function approvalStatusLabel(t){
@@ -4414,14 +5648,21 @@ function renderTab(){
        "kicked-back":"Returned to Service Desk","info-needed":"Returned for information","awaiting-confirmation":"Specialist work complete — awaiting user confirmation"
      }[t.specialistState]||t.specialistState;
      const request=t.specialistInfoRequest?`<div class="orgwarning"><b>Specialist requested more information:</b><br>${esc(t.specialistInfoRequest.text)}</div>`:"";
-     const cards=SUPPORT_TEAMS.map(tm=>{const load=teamLoad(tm.id).toLowerCase();return `<button class="teamcard ${current===tm.name?"current":""}" onclick="assignToTeam('${tm.id}')"><b>${esc(tm.name)}</b>${esc(tm.desc)}<div class="teammeta"><span>${esc(tm.specialists[0])} + team</span><span class="load ${load}">${esc(teamLoad(tm.id))}</span></div></button>`}).join("");
-     const hist=(t.teamHistory||[]).slice().reverse().map(h=>`<div class="teamhistoryitem"><b>${esc(h.time)} · ${esc(h.action)}</b><br>${esc(h.team)}${h.note?`<br>${esc(h.note)}`:""}</div>`).join("")||'<div class="small">No assignment history yet.</div>';
-     body.innerHTML=`<div class="teamstatus ${t.specialistState==="accepted"||t.specialistState==="awaiting-confirmation"?"accepted":t.specialistState==="kicked-back"||t.specialistState==="info-needed"?"returned":t.specialistState==="working"||t.specialistState==="reviewing"?"working":""}"><b>Current queue: ${esc(current)}</b><br>${esc(stateLabel)} · ${t.escalationAttempts||0} assignment attempt(s) · ${t.teamKickbacks||0} return(s)</div>
-       ${request}
-       ${current!=="Service Desk"&&["reviewing","accepted","working"].includes(t.specialistState)?'<button class="secondary" style="width:100%;margin:8px 0" onclick="recallFromTeam()">Recall to Service Desk</button>':""}
-       <div class="small" style="margin:8px 0">Choose a specialist queue based on service ownership and the evidence you have gathered. Queue names do not reveal the correct answer.</div>
+     const suggested=t.specialistSuggestedDiagnostic?(getScenario(t).diagnostics||[]).find(d=>d[0]===t.specialistSuggestedDiagnostic)?.[1]:t.specialistSuggestedFix?(getScenario(t).fixes||[]).find(f=>f[0]===t.specialistSuggestedFix)?.[1]:null;
+     const suggestion=suggested?`<div class="specialisthint"><b>Specialist suggestion</b><br>${esc(suggested)}<br><span class="small">This action is highlighted in the ticket action tray.</span></div>`:"";
+     const coworkerCards=state.coworkers.map(cw=>{const load=coworkerLoad(cw.id),aff=Math.round(coworkerAffinity(cw,t)*100),accept=Math.round(coworkerAcceptanceChance(cw,t)*100);return `<div class="coworkercard"><b>${esc(cw.name)}</b> · ${esc(cw.title)}<div class="coworkertrust">${esc(cw.style)} · ${load} load · Trust ${Math.round(cw.trust)}/100 · Fit ${aff}%</div><div>${esc(cw.bio)}</div><div class="coworkeractions"><button class="secondary" onclick="askCoworkerForHelp('${cw.id}')">Ask for Help</button><button class="secondary" onclick="assignToCoworker('${cw.id}')">Reassign (${accept}%)</button><button class="secondary" onclick="tradeWithCoworker('${cw.id}')">Trade Tickets</button></div></div>`}).join("");
+     const cards=SUPPORT_TEAMS.map(tm=>{const load=teamLoad(tm.id).toLowerCase(),b=teamBehavior(tm.id);return `<button class="teamcard ${current===tm.name?"current":""}" onclick="assignToTeam('${tm.id}')"><b>${esc(tm.name)}</b>${esc(tm.desc)}<div class="teamtemper">${esc(b.label)} · handoff tolerance varies with queue load</div><div class="teammeta"><span>${esc(tm.specialists[0])} + team</span><span class="load ${load}">${esc(teamLoad(tm.id))}</span></div></button>`}).join("");
+     const hist=(t.teamHistory||[]).slice().reverse().map(h=>`<div class="teamhistoryitem"><b>${esc(h.time)} · ${esc(h.action)}</b><br>${esc(h.team)}${h.note?`<br>${esc(h.note)}`:""}</div>`).join("")||'<div class="small">No specialist assignment history yet.</div>';
+     const chist=(t.coworkerHistory||[]).map(h=>`<div class="teamhistoryitem"><b>${esc(h.time)} · ${esc(h.action)}</b><br>${esc(h.coworker)}${h.note?`<br>${esc(h.note)}`:""}</div>`).join("")||'<div class="small">No teammate ownership history yet.</div>';
+     body.innerHTML=`<div class="teamstatus"><b>Service Desk ownership: ${t.ownerAgentId==="player"&&!t.sharedQueue?"You":t.sharedQueue?"Shared Queue":esc(coworkerById(t.ownerAgentId)?.name||"Teammate")}</b><br>${t.coworkerState!=="none"?`Teammate state: ${esc(t.coworkerState)} · `:""}Dump points on this ticket: ${t.coworkerDumpPoints||0}</div>
+       <div class="contextcard"><h4>Fellow Service Desk Agents</h4><div class="small" style="margin-bottom:7px">Ask for a hint, reassign ownership, or trade tickets. Trust, workload, specialty fit, and handoff quality affect whether they help or accept.</div><div class="coworkergrid">${coworkerCards}</div><div class="coworkeractions"><button class="danger" onclick="dumpToSharedQueue()">Dump into Shared Queue</button>${t.ownerAgentId!=="player"||t.sharedQueue?'<button class="secondary" onclick="recallFromCoworker()">Recall to My Queue</button>':""}${(t.coworkerAuditPoints||0)>0&&!t.auditAttributionHidden?`<button class="danger" onclick="concealCoworkerTransfer()">Outrun Audit Attribution (${effectiveAuditTarget(t.coworkerTransferMode==="shared"?"shared-conceal":t.coworkerDumpPoints>=3?"repeat-dump-conceal":"reassignment-conceal",t)} WPM)</button>`:""}</div></div>
+       <div class="contextcard"><h4>Teammate Ownership History</h4>${chist}</div>
+       <div class="teamstatus ${t.specialistState==="accepted"||t.specialistState==="awaiting-confirmation"?"accepted":t.specialistState==="kicked-back"||t.specialistState==="info-needed"?"returned":t.specialistState==="working"||t.specialistState==="reviewing"?"working":""}"><b>Specialist queue: ${esc(current)}</b><br>${esc(stateLabel)} · ${t.escalationAttempts||0} assignment attempt(s) · ${t.teamKickbacks||0} return(s)${t.handoffGrade?` · <span class="handoffbadge ${handoffGradeClass(t.handoffGrade)}">${esc(t.handoffGrade)}</span>`:""}</div>
+       ${request}${suggestion}
+       ${current!=="Service Desk"&&["reviewing","accepted","working"].includes(t.specialistState)?'<button class="secondary" style="width:100%;margin:8px 0" onclick="recallFromTeam()">Recall from Specialist</button>':""}
+       <div class="small" style="margin:8px 0">Specialist queue load affects tolerance, not ownership. Fellow-agent reassignment is separate from specialist escalation.</div>
        <div class="teamgrid">${cards}</div>
-       <div class="contextcard" style="margin-top:10px"><h4>Assignment History</h4><div class="teamhistory">${hist}</div></div>`;
+       <div class="contextcard" style="margin-top:10px"><h4>Specialist Assignment History</h4><div class="teamhistory">${hist}</div></div>`;
    }
  }else if(activeTab==="world"){
    const events=state.world?.events||[],anns=state.world?.announcements||[],ev=t?relevantWorldEvent(t):null;if(t&&ev)t.worldContextSeen=true;
@@ -4450,8 +5691,17 @@ function renderTab(){
      </div>`;
    }
  }else{
-   body.innerHTML=t?`<div class="statusstack"><button class="secondary" onclick="setStatus('In Progress')">Set In Progress</button><button class="secondary" onclick="setStatus('Waiting for User')">Waiting for User</button><button class="secondary" onclick="openTeamsTab()">Escalate / Assign</button><button class="primary" onclick="closeTicket()">Resolve / Close Ticket</button><button class="danger" onclick="forceCloseTicket()">Force Close Ticket</button></div>
-   <div class="resultbox">Applied fixes must be validated with the requester before normal closure. Once a fix is ready, a one-click validation follow-up replaces one quick action. Force Close is always available, but users can object and score the interaction. Multi-stage approvals can remain open in the background while you work the rest of the queue. Use the Approvals tab to see who actually has authority, delegation, denials, withdrawals, and emergency exceptions. Poorly closed tickets may reopen, and multiple apparently separate tickets may be symptoms of one larger incident. Escalations now remain open until a specialist team accepts, investigates, and returns a resolution for requester validation. The World tab shows the current change calendar, outages, campaigns, workload events, and announcements that may be shaping the queue. Catalog requests use separate fulfillment targets and remain open through classification, intake, approvals, fulfillment, and requester validation.</div>`:'<div class="empty">Select a ticket.</div>';
+   body.innerHTML=t?(t.resolved?`<div class="fulfillmentcard"><b>Ticket complete — ${esc(t.outcome||"Resolved")}</b><br>Score: ${t.score??"—"}/100. Reopening controls and destructive actions are unavailable after completion.<div class="requestbuttons"><button class="primary" onclick="showTicketReport(getTicket())">View Resolution & Score</button></div></div>`:`<div class="statusstack"><button class="secondary" onclick="setStatus('In Progress')">Set In Progress</button><button class="secondary" onclick="setStatus('Waiting for User')">Waiting for User</button><button class="secondary" onclick="openTeamsTab()">Escalate / Assign</button><button class="primary" onclick="closeTicket()">Resolve / Close Ticket</button><button class="danger" onclick="forceCloseTicket()">Force Close Ticket</button></div>
+   ${responsePolicyPanel(t)}
+   <div class="dangerzone"><h4>Desperation / Administrative Misconduct</h4><p>These are deliberately bad career decisions. Detection is no longer a simple random firing roll: questionable actions launch <b>Outrun the Audit</b>, an abstract typing race. Faster, more accurate typing can avoid immediate attribution; repeated findings build Misconduct Heat and escalate from warnings to coaching, a misconduct plan, final warning, and eventually termination.</p>
+   <div class="auditheat"><div><b>Misconduct Heat ${state.maliciousStats?.heat||0}/100</b><div class="heatbar"><i style="width:${Math.min(100,state.maliciousStats?.heat||0)}%"></i></div></div><span class="auditstage ${misconductStageClass()}">${esc(misconductStageLabel())}</span></div>
+   <div class="desperationgrid">
+    <div class="desperationcard"><b>False Waiting for User</b>Buy yourself time even though you never asked them anything. Audit target: ${effectiveAuditTarget("false-waiting",t)} adjusted WPM.<button class="danger" onclick="markFalseWaiting()">Do It Anyway</button></div>
+    <div class="desperationcard"><b>Unjustified Priority Downgrade</b>Reduce queue pressure without a real impact change. Audit target: ${effectiveAuditTarget("priority-downgrade",t)} adjusted WPM.<button class="danger" onclick="unjustifiedPriorityDowngrade()">Lower Priority Anyway</button></div>
+    <div class="desperationcard"><b>Delete Ticket Record</b>Hide it from the visible queue so it cannot reopen. Ticket scores 0/100. Audit target: ${effectiveAuditTarget("ticket-delete",t)} adjusted WPM.<button class="danger" onclick="deleteTicketRecord()">Delete Ticket</button></div>
+    <div class="desperationcard"><b>Delete Requester Account</b>The nuclear option. Ticket scores 0/100. Audit target tops out at ${effectiveAuditTarget("account-delete",t)} adjusted WPM with 95% accuracy.<button class="danger" onclick="deleteRequesterAccount()">Delete Requester's Account</button></div>
+   </div></div>
+   <div class="resultbox">Applied fixes must be validated with the requester before normal closure. Once a fix is ready, a one-click validation follow-up replaces one quick action. Force Close is always available, but users can object and score the interaction. Multi-stage approvals can remain open in the background while you work the rest of the queue. Use the Approvals tab to see who actually has authority, delegation, denials, withdrawals, and emergency exceptions. Poorly closed tickets may reopen, and multiple apparently separate tickets may be symptoms of one larger incident. Escalations now remain open until a specialist team accepts, investigates, and returns a resolution for requester validation. The World tab shows the current change calendar, outages, campaigns, workload events, and announcements that may be shaping the queue. Catalog requests use separate fulfillment targets and remain open through classification, intake, approvals, fulfillment, and requester validation.</div>`):'<div class="empty">Select a ticket.</div>';
  }
 }
 window.setStatus=setStatus;window.closeTicket=closeTicket;window.forceCloseTicket=forceCloseTicket;window.showTicketReport=showTicketReport;
@@ -4466,7 +5716,7 @@ function employeeDirectoryCard(e){
  const rel=relationshipTier(e),avg=e.closureInteractions?Math.round((e.ticketHistory||[]).reduce((a,h)=>a+(h.rating||0),0)/Math.max(1,(e.ticketHistory||[]).filter(h=>h.rating).length)*10)/10:"—";
  const recent=(e.ticketHistory||[])[0];
  return `<div class="personcard" data-person-search="${esc(`${e.name} ${e.department} ${e.roleTitle}`.toLowerCase())}">
-   <div class="approvalrow"><div><div class="personname">${esc(e.name)}</div><div class="personmeta">${esc(e.roleTitle)} · ${esc(e.department)}<br>Supervisor: ${esc(e.supervisorName||"—")} · Manager: ${esc(e.managerName||"—")}</div></div><span class="relationship ${rel.id}">${esc(rel.label)}</span></div>
+   <div class="approvalrow"><div><div class="personname">${esc(e.name)}${e.accountDisabledByAgent?' <span class="tag account-disabled">ACCOUNT DISABLED</span>':""}</div><div class="personmeta">${esc(e.roleTitle)} · ${esc(e.department)}<br>Supervisor: ${esc(e.supervisorName||"—")} · Manager: ${esc(e.managerName||"—")}</div></div><span class="relationship ${rel.id}">${esc(rel.label)}</span></div>
    <div class="profilemetrics"><div class="profilemetric"><b>${e.lifetimeTickets}</b><span>Tickets</span></div><div class="profilemetric"><b>${avg}</b><span>Avg Rating</span></div><div class="profilemetric"><b>${Math.round(e.satisfaction)}</b><span>Satisfaction</span></div></div>
    ${e.closureInteractions?`<div class="personmeta">Observed: ${esc(employeeTechLabel(e))} · ${esc(employeeResponseLabel(e))}${recent?`<br>Latest: ${esc(recent.category)} — ${esc(recent.outcome)}`:""}${e.requestHistory?.length?`<br>Catalog requests: ${e.requestHistory.length}`:""}${e.entitlements?.length?`<br>Known entitlements: ${e.entitlements.slice(0,3).map(x=>esc(x.name)).join(", ")}`:""}</div>`:'<div class="personmeta">No completed interactions with you yet.</div>'}
  </div>`;
@@ -4500,6 +5750,7 @@ function showCareerCenter(){
  <div class="contextcard"><h4>${state.active?"Current Development Objectives":"Latest Development Objectives"}</h4><div class="objectivegrid">${objectives}</div></div>
  <div class="contextcard"><h4>Career Skill Profile</h4><div class="skillgrid">${careerSkillCard("Technical / FCR","technical")}${careerSkillCard("Customer Experience","customer")}${careerSkillCard("Security","security")}${careerSkillCard("Documentation","documentation")}${careerSkillCard("Escalation & Routing","escalation")}${careerSkillCard("Operational Awareness","operations")}${careerSkillCard("Request Fulfillment","requests")}${careerSkillCard("Queue Management","queue")}</div></div>
  <div class="contextcard"><h4>Career Metrics</h4><div class="reportgrid"><div class="stat"><b>${metricAverage("fcr")||"—"}%</b><span>FCR</span></div><div class="stat"><b>${metricAverage("csat")||"—"}%</b><span>CSAT</span></div><div class="stat"><b>${metricAverage("sla")||"—"}%</b><span>SLA</span></div><div class="stat"><b>${metricAverage("security")||"—"}%</b><span>Security</span></div><div class="stat"><b>${metricAverage("routing")||"—"}%</b><span>Routing</span></div><div class="stat"><b>${metricAverage("operations")||"—"}%</b><span>Ops Awareness</span></div><div class="stat"><b>${metricAverage("requests")||"—"}%</b><span>Request Quality</span></div></div></div>
+ <div class="contextcard"><h4>Administrative Conduct / Audit</h4><div class="auditheat"><div><b>Misconduct Heat ${state.maliciousStats?.heat||0}/100</b><div class="heatbar"><i style="width:${Math.min(100,state.maliciousStats?.heat||0)}%"></i></div></div><span class="auditstage ${misconductStageClass()}">${esc(misconductStageLabel())}</span></div><div class="reportgrid"><div class="stat"><b>${state.maliciousStats?.findings||0}</b><span>Attributed Findings</span></div><div class="stat"><b>${state.maliciousStats?.evasionAttempts||0}</b><span>Audit Races</span></div><div class="stat"><b>${state.maliciousStats?.cleanEscapes||0}</b><span>Clean Escapes</span></div><div class="stat"><b>${state.maliciousStats?.narrowEscapes||0}</b><span>Narrow Escapes</span></div><div class="stat"><b>${state.maliciousStats?.extraTickets||0}</b><span>Punishment Tickets</span></div></div><div class="audit-history">${(state.maliciousStats?.auditHistory||[]).slice(0,8).map(h=>`<div class="audit-history-item"><b>Shift ${h.shift} · ${esc(h.label)} — ${esc(h.outcome)}</b><br>${esc(h.detail||"")}<br>Heat ${h.heat}/100</div>`).join("")||'<div class="small">No audit history recorded.</div>'}</div></div>
  <div class="contextcard"><h4>Achievements</h4><div class="achievementgrid">${achievements}</div></div>
  <div class="contextcard"><h4>Personnel File</h4><div class="personnelfile">${personnel}</div></div>
  ${state.careerArchive?.length?`<div class="contextcard"><h4>Prior Careers</h4><div class="personnelfile">${archives}</div></div>`:""}
@@ -4518,7 +5769,7 @@ function importCareerSave(input){
      const parsed=JSON.parse(reader.result),incoming=parsed?.state||parsed;
      if(!incoming||typeof incoming!=="object"||!Array.isArray(incoming.tickets))throw new Error("This does not appear to be a SuperService save.");
      if(state.active&&!confirm("Replace the current active SuperService career with this imported save?")){input.value="";return}
-     state=normalizeState(incoming);saveState();hideModal();
+     state=normalizeState(incoming);syncTypingPracticeStats();saveState();hideModal();
      if(state.active&&state.tickets.length)document.getElementById("startModal").classList.add("hidden");else if(!state.tickets.length)document.getElementById("startModal").classList.remove("hidden");else document.getElementById("startModal").classList.add("hidden");
      processPending();renderAll();toast("Career save imported.");
    }catch(err){alert(`Unable to import save: ${err.message}`)}
@@ -4549,8 +5800,10 @@ window.showPerformanceCenter=showPerformanceCenter;
 function showTeamQueues(){
  const active=state.tickets.filter(t=>!t.resolved);
  showModal(`<div class="mh"><h2>Specialist Queues</h2><button class="secondary" onclick="hideModal()">Close</button></div><div class="mb">
- <div class="reportgrid"><div class="stat"><b>${state.teamStats?.assignments||0}</b><span>Assignments</span></div><div class="stat"><b>${state.teamStats?.accepted||0}</b><span>Accepted</span></div><div class="stat"><b>${state.teamStats?.kickbacks||0}</b><span>Returns</span></div><div class="stat"><b>${state.teamStats?.wrongQueue||0}</b><span>Wrong Queue</span></div><div class="stat"><b>${state.teamStats?.resolutions||0}</b><span>Specialist Resolutions</span></div></div>
- <div class="teamgrid">${SUPPORT_TEAMS.map(tm=>{const assigned=active.filter(t=>t.assignmentQueue===tm.name).length,load=teamLoad(tm.id).toLowerCase();return `<div class="queuecard"><b>${esc(tm.name)}</b><div>${esc(tm.desc)}</div><div class="teammeta"><span class="queuecounts">${assigned} active ticket${assigned===1?"":"s"} here</span><span class="load ${load}">${esc(teamLoad(tm.id))}</span></div></div>`}).join("")}</div>
+ <div class="reportgrid"><div class="stat"><b>${state.teamStats?.assignments||0}</b><span>Assignments</span></div><div class="stat"><b>${state.teamStats?.accepted||0}</b><span>Accepted</span></div><div class="stat"><b>${state.teamStats?.mercyAccepts||0}</b><span>Courtesy Accepts</span></div><div class="stat"><b>${state.teamStats?.adviceReturns||0}</b><span>Helpful Returns</span></div><div class="stat"><b>${state.teamStats?.kickbacks||0}</b><span>Returns</span></div><div class="stat"><b>${state.teamStats?.wrongQueue||0}</b><span>Wrong Queue</span></div><div class="stat"><b>${state.teamStats?.excellentHandoffs||0}</b><span>Excellent Handoffs</span></div><div class="stat"><b>${state.teamStats?.resolutions||0}</b><span>Specialist Resolutions</span></div></div>
+ <div class="freeplaynote" style="margin:8px 0"><b>Queue behavior is not deterministic.</b><br>Low-load teams have more room to accept a thin handoff or point you toward the missing check. Moderate queues are less forgiving. High-load queues almost always require a clean handoff. Authorization/policy blocks are never overridden by spare capacity.</div>
+ <div class="contextcard"><h4>Service Desk Teammates</h4><div class="coworkergrid">${state.coworkers.map(cw=>`<div class="coworkercard"><b>${esc(cw.name)}</b> · ${esc(cw.title)}<div class="coworkertrust">${esc(cw.style)} · ${esc(coworkerLoad(cw.id))} load · Trust ${Math.round(cw.trust)}/100</div><div>${esc(cw.bio)}</div><div class="small">Accepted ${cw.accepted} · Returned ${cw.rejected} · Helped ${cw.helped} · Trades ${cw.trades}</div></div>`).join("")}</div></div>
+ <div class="teamgrid">${SUPPORT_TEAMS.map(tm=>{const assigned=active.filter(t=>t.assignmentQueue===tm.name).length,load=teamLoad(tm.id).toLowerCase(),b=teamBehavior(tm.id);return `<div class="queuecard"><b>${esc(tm.name)}</b><div>${esc(tm.desc)}</div><div class="teamtemper">${esc(b.label)} specialist culture</div><div class="teammeta"><span class="queuecounts">${assigned} active ticket${assigned===1?"":"s"} here</span><span class="load ${load}">${esc(teamLoad(tm.id))}</span></div></div>`}).join("")}</div>
  </div><div class="mf"><button class="primary" onclick="hideModal()">Done</button></div>`);
 }
 window.showTeamQueues=showTeamQueues;
@@ -4569,17 +5822,39 @@ function showEmployeeDirectory(){
 
 function showSettings(){
  showModal(`<div class="mh"><h2>Settings & Save Management</h2><button class="secondary" onclick="hideModal()">Close</button></div><div class="mb">
- <div class="reportgrid"><div class="stat"><b>${state.career?.shifts||0}</b><span>Lifetime Shifts</span></div><div class="stat"><b>${state.career?.tickets||0}</b><span>Lifetime Tickets</span></div><div class="stat"><b>${state.career?.tickets?Math.round(state.career.totalScore/state.career.tickets):0}</b><span>Lifetime Average</span></div><div class="stat"><b>${state.career?.terminations||0}</b><span>Times Fired</span></div><div class="stat"><b>${state.careerProfile?.careerNumber||1}</b><span>Current Career</span></div><div class="stat"><b>${esc(agentTitle())}</b><span>Current Title</span></div><div class="stat"><b>${state.requestStats?.fulfilled||0}</b><span>Shift Requests Fulfilled</span></div><div class="stat"><b>${state.requestStats?.kickbacks||0}</b><span>Shift Catalog Kickbacks</span></div></div>
+ <div class="reportgrid"><div class="stat"><b>${state.career?.shifts||0}</b><span>Lifetime Shifts</span></div><div class="stat"><b>${state.career?.tickets||0}</b><span>Lifetime Tickets</span></div><div class="stat"><b>${state.career?.tickets?Math.round(state.career.totalScore/state.career.tickets):0}</b><span>Lifetime Average</span></div><div class="stat"><b>${state.career?.terminations||0}</b><span>Times Fired</span></div><div class="stat"><b>${state.careerProfile?.careerNumber||1}</b><span>Current Career</span></div><div class="stat"><b>${esc(agentTitle())}</b><span>Current Title</span></div><div class="stat"><b>${state.requestStats?.fulfilled||0}</b><span>Shift Requests Fulfilled</span></div><div class="stat"><b>${state.requestStats?.kickbacks||0}</b><span>Shift Catalog Kickbacks</span></div><div class="stat"><b>${state.settings?.typing?.bestWpm||0}</b><span>Typing Best WPM</span></div><div class="stat"><b>${state.settings?.typing?.sessions||0}</b><span>Typing Sessions</span></div></div>
  <div class="savebox"><b>Portable career save</b><br>Your active career is automatically saved in this browser. Export a JSON backup if you want to move it to another browser/device or protect the career from cleared site data.<br><button class="secondary" style="margin-top:8px" onclick="exportCareerSave()">Export Career Save</button><input class="fileinput" type="file" aria-label="Import SuperService career save" accept=".json,application/json" onchange="importCareerSave(this)"></div>
  <p class="small">SuperService itself does not transmit the save. localStorage remains the active save location until you explicitly export or import a file.</p></div>
  <div class="mf"><button class="danger" onclick="resetData()">Reset All Data</button><button class="secondary" onclick="showCareerCenter()">Career Center</button><button class="primary" onclick="hideModal()">Done</button></div>`);
 }
-function resetData(){if(confirm("Delete all SuperService saved progress and career data?")){localStorage.removeItem("superservice-save");state=defaultState();hideModal();document.getElementById("startModal").classList.remove("hidden");renderAll()}}
+function resetData(){if(confirm("Delete all SuperService saved progress and career data?")){localStorage.removeItem("superservice-save");localStorage.removeItem(TYPING_STATS_KEY);localStorage.removeItem("superservice-save-recovery");state=defaultState();syncTypingPracticeStats();hideModal();document.getElementById("startModal").classList.remove("hidden");renderAll()}}
 window.resetData=resetData;
 
+function updateSessionModeHint(){
+ const sel=document.getElementById("sessionSelect"),hint=document.getElementById("sessionModeHint");if(!sel||!hint)return;
+ hint.textContent=sel.value==="freeplay"?"Freeplay starts empty. Add only the tickets you want; practice results do not commit to career progression.":sel.value==="endless"?"Endless Desk continuously generates work and does not automatically produce a finite shift report.":"Career shifts generate a queue and feed supervisor/career progression.";
+}
+
+
+function bootstrapApplicationState(){
+ let loaded=null,raw=null;
+ try{
+   raw=localStorage.getItem("superservice-save");
+   loaded=loadState();
+   state=normalizeState(loaded||defaultState());
+ }catch(err){
+   startupRecoveryError=err;
+   console.error("SuperService could not load or migrate the saved state. A recovery copy was preserved and a clean desk was started.",err);
+   if(raw){try{localStorage.setItem("superservice-save-recovery",raw)}catch(e){}}
+   state=normalizeState(defaultState());
+ }
+ syncTypingPracticeStats();
+ return state;
+}
 document.getElementById("startShiftBtn").onclick=startShift;
 document.getElementById("newShiftBtn").onclick=newShift;
 document.getElementById("settingsBtn").onclick=showSettings;
+document.getElementById("sessionSelect").onchange=updateSessionModeHint;updateSessionModeHint();
 document.getElementById("sendReplyBtn").onclick=freeReply;
 document.getElementById("publicReply").addEventListener("keydown",e=>{
  if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){
@@ -4590,6 +5865,8 @@ document.getElementById("publicReply").addEventListener("keydown",e=>{
 });
 document.getElementById("globalSearch").oninput=e=>{ticketFilter=e.target.value.trim().toLowerCase();renderQueue()};
 document.getElementById("railTickets").onclick=()=>{const list=document.getElementById("ticketList"),row=list.querySelector('[aria-selected="true"]')||list.querySelector(".ticketrow");(row||list).focus?.();};
+document.getElementById("railAddTicket").onclick=showFreeplayTicketPicker;
+document.getElementById("railTyping").onclick=showTypingPractice;
 document.getElementById("railKB").onclick=()=>{activeTab="kb";renderTab()};
 document.getElementById("railReports").onclick=showCareerCenter;
 document.getElementById("railPeople").onclick=showEmployeeDirectory;
@@ -4597,7 +5874,7 @@ document.getElementById("railTeams").onclick=showTeamQueues;
 document.getElementById("railCatalog").onclick=showServiceCatalog;
 document.getElementById("railWorld").onclick=showOperationsBoard;
 document.getElementById("railSettings").onclick=showSettings;
-document.getElementById("railHelp").onclick=()=>showModal(`<div class="mh"><h2>SuperService Help</h2><button class="secondary" onclick="hideModal()">Close</button></div><div class="mb"><p style="font-size:12px;line-height:1.55">Read the ticket, ask useful questions, use tools when they add evidence, apply an appropriate fix or escalation, and document what happened. Applied fixes should be validated with the requester before normal closure; when a fix is ready, use the one-click resolution follow-up or ask naturally in chat. You may force close any ticket, but the customer will react and rate the closure. Professional conduct matters: profanity, name-calling, demeaning phrases, and insults such as idiot, moron, stupid, dumbass, ass, asshole, jerk, loser, useless, shut up, or similar language produce negative customer reactions; direct or repeated abuse can generate complaints and disciplinary action. Users may be mistaken, incomplete, disappear, correct themselves later, or try things without you. Use Context for prior history and attachments, the Approvals tab for multi-stage authority chains and approval history, and Find Related Tickets when an outage may be affecting multiple people. Managers, data owners, application owners, Security, Privacy, Records, HR, Procurement, and delegated approvers may all participate—and they do not always agree. Specialist escalations now go to real simulated queues: teams can accept, return incomplete handoffs, reject wrong routing, internally reroute a minority of mistakes, provide progress updates, and return completed work for requester validation. Requesters are persistent employees: their reporting chain, technical comfort, response habits, prior tickets, satisfaction, trust, catalog-request history, and known entitlements carry across shifts. Service requests now have a distinct workflow: use the Request tab to classify the intake, collect every required catalog field, validate entitlement/policy, complete any required approval chain, submit to the catalog fulfillment owner, and then validate the result with the requester. Do not treat a normal access/software/hardware/data request as an incident repair; direct fulfillment attempts are blocked until the catalog workflow is complete. The Service Catalog rail button shows standard and non-standard offerings, requirements, owners, approval chains, and fulfillment targets. The organization itself is now simulated too: deployments, maintenance, outages, phishing waves, new-hire surges, licensing problems, and VIP events can generate correlated ticket bursts as the shift progresses. Ticket descriptions are not assumed to be perfectly written: when a requester says only “the system,” “the application,” or similar vague language, use the explicit clarification action or ask the same question in free text. Free chat also recognizes common diagnostic intent—errors, scope, timing, other affected users, network/VPN, browsers, webmail, devices, versions, approvals, ownership, retention, file paths, licensing, and similar questions—so typing natural questions can advance the same evidence model as the buttons. Once a corrective action or specialist fix is ready for validation, one quick-action slot changes to a resolution follow-up so you can ask the requester to test and confirm with one click. Your supervisor now reviews every completed shift across FCR, reopen rate, CSAT, SLA, security, documentation, escalation judgment, specialist queue-routing quality, operational awareness, closure quality, conduct, and queue control. In Career Mode those reviews feed a persistent personnel file, development objectives, skill profile, probation period, achievements, career XP, promotions up through Lead Service Agent, archived prior careers, and portable save backups. Balance now reflects a longer career arc: promotions wait until probation is complete, recognition requirements rise by title, PIPs use a monitored recovery period rather than one-strike termination, and sustained clean closure work can clear closure coaching or a closure-quality PIP. Keyboard: Enter sends a public reply; Shift+Enter adds a new line; Ctrl/Command+Enter also sends; / or Ctrl/Command+K focuses ticket search; arrow keys move through the ticket queue when it has focus; Left/Right, Home, and End move among workspace tabs; Escape closes ordinary dialogs. Focus indicators, screen-reader labels, reduced-motion support, and larger mobile touch targets are enabled throughout the workspace.</p><div class="contextcard"><h4>Keyboard shortcuts</h4><div class="a11y-shortcuts"><kbd>/</kbd><span>Focus ticket search</span><kbd>Ctrl/⌘ + K</kbd><span>Focus ticket search</span><kbd>Enter</kbd><span>Send public reply</span><kbd>Shift + Enter</kbd><span>New line in public reply</span><kbd>Ctrl/⌘ + Enter</kbd><span>Send public reply</span><kbd>↑ / ↓</kbd><span>Move through focused ticket queue</span><kbd>← / →</kbd><span>Move through focused workspace tabs</span><kbd>Esc</kbd><span>Close an open dialog</span></div></div></div>`);
+document.getElementById("railHelp").onclick=()=>showModal(`<div class="mh"><h2>SuperService Help</h2><button class="secondary" onclick="hideModal()">Close</button></div><div class="mb"><p style="font-size:12px;line-height:1.55">Read the ticket, ask useful questions, use tools when they add evidence, apply an appropriate fix or escalation, and document what happened. Applied fixes should be validated with the requester before normal closure; when a fix is ready, use the one-click resolution follow-up or ask naturally in chat. You may force close any ticket, but the customer will react and rate the closure. The Status tab also contains deliberately bad desperation/misconduct choices. These now use Misconduct Heat and an escalating discipline ladder rather than a one-click firing roll. Questionable actions can launch the fictional Outrun the Audit typing race: beat the computer's adjusted-WPM and accuracy target to avoid immediate attribution; fail and the finding can lead to extra tickets, training, coaching, a misconduct plan, reassignment restrictions, final warning, and eventually termination. The race is intentionally abstract and does not model real audit-log manipulation. Professional conduct matters: profanity, name-calling, demeaning phrases, and insults such as idiot, moron, stupid, dumbass, ass, asshole, jerk, loser, useless, shut up, or similar language produce negative customer reactions; direct or repeated abuse can generate complaints and disciplinary action. Users may be mistaken, incomplete, disappear, correct themselves later, or try things without you. When a real requester response is outstanding, the Requester Response Policy tracks documented contact attempts and wait age. Legitimate follow-ups can probabilistically accelerate the pending response without making every user unnaturally fast; repeated rapid-fire bugging may annoy them and does not count as separate policy contact. Long enough inactivity can unlock supervisor assistance, alternate validation for appropriate shared services, and legitimate Closed — No Requester Response closure. Policy-closed tickets can later reopen, and you may release future reopens to the shared Service Desk queue instead of guaranteeing they return to you. Use Context for prior history and attachments, the Approvals tab for multi-stage authority chains and approval history, and Find Related Tickets when an outage may be affecting multiple people. Managers, data owners, application owners, Security, Privacy, Records, HR, Procurement, and delegated approvers may all participate—and they do not always agree. The Service Desk now has persistent fellow agents with their own specialties, workload, personalities, and trust in you. In the Teams tab you can ask a teammate for help, reassign a ticket, trade tickets, or dump work into the shared queue. Good handoffs and sensible specialty matching make acceptance more likely; weak dumping lowers coworker trust, can be returned with attitude, and repeated patterns can attract Dana's attention and even result in additional tickets being assigned to you. Specialist escalations go to simulated queues with their own workload and temperament. Handoffs are graded Excellent, Adequate, Thin, Poor, Wrong Team, or Blocked. A Low-load team may shrug and accept an incomplete but correctly routed handoff, or return it with a useful clue about the missing diagnostic or likely cause; Moderate queues are less forgiving and High queues are very unlikely to absorb missing Service Desk work. Strict authorization/policy blocks are never bypassed by spare capacity. Excellent handoffs move through specialist work faster. Requesters are persistent employees: their reporting chain, technical comfort, response habits, prior tickets, satisfaction, trust, catalog-request history, and known entitlements carry across shifts. Service requests now have a distinct workflow: use the Request tab to classify the intake, collect every required catalog field, validate entitlement/policy, complete any required approval chain, submit to the catalog fulfillment owner, and then validate the result with the requester. Do not treat a normal access/software/hardware/data request as an incident repair; direct fulfillment attempts are blocked until the catalog workflow is complete. The Service Catalog rail button shows standard and non-standard offerings, requirements, owners, approval chains, and fulfillment targets. Freeplay is available from the New Shift screen: it starts with an empty desk and lets you add individual scenarios from the + rail button whenever you want. Root causes remain hidden, but Freeplay ticket results are isolated from career progression and supervisor discipline. The keyboard rail button opens a basic Typing Practice module with Words, Sentences, and Service Desk Text drills plus WPM and accuracy tracking; typing scores do not affect the service-desk career. The organization itself is now simulated too: deployments, maintenance, outages, phishing waves, new-hire surges, licensing problems, and VIP events can generate correlated ticket bursts as the shift progresses. Ticket descriptions are not assumed to be perfectly written: when a requester says only “the system,” “the application,” or similar vague language, use the explicit clarification action or ask the same question in free text. Free chat also recognizes common diagnostic intent—errors, scope, timing, other affected users, network/VPN, browsers, webmail, devices, versions, approvals, ownership, retention, file paths, licensing, and similar questions—so typing natural questions can advance the same evidence model as the buttons. The action tray now has two rows: Investigate always keeps every scenario diagnostic available, while Actions / Risk contains all available fixes plus a larger rotating set of plausible premature, risky, or bad choices. Completed diagnostics stay visible and are marked rather than disappearing. If a specialist points you toward a missing check, that action is highlighted. Once a corrective action or specialist fix is ready for validation, the resolution follow-up is added without replacing an investigation option. Your supervisor now reviews every completed shift across FCR, reopen rate, CSAT, SLA, security, documentation, escalation judgment, specialist queue-routing quality, operational awareness, closure quality, conduct, and queue control. In Career Mode those reviews feed a persistent personnel file, development objectives, skill profile, probation period, achievements, career XP, promotions up through Lead Service Agent, archived prior careers, and portable save backups. Balance now reflects a longer career arc: promotions wait until probation is complete, recognition requirements rise by title, PIPs use a monitored recovery period rather than one-strike termination, and sustained clean closure work can clear closure coaching or a closure-quality PIP. Keyboard: Enter sends a public reply; Shift+Enter adds a new line; Ctrl/Command+Enter also sends; / or Ctrl/Command+K focuses ticket search; arrow keys move through the ticket queue when it has focus; Left/Right, Home, and End move among workspace tabs; Escape closes ordinary dialogs. Focus indicators, screen-reader labels, reduced-motion support, and larger mobile touch targets are enabled throughout the workspace.</p><div class="contextcard"><h4>Keyboard shortcuts</h4><div class="a11y-shortcuts"><kbd>/</kbd><span>Focus ticket search</span><kbd>Ctrl/⌘ + K</kbd><span>Focus ticket search</span><kbd>Enter</kbd><span>Send public reply</span><kbd>Shift + Enter</kbd><span>New line in public reply</span><kbd>Ctrl/⌘ + Enter</kbd><span>Send public reply</span><kbd>↑ / ↓</kbd><span>Move through focused ticket queue</span><kbd>← / →</kbd><span>Move through focused workspace tabs</span><kbd>Esc</kbd><span>Close an open dialog</span></div></div></div>`);
 function activateWorkspaceTab(button,focus=false){
  if(!button)return;activeTab=button.dataset.tab;renderTab();if(focus)document.getElementById(`tab-${activeTab}`)?.focus?.();
 }
@@ -4635,6 +5912,8 @@ document.addEventListener?.("keydown",e=>{
  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();const search=document.getElementById("globalSearch");search.focus();search.select?.();return}
  if(e.key==="/"&&!typing&&genericModal.classList.contains("hidden")){e.preventDefault();const search=document.getElementById("globalSearch");search.focus();search.select?.()}
 });
+/* Bootstrap only after every data table, const binding, function, and DOM reference above is initialized. */
+bootstrapApplicationState();
 setInterval(processPending,450);
 
 if(state.active&&state.tickets.length){
@@ -4644,4 +5923,5 @@ if(state.active&&state.tickets.length){
  document.getElementById("startModal").classList.add("hidden");
 }
 renderAll();
+if(startupRecoveryError)toast("Saved career could not be loaded; a recovery copy was preserved.");
 if(!document.getElementById("startModal").classList.contains("hidden"))document.getElementById("startModal").querySelector("select,button")?.focus?.();

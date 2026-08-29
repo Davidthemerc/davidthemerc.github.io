@@ -1,3 +1,4 @@
+import { hyperSoftShouldBypassTypingEvent } from "../core/accessibilityUtils.js";
 import { PREFIX_SUFFIX_CHUNKS } from "../core/config.js";
 
 const STATIONS = {
@@ -30,6 +31,7 @@ export class SpaceJunkGame {
     this.mission = MISSIONS[gameOptions.spaceMission] ?? MISSIONS.patrol;
     this.watch = DURATIONS[gameOptions.spaceDuration] ?? DURATIONS.standard;
     this.running = false;
+    this.finished = false;
     this.durationMs = this.watch.ms;
     this.debris = [];
     this.buffer = "";
@@ -53,6 +55,7 @@ export class SpaceJunkGame {
 
   start() {
     this.running = true;
+    this.finished = false;
     this.stage.innerHTML = `
       <div class="space-stage space-defense-stage" id="spaceStage">
         <div class="station ${this.maxShield ? "station-shielded" : ""}" id="spaceStation">
@@ -187,6 +190,7 @@ export class SpaceJunkGame {
   }
 
   handleKeydown(event) {
+    if (hyperSoftShouldBypassTypingEvent(event)) return;
     if (!this.running || event.ctrlKey || event.metaKey || event.altKey) return;
 
     if (/^[a-zA-Z]$/.test(event.key)) {
@@ -399,7 +403,7 @@ export class SpaceJunkGame {
     this.engine.updateHUD({ timerMs: remaining });
 
     if (this.hull <= 0) {
-      this.finish({
+      this.complete({
         success: false,
         score: this.engine.score,
         title: "Station disabled",
@@ -418,7 +422,7 @@ export class SpaceJunkGame {
 
     if (remaining <= 0) {
       this.engine.addScore(this.hull * 100 + this.shield * 70 + this.waveNumber * 30);
-      this.finish({
+      this.complete({
         success: true,
         score: this.engine.score,
         title: "Orbit secured",
@@ -440,6 +444,14 @@ export class SpaceJunkGame {
 
   getHUDTime() {
     return Math.max(0, this.durationMs - this.engine.getElapsedMs());
+  }
+
+  complete(result) {
+    if (!this.running || this.finished) return false;
+    this.finished = true;
+    this.running = false;
+    this.finish(result);
+    return true;
   }
 
   stop() {
