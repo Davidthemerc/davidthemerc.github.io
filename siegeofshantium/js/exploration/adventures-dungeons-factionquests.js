@@ -1,5 +1,3 @@
-function adventureSiteForLocation(id){return Object.values(ADVENTURE_SITES).find(s=>s.location===id)}
-function adventureState(id){ensureWorldState();if(!state.world.adventures[id])state.world.adventures[id]={stage:0,completed:false,visits:0,lastDay:0};return state.world.adventures[id]}
 function adventureProgressText(site){const s=adventureState(site.location);return s.completed?'CLEARED':SOSText("exploration_adventures_dungeons_factionquests.adventureProgressText.001",Math.min(site.stages,s.stage+1),site.stages)}
 function adventureEnemyGroup(siteId,label,size=3){
  const phase=clamp(1+Math.floor(state.world.day/4),1,12),pool=phase<4?ENEMIES.slice(0,12):phase<8?ENEMIES.slice(0,22):ENEMIES.slice(5),members=[];
@@ -227,7 +225,7 @@ function showDungeonMap(siteId){modalRouteEnter(SOSText("exploration_adventures_
  const site=ADVENTURE_SITES[siteId],layout=dungeonLayout(siteId);if(!site||!layout)return showAdventureSite(siteId);
  const s=adventureState(siteId),d=ensureDungeonState(siteId);
  overlay(SOSText("exploration_adventures_dungeons_factionquests.showDungeonMap.002",esc(site.name),layout.rooms.map(r=>{const status=dungeonRoomStatus(siteId,r),locked=status==='LOCKED';return `<button class="dungeon-room room-${r.type} ${status==='VISITED'||status==='CLEARED SECRET'?'room-cleared':''}" data-room="${r.id}" style="left:${r.x}%;top:${r.y}%" ${locked?'disabled':''}><b>${esc(r.name)}</b><span>${esc(status)}</span></button>`}).join(''),adventureProgressText(site),s.bossDefeated?' • Boss defeated':''));
- document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>interactDungeonRoom(siteId,b.dataset.room));$('#dungeonBack').onclick=()=>showAdventureSite(siteId);wireClose()
+ document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>interactDungeonRoom(siteId,b.dataset.room));$('#dungeonBack').onclick=()=>SOSServices.navigation.back(()=>showAdventureSite(siteId));wireClose()
 }
 function interactDungeonRoom(siteId,roomId){
  const layout=dungeonLayout(siteId),r=layout?.rooms.find(x=>x.id===roomId),s=adventureState(siteId),d=ensureDungeonState(siteId);if(!r)return;
@@ -323,3 +321,14 @@ function completeFactionQuestline(id,branch){
  if(id===SOSText("exploration_adventures_dungeons_factionquests.completeFactionQuestline.003")){gainGold(160);state.world.factionStanding.Independent+=6;state.world.settlements.stonebridge.prosperity=Math.min(100,state.world.settlements.stonebridge.prosperity+7);state.world.settlements.river.prosperity=Math.min(100,state.world.settlements.river.prosperity+5)}
  state.reputation++;recordWorldNews(SOSText("exploration_adventures_dungeons_factionquests.completeFactionQuestline.004",Object.values(FACTION_QUESTLINES).find(x=>x.id===id).name),'good');save();actionResult(SOSText("exploration_adventures_dungeons_factionquests.completeFactionQuestline.005"),SOSText("exploration_adventures_dungeons_factionquests.completeFactionQuestline.006"),'good',renderOpenWorld)
 }
+
+function defaultWorldState(){
+ const candidates=ALLIES.filter(a=>!a.fieldOnly);
+ const locs=['river','woods','quarry','southroad','watchfort','marsh','stonebridge','northgate'];
+ const companions={};
+ const blueHomes={blue_guide:'lowcreek',blue_quarry:'winterstone',blue_valley:'norwegian',blue_signal:'skybreak',red_adjutant:'sengia',red_lockrunner:'lockwood',red_grainwarden:'briarlake',red_firebreak:'pyreglade'};
+ candidates.forEach((a,i)=>companions[a.id]={id:a.id,location:blueHomes[a.id]||locs[i%locs.length],known:false,lastSeenDay:0,disposition:0,cooldownUntil:0});
+ return {day:1,location:'shantium',region:'shantium',unlockedRegions:['shantium'],regionHistory:[],discovered:WORLD_LOCATIONS.filter(x=>!x.hidden&&locationRegion(x)==='shantium').map(x=>x.id),companions,rumors:[],travelHistory:[],lastMoveDay:1,parties:[],quests:[],contracts:{},contractDay:0,factionStanding:defaultFactionStanding(),cargo:{food:0,medicine:0,timber:0,cloth:0,iron:0,tools:0,luxury:0,hides:0,stone:0,livestock:0,salt:0,spirits:0,dye:0},settlements:defaultSettlementState(),worldEvents:[],adventures:{},storyChains:{},treasureMaps:[],factionQuestlines:{},localReputation:defaultLocalReputation(),npcFamiliarity:{},history:[],homeBase:defaultHomeBase(),personalRequests:{},trackedQuestId:null,trackedPartyId:null,activeEscortQuestId:null,roadEventHistory:[],roadEventCooldownDay:0,roadEventStats:{helped:0,ignored:0,hostile:0,profited:0},contractChains:{},contractStats:{completed:0,failed:0,abandoned:0,early:0,followups:0},contractMemory:{entities:{},history:[]},pendingContractFailures:[],captivity:null,captiveCompanions:{},factionPresence:{},factionActivityDay:0,factionDiplomacy:{},factionIncidents:{},factionPrivileges:{},companionStories:{},settlementEvents:{},npcMovements:{},settlementVisits:{},settlementProblems:{},reputationMilestones:{},shantiumCommunity:{recognitions:[],lastCeremonyDay:0,publicMood:'steady'},regionalSimulation:{threads:[],flows:[],routePressure:{},lastResponseDay:{},opportunities:[],interventions:[]},politics:{settlements:{},treaties:{},roadRights:{},history:[]},encounterStats:{ambushes:0,avoided:0,surrenders:0,parleys:0,withdrawals:0,terrainWins:{}},economy:{properties:{},investments:[],ledger:[],regionalStorage:{},projects:{}},law:{heat:{},bounties:{},crimes:[],warrants:{},jailings:0,finesPaid:0,bribes:0},roadLife:{queue:[],history:[],lastSceneDay:0,camps:0,initiatives:0,arguments:0,reconciliations:0},worldIntegration:defaultWorldIntegrationState()};
+}
+
+let WORLD_STATE_ENSURING=false;

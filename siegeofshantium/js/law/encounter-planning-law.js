@@ -1,31 +1,71 @@
 function encounterTerrain(locId=state.world.location){return OPEN_WORLD_TERRAINS[locId]||{name:SOSText("law_encounter_planning_law.encounterTerrain.001"),acc:0,def:0,enemyAcc:0,retreat:0,ambush:0,desc:SOSText("law_encounter_planning_law.encounterTerrain.002")}}
-function encounterScoutScore(p){const ranger=guardianClass()===SOSText("law_encounter_planning_law.encounterScoutScore.001")?4:0,rogue=guardianClass()===SOSText("law_encounter_planning_law.encounterScoutScore.002")?3:0,companions=partyMembers(true).filter(m=>[SOSText("law_encounter_planning_law.encounterScoutScore.003"),SOSText("law_encounter_planning_law.encounterScoutScore.004")].includes(m.className||allyDef(m.id)?.className)).length*2;return stat(state,'dex')+state.scouting+ranger+rogue+companions-(p?.kind==='bandits'?2:0)}
-function encounterIntimidationScore(p){const bers=guardianClass()===SOSText("law_encounter_planning_law.encounterIntimidationScore.001")?5:0,vanguard=guardianClass()===SOSText("law_encounter_planning_law.encounterIntimidationScore.002")?2:0,rep=Math.floor((state.reputation||0)/2),party=partyMembers(true).filter(m=>m.hp>0).length;return stat(state,'cha')+rep+bers+vanguard+party}
+function encounterScoutScore(p){const ranger=guardianClass()===SOSText("law_encounter_planning_law.encounterScoutScore.001")?4:0,rogue=guardianClass()===SOSText("law_encounter_planning_law.encounterScoutScore.002")?3:0,companions=partyMembers(true).filter(m=>[SOSText("law_encounter_planning_law.encounterScoutScore.003"),SOSText("law_encounter_planning_law.encounterScoutScore.004")].includes(m.className||allyDef(m.id)?.className)).length*2,dex=Math.round(boundedStatValue(stat(state,'dex'))*.45),freshScouting=scoutingLevel()*4;return dex+freshScouting+ranger+rogue+companions-(p?.kind==='bandits'?2:0)}
+function encounterIntimidationScore(p){const bers=guardianClass()===SOSText("law_encounter_planning_law.encounterIntimidationScore.001")?5:0,vanguard=guardianClass()===SOSText("law_encounter_planning_law.encounterIntimidationScore.002")?2:0,rep=Math.min(12,Math.floor(Math.max(0,state.reputation||0)/12)),party=partyMembers(true).filter(m=>m.hp>0).length;return boundedStatValue(stat(state,'cha'))+rep+bers+vanguard+party}
 
+function worldPartyTrainingCap(kind){
+ const caps={bandits:24,raiders:30,merchant:22,refugees:18,mercenary:36,redstone:40,bluestone:40,coalition:38,spawn:34,bounty:40};
+ return caps[kind]||34
+}
+function worldPartyTrainingFloor(kind){
+ const floors={bandits:1,raiders:3,merchant:1,refugees:1,mercenary:5,redstone:6,bluestone:6,coalition:5,spawn:4,bounty:8};
+ return floors[kind]||2
+}
 function rollWorldPartyCombatLevel(kind){
- const bag=[-2,-2,-1,-1,-1,-1,0,0,0,0,0,0,0,1,1,2];
- let offset=pick(bag);
- if(['redstone','bluestone','mercenary'].includes(kind)&&offset===-2&&chance(.45))offset=-1;
- return Math.max(1,(state.level||1)+offset)
+ const player=Math.max(1,state.level||1),cap=worldPartyTrainingCap(kind),floor=worldPartyTrainingFloor(kind),base=Math.min(player,cap),bags={
+  bandits:[-5,-4,-4,-3,-3,-2,-2,-1],raiders:[-3,-2,-2,-1,-1,0,0,1],merchant:[-5,-4,-3,-2,-2,-1],refugees:[-6,-5,-4,-3,-2],
+  mercenary:[-2,-1,-1,0,0,0,1,1],redstone:[-2,-1,0,0,0,1,1,2],bluestone:[-2,-1,0,0,0,1,1,2],coalition:[-3,-2,-1,0,0,1,1],spawn:[-3,-2,-1,0,0,1],bounty:[-1,0,0,1,1,2]
+ };
+ const offset=pick(bags[kind]||[-3,-2,-1,0,0,1]);
+ return clamp(base+offset,floor,cap)
 }
 function worldPartyCombatLevel(p){
- const level=Math.max(1,state.level||1);if(!p)return level;
+ const player=Math.max(1,state.level||1);if(!p)return Math.min(player,worldPartyTrainingCap('spawn'));
+ const cap=worldPartyTrainingCap(p.kind),floor=worldPartyTrainingFloor(p.kind);
  if(!Number.isFinite(p.combatLevel))p.combatLevel=rollWorldPartyCombatLevel(p.kind);
- p.combatLevel=clamp(Math.round(p.combatLevel),Math.max(1,level-2),level+2);
+ // v1.5.29 migration: old parties were continuously forced to Guardian level ±2.
+ // Preserve a party's earned/stored level when plausible, but stop ordinary road parties
+ // from becoming superhuman solely because the Guardian has had a very long campaign.
+ p.combatLevel=clamp(Math.round(p.combatLevel),floor,Math.min(cap,Math.max(floor,player+2)));
  return p.combatLevel
 }
-function worldCombatTargetRatio(level){
- const gap=clamp(level-(state.level||1),-2,2);
- return gap<=-2?.76:gap===-1?.87:gap===0?.98:gap===1?1.10:1.22
+function worldPartyThreatKindFactor(kind){
+ return ({refugees:.48,merchant:.66,bandits:.76,spawn:.88,raiders:.94,coalition:1.00,mercenary:1.04,redstone:1.07,bluestone:1.07,bounty:1.12})[kind]||.90
+}
+function worldPartyRoleThreat(role){
+ const r=String(role||'').toLowerCase();
+ if(/captain|commander|sergeant|veteran|elite|warden/.test(r))return .10;
+ if(/mage|wizard|sorcer|healer|medic|assassin/.test(r))return .09;
+ if(/crossbow|archer|scout|ranger|berserker|lancer|pike/.test(r))return .055;
+ if(/guard|soldier|brigand|raider|hunter|spear/.test(r))return .035;
+ return 0
+}
+function worldPartyThreatProfile(p){
+ ensureWorldPartyComposition(p);const doctrine=ensureWorldPartyDoctrine(p),live=(p?.combatComposition||[]).filter(x=>x.status!=='dead'&&x.status!=='recovering'),count=Math.max(1,live.length||p?.combatantCount||1),level=worldPartyCombatLevel(p),playerLevel=Math.max(1,state.level||1),gap=level-playerLevel;
+ const size=clamp(.58+count*.11,.64,1.55),kind=worldPartyThreatKindFactor(p?.kind),roleMix=clamp(1+live.reduce((n,x)=>n+worldPartyRoleThreat(x.role||x.label),0),1,1.34);
+ const tactic=({disciplined:1.07,professional:1.07,defensive:1.04,mobile:1.03,shock:1.06,protective:.94,skirmish:.98,mixed:1})[doctrine?.tactic]||1;
+ const morale=clamp(.90+((Number(p?.morale??doctrine?.morale??55)-45)/220),.88,1.10),leader=worldPartyLeaderFromComposition(p)?1.04:1,training=clamp(1+gap*.025,.80,1.12),reinforce=1+clamp(doctrine?.reinforce||0,0,.35)*.28;
+ const targetRatio=clamp(size*kind*roleMix*tactic*morale*leader*training*reinforce,.38,1.85);
+ return {level,gap,count,size,kindFactor:kind,roleMix,tactic,morale,leader,training,reinforce,targetRatio,doctrine}
+}
+function worldCombatTargetRatio(pOrLevel){
+ if(pOrLevel&&typeof pOrLevel==='object')return worldPartyThreatProfile(pOrLevel).targetRatio;
+ const level=Math.max(1,Number(pOrLevel)||state.level||1),gap=clamp(level-(state.level||1),-8,3);return clamp(.88+gap*.035,.62,1.08)
+}
+function worldThreatAssessmentRow(ratio){
+ return ratio<.62?[SOSText("law_encounter_planning_law.worldPartyCombatAssessment.011"),SOSText("law_encounter_planning_law.worldPartyCombatAssessment.012"),'good']:
+  ratio<.86?[SOSText("law_encounter_planning_law.worldPartyCombatAssessment.013"),SOSText("law_encounter_planning_law.worldPartyCombatAssessment.014"),'good']:
+  ratio<1.12?[SOSText("law_encounter_planning_law.worldPartyCombatAssessment.015"),SOSText("law_encounter_planning_law.worldPartyCombatAssessment.016"),'info']:
+  ratio<1.38?[SOSText("law_encounter_planning_law.worldPartyCombatAssessment.017"),SOSText("law_encounter_planning_law.worldPartyCombatAssessment.018"),'warning']:
+  ratio<1.65?[SOSText("law_encounter_planning_law.worldPartyCombatAssessment.019"),SOSText("law_encounter_planning_law.worldPartyCombatAssessment.020"),'warning']:
+  [SOSText("law_encounter_planning_law.worldPartyCombatAssessment.021"),SOSText("law_encounter_planning_law.worldPartyCombatAssessment.022"),'warning']
+}
+function playerPartyCombatConditionFactor(){
+ const rows=[{hp:state.guardian.hp,max:maxHP(),st:state.guardian.stamina,stMax:maxStamina()},...partyMembers(true).filter(m=>m.hp>0).map(m=>({hp:m.hp,max:allyMaxHP(m),st:m.stamina,stMax:allyMaxStamina(m)}))];
+ if(!rows.length)return .5;const avg=rows.reduce((n,x)=>n+clamp((Math.max(0,x.hp)/Math.max(1,x.max))*.78+(Math.max(0,x.st)/Math.max(1,x.stMax))*.22,.08,1),0)/rows.length;return clamp(.48+avg*.52,.52,1)
 }
 function worldPartyCombatAssessment(p){
- const level=worldPartyCombatLevel(p),gap=level-(state.level||1);
- const row=gap<=-2?[SOSText("law_encounter_planning_law.worldPartyCombatAssessment.001"),SOSText("law_encounter_planning_law.worldPartyCombatAssessment.002"),'good']:
-  gap===-1?[SOSText("law_encounter_planning_law.worldPartyCombatAssessment.003"),SOSText("law_encounter_planning_law.worldPartyCombatAssessment.004"),'good']:
-  gap===0?[SOSText("law_encounter_planning_law.worldPartyCombatAssessment.005"),SOSText("law_encounter_planning_law.worldPartyCombatAssessment.006"),'info']:
-  gap===1?[SOSText("law_encounter_planning_law.worldPartyCombatAssessment.007"),SOSText("law_encounter_planning_law.worldPartyCombatAssessment.008"),'warning']:
-  [SOSText("law_encounter_planning_law.worldPartyCombatAssessment.009"),SOSText("law_encounter_planning_law.worldPartyCombatAssessment.010"),'warning'];
- return {level,gap,label:row[0],text:row[1],tone:row[2]}
+ const profile=worldPartyThreatProfile(p),condition=playerPartyCombatConditionFactor(),ratio=clamp(profile.targetRatio/condition,.38,2.1),row=worldThreatAssessmentRow(ratio);
+ return {level:profile.level,gap:profile.gap,label:row[0],text:row[1],tone:row[2],ratio,count:profile.count,profile,condition}
 }
 function encounterStrengthEstimate(p){return worldPartyCombatAssessment(p).label}
 
@@ -37,30 +77,30 @@ function worldAmbushPlan(p,terrain=encounterTerrain()){
  return {pct,openingDamage,counterRisk,riskLabel:counterRisk>=50?'High':counterRisk>=40?'Meaningful':SOSText("law_encounter_planning_law.worldAmbushPlan.001")}
 }
 function worldSurrenderChance(p){
- const level=worldPartyCombatLevel(p),gap=(state.level||1)-level,score=encounterIntimidationScore(p),d=ensureWorldPartyDoctrine(p),morale=Number(p.morale??d.morale);
- let pct=(4+Math.max(0,score-10)*.6+Math.max(0,gap)*3-Math.max(0,-gap)*4+(55-morale)*.18)*d.surrender;if(worldPartyDisposition(p)!=='hostile')pct-=2;
- return clamp(Math.round(pct),2,32)
+ const a=worldPartyCombatAssessment(p),score=encounterIntimidationScore(p),d=ensureWorldPartyDoctrine(p),morale=Number(p.morale??d.morale),advantage=clamp(1-(a.ratio||1),-.75,.75);
+ let pct=(4+Math.max(0,score-10)*.72+Math.max(0,advantage)*22-Math.max(0,-advantage)*18+(55-morale)*.18)*d.surrender;if(worldPartyDisposition(p)!=='hostile')pct-=2;
+ return clamp(Math.round(pct),2,34)
 }
 function surrenderRefusalAttackChance(p){
  const assessment=worldPartyCombatAssessment(p),hostile=worldPartyDisposition(p)==='hostile',disciplined=['redstone','bluestone','coalition','mercenary'].includes(p?.kind);
- return clamp((hostile?52:24)+Math.max(0,assessment.gap)*12+(disciplined?8:0),20,86)
+ return clamp((hostile?48:22)+Math.max(0,(assessment.ratio||1)-1)*42+(disciplined?8:0),18,86)
 }
 function showWorldEncounterPlan(p,hostileInitiated=false){modalRouteEnter(SOSText("law_encounter_planning_law.showWorldEncounterPlan.001"),Array.from(arguments));
  if(!p||!state.world.parties.some(x=>x.id===p.id))return renderOpenWorld();if(!canEngageWorldParty(p))return actionResult(SOSText("law_encounter_planning_law.showWorldEncounterPlan.002"),SOSText("law_encounter_planning_law.showWorldEncounterPlan.003"),'info',renderOpenWorld);
- const terrain=encounterTerrain(),d=worldPartyDisposition(p),assessment=worldPartyCombatAssessment(p),ambush=worldAmbushPlan(p,terrain),intim=worldSurrenderChance(p),doctrine=ensureWorldPartyDoctrine(p),leader=worldPartyLeaderFromComposition(p);
+ playerPartyApproachWorldParty(p);const terrain=encounterTerrain(),d=worldPartyDisposition(p),assessment=worldPartyCombatAssessment(p),ambush=worldAmbushPlan(p,terrain),intim=worldSurrenderChance(p),doctrine=ensureWorldPartyDoctrine(p),leader=worldPartyLeaderFromComposition(p);
  const canParley=[SOSText("law_encounter_planning_law.showWorldEncounterPlan.004"),SOSText("law_encounter_planning_law.showWorldEncounterPlan.005"),SOSText("law_encounter_planning_law.showWorldEncounterPlan.006"),SOSText("law_encounter_planning_law.showWorldEncounterPlan.007"),SOSText("law_encounter_planning_law.showWorldEncounterPlan.008"),SOSText("law_encounter_planning_law.showWorldEncounterPlan.009")].includes(p.faction),political=OPEN_WORLD_FACTIONS[p.faction]&&settlementControl(state.world.location)!==p.faction;
  const doctrineHTML=SOSText("law_encounter_planning_law.showWorldEncounterPlan.018",esc(doctrine.name),esc(p.formation||doctrine.formation),Math.round(p.morale??doctrine.morale),Math.round((doctrine.reinforce||0)*100),leader?esc(leader.label||p.leaderName||''):'—');
- overlay(SOSText("law_encounter_planning_law.showWorldEncounterPlan.010",esc(p.name),assessment.gap>0?'warning':'notice',esc(assessment.label),assessment.level,state.level,esc(assessment.text),esc(terrain.name),esc(terrain.desc),terrain.acc>=0?'+':'',terrain.acc,terrain.def>=0?'+':'',terrain.def,terrain.enemyAcc>=0?'+':'',terrain.enemyAcc,terrain.retreat>=0?'+':'',Math.round(terrain.retreat*100),ambush.pct,ambush.riskLabel,intim,`${doctrineHTML}${canParley?'<button id="encParley">Attempt Parley</button>':''}<button id="encWithdraw">Offer a Way Out</button>`,political?`<p class="compact muted">This encounter occurs under ${esc(settlementControl(state.world.location))} political control. Violence may have local political consequences.</p>`:''),true);
+ overlay(SOSText("law_encounter_planning_law.showWorldEncounterPlan.010",esc(p.name),assessment.tone==='warning'?'warning':'notice',esc(assessment.label),assessment.level,assessment.count,esc(assessment.text),esc(terrain.name),esc(terrain.desc),terrain.acc>=0?'+':'',terrain.acc,terrain.def>=0?'+':'',terrain.def,terrain.enemyAcc>=0?'+':'',terrain.enemyAcc,terrain.retreat>=0?'+':'',Math.round(terrain.retreat*100),ambush.pct,ambush.riskLabel,intim,`${doctrineHTML}${canParley?'<button id="encParley">Attempt Parley</button>':''}<button id="encWithdraw">Offer a Way Out</button>`,political?`<p class="compact muted">This encounter occurs under ${esc(settlementControl(state.world.location))} political control. Violence may have local political consequences.</p>`:''),true);
  $('#encDirect').onclick=()=>startWorldPartyCombatPrepared(p,{terrain,stance:'direct'});
  $('#encAmbush').onclick=()=>attemptWorldAmbush(p,terrain);
  $('#encIntimidate').onclick=()=>attemptWorldSurrender(p);
  if($('#encParley'))$('#encParley').onclick=()=>attemptWorldParley(p);
  if($('#encWithdraw'))$('#encWithdraw').onclick=()=>offerWorldPartyWithdrawal(p);
  $('#encAvoid').onclick=()=>avoidWorldEncounter(p);
- $('#encBack').onclick=()=>showWorldParty(p.id)
+ $('#encBack').onclick=()=>SOSServices.navigation.back(()=>showWorldParty(p.id))
 }
 function offerWorldPartyWithdrawal(p){
- const d=ensureWorldPartyDoctrine(p),hostile=worldPartyDisposition(p)==='hostile',score=rnd(1,20)+stat(state,'cha')+Math.floor((state.reputation||0)/2)+Math.max(0,Math.round((55-(p.morale??d.morale))/8)),dc=hostile?15:11;
+ const d=ensureWorldPartyDoctrine(p),hostile=worldPartyDisposition(p)==='hostile',score=rnd(1,20)+boundedStatValue(stat(state,'cha'))+Math.min(10,Math.floor(Math.max(0,state.reputation||0)/14))+Math.max(0,Math.round((55-(p.morale??d.morale))/8)),dc=hostile?15:11;
  if(score>=dc){state.world.encounterStats.parleys++;p.attitude=hostile?'wary':p.attitude;p.morale=Math.max(20,(p.morale??d.morale)-4);p.travelLeft=Math.max(1,p.travelLeft||1);reduceRoutePressure(p.location,p.destination,1);const inc=createWorldIncident('encounter_withdrawal',{location:state.world.location,severity:1,actors:[{ref:'guardian:guardian'},{ref:p.actorRef||`world_party:${p.id}`}],political:{faction:p.faction},meta:{peaceful:true,partyName:p.name}});resolveWorldIncident(inc.id,{kind:'mutual_withdrawal',violent:false});recordWorldHistory(SOSText("law_encounter_planning_law.offerWorldPartyWithdrawal.001",p.name),'good','encounter');save();return actionResult(SOSText("law_encounter_planning_law.offerWorldPartyWithdrawal.002"),SOSText("law_encounter_planning_law.offerWorldPartyWithdrawal.003",p.name),'good',renderOpenWorld)}
  p.morale=Math.min(90,(p.morale??d.morale)+2);recordWorldHistory(SOSText("law_encounter_planning_law.offerWorldPartyWithdrawal.004",p.name),'info','encounter');save();actionResult(SOSText("law_encounter_planning_law.offerWorldPartyWithdrawal.005"),SOSText("law_encounter_planning_law.offerWorldPartyWithdrawal.006",p.name),'info',()=>showWorldEncounterPlan(p))
 }
@@ -155,7 +195,8 @@ function attemptCovertSettlementEntry(id,onEntered){
 function showSettlementLawArrival(id=state.world.location,onEntered=null){
  if(!lawArrivalNeedsDecision(id))return completeLawfulSettlementEntry(id,onEntered);const p=jurisdictionRule(id),b=localBounty(id),h=lawHeat(id),w=hasWarrant(id),pct=lawCovertEntryChance(id),political=lawPoliticalEntryOption(id),serious=w&&!lawFineSettlementAllowed(id),existing=lawEntryState(id);
  if(existing?.status==='covert')return typeof onEntered==='function'?onEntered():renderOpenWorld();
- overlay(SOSText("law_encounter_planning_law.showSettlementLawArrival.001",esc(worldLocation(id).name),esc(p.authority),esc(wantedTier(id)),h,b,w?' • ACTIVE WARRANT':'',pct,serious?SOSText("law_encounter_planning_law.showSettlementLawArrival.002"):'',political?`<button id="lawArrivalPolitical"><b>${esc(SOSText("law_encounter_planning_law.showSettlementLawArrival.003",majorFaction(political.faction).short))}</b><small>${esc(SOSText("law_encounter_planning_law.showSettlementLawArrival.004",political.score,political.cap.toFixed(1)))}</small></button>`:'')+(id==='shantium'&&typeof homeSecretPassageBuilt==='function'&&homeSecretPassageBuilt()?`<button id="lawArrivalPassage"><b>Use Hidden Passage to Guardian Hall</b><small>Enter from the concealed forest entrance without passing through Shantium’s gates.</small></button>`:''),true);
+ const arrivalExtras=(political?`<button id="lawArrivalPolitical"><b>${esc(SOSText("law_encounter_planning_law.showSettlementLawArrival.003",majorFaction(political.faction).short))}</b><small>${esc(SOSText("law_encounter_planning_law.showSettlementLawArrival.004",political.score,political.cap.toFixed(1)))}</small></button>`:'')+(id==='shantium'&&typeof homeSecretPassageBuilt==='function'&&homeSecretPassageBuilt()?`<button id="lawArrivalPassage"><b>Use Hidden Passage to Guardian Hall</b><small>Enter from the concealed forest entrance without passing through Shantium’s gates.</small></button>`:'');
+ overlay(SOSText("law_encounter_planning_law.showSettlementLawArrival.001",esc(worldLocation(id).name),esc(p.authority),esc(wantedTier(id)),h,b,w?' • ACTIVE WARRANT':'',pct,serious?SOSText("law_encounter_planning_law.showSettlementLawArrival.002"):'',arrivalExtras),true);
  $('#lawArrivalOpen').onclick=()=>{if(w)return maybeLawCheckpoint(id,onEntered);setLawEntryState(id,'open',{enteredDay:state.world.day,scrutiny:true});recordWorldHistory(SOSText("law_encounter_planning_law.showSettlementLawArrival.005",state.name,worldLocation(id).name),'info','law');save();closeOverlay();return typeof onEntered==='function'?onEntered():renderOpenWorld()};
  $('#lawArrivalSneak').onclick=()=>attemptCovertSettlementEntry(id,onEntered);if($('#lawArrivalPassage'))$('#lawArrivalPassage').onclick=enterGuardianHallViaSecretPassage;if($('#lawArrivalPolitical'))$('#lawArrivalPolitical').onclick=()=>attemptLawPoliticalEntryIntervention(id,onEntered);$('#lawArrivalOutside').onclick=()=>{setLawEntryState(id,'outside',{arrivedFrom:state.world.travelPlan?.from||null});recordWorldHistory(SOSText("law_encounter_planning_law.showSettlementLawArrival.006",state.name,worldLocation(id).name),'info','law');save();closeOverlay();renderOpenWorld()};return true
 }
@@ -163,7 +204,7 @@ function ensureSettlementEnteredForMenu(id=state.world.location){const e=lawEntr
 function maybeExposeCovertSettlementEntry(id=state.world.location,activity='public'){const e=lawEntryState(id);if(!e||e.status!=='covert')return false;const mod=activity==='law'||activity==='politics'||activity==='council'?24:activity==='services'||activity==='trade'?12:activity==='people'||activity==='townLife'?16:6,pct=clamp(Math.round((e.recognitionRisk||45)+mod),18,96);if(rnd(1,100)>pct)return false;clearLawEntryState(id);lawState().heat[id]=clamp(lawHeat(id)+1,0,25);recordWorldHistory(SOSText("law_encounter_planning_law.maybeExposeCovertSettlementEntry.001",state.name,worldLocation(id).name),'bad','law');save();if(hasWarrant(id)){actionResult(SOSText("law_encounter_planning_law.maybeExposeCovertSettlementEntry.002"),SOSText("law_encounter_planning_law.maybeExposeCovertSettlementEntry.003",worldLocation(id).name),'bad',()=>maybeLawCheckpoint(id));return true}actionResult(SOSText("law_encounter_planning_law.maybeExposeCovertSettlementEntry.002"),SOSText("law_encounter_planning_law.maybeExposeCovertSettlementEntry.004",worldLocation(id).name),'bad',renderOpenWorld);return true}
 function crimeWitnessChance(id,kind='robbery'){const ss=state.world.settlements[id],base=ss?30+ss.security*.45:18,mod=kind==='murder'?20:kind==='assault'?10:0;return clamp(Math.round(base+mod),12,92)}
 
-const CRIME_SEVERITY={trespass:1,threat:1,smuggling:2,theft:2,assault:3,robbery:4,kidnapping:5,murder:7,escape_custody:3,bribery:2};
+const CRIME_SEVERITY={trespass:1,threat:1,smuggling:2,theft:2,fraud:3,vandalism:2,assault:3,robbery:4,kidnapping:5,murder:7,escape_custody:3,bribery:2};
 const JURISDICTION_RULES={
  shantium:{authority:SOSText("law_encounter_planning_law.crimeWitnessChance.001"),faction:SOSText("law_encounter_planning_law.crimeWitnessChance.002"),strict:2,focus:['assault','robbery','theft','murder','kidnapping']},
  river:{authority:SOSText("law_encounter_planning_law.crimeWitnessChance.003"),faction:SOSText("law_encounter_planning_law.crimeWitnessChance.004"),strict:1,focus:['robbery','smuggling','theft','assault']},
@@ -232,8 +273,8 @@ function submitToArrest(id){
 }
 function showLocalLaw(id=state.world.location){modalRouteEnter(SOSText("law_encounter_planning_law.showLocalLaw.001"),Array.from(arguments));
  const L=lawState(),p=jurisdictionRule(id),b=localBounty(id),h=lawHeat(id),rest=restitutionDue(id),crimes=L.crimes.filter(c=>c.locId===id).slice(-8).reverse(),jrep=jurisdictionRep(id);
- overlay(SOSText("law_encounter_planning_law.showLocalLaw.002",esc(worldLocation(id).name),hasWarrant(id)?'warning':'notice',esc(wantedTier(id)),esc(p.authority),h,b,rest,jrep,hasWarrant(id)?' • WARRANT ACTIVE':'',crimes.map(c=>`<div class="card compact"><b>Day ${c.day}: ${esc(c.desc)}</b><br>${c.witnessed?`Reported / witnessed (${c.witnessChance??'?'}% witness likelihood) • assessed ${c.fine}g`:`No actionable witness (${c.witnessChance??'?'}% witness likelihood)`}</div>`).join('')||'<p class="muted">No local offenses recorded.</p>',b>0||rest>0?`<div class="choice-list">${b>0?`${lawFineSettlementAllowed(id)?`<button id="lawPay" ${state.gold<b?'disabled':''}>Pay Outstanding Charges — ${b}g</button>`:`<div class="warning notice compact">This warrant requires custody or formal intervention; paying the financial amount alone will not clear it.</div>`}<button id="lawAppeal">Appeal / Negotiate Charges</button><button id="lawBribe" ${state.gold<Math.max(20,Math.round(b*.55))?'disabled':''}>Attempt Quiet Payment</button>`:''}${rest>0?`<button id="lawRestitution" ${state.gold<rest?'disabled':''}>Pay Restitution — ${rest}g</button>`:''}${hasWarrant(id)?'<button id="lawSubmit">Submit to Arrest</button><button id="lawService">Request Service / Restitution Sentence</button>':''}</div>`:''),true);
- if($('#lawPay'))$('#lawPay').onclick=()=>clearLocalLaw(id,'fine');if($('#lawAppeal'))$('#lawAppeal').onclick=()=>clearLocalLaw(id,'appeal');if($('#lawBribe'))$('#lawBribe').onclick=()=>bribeLocalAuthority(id);if($('#lawRestitution'))$('#lawRestitution').onclick=()=>payRestitution(id);if($('#lawSubmit'))$('#lawSubmit').onclick=()=>submitToArrest(id);if($('#lawService'))$('#lawService').onclick=()=>clearChargesThroughService(id);wireClose()
+ overlay(SOSText("law_encounter_planning_law.showLocalLaw.002",esc(worldLocation(id).name),hasWarrant(id)?'warning':'notice',esc(wantedTier(id)),esc(p.authority),h,b,rest,jrep,hasWarrant(id)?' • WARRANT ACTIVE':'',crimes.map(c=>`<div class="card compact"><b>Day ${c.day}: ${esc(c.desc)}</b><br>${c.witnessed?`Reported / witnessed (${c.witnessChance??'?'}% witness likelihood) • assessed ${c.fine}g`:`No actionable witness (${c.witnessChance??'?'}% witness likelihood)`}</div>`).join('')||'<p class="muted">No local offenses recorded.</p>',b>0||rest>0?`<div class="choice-list">${b>0?`${lawFineSettlementAllowed(id)?`<button id="lawPay" ${state.gold<b?'disabled':''}>Pay Outstanding Charges — ${b}g</button>`:`<div class="warning notice compact">This warrant requires custody or formal intervention; paying the financial amount alone will not clear it.</div>`}<button id="lawAppeal">Appeal / Negotiate Charges</button><button id="lawBribe" ${state.gold<Math.max(20,Math.round(b*.55))?'disabled':''}>Attempt Quiet Payment</button>`:''}${rest>0?`<button id="lawRestitution" ${state.gold<rest?'disabled':''}>Pay Restitution — ${rest}g</button>`:''}${hasWarrant(id)?'<button id="lawSubmit">Submit to Arrest</button><button id="lawService">Request Service / Restitution Sentence</button>':''}</div>`:''),true);if(modal?.querySelector('.dialog'))modal.querySelector('.dialog').insertAdjacentHTML('beforeend','<div class="dialog-footer"><button id="localLawBack">Back to Market & Services</button></div>');
+ if($('#lawPay'))$('#lawPay').onclick=()=>clearLocalLaw(id,'fine');if($('#lawAppeal'))$('#lawAppeal').onclick=()=>clearLocalLaw(id,'appeal');if($('#lawBribe'))$('#lawBribe').onclick=()=>bribeLocalAuthority(id);if($('#lawRestitution'))$('#lawRestitution').onclick=()=>payRestitution(id);if($('#lawSubmit'))$('#lawSubmit').onclick=()=>submitToArrest(id);if($('#lawService'))$('#lawService').onclick=()=>clearChargesThroughService(id);if($('#localLawBack'))$('#localLawBack').onclick=()=>SOSServices.navigation.back(()=>showSettlementServices(id));wireClose()
 }
 function payLawChargesForEntry(id,onEntered=null){const L=lawState(),b=localBounty(id);if(!lawFineSettlementAllowed(id))return maybeLawCheckpoint(id,onEntered);if(state.gold<b)return maybeLawCheckpoint(id,onEntered);state.gold-=b;L.finesPaid=(L.finesPaid||0)+b;L.bounties[id]=0;L.heat[id]=Math.max(0,lawHeat(id)-6);delete L.warrants[id];clearLawEntryState(id);recordWorldHistory(SOSText("law_encounter_planning_law.clearLocalLaw.001",state.name,b,worldLocation(id).name),'good','law');save();return actionResult(SOSText("law_encounter_planning_law.payLawChargesForEntry.001"),SOSText("law_encounter_planning_law.payLawChargesForEntry.002",b,worldLocation(id).name),'good',()=>typeof onEntered==='function'?onEntered():renderOpenWorld())}
 function maybeLawCheckpoint(id=state.world.location,onEntered=null){
@@ -243,4 +284,23 @@ function maybeLawCheckpoint(id=state.world.location,onEntered=null){
 }
 function showRegionalLaw(){modalRouteEnter(SOSText("law_encounter_planning_law.showRegionalLaw.001"),Array.from(arguments));
  const L=lawState(),locs=regionalSettlements(currentWorldRegion()),red=currentWorldRegion()==='redstone';overlay(SOSText("law_encounter_planning_law.showRegionalLaw.002",esc(regionDef().name),red?' Sengia-region settlements also track how Redstone orders interact with local civil authority and prior Guardian rulings.':'',locs.map(l=>`<button class="law-location-card" data-lawloc="${l.id}"><span><b>${esc(l.name)}</b><small>${esc(jurisdictionRule(l.id).authority)}${red?` • ${esc(sengiaPrecedentLabel(l.id))}`:''}</small></span><span><b>${esc(wantedTier(l.id))}</b><small>${localBounty(l.id)}g bounty • ${restitutionDue(l.id)}g restitution • rep ${jurisdictionRep(l.id)}${hasWarrant(l.id)?' • warrant':''}</small></span></button>`).join(''),L.finesPaid||0,L.jailings||0,L.bribes||0,regionalWantedSummary().length),true);document.querySelectorAll('[data-lawloc]').forEach(b=>b.onclick=()=>red?showSengiaAuthority(b.dataset.lawloc):showLocalLaw(b.dataset.lawloc));wireClose()
+}
+
+function guardianHallAffiliatedParty(p){if(!p)return false;if(p.guardianCaravan||p.logisticsShipment||p.guardianAffiliation||p.guardianHallAffiliated)return true;const r=p.travelerId?travelerRegistryState().records[p.travelerId]:null;return !!r?.guardianHallAffiliated}
+function ensureGuardianHallPartyRecognition(p){
+ if(!guardianHallAffiliatedParty(p))return null;const s=ensurePartySocial(p),r=travelerRecord(p);
+ s.familiarity=Math.max(2,s.familiarity||0);s.hallRecognized=true;
+ r.guardianHallAffiliated=true;r.guardianHallCordial=true;r.social=r.social||{talks:0,topics:{},firstDay:state.world.day,lastDay:state.world.day,familiarity:0,helped:0};
+ r.social.familiarity=Math.max(2,r.social.familiarity||0);r.social.hallRecognized=true;r.lastContactDay=state.world.day;return r
+}
+function guardianHallPartyRecognitionHTML(p){if(!guardianHallAffiliatedParty(p))return'';return SOSText("world_party_interactions.guardianHallPartyRecognitionHTML.001",esc(p.name))}
+function worldPartyDisposition(p){if(p.kind==='bounty')return hasWarrant(p.bountyLocId||state.world.location)?'hostile':'neutral';if(guardianHallAffiliatedParty(p))return'friendly';const standing=state.world.factionStanding[p.faction]||0;if(p.attitude==='hostile')return standing>=8?'wary':'hostile';if(p.attitude==='friendly')return standing<-5?'wary':'friendly';if(p.attitude==='conditional')return standing<-2?'hostile':standing>=5?'friendly':'wary';return standing<-5?'wary':standing>=8?'friendly':'neutral'}
+
+function findRegionalBattleNearPlayer(){
+ const region=currentWorldRegion(),me=worldLocation(state.world.location),rows=[];
+ for(const c of activeLiveRegionalConflicts()){
+  if(c.region!==region)continue;const a=state.world.parties.find(p=>p.id===c.aId),b=state.world.parties.find(p=>p.id===c.bId);if(!a||!b)continue;
+  const pos=liveConflictPosition(c),dist=Math.hypot(pos.x-me.x,pos.y-me.y);if(dist<24)rows.push({a,b,c,dist})
+ }
+ rows.sort((x,y)=>x.dist-y.dist);return rows.length?[rows[0].a,rows[0].b,rows[0].c]:null
 }

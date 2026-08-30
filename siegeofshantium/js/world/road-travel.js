@@ -1,30 +1,3 @@
-function roadConditionProfile(from,to){
- const r=routeEvidence(from,to),traffic=r.status==='open'?'heavy':r.status==='watched'?'normal':r.status==='risky'?'light':'sparse';
- return {status:r.status,pressure:r.pressure,traffic,encounterMod:r.status==='open'?.02:r.status==='watched'?.08:r.status==='risky'?.18:.28,hostileMod:r.status==='dangerous'?2.3:r.status==='risky'?1.65:r.status==='watched'?1.2:.7}
-}
-function roadEventWeightedPick(ctx=null){
- const pool=[],profile=ctx?.route||roadConditionProfile(ctx?.from||state.world.location,ctx?.to||state.world.location);
- const hostileIds=['ambush','toll','camp','deserters','ruined_caravan','escaped_prisoner'],safeIds=['traffic','pilgrims','messenger','road_healer','hunters','envoy','patrol'];
- for(const e of ROAD_EVENT_TYPES){let w=e.weight;
-   if(e.id==='bounty_hunter'&&!hasWarrant(ctx?.to||state.world.location))w=Math.max(1,Math.round(w*.25));
-   if(e.id==='envoy'&&['woods','marsh','quarry'].includes(ctx?.to))w=Math.max(1,w-2);
-   if(e.id==='magic_disturbance'&&['quarry','watchfort','woods','marsh'].includes(ctx?.to))w+=3;
-   if(e.id==='hunters'&&['woods','marsh','northgate'].includes(ctx?.to))w+=2;
-   if(e.id==='smugglers'&&['stonebridge','river','southroad','marsh'].includes(ctx?.to))w+=2;
-   if(hostileIds.includes(e.id))w=Math.max(1,Math.round(w*profile.hostileMod));
-   if(safeIds.includes(e.id)){const mult=profile.status==='open'?1.65:profile.status==='watched'?1.25:profile.status==='risky'?.8:.5;w=Math.max(1,Math.round(w*mult))}
-   if(e.id==='broken_cart'||e.id==='stranded')w+=profile.status==='risky'?3:profile.status==='dangerous'?5:0;
-   if(e.id==='refugees')w+=profile.status==='dangerous'?4:profile.status==='risky'?2:0;
-   for(let i=0;i<w;i++)pool.push(e)
- }
- return pick(pool)
-}
-function roadEventContext(from,to,escort=false){
- const fs=settlementState(from),ts=settlementState(to),security=Math.round(((fs.security||50)+(ts.security||50))/2),route=roadConditionProfile(from,to),plan=state.world.travelPlan||{mode:'direct'};
- const region=locationRegion(to),ambushVariant=region==='redstone'?'checkpoint trap':region==='bluestone'?'high-ground ambush':['woods','marsh'].includes(to)?'concealed flank':'roadside ambush';
- return {from,to,escort,security,route,plan,region,ambushVariant,danger:clamp((60-security)/100+.08+route.encounterMod-(plan.mode==='safer'?.10:0),.05,.72)}
-}
-function roadEventChance(ctx){return clamp(.24+ctx.danger-(ctx.escort?.06:0)+(ctx.route.status==='open'?.05:0),.18,.78)}
 function roadTrafficDescription(ctx){
  const r=ctx.route;return r.status==='open'?SOSText("world_road_travel.roadTrafficDescription.001",worldLocation(ctx.from).name,worldLocation(ctx.to).name):r.status==='watched'?SOSText("world_road_travel.roadTrafficDescription.002"):r.status==='risky'?SOSText("world_road_travel.roadTrafficDescription.003"):SOSText("world_road_travel.roadTrafficDescription.004")
 }
@@ -60,12 +33,66 @@ function roadEventOutcome(ev,choice,ctx,title,text,tone='info',after=null){
  log(`${ev.title}: ${recordedText}`,tone==='good'?'good':tone==='bad'?'bad':'info');save();
  actionResult(title,text,tone,after)
 }
+// v1.6.1 — contextual road encounters and real ambush escalation
+let pendingRoadAmbushAfter=null;
+function roadEventCategory(ev){
+ const id=ev?.id||'';
+ if(['ambush','toll','camp','deserters','bounty_hunter','escaped_prisoner'].includes(id))return 'Threat';
+ if(['blocked','weather','broken_cart','ruined_caravan'].includes(id))return 'Road Hazard';
+ if(['patrol','prisoners','envoy','messenger'].includes(id))return 'Authority & Politics';
+ if(['traffic','stranded','wounded','refugees','traveler','pilgrims','road_healer','hunters','merc_recruiter'].includes(id))return 'Road Life';
+ if(['smugglers'].includes(id))return 'Questionable Opportunity';
+ if(['magic_disturbance','abandoned'].includes(id))return 'Uncertain';
+ return 'Road Encounter'
+}
+function roadEventRisk(ctx,ev){
+ let n=ctx?.danger||.2;if(['ambush','bounty_hunter','toll','camp','deserters'].includes(ev?.id))n+=.18;if(['traffic','pilgrims','road_healer','hunters'].includes(ev?.id))n-=.12;
+ n=clamp(n,0,1);return n>=.65?{label:'HIGH RISK',cls:'high'}:n>=.42?{label:'CAUTION',cls:'caution'}:{label:'ROUTINE',cls:'routine'}
+}
+function roadEventContextLine(ctx){
+ const route=ctx?.route||{status:'open',pressure:0},pressure=Math.max(0,Math.round(route.pressure||0));
+ const traffic=route.status==='open'?'regular traffic':route.status==='watched'?'guarded traffic':route.status==='risky'?'thin traffic':'very little traffic';
+ return `${String(route.status||'open').toUpperCase()} ROAD • ${traffic}${pressure?` • route pressure ${pressure}`:''}`
+}
+function roadAmbushLikelyParty(ctx){
+ const region=ctx?.region||currentWorldRegion(),candidates=(state.world.parties||[]).filter(p=>['bandits','raiders'].includes(p.kind)&&worldPartyDisplayRegion(p)===region&&!p.engaged&&!partyInLiveConflict(p.id));
+ if(!candidates.length)return null;
+ const endpoints=new Set([ctx?.from,ctx?.to]);return candidates.sort((a,b)=>((endpoints.has(b.location)?3:0)+(endpoints.has(b.destination)?2:0)+(b.morale||50)/100)-((endpoints.has(a.location)?3:0)+(endpoints.has(a.destination)?2:0)+(a.morale||50)/100))[0]||null
+}
+function ensureRoadAmbushParty(ctx){
+ let p=roadAmbushLikelyParty(ctx);if(!p){const kind=(ctx?.route?.pressure||0)>=5||chance(.42)?'raiders':'bandits';p=spawnWorldParty(kind,ctx?.region||currentWorldRegion());p.name=kind==='raiders'?'Road Raiders':'Road Ambushers'}
+ p.attitude='hostile';p.status='engaged';p.roadAmbush=true;p.lastRoadAmbushDay=state.world.day;
+ // Put the attackers at the road scene and the Player Party physically beside them.
+ const loc=ctx?.to||ctx?.from||state.world.location;p.location=loc;p.destination=loc;p.travelLeft=0;p.travelTotal=Math.max(1,p.travelTotal||1);p.region=locationRegion(loc);ensureWorldPartyComposition(p);ensureWorldPartyDoctrine(p);syncTravelerRecord(p);playerPartyMoveBesideWorldParty(p);return p
+}
+function startRoadAmbushCombat(ev,ctx,after,tactical={}){
+ const p=ensureRoadAmbushParty(ctx);pendingRoadAmbushAfter=typeof after==='function'?after:null;roadEventStat('hostile');state.world.encounterStats.ambushes=(state.world.encounterStats.ambushes||0)+1;
+ roadEventRecord(ev,'combat',`The ${ctx.ambushVariant} escalated into a fight with ${p.name}.`);recordWorldHistory(`${p.name} ambushed the Player Party on the road near ${worldLocation(ctx.to||ctx.from).name}.`,'bad','encounter');save();
+ const gr=makeWorldCombatGroup(p);gr.name=p.name;gr.worldPartyId=p.id;gr.roadAmbush=true;gr.roadAmbushVariant=ctx.ambushVariant;gr.tactical={terrain:tactical.terrain||encounterTerrain(),stance:tactical.stance||'ambushed',acc:tactical.acc||0,def:tactical.def||0,enemyAcc:tactical.enemyAcc||0,retreat:tactical.retreat||0,openingDamage:tactical.openingDamage||0,enemyFirst:!!tactical.enemyFirst};SOSServices.combat.launch(gr)
+}
+function roadAmbushResumeJourney(){const fn=pendingRoadAmbushAfter;pendingRoadAmbushAfter=null;if(typeof fn==='function')return fn();renderOpenWorld()}
+function roadAmbushClearResume(){pendingRoadAmbushAfter=null}
+function roadEventPresentationHTML(ev,ctx,buttons){
+ const risk=roadEventRisk(ctx,ev),category=roadEventCategory(ev),route=roadEventContextLine(ctx),from=worldLocation(ctx.from).name,to=worldLocation(ctx.to).name;
+ return `<h2>${esc(ev.title)}</h2><div class="road-encounter-scene risk-${risk.cls}"><div class="road-encounter-meta"><span>${esc(category)}</span><b>${esc(risk.label)}</b></div><p>${esc(ev.text)}</p><div class="road-encounter-route"><b>${esc(from)} → ${esc(to)}</b><small>${esc(route)}${ctx.escort?' • ESCORT JOURNEY':''}</small></div></div><div class="road-encounter-actions">${buttons.map(([id,label])=>`<button data-roadchoice="${id}">${esc(label)}</button>`).join('')}</div>`
+}
 function resolveRoadEvent(ev,choice,ctx,after){
  const loc=roadEventSettlementId(ctx),ss=settlementState(loc),gold=state.gold||0;
  if(ev.id==='ambush'){
-  if(choice==='stand'){const variant=ctx.ambushVariant,terrainBonus=variant==='high-ground ambush'?2:variant==='checkpoint trap'?1:0,score=rnd(1,20)+stat(state,'str')+Math.floor((state.scouting||0)/2)-terrainBonus,target=13+Math.round(ctx.route.pressure/2);if(score>=target){roadEventStat('hostile');reduceRoutePressure(ctx.from,ctx.to,1);state.reputation++;return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.001"),SOSText("world_road_travel.resolveRoadEvent.089",variant),'good',after)}const dmg=rnd(6,14);state.guardian.hp=Math.max(1,state.guardian.hp-dmg);addRoutePressure(ctx.from,ctx.to,1);return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.003"),SOSText("world_road_travel.resolveRoadEvent.090",ctx.ambushVariant,dmg),'bad',after)}
-  if(choice==='evade'){const bonus=[SOSText("world_road_travel.resolveRoadEvent.005"),SOSText("world_road_travel.resolveRoadEvent.006")].includes(guardianClass())?4:0,score=rnd(1,20)+stat(state,'dex')+bonus;if(score>=13){gainScoutingIntel(1,{type:'road_event',location:ctx.to,source:SOSText("world_road_travel.intelGain.001"),summary:SOSText("world_road_travel.intelGain.002",worldLocation(ctx.to).name),reliability:68,precision:'route'});return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.007"),SOSText("world_road_travel.resolveRoadEvent.008"),'good',after)}advanceWorldDays(1,SOSText("world_road_travel.resolveRoadEvent.009"));return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.010"),SOSText("world_road_travel.resolveRoadEvent.011"),'info',after)}
-  if(choice==='pay'){const cost=25;if(gold<cost)return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.012"),SOSText("world_road_travel.resolveRoadEvent.013"),'bad',after);state.gold-=cost;return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.014"),SOSText("world_road_travel.resolveRoadEvent.015",cost),'bad',after)}
+  if(choice==='stand'){
+   const variant=ctx.ambushVariant,terrainPenalty=variant==='high-ground ambush'?3:variant==='checkpoint trap'?2:variant==='concealed flank'?1:0;
+   const score=rnd(1,20)+boundedStatValue(stat(state,'wis'))+scoutingLevel()*2+(ctx.campPrep?3:0)+(guardianClass()==='Ranger'?4:guardianClass()==='Rogue'?3:0)-terrainPenalty,target=14+Math.round((ctx.route.pressure||0)/2);
+   if(score>=target){reduceRoutePressure(ctx.from,ctx.to,1);state.reputation++;log(`The Player Party spots the ${variant} early and forms up before the attackers close.`,'good');return startRoadAmbushCombat(ev,ctx,after,{stance:'prepared against ambush',acc:5,def:3,openingDamage:5,enemyFirst:false})}
+   addRoutePressure(ctx.from,ctx.to,1);log(`The ${variant} closes before the Player Party can fully form up.`,'bad');return startRoadAmbushCombat(ev,ctx,after,{stance:'caught in ambush',enemyAcc:5,enemyFirst:true})
+  }
+  if(choice==='evade'){
+   const bonus=guardianClass()==='Ranger'?5:guardianClass()==='Rogue'?6:0,score=rnd(1,20)+boundedStatValue(stat(state,'dex'))+scoutingLevel()*2+(ctx.campPrep?3:0)+bonus,target=14+Math.round((ctx.route.pressure||0)/2);
+   if(score>=target){state.world.encounterStats.avoided++;gainScoutingIntel(1,{type:'road_event',location:ctx.to,source:'Ambush route',summary:`The company identified concealed approach ground near ${worldLocation(ctx.to).name}.`,reliability:76,precision:'route'});return roadEventOutcome(ev,choice,ctx,'Ambush Evaded','The Player Party breaks contact before the attackers can close.','good',after)}
+   log('The attempt to break contact fails. The attackers close from the side ground.','bad');return startRoadAmbushCombat(ev,ctx,after,{stance:'failed break contact',enemyAcc:4,enemyFirst:true,retreat:-.04})
+  }
+  if(choice==='pay'){
+   const cost=25;if(gold<cost)return roadEventOutcome(ev,choice,ctx,'Not Enough Gold',`The attackers demand ${cost} gold to let the Player Party pass.`,'bad',after);state.gold-=cost;addRoutePressure(ctx.from,ctx.to,1);return roadEventOutcome(ev,choice,ctx,'Paid Off the Ambushers',`The attackers take ${cost} gold and disappear back from the road. The payment may encourage more trouble on this route.`,'bad',after)
+  }
  }
  if(ev.id==='blocked'&&choice==='talkroadblock'){
   const hostile=state.world.parties.filter(p=>['bandits','raiders','mercenary'].includes(p.kind)&&(p.location===ctx.from||p.location===ctx.to||p.destination===ctx.to)).sort((a,b)=>(b.morale||0)-(a.morale||0))[0];
@@ -172,7 +199,7 @@ function resolveRoadEvent(ev,choice,ctx,after){
   return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.186"),SOSText("world_road_travel.resolveRoadEvent.187"),'info',after)
  }
  if(ev.id==='road_healer'){
-  if(choice==='treat'){if(state.gold<12)return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.188"),SOSText("world_road_travel.resolveRoadEvent.189"),'info',after);state.gold-=12;restoreActiveCompany(.4);return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.190"),SOSText("world_road_travel.resolveRoadEvent.191"),'good',after)}
+  if(choice==='treat'){if(state.gold<12)return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.188"),SOSText("world_road_travel.resolveRoadEvent.189"),'info',after);state.gold-=12;if(typeof stabilizeActiveCompany==='function'){stabilizeActiveCompany(3);treatCompanyRecovery(1,true);recoveryRestoreCompany(.55,.7,true);recoveryRecord('road_healer','A road healer stabilized the Player Party and provided limited field treatment.','good',{location:roadEventSettlementId(ctx)})}else restoreActiveCompany(.4);return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.190"),SOSText("world_road_travel.resolveRoadEvent.191"),'good',after)}
   if(choice==='buy'){if(state.gold<18)return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.192"),SOSText("world_road_travel.resolveRoadEvent.193"),'info',after);state.gold-=18;roadEventCargo('medicine',1);return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.194"),SOSText("world_road_travel.resolveRoadEvent.195"),'good',after)}
   if(choice==='news'){gainScoutingIntel(1,{type:'road_event',location:ctx.to,source:SOSText("world_road_travel.intelGain.001"),summary:SOSText("world_road_travel.intelGain.002",worldLocation(ctx.to).name),reliability:68,precision:'route'});return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.196"),SOSText("world_road_travel.resolveRoadEvent.197"),'info',after)}
   return roadEventOutcome(ev,choice,ctx,SOSText("world_road_travel.resolveRoadEvent.198"),SOSText("world_road_travel.resolveRoadEvent.199"),'info',after)
@@ -247,13 +274,13 @@ function roadEventButtons(ev){
 }
 function showRoadEvent(ev,ctx,after){modalRouteEnter(SOSText("world_road_travel.showRoadEvent.001"),Array.from(arguments));
  let buttons=roadEventButtons(ev);if(ev.id==='blocked'&&ctx.route.pressure>=5&&chance(.38))buttons=[['talkroadblock',SOSText("world_road_travel.roadEventButtons.089")],['clear',SOSText("world_road_travel.roadEventButtons.030")],['detour',SOSText("world_road_travel.roadEventButtons.031")]];if(ev.id==='bounty_hunter'&&!hasWarrant(roadEventSettlementId(ctx)))buttons=buttons.filter(([id])=>['ask','ignore'].includes(id));
- overlay(SOSText("world_road_travel.showRoadEvent.002",esc(ev.title),ctx.route.status,esc(ev.text),esc(worldLocation(ctx.from).name),esc(worldLocation(ctx.to).name),esc(ctx.route.status.toUpperCase()),ctx.escort?' • Escort journey':'',buttons.map(([id,label])=>`<button data-roadchoice="${id}">${esc(label)}</button>`).join('')),false,true);
+ overlay(roadEventPresentationHTML(ev,ctx,buttons),false,true);
  document.querySelectorAll('[data-roadchoice]').forEach(b=>b.onclick=()=>resolveRoadEvent(ev,b.dataset.roadchoice,ctx,after))
 }
 function maybeRoadEvent(from,to,escort,after){
  ensureWorldState();const ctx=roadEventContext(from,to,escort);
  if(state.world.day<=(state.world.roadEventCooldownDay||0)||!chance(roadEventChance(ctx)))return after();
- state.world.roadEventCooldownDay=state.world.day;const ev=roadEventWeightedPick(ctx);showRoadEvent(ev,ctx,after)
+ const ev=roadEventWeightedPick(ctx);state.world.roadEventCooldownDay=state.world.day+(ctx.route.status==='dangerous'?0:1);showRoadEvent(ev,ctx,after)
 }
 
 function roadEncounterVariety(){
@@ -277,28 +304,39 @@ function unlockRegion(region){
 function regionTravelFlavor(c){
  if(c.id==='northwest_highroad')return {summary:SOSText("world_road_travel.regionTravelFlavor.001"),events:[SOSText("world_road_travel.regionTravelFlavor.002"),SOSText("world_road_travel.regionTravelFlavor.003"),SOSText("world_road_travel.regionTravelFlavor.004"),SOSText("world_road_travel.regionTravelFlavor.005")]};
  if(c.id==='eastern_redstone_road')return {summary:SOSText("world_road_travel.regionTravelFlavor.006"),events:[SOSText("world_road_travel.regionTravelFlavor.007"),SOSText("world_road_travel.regionTravelFlavor.008"),SOSText("world_road_travel.regionTravelFlavor.009"),SOSText("world_road_travel.regionTravelFlavor.010")]};
+ if(c.id==='grayhaven_exium')return {summary:'The Frozen North Road climbs beyond the last comfortable Sengian waystations into exposed snow country.',events:['Wind drives loose snow across the Grayhaven road until the old wheel ruts vanish beneath white drifts.','The party passes a frozen road marker half buried in snow, proof that Exium is still several hard miles ahead.']};
+ if(c.id==='crownpass_exium')return {summary:'The High Crown–Exium Ice Road crosses a severe mountain approach where snow, ice, and wind make every mile expensive.',events:['Ice coats the high road beyond Crown Pass, forcing the party to pick a slow line between exposed stone and deep snow.','A hard northern wind tears across the pass while the party follows Bluestone cairns toward Exium.']};
  return {summary:SOSText("world_road_travel.regionTravelFlavor.011"),events:[SOSText("world_road_travel.regionTravelFlavor.012")]}
 }
 function showRegionTravel(){modalRouteEnter(SOSText("world_road_travel.showRegionTravel.001"),Array.from(arguments));
- const c=regionConnectionAt();if(!c)return actionResult(SOSText("world_road_travel.showRegionTravel.002"),SOSText("world_road_travel.showRegionTravel.003"),'info',renderOpenWorld);
- const dest=regionConnectionOther(c,state.world.location),to=worldLocation(dest),toRegion=regionDef(locationRegion(dest)),flavor=regionTravelFlavor(c);
- overlay(SOSText("world_road_travel.showRegionTravel.004",esc(c.name),esc(c.desc),esc(toRegion.name),c.days,esc(flavor.summary),esc(to.name)));
- $('#crossRegion').onclick=()=>{closeOverlay();beginInterRegionJourney(c,state.world.location,dest,c.days)};$('#regionTravelStay').onclick=()=>{if(worldLifePendingTravel())clearWorldLifePendingTravel();save();closeOverlay();renderOpenWorld()}
+ const connections=regionConnectionsAt();if(!connections.length)return actionResult(SOSText("world_road_travel.showRegionTravel.002"),SOSText("world_road_travel.showRegionTravel.003"),'info',renderOpenWorld);
+ if(connections.length===1){const c=connections[0],dest=regionConnectionOther(c,state.world.location),to=worldLocation(dest),toRegion=regionDef(locationRegion(dest)),flavor=regionTravelFlavor(c);overlay(SOSText("world_road_travel.showRegionTravel.004",esc(c.name),esc(c.desc),esc(toRegion.name),c.days,esc(flavor.summary),esc(to.name)));$('#crossRegion').onclick=()=>{closeOverlay();beginInterRegionJourney(c,state.world.location,dest,c.days)};$('#regionTravelStay').onclick=()=>{if(worldLifePendingTravel())clearWorldLifePendingTravel();save();closeOverlay();renderOpenWorld()};return}
+ const here=state.world.location;
+ const cards=connections.map(c=>{const dest=regionConnectionOther(c,here),to=worldLocation(dest),toRegion=regionDef(locationRegion(dest)),flavor=regionTravelFlavor(c);return `<div class="card compact regional-crossing-choice"><b>${esc(c.name)}</b><br><span>${esc(c.desc)}</span><div class="stat-row"><span>Destination</span><b>${esc(to.name)} — ${esc(toRegion.name)}</b></div><div class="stat-row"><span>Travel time</span><b>${c.days} days</b></div><small>${esc(flavor.summary)}</small><br><button data-crossregion="${esc(c.id)}">Travel to ${esc(to.name)}</button></div>`}).join('');
+ overlay(`<h2>Regional Travel</h2><p>${esc(worldLocation(here).name)} connects to more than one neighboring region. Choose the crossing the Player Party will take.</p>${cards}<button id="regionTravelStay">Stay Here</button>`,true);
+ document.querySelectorAll('[data-crossregion]').forEach(b=>b.onclick=()=>{const c=REGION_CONNECTIONS.find(x=>x.id===b.dataset.crossregion);if(!c)return;const dest=regionConnectionOther(c,here);closeOverlay();beginInterRegionJourney(c,here,dest,c.days)});
+ $('#regionTravelStay').onclick=()=>{if(worldLifePendingTravel())clearWorldLifePendingTravel();save();closeOverlay();renderOpenWorld()};wireClose()
 }
 function beginInterRegionJourney(connection,from,dest,remaining){
  if(remaining<=0){const newRegion=locationRegion(dest),scoutShift=reduceScoutingForRegionChange();unlockRegion(newRegion);state.world.location=dest;state.world.region=newRegion;ensureMapView(newRegion).lastLocation=null;if(scoutShift.before!==scoutShift.after)recordWorldHistory(`Regional scouting reset: ${scoutShift.before} → ${scoutShift.after}. Fresh reconnaissance is needed in ${regionDef(newRegion).name}.`,'info','travel');state.world.regionHistory.push({day:state.world.day,from:locationRegion(from),to:newRegion,via:connection.name});state.world.regionHistory=state.world.regionHistory.slice(-30);ensureMapView().lastLocation=null;SOSServices.companions.noteSharedEvent('region',SOSText("world_road_travel.beginInterRegionJourney.001",connection.name,regionDef(newRegion).name));recordWorldHistory(SOSText("world_road_travel.beginInterRegionJourney.002",connection.name,regionDef(newRegion).name),'good',SOSText("world_road_travel.beginInterRegionJourney.003"));save();if(worldLifePendingTravel()){if(continueWorldLifeTravel())return}return renderOpenWorld()}
- advanceWorldDays(1,SOSText("world_road_travel.beginInterRegionJourney.004",connection.name));const flavor=regionTravelFlavor(connection);if(chance(.28))log(pick(flavor.events),'info');beginInterRegionJourney(connection,from,dest,remaining-1)
+ advanceWorldDays(1,SOSText("world_road_travel.beginInterRegionJourney.004",connection.name));if(typeof recoveryTravelStrainTick==='function')recoveryTravelStrainTick(connection.name);const flavor=regionTravelFlavor(connection);if(chance(.28))log(pick(flavor.events),'info');beginInterRegionJourney(connection,from,dest,remaining-1)
+}
+function attemptPlayerPartySettlementReentry(dest=state.world.location){
+ if(!playerPartyInField()||dest!==state.world.location||!state.world.settlements?.[dest])return renderOpenWorld();
+ const finish=()=>{playerPartyClearFieldPosition();state.world.settlementVisits[dest]=(state.world.settlementVisits[dest]||0)+1;save();renderOpenWorld()};
+ if(typeof showSettlementLawArrival==='function'&&lawArrivalNeedsDecision(dest)){showSettlementLawArrival(dest,finish);return}
+ finish()
 }
 function attemptWorldTravel(dest){
- ensureWorldState();if(captivityActive())return showCaptivity();const eq=activeEscortQuest();if(eq)return showEscortStatus(eq.id);if(dest===state.world.location)return showWorldArea();if(locationRegion(dest)!==currentWorldRegion()){const c=regionConnectionAt();if(c&&regionConnectionOther(c,state.world.location)===dest)return showRegionTravel();return actionResult(SOSText("world_road_travel.attemptWorldTravel.001"),SOSText("world_road_travel.attemptWorldTravel.002",worldLocation(dest).name),'info',renderOpenWorld)}
+ ensureWorldState();if(captivityActive())return showCaptivity();const eq=activeEscortQuest();if(eq)return showEscortStatus(eq.id);if(dest===state.world.location){if(playerPartyInField()&&state.world.settlements?.[dest])return attemptPlayerPartySettlementReentry(dest);return showWorldArea();}if(locationRegion(dest)!==currentWorldRegion()){const c=regionConnectionsAt().find(x=>regionConnectionOther(x,state.world.location)===dest);if(c)return showRegionTravel();return actionResult(SOSText("world_road_travel.attemptWorldTravel.001"),SOSText("world_road_travel.attemptWorldTravel.002",worldLocation(dest).name),'info',renderOpenWorld)}
  const from=state.world.location,to=worldLocation(dest),profile=roadConditionProfile(from,dest),opts=routeTravelOptions(from,dest),reaction=companionRouteReaction(from,dest);
  overlay(SOSText("world_road_travel.attemptWorldTravel.003",esc(to.name),esc(to.desc),profile.status,esc(profile.status.toUpperCase()),profile.pressure,esc(profile.traffic),esc(roadTrafficDescription({from,to:dest,route:profile})),reaction?`<div class="companion-reaction">${esc(reaction)}</div>`:'',opts.direct.label,esc(opts.direct.desc),opts.safer.label,esc(opts.safer.desc)));
- const go=(mode,days)=>{if(typeof clearLawEntryState==='function')clearLawEntryState(from);if(from==='shantium'&&dest!=='shantium')homeMarkDeparture();state.world.travelPlan={mode,from,to:dest,startedDay:state.world.day};state.world.routeTravelHistory.push({day:state.world.day,from,to:dest,mode,status:profile.status,pressure:profile.pressure});state.world.routeTravelHistory=state.world.routeTravelHistory.slice(-40);closeOverlay();beginWorldJourney(from,dest,days)};
+ const go=(mode,days)=>{playerPartyBeginFieldTravel();if(typeof clearLawEntryState==='function')clearLawEntryState(from);if(from==='shantium'&&dest!=='shantium')homeMarkDeparture();state.world.travelPlan={mode,from,to:dest,startedDay:state.world.day};state.world.routeTravelHistory.push({day:state.world.day,from,to:dest,mode,status:profile.status,pressure:profile.pressure});state.world.routeTravelHistory=state.world.routeTravelHistory.slice(-40);closeOverlay();beginWorldJourney(from,dest,days)};
  $('#travelDirect').onclick=()=>go('direct',scoutingTravelDays(opts.direct.days));$('#travelSafer').onclick=()=>go('safer',scoutingTravelDays(opts.safer.days));$('#travelStay').onclick=()=>{if(worldLifePendingTravel())clearWorldLifePendingTravel();save();closeOverlay();renderOpenWorld()};
 }
 function beginWorldJourney(from,dest,remaining){
- ensureWorldState();if(remaining<=0){ensureMapView().lastLocation=null;state.world.location=dest;state.world.region=locationRegion(dest);if(dest==='shantium'&&from!=='shantium')homePrepareHomecomingBriefing();state.world.travelPlan={mode:'direct',from:null,to:null,startedDay:null};state.world.settlementVisits[dest]=(state.world.settlementVisits[dest]||0)+1;if(worldLocation(dest).hidden){const XS=explorationSiteState(dest);XS.visits++;XS.lastVisit=state.world.day}if(state.world.settlements[dest])createSettlementEvent(dest,false);log(SOSText("world_road_travel.beginWorldJourney.001",state.world.day,worldLocation(dest).name),'info');if(state.world.settlements[dest])SOSServices.companions.noteSharedEvent('settlement',SOSText("world_road_travel.beginWorldJourney.002",worldLocation(dest).name));checkWorldQuestArrival();checkAdventureStoryArrival();checkFactionQuestProgress();checkPersonalRequests();save();const finishArrival=()=>{if(worldLifePendingTravel()){if(continueWorldLifeTravel())return}if(checkCompanionStories()){save();return}renderOpenWorld();return handleFactionArrival(dest,renderOpenWorld)};if(state.world.settlements[dest]&&typeof showSettlementLawArrival==='function'&&lawArrivalNeedsDecision(dest)){showSettlementLawArrival(dest,finishArrival);return}return finishArrival()}
- advanceWorldDays(1,SOSText("world_road_travel.beginWorldJourney.003",worldLocation(from).name,worldLocation(dest).name));
+ ensureWorldState();if(remaining<=0){ensureMapView().lastLocation=null;state.world.location=dest;state.world.region=locationRegion(dest);{const dl=worldLocation(dest),F=playerPartyFieldState();if(!state.world.settlements[dest]){F.active=true;F.region=locationRegion(dest);F.x=dl.x;F.y=dl.y;F.anchorLocation=dest;F.targetPartyId=null}else{F.x=dl.x;F.y=dl.y;F.region=locationRegion(dest)}}if(dest==='shantium'&&from!=='shantium')homePrepareHomecomingBriefing();state.world.travelPlan={mode:'direct',from:null,to:null,startedDay:null};state.world.settlementVisits[dest]=(state.world.settlementVisits[dest]||0)+1;if(worldLocation(dest).hidden){const XS=explorationSiteState(dest);XS.visits++;XS.lastVisit=state.world.day}if(state.world.settlements[dest])createSettlementEvent(dest,false);log(SOSText("world_road_travel.beginWorldJourney.001",state.world.day,worldLocation(dest).name),'info');if(state.world.settlements[dest])SOSServices.companions.noteSharedEvent('settlement',SOSText("world_road_travel.beginWorldJourney.002",worldLocation(dest).name));checkWorldQuestArrival();checkAdventureStoryArrival();checkFactionQuestProgress();checkPersonalRequests();save();const finishArrival=()=>{if(state.world.settlements[dest])playerPartyClearFieldPosition();if(worldLifePendingTravel()){if(continueWorldLifeTravel())return}if(checkCompanionStories()){save();return}renderOpenWorld();return handleFactionArrival(dest,renderOpenWorld)};if(state.world.settlements[dest]&&typeof showSettlementLawArrival==='function'&&lawArrivalNeedsDecision(dest)){showSettlementLawArrival(dest,finishArrival);return}return finishArrival()}
+ advanceWorldDays(1,SOSText("world_road_travel.beginWorldJourney.003",worldLocation(from).name,worldLocation(dest).name));if(typeof recoveryTravelStrainTick==='function')recoveryTravelStrainTick(`${worldLocation(from).name} → ${worldLocation(dest).name}`);
  const next=()=>beginWorldJourney(from,dest,remaining-1);
  maybeRoadEvent(from,dest,false,next)
 }
@@ -356,3 +394,6 @@ const SENGIA_ECONOMY_DEFAULTS={seasonLength:10,settlements:{
  glenbrook:{food:55,seed:20,materials:46,recovery:49,demand:42,production:19,label:SOSText("world_road_travel.regionalLocalLifeHTML.066")},
  tyrdon:{food:48,seed:17,materials:39,recovery:47,demand:47,production:15,label:SOSText("world_road_travel.regionalLocalLifeHTML.067")},
  pyreglade:{food:42,seed:11,materials:64,recovery:52,demand:51,production:10,label:SOSText("world_road_travel.regionalLocalLifeHTML.068")}}};
+
+function sengiaEconomyState(){ensureWorldState();let E=state.world.sengiaEconomy;if(!E||typeof E!=='object')E=state.world.sengiaEconomy={season:1,seasonDay:1,lastTickDay:state.world.day,settlements:{},shipments:[],history:[],harvests:0};if(!E.settlements)E.settlements={};if(!Array.isArray(E.shipments))E.shipments=[];if(!Array.isArray(E.history))E.history=[];for(const [id,d] of Object.entries(SENGIA_ECONOMY_DEFAULTS.settlements))if(!E.settlements[id])E.settlements[id]={...d,shortage:false,lastHarvest:0,compensation:0};return E}
+function sengiaFoodPolicy(){const p=redstoneCompanionPolicy('red_grainwarden'),r=redstoneRegionalOutcome('sengia_hunger');if(r==='capital')return'capital';if(r==='market')return'market';if(r==='compact'||p==='compact')return'compact';if(p==='reserve')return'reserve';return'custom'}

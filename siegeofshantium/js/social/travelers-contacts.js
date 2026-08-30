@@ -1,9 +1,3 @@
-function worldPartyType(kind){return WORLD_PARTY_TYPES.find(x=>x.kind===kind)}
-
-function matureCampaignTier(){
- if(!isOpenWorld())return 0;const regions=(state.world.unlockedRegions||['shantium']).length,day=state.world.day||1;
- if(regions>=3&&day>=60)return 3;if(regions>=3)return 2;if(regions>=2)return 1;return 0
-}
 function travelerRegistryState(){
  ensureWorldState();if(!state.world.travelerRegistry||typeof state.world.travelerRegistry!=='object')state.world.travelerRegistry={records:{},history:[]};
  const R=state.world.travelerRegistry;if(!R.records)R.records={};if(!Array.isArray(R.history))R.history=[];return R
@@ -65,7 +59,7 @@ function generateTravelerGroupIdentity(r){if(!r||!travelerIdentityEligibleKind(r
 function travelerIdentityMember(identity,id){return identity?.members?.find(x=>x.id===id)||null}
 function ensureTravelerRecordIdentity(r,p=null,force=false){
  if(!r||!travelerIdentityEligibleKind(r.kind))return null;r.genericName=r.genericName||r.name||(p?.name)||worldPartyType(r.kind)?.name||SOSText("social_travelers_contacts.ensureTravelerRecordIdentity.001");
- if(!r.identity&&(force||travelerIdentityKnown(r)))r.identity=generateTravelerGroupIdentity(r);
+ if(!r.identity&&force)r.identity=generateTravelerGroupIdentity(r);
  if(r.identity){r.identity.companionContacts=r.identity.companionContacts||{};r.name=r.identity.groupName;const groupRef=worldActorRef('traveler_group',r.id,{name:r.identity.groupName,location:p?.location||r.lastKnownLocation||r.settledAt||null,meta:{kind:r.kind,faction:r.faction}});r.actorRef=groupRef?.key||r.actorRef;for(const m of r.identity.members||[]){const a=worldActorRef('traveler_person',m.id,{name:m.name,location:p?.location||m.dependentPlacement?.location||m.currentLocation||r.lastKnownLocation||r.settledAt||null,active:m.status!=='dead',meta:{groupId:r.id,groupName:r.identity.groupName,role:m.role,age:m.age,status:m.status||'active'}});m.actorRef=a?.key||m.actorRef}if(p){p.genericName=p.genericName||p.name||r.genericName;p.name=r.identity.groupName;p.groupIdentity=r.identity;p.actorRef=groupRef?.key||p.actorRef;syncWorldPartyCompositionWithIdentity(p,r.identity)}}
  return r.identity||null
 }
@@ -102,7 +96,7 @@ function resolveTravelerDependentPlacements(r,locId=null,reason='adult caregiver
 function travelerPlacedDependents(r){return travelerDependentChildren(r).filter(m=>m.dependentPlacement?.hostGroupId)}
 function ensureNamedTravelerGuardianPrisoner(r,m,locId){
  if(!r||!m)return null;state.prisoners=state.prisoners||[];let p=state.prisoners.find(x=>x.namedTravelerId===r.id&&Array.isArray(x.namedPersonIds)&&x.namedPersonIds.includes(m.id));if(p)return p;
- p={id:'named_'+uid(),faction:r.faction||'Independent',count:1,round:state.world.day,questioned:false,source:r.name||r.identity?.groupName||'Named traveler',world:true,namedTravelerId:r.id,namedPersonIds:[m.id],namedPersonNames:[m.name]};state.prisoners.push(p);return p
+ p={id:'named_'+uid(),faction:r.faction||'Independent',count:1,round:state.world.day,questioned:true,captureIntelDone:false,source:r.name||r.identity?.groupName||'Named traveler',world:true,namedTravelerId:r.id,namedPersonIds:[m.id],namedPersonNames:[m.name]};state.prisoners.push(p);prisonerCaptureRoadIntel(p);return p
 }
 function travelerLifecycleLocation(r){
  const p=activePartyForTraveler(r);if(p)return p.location;if(r?.hospitalityStatus==='traveling'||r?.hospitalityStatus==='guest')return 'shantium';const placed=travelerPlacedDependents(r);if(placed.length&&placed[0].dependentPlacement?.location)return placed[0].dependentPlacement.location;const caps=travelerCapturedMembers(r);if(caps.length&&caps[0].custody?.location)return caps[0].custody.location;if(r?.settledAt&&validWorldLocationId(r.settledAt))return r.settledAt;if(validWorldLocationId(r?.lastKnownLocation))return r.lastKnownLocation;return null
@@ -336,3 +330,8 @@ function relationshipConsequencesSummary(locId=state.world.location){
 }
 
 
+
+function socialLifeState(){
+ ensureWorldState();if(!state.world.socialLife||typeof state.world.socialLife!=='object')state.world.socialLife={events:{},history:[],lastGenDay:{}};
+ const S=state.world.socialLife;if(!S.events)S.events={};if(!Array.isArray(S.history))S.history=[];if(!S.lastGenDay)S.lastGenDay={};return S
+}

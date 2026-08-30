@@ -1,7 +1,3 @@
-function socialLifeState(){
- ensureWorldState();if(!state.world.socialLife||typeof state.world.socialLife!=='object')state.world.socialLife={events:{},history:[],lastGenDay:{}};
- const S=state.world.socialLife;if(!S.events)S.events={};if(!Array.isArray(S.history))S.history=[];if(!S.lastGenDay)S.lastGenDay={};return S
-}
 function activeSocialEvent(locId){
  const S=socialLifeState(),e=S.events[locId];if(!e)return null;
  if(e.status==='active'&&e.expiresDay>=state.world.day)return e;
@@ -66,7 +62,7 @@ function showSocialLifeEvent(locId=state.world.location,arrivalConfirmed=false){
  if(locId!==state.world.location&&!arrivalConfirmed){const e=activeSocialEvent(locId);return beginWorldLifeTravel('event',e?.id||null,locId)}
  const e=activeSocialEvent(locId)||createSocialLifeEvent(locId,true);if(!e)return showTownLife(locId);const a=socialEventActorNames(e);
  overlay(SOSText("social_world_life_chains.showSocialLifeEvent.002",esc(e.title),esc(e.stage===0?e.text:e.stage2),a.c?`<div class="notice compact companion-social-interjection">${esc(socialEventCompanionInterjection(e))}</div>`:'',esc(worldLocation(locId).name),state.world.day,e.stage+1,[a.npc?.name,a.r?.name,a.c?.name].filter(Boolean).map(esc).join(' • '),socialEventChoiceSet(e).map(([id,label,desc])=>`<button data-socialchoice="${id}"><b>${esc(label)}</b><br><small>${esc(desc)}</small></button>`).join('')),true);
- document.querySelectorAll('[data-socialchoice]').forEach(b=>b.onclick=()=>resolveSocialLifeEvent(locId,b.dataset.socialchoice));$('#socialEventBack').onclick=()=>showTownLife(locId)
+ document.querySelectorAll('[data-socialchoice]').forEach(b=>b.onclick=()=>resolveSocialLifeEvent(locId,b.dataset.socialchoice));$('#socialEventBack').onclick=()=>SOSServices.navigation.back(()=>showTownLife(locId))
 }
 function socialRelationshipEffects(e,choice){
  const a=socialEventActorNames(e);let good=0,bad=0;
@@ -133,7 +129,7 @@ function socialChainChoiceSet(c){
 }
 function showSocialChain(id,arrivalConfirmed=false){modalRouteEnter(SOSText("social_world_life_chains.showSocialChain.001"),Array.from(arguments));
  const c=socialChainState().chains.find(x=>x.id===id);if(!c||c.status!=='active')return showTownLife(state.world.location);if(c.locId!==state.world.location&&!arrivalConfirmed)return beginWorldLifeTravel('chain',c.id,c.locId);const a=chainActorData(c);
- overlay(SOSText("social_world_life_chains.showSocialChain.002",esc(c.sourceTitle),esc(c.text||socialChainText(c)),esc(worldLocation(c.locId).name),c.activatedDay||state.world.day,[a.npc?.name,a.r?.name,a.comp?.name].filter(Boolean).map(esc).join(' • '),socialChainChoiceSet(c).map(([id,label,desc])=>`<button data-chainchoice="${id}"><b>${esc(label)}</b><br><small>${esc(desc)}</small></button>`).join('')),true);document.querySelectorAll('[data-chainchoice]').forEach(b=>b.onclick=()=>resolveSocialChain(c.id,b.dataset.chainchoice));$('#socialChainBack').onclick=()=>showTownLife(c.locId)
+ overlay(SOSText("social_world_life_chains.showSocialChain.002",esc(c.sourceTitle),esc(c.text||socialChainText(c)),esc(worldLocation(c.locId).name),c.activatedDay||state.world.day,[a.npc?.name,a.r?.name,a.comp?.name].filter(Boolean).map(esc).join(' • '),socialChainChoiceSet(c).map(([id,label,desc])=>`<button data-chainchoice="${id}"><b>${esc(label)}</b><br><small>${esc(desc)}</small></button>`).join('')),true);document.querySelectorAll('[data-chainchoice]').forEach(b=>b.onclick=()=>resolveSocialChain(c.id,b.dataset.chainchoice));$('#socialChainBack').onclick=()=>SOSServices.navigation.back(()=>showTownLife(c.locId))
 }
 function createSocialFollowupContract(c){const a=chainActorData(c),type=c.type==='traveler_request'?'delivery':c.type==='work_contract'?'escort':pick(['visit','delivery','procure']),q=generateContract(c.locId,type);q.socialChainId=c.id;q.socialSourceTitle=c.sourceTitle;q.name=c.type==='traveler_request'?'Road Contact Follow-Up':c.type==='work_contract'?'Social Connection Contract':SOSText("social_world_life_chains.createSocialFollowupContract.001");q.desc=SOSText("social_world_life_chains.createSocialFollowupContract.002",c.sourceTitle,a.r?`${a.r.name} is directly involved.`:'');q.reward+=30;state.world.contracts[c.locId]=state.world.contracts[c.locId]||[];state.world.contracts[c.locId].unshift(q);state.world.contracts[c.locId]=state.world.contracts[c.locId].slice(0,4);return q}
 function resolveSocialChain(id,choice){
@@ -197,7 +193,7 @@ function companionSocialTownHTML(locId){
 function showCompanionSocialRequest(id){modalRouteEnter(SOSText("social_world_life_chains.showCompanionSocialRequest.001"),Array.from(arguments));
  const r=companionSocialNetworkState().requests.find(x=>x.id===id);if(!r||r.status!=='active')return showTownLife(state.world.location);const m=state.party.members[r.compId],npc=r.npcId?settlementNpc(r.locId,r.npcId):null,tr=r.travelerId?travelerRegistryState().records[r.travelerId]:null;
  overlay(SOSText("social_world_life_chains.showCompanionSocialRequest.002",esc(m.name),esc(companionSocialRequestText(r)),npc?`<div class="notice compact"><b>${esc(npc.name)}</b> • ${esc(npc.role)}<br>${esc(m.name)} → ${esc(npc.name)}: ${esc(companionNpcOpinionLabel(m.id,npc.id))}</div>`:'',tr?`<div class="notice compact"><b>${esc(travelerReferenceForCompanion(tr,m.id))}</b><br>${esc(m.name)} → contact: ${esc(companionTravelerOpinionLabel(m.id,tr.id))} • Guardian/company standing: ${esc(travelerAttitudeLabel(tr))}${tr.identity?`<br><small>${esc(tr.identity.groupName)} • ${tr.identity.members.length} known members</small>`:''}</div>`:''),true);
- document.querySelectorAll('[data-comp-social]').forEach(b=>b.onclick=()=>resolveCompanionSocialRequest(id,b.dataset.compSocial));$('#compSocialBack').onclick=()=>showTownLife(r.locId)
+ document.querySelectorAll('[data-comp-social]').forEach(b=>b.onclick=()=>resolveCompanionSocialRequest(id,b.dataset.compSocial));$('#compSocialBack').onclick=()=>SOSServices.navigation.back(()=>showTownLife(r.locId))
 }
 function resolveCompanionSocialRequest(id,choice){
  const C=companionSocialNetworkState(),r=C.requests.find(x=>x.id===id);if(!r||r.status!=='active')return showTownLife(state.world.location);const m=state.party.members[r.compId],npc=r.npcId?settlementNpc(r.locId,r.npcId):null,tr=r.travelerId?travelerRegistryState().records[r.travelerId]:null;let text='',tone='info';
@@ -248,3 +244,40 @@ function companionNpcSocialDailyTick(){
 }
 
 
+
+function relationshipContractState(){
+ ensureWorldState();if(!state.world.relationshipContracts||typeof state.world.relationshipContracts!=='object')state.world.relationshipContracts={messengers:[],history:[],lastGenDay:{},serial:0};
+ const R=state.world.relationshipContracts;if(!Array.isArray(R.messengers))R.messengers=[];if(!Array.isArray(R.history))R.history=[];if(!R.lastGenDay)R.lastGenDay={};return R
+}
+function relationshipContractCandidates(locId){
+ const rows=[],present=settlementNpcsPresent(locId),companions=activeRoadCompanions(),travelers=meaningfulTravelersForLocation(locId);
+ for(const npc of present){const rel=npcRelationshipState(npc.id);if((rel.familiarity||0)>=4&&rel.opinion>-3)rows.push({kind:'npc',npc,weight:(rel.familiarity||0)+Math.max(0,rel.opinion||0)})}
+ for(const m of companions){const ops=Object.values(companionNpcOpinionState()).filter(o=>o.compId===m.id&&Math.abs(o.score)>=2);if((m.trust||0)>=55||ops.length)rows.push({kind:'companion',companion:m,weight:Math.floor((m.trust||0)/15)+ops.length})}
+ for(const r of travelers){if(travelerAttitudeScore(r)>=4&&(r.contractsCompleted||0)>=1)rows.push({kind:'traveler',traveler:r,weight:travelerAttitudeScore(r)+(r.contractsCompleted||0)*2})}
+ return rows.sort((a,b)=>b.weight-a.weight)
+}
+function relationshipContractType(source,locId){
+ const role=String(source.npc?.role||'').toLowerCase(),r=source.traveler,comp=source.companion;
+ if(source.kind==='npc'){
+  if(role.includes('guard')||role.includes('watch')||role.includes('scout')||role.includes('officer'))return pick(['hunt','visit','delivery']);
+  if(role.includes('trader')||role.includes('factor')||role.includes('merchant')||role.includes('broker'))return pick(['delivery','procure','escort']);
+  if(role.includes('healer')||role.includes('teacher')||role.includes('baker')||role.includes('cook'))return pick(['procure','visit','delivery']);
+  return pick(['visit','delivery','procure']);
+ }
+ if(source.kind==='traveler')return r?.kind==='mercenary'?pick(['escort','hunt','visit']):pick(['delivery','escort','procure']);
+ if(source.kind==='companion')return comp?.role==='ranger'||comp?.role==='rogue'?pick(['visit','hunt','delivery']):pick(['visit','delivery','escort']);
+ return'visit'
+}
+function relationshipContractTarget(source,locId,type){
+ const unlocked=state.world.unlockedRegions||['shantium'],all=unlocked.flatMap(r=>regionalSettlements(r)).filter(x=>!x.hidden&&x.id!==locId);
+ if(source.kind==='npc'){
+  const moves=populationMovementState().history.filter(x=>x.type==='npc_move'&&(x.from===locId||x.to===locId)).slice(-8);
+  if(moves.length&&chance(.45)){const m=pick(moves);return m.to===locId?m.from:m.to}
+ }
+ if(source.kind==='traveler'&&source.traveler?.settledAt&&source.traveler.settledAt!==locId&&state.world.settlements[source.traveler.settledAt])return source.traveler.settledAt;
+ if(source.kind==='companion'){
+  const ops=Object.values(companionNpcOpinionState()).filter(o=>o.compId===source.companion.id&&Math.abs(o.score)>=2);
+  const o=ops[0];if(o){const home=npcHomeLocation(o.npcId),cur=currentNpcLocation(o.npcId,home);if(cur&&cur!==locId)return cur}
+ }
+ return pick(all)?.id||locId
+}

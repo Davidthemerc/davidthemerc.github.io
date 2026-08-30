@@ -51,3 +51,25 @@ function epilogue(n){const t=state.town;const base={
  'Fallen Guardian':SOSText("siege_round_events_endings.epilogue.008"),
  'Fall of Shantium':SOSText("siege_round_events_endings.epilogue.009")}[n];const consequences=eventSummaryFlags(),companions=partyMembers(false).slice().sort((a,b)=>companionTrust(b)-companionTrust(a)),closest=companions[0];return SOSText("siege_round_events_endings.epilogue.010",base,t.population,t.morale,state.flags.compassion>=3?'People remember that the Guardian defended civilians as fiercely as walls. ':'',closest?`${closest.name} leaves the siege ${trustTier(closest.trust).toLowerCase()} to the Guardian after ${closest.battles||0} shared battles. `:'',consequences.length?'The siege also leaves these memories: '+consequences.slice(0,4).join('; ')+'.':'')}
 
+
+const XP_MODEL='cumulative_rs_v1',XP_CURVE_SCALE=1.30;
+const XP_TOTAL_CACHE={1:0};
+function xpTotalForLevel(level){
+ level=Math.max(1,Math.floor(Number(level)||1));if(XP_TOTAL_CACHE[level]!=null)return XP_TOTAL_CACHE[level];
+ let points=0;for(let i=1;i<level;i++)points+=Math.floor(i+300*Math.pow(2,i/7));
+ return XP_TOTAL_CACHE[level]=Math.floor((points/4)*XP_CURVE_SCALE)
+}
+function xpNeed(){return xpTotalForLevel((state?.level||1)+1)}
+function xpLevelFloor(){return xpTotalForLevel(state?.level||1)}
+function xpIntoLevel(){return Math.max(0,(state?.xp||0)-xpLevelFloor())}
+function xpLevelSpan(){return Math.max(1,xpNeed()-xpLevelFloor())}
+function xpRemaining(){return Math.max(0,xpNeed()-(state?.xp||0))}
+function legacyXpNeedForLevel(level){return 110+(Math.max(1,level)-1)*85}
+function migrateCumulativeXpModel(){
+ if(!state||state.progressionModel===XP_MODEL)return false;
+ const level=Math.max(1,Math.floor(Number(state.level)||1)),oldResidual=Math.max(0,Number(state.xp)||0),oldNeed=Math.max(1,legacyXpNeedForLevel(level));
+ const progress=clamp(oldResidual/oldNeed,0,.999999),floor=xpTotalForLevel(level),span=xpTotalForLevel(level+1)-floor;
+ state.xp=Math.floor(floor+span*progress);state.progressionModel=XP_MODEL;
+ state.progressionMigration={version:VERSION,level,legacyResidual:Math.round(oldResidual),progress:Number(progress.toFixed(4))};
+ return true
+}

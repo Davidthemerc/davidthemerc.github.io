@@ -81,6 +81,7 @@ function gearUtility(it,className,priority='balanced',ownerId='guardian'){
  if(priority==='weapon'){wd=2.55;wa=1.45;wdef=.65;wi=.82}
  else if(priority==='defense'){wd=.75;wa=.65;wdef=2.35;wi=.58}
  else if(priority==='cheap'){wd=1.55;wa=1.0;wdef=1.2;wi=.58}
- const role=roleSuitability(className,it),mechanical=(it.damage||0)*wd+(it.accuracy||0)*wa+(it.defense||0)*wdef+(it.initiative||0)*wi;
- return mechanical+role.score*2.2+traitScore(it,className)+(it.tier||0)*1.65+(it.enchantment?7+(it.enchantment.power||0)*2:0)+legacyFitBonus(it,ownerId)+boundPreferenceBonus(it,ownerId)
+ const role=roleSuitability(className,it),effDamage=boundedGearStat(it.damage||0,'damage'),effAccuracy=boundedGearStat(Math.max(0,it.accuracy||0),'accuracy')+Math.min(0,it.accuracy||0),effDefense=boundedGearStat(Math.max(0,it.defense||0),'defense')+Math.min(0,it.defense||0),effInitiative=boundedGearStat(Math.max(0,it.initiative||0),'initiative')+Math.min(0,it.initiative||0),mechanical=effDamage*wd+effAccuracy*wa+effDefense*wdef+effInitiative*wi;
+ const specialization=(role.score*2.7)+traitScore(it,className)*1.35+(it.artifact?5:0)+(it.enchantment?4+(it.enchantment.power||0)*1.1:0);
+ return mechanical+specialization+(it.tier||0)*1.35+legacyFitBonus(it,ownerId)+boundPreferenceBonus(it,ownerId)
 }

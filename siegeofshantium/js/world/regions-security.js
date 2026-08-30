@@ -1,3 +1,86 @@
+const PARTY_BASE_LIMIT=2;
+const PARTY_UNLOCK_ROUND=8;
+
+
+const WORLD_REGIONS={
+ shantium:{id:'shantium',name:SOSText("items_equipment.valuableRemove.071"),mapTitle:SOSText("items_equipment.valuableRemove.072"),subtitle:SOSText("items_equipment.valuableRemove.073"),terrain:'mixed'},
+ bluestone:{id:'bluestone',name:SOSText("items_equipment.valuableRemove.074"),mapTitle:SOSText("items_equipment.valuableRemove.075"),subtitle:SOSText("items_equipment.valuableRemove.076"),terrain:'mountain'},
+ redstone:{id:'redstone',name:SOSText("items_equipment.valuableRemove.077"),mapTitle:SOSText("items_equipment.valuableRemove.078"),subtitle:SOSText("items_equipment.valuableRemove.079"),terrain:'eastern'},
+ farnorth:{id:'farnorth',name:'Far Northern Region',mapTitle:'FAR NORTHERN REGION',subtitle:'Frozen roads • Independent frontier • travel takes roughly twice as long',terrain:'frozen'}
+};
+const REGION_CONNECTIONS=[
+ {id:'northwest_highroad',a:'northgate',b:'lowcreek',days:3,name:SOSText("items_equipment.valuableRemove.080"),desc:SOSText("items_equipment.valuableRemove.081")},
+ {id:'eastern_redstone_road',a:'redoubt',b:'lockwood',days:3,name:SOSText("items_equipment.valuableRemove.082"),desc:SOSText("items_equipment.valuableRemove.083")},
+ {id:'grayhaven_exium',a:'grayhaven',b:'exium',days:4,name:'Frozen North Road',desc:'The northern road leaves Grayhaven and climbs through increasingly severe snow toward Exium.'},
+ {id:'crownpass_exium',a:'crownpass',b:'exium',days:4,name:'High Crown–Exium Ice Road',desc:'A brutal high route links Bluestone’s High Crown Pass with the Far Northern gateway at Exium.'}
+];
+const WORLD_LOCATIONS=[
+ {id:'shantium',name:SOSText("items_equipment.valuableRemove.084"),x:48,y:49,type:'town',faction:SOSText("items_equipment.valuableRemove.085"),desc:SOSText("items_equipment.valuableRemove.086")},
+ {id:'river',name:SOSText("items_equipment.valuableRemove.087"),x:25,y:31,type:'settlement',faction:SOSText("items_equipment.valuableRemove.088"),desc:SOSText("items_equipment.valuableRemove.089")},
+ {id:'woods',name:SOSText("items_equipment.valuableRemove.090"),x:12,y:57,type:'wilderness',faction:SOSText("items_equipment.valuableRemove.091"),desc:SOSText("items_equipment.valuableRemove.092")},
+ {id:'quarry',name:SOSText("items_equipment.valuableRemove.093"),x:70,y:24,type:'ruins',faction:SOSText("items_equipment.valuableRemove.094"),desc:SOSText("items_equipment.valuableRemove.095")},
+ {id:'southroad',name:SOSText("items_equipment.valuableRemove.096"),x:58,y:78,type:'camp',faction:SOSText("items_equipment.valuableRemove.097"),desc:SOSText("items_equipment.valuableRemove.098")},
+ {id:'watchfort',name:SOSText("items_equipment.valuableRemove.099"),x:84,y:54,type:'ruins',faction:SOSText("items_equipment.valuableRemove.100"),desc:SOSText("items_equipment.valuableRemove.101")},
+ {id:'marsh',name:SOSText("items_equipment.valuableRemove.102"),x:30,y:82,type:'wilderness',faction:SOSText("items_equipment.valuableRemove.103"),desc:SOSText("items_equipment.valuableRemove.104")},
+ {id:'stonebridge',name:SOSText("items_equipment.valuableRemove.105"),x:80,y:78,type:'settlement',faction:SOSText("items_equipment.valuableRemove.106"),desc:SOSText("items_equipment.valuableRemove.107")},
+ {id:'northgate',name:SOSText("items_equipment.valuableRemove.108"),x:52,y:12,type:'settlement',faction:SOSText("items_equipment.valuableRemove.109"),desc:SOSText("items_equipment.valuableRemove.110")},
+ {id:'redoubt',name:SOSText("items_equipment.valuableRemove.111"),x:92,y:18,type:'fort',faction:SOSText("items_equipment.valuableRemove.112"),desc:SOSText("items_equipment.valuableRemove.113")},
+ {id:'ashfarm',name:SOSText("items_equipment.valuableRemove.114"),x:18,y:44,type:'hidden',faction:SOSText("items_equipment.valuableRemove.115"),desc:SOSText("items_equipment.valuableRemove.116"),hidden:true,siteKind:'homestead'},
+ {id:'oldshrine',name:SOSText("items_equipment.valuableRemove.117"),x:39,y:27,type:'hidden',faction:SOSText("items_equipment.valuableRemove.118"),desc:SOSText("items_equipment.valuableRemove.119"),hidden:true,siteKind:'shrine'},
+ {id:'wolfcave',name:SOSText("items_equipment.valuableRemove.120"),x:8,y:69,type:'hidden',faction:SOSText("items_equipment.valuableRemove.121"),desc:SOSText("items_equipment.valuableRemove.122"),hidden:true,siteKind:'cave'},
+ {id:'battlefield',name:SOSText("items_equipment.valuableRemove.123"),x:61,y:39,type:'hidden',faction:SOSText("items_equipment.valuableRemove.124"),desc:SOSText("items_equipment.valuableRemove.125"),hidden:true,siteKind:'battlefield'},
+ {id:'smugglerhide',name:SOSText("items_equipment.valuableRemove.126"),x:21,y:91,type:'hidden',faction:SOSText("items_equipment.valuableRemove.127"),desc:SOSText("items_equipment.valuableRemove.128"),hidden:true,siteKind:'hideout'},
+ {id:'collapsedmine',name:SOSText("items_equipment.valuableRemove.129"),x:77,y:34,type:'hidden',faction:SOSText("items_equipment.valuableRemove.130"),desc:SOSText("items_equipment.valuableRemove.131"),hidden:true,siteKind:'mine'},
+ {id:'hermit',name:SOSText("items_equipment.valuableRemove.132"),x:68,y:65,type:'hidden',faction:SOSText("items_equipment.valuableRemove.133"),desc:SOSText("items_equipment.valuableRemove.134"),hidden:true,siteKind:'homestead'},
+ {id:'oldtower',name:SOSText("items_equipment.valuableRemove.135"),x:90,y:42,type:'hidden',faction:SOSText("items_equipment.valuableRemove.136"),desc:SOSText("items_equipment.valuableRemove.137"),hidden:true,siteKind:'ruin'},
+ {id:'sinkhole',name:SOSText("items_equipment.valuableRemove.138"),x:41,y:91,type:'hidden',faction:SOSText("items_equipment.valuableRemove.139"),desc:SOSText("items_equipment.valuableRemove.140"),hidden:true,siteKind:'strange'},
+ {id:'banditcamp',name:SOSText("items_equipment.valuableRemove.141"),x:44,y:68,type:'hidden',faction:SOSText("items_equipment.valuableRemove.142"),desc:SOSText("items_equipment.valuableRemove.143"),hidden:true,siteKind:'hideout'},
+ {id:'milepost',name:SOSText("items_equipment.valuableRemove.144"),x:34,y:43,type:'hidden',faction:SOSText("items_equipment.valuableRemove.145"),desc:SOSText("items_equipment.valuableRemove.146"),hidden:true,siteKind:'landmark',minor:true},
+ {id:'huntershelter',name:SOSText("items_equipment.valuableRemove.147"),x:15,y:51,type:'hidden',faction:SOSText("items_equipment.valuableRemove.148"),desc:SOSText("items_equipment.valuableRemove.149"),hidden:true,siteKind:'campsite',minor:true},
+ {id:'abandonedwagon',name:SOSText("items_equipment.valuableRemove.150"),x:64,y:53,type:'hidden',faction:SOSText("items_equipment.valuableRemove.151"),desc:SOSText("items_equipment.valuableRemove.152"),hidden:true,siteKind:'wreck',minor:true},
+ {id:'gravecircle',name:SOSText("items_equipment.valuableRemove.153"),x:55,y:29,type:'hidden',faction:SOSText("items_equipment.valuableRemove.154"),desc:SOSText("items_equipment.valuableRemove.155"),hidden:true,siteKind:'landmark',minor:true},
+ {id:'charcoalcamp',name:SOSText("items_equipment.valuableRemove.156"),x:9,y:48,type:'hidden',faction:SOSText("items_equipment.valuableRemove.157"),desc:SOSText("items_equipment.valuableRemove.158"),hidden:true,siteKind:'campsite',minor:true},
+ {id:'cistern',name:SOSText("items_equipment.valuableRemove.159"),x:73,y:47,type:'hidden',faction:SOSText("items_equipment.valuableRemove.160"),desc:SOSText("items_equipment.valuableRemove.161"),hidden:true,siteKind:'landmark',minor:true},
+ {id:'ferrylanding',name:SOSText("items_equipment.valuableRemove.162"),x:29,y:23,type:'hidden',faction:SOSText("items_equipment.valuableRemove.163"),desc:SOSText("items_equipment.valuableRemove.164"),hidden:true,siteKind:'landmark',minor:true},
+ {id:'fallenchapel',name:SOSText("items_equipment.valuableRemove.165"),x:58,y:59,type:'hidden',faction:SOSText("items_equipment.valuableRemove.166"),desc:SOSText("items_equipment.valuableRemove.167"),hidden:true,siteKind:'ruin',minor:true},
+ {id:'zion',name:SOSText("items_equipment.valuableRemove.168"),x:52,y:31,type:'town',faction:SOSText("items_equipment.valuableRemove.169"),region:'bluestone',terrain:'mountain-city',desc:SOSText("items_equipment.valuableRemove.170")},
+ {id:'lowcreek',name:SOSText("items_equipment.valuableRemove.171"),x:79,y:79,type:'settlement',faction:SOSText("items_equipment.valuableRemove.172"),region:'bluestone',terrain:'mountain-valley',desc:SOSText("items_equipment.valuableRemove.173")},
+ {id:'ebonheart',name:SOSText("items_equipment.valuableRemove.174"),x:21,y:53,type:'settlement',faction:SOSText("items_equipment.valuableRemove.175"),region:'bluestone',terrain:'mountain',desc:SOSText("items_equipment.valuableRemove.176")},
+ {id:'norwegian',name:SOSText("items_equipment.valuableRemove.177"),x:37,y:72,type:'settlement',faction:SOSText("items_equipment.valuableRemove.178"),region:'bluestone',terrain:'valley',desc:SOSText("items_equipment.valuableRemove.179")},
+ {id:'winterstone',name:SOSText("items_equipment.valuableRemove.180"),x:67,y:19,type:'settlement',faction:SOSText("items_equipment.valuableRemove.181"),region:'bluestone',terrain:'quarry',desc:SOSText("items_equipment.valuableRemove.182")},
+ {id:'ziongorge',name:SOSText("items_equipment.valuableRemove.183"),x:70,y:52,type:'wilderness',faction:SOSText("items_equipment.valuableRemove.184"),region:'bluestone',terrain:'gorge',desc:SOSText("items_equipment.valuableRemove.185")},
+ {id:'crownpass',name:SOSText("items_equipment.valuableRemove.186"),x:48,y:8,type:'camp',faction:SOSText("items_equipment.valuableRemove.187"),region:'bluestone',terrain:'pass',desc:'A small Bluestone-controlled camp settlement at the high, wind-cut pass above Zion. It guards the ice road toward Exium and the Far Northern Region.'},
+ {id:'westspawnroad',name:SOSText("items_equipment.valuableRemove.189"),x:17,y:88,type:'wilderness',faction:SOSText("items_equipment.valuableRemove.190"),region:'bluestone',terrain:'mountain-road',desc:SOSText("items_equipment.valuableRemove.191")},
+ {id:'skybreak',name:SOSText("items_equipment.valuableRemove.192"),x:88,y:44,type:'fort',faction:SOSText("items_equipment.valuableRemove.193"),region:'bluestone',terrain:'mountain-fort',desc:SOSText("items_equipment.valuableRemove.194")},
+ {id:'goatshrine',name:SOSText("items_equipment.valuableRemove.195"),x:31,y:34,type:'hidden',faction:SOSText("items_equipment.valuableRemove.196"),region:'bluestone',terrain:'mountain',desc:SOSText("items_equipment.valuableRemove.197"),hidden:true,siteKind:'shrine',minor:true},
+ {id:'snowcut',name:SOSText("items_equipment.valuableRemove.198"),x:59,y:63,type:'hidden',faction:SOSText("items_equipment.valuableRemove.199"),region:'bluestone',terrain:'mountain',desc:SOSText("items_equipment.valuableRemove.200"),hidden:true,siteKind:'landmark',minor:true},
+ {id:'sengia',name:SOSText("items_equipment.valuableRemove.201"),x:76,y:47,type:'town',faction:SOSText("items_equipment.valuableRemove.202"),region:'redstone',terrain:'walled-city',desc:SOSText("items_equipment.valuableRemove.203")},
+ {id:'lockwood',name:SOSText("items_equipment.valuableRemove.204"),x:18,y:48,type:'settlement',faction:SOSText("items_equipment.valuableRemove.205"),region:'redstone',terrain:'forest-town',desc:SOSText("items_equipment.valuableRemove.206")},
+ {id:'grayhaven',name:SOSText("items_equipment.valuableRemove.207"),x:25,y:15,type:'settlement',faction:SOSText("items_equipment.valuableRemove.208"),region:'redstone',terrain:'road-town',desc:SOSText("items_equipment.valuableRemove.209")},
+ {id:'grainvalley',name:SOSText("items_equipment.valuableRemove.210"),x:46,y:28,type:'wilderness',faction:SOSText("items_equipment.valuableRemove.211"),region:'redstone',terrain:'mountain-valley',desc:SOSText("items_equipment.valuableRemove.212")},
+ {id:'briarlake',name:SOSText("items_equipment.valuableRemove.213"),x:55,y:22,type:'settlement',faction:SOSText("items_equipment.valuableRemove.214"),region:'redstone',terrain:'lakeside',desc:SOSText("items_equipment.valuableRemove.215")},
+ {id:'glenbrook',name:SOSText("items_equipment.valuableRemove.216"),x:50,y:69,type:'settlement',faction:SOSText("items_equipment.valuableRemove.217"),region:'redstone',terrain:'road-village',desc:SOSText("items_equipment.valuableRemove.218")},
+ {id:'tyrdon',name:SOSText("items_equipment.valuableRemove.219"),x:69,y:82,type:'settlement',faction:SOSText("items_equipment.valuableRemove.220"),region:'redstone',terrain:'dry-town',desc:SOSText("items_equipment.valuableRemove.221")},
+ {id:'pyreglade',name:SOSText("items_equipment.valuableRemove.222"),x:89,y:72,type:'settlement',faction:SOSText("items_equipment.valuableRemove.223"),region:'redstone',terrain:'resin-slopes',desc:SOSText("items_equipment.valuableRemove.224")},
+ {id:'lockwoodforest',name:SOSText("items_equipment.valuableRemove.225"),x:13,y:64,type:'wilderness',faction:SOSText("items_equipment.valuableRemove.226"),region:'redstone',terrain:'forest',desc:SOSText("items_equipment.valuableRemove.227")},
+ {id:'grainpass',name:SOSText("items_equipment.valuableRemove.228"),x:36,y:20,type:'wilderness',faction:SOSText("items_equipment.valuableRemove.229"),region:'redstone',terrain:'pass-road',desc:SOSText("items_equipment.valuableRemove.230")},
+ {id:'sengiaroad',name:SOSText("items_equipment.valuableRemove.231"),x:66,y:52,type:'wilderness',faction:SOSText("items_equipment.valuableRemove.232"),region:'redstone',terrain:'military-road',desc:SOSText("items_equipment.valuableRemove.233")},
+ {id:'pyreslopes',name:SOSText("items_equipment.valuableRemove.234"),x:84,y:57,type:'wilderness',faction:SOSText("items_equipment.valuableRemove.235"),region:'redstone',terrain:'forest-slope',desc:SOSText("items_equipment.valuableRemove.236")},
+ {id:'smugglercutred',name:SOSText("items_equipment.valuableRemove.237"),x:29,y:57,type:'hidden',faction:SOSText("items_equipment.valuableRemove.238"),region:'redstone',terrain:'forest',desc:SOSText("items_equipment.valuableRemove.239"),hidden:true,siteKind:'trail',minor:true},
+ {id:'oldredway',name:SOSText("items_equipment.valuableRemove.240"),x:61,y:38,type:'hidden',faction:SOSText("items_equipment.valuableRemove.241"),region:'redstone',terrain:'ruin-road',desc:SOSText("items_equipment.valuableRemove.242"),hidden:true,siteKind:'ruin',minor:true},
+ {id:'resinhollow',name:SOSText("items_equipment.valuableRemove.243"),x:93,y:58,type:'hidden',faction:SOSText("items_equipment.valuableRemove.244"),region:'redstone',terrain:'forest-slope',desc:SOSText("items_equipment.valuableRemove.245"),hidden:true,siteKind:'campsite',minor:true},
+ {id:'azerdon',name:'Azerdon',x:55,y:8,type:'town',faction:'Independent',region:'farnorth',terrain:'frozen-city',desc:'The medium-sized capital of the Far Northern Region, strongly Independent and sustained by a stubborn internal northern economy.'},
+ {id:'karsen',name:'Karsen',x:55,y:43,type:'settlement',faction:'Independent',region:'farnorth',terrain:'snow-crossroads',desc:'A rugged crossroads village and indispensable staging point for travel across the Far North.'},
+ {id:'decius',name:'Decius',x:29,y:42,type:'settlement',faction:'Independent',region:'farnorth',terrain:'snow-village',desc:'A remote western settlement of hunters, trappers, and people accustomed to hard winters.'},
+ {id:'snowcaves',name:'Snow Caves',x:10,y:42,type:'wilderness',faction:'Independent',region:'farnorth',terrain:'ice-caves',desc:'A sprawling set of snowbound caves in the western heights. The deeper chambers are poorly known.'},
+ {id:'standingstones',name:'Standing Stone Tundra',x:39,y:24,type:'wilderness',faction:'Independent',region:'farnorth',terrain:'stony-tundra',desc:'An exposed tundra scattered with enormous standing stones older than any nearby settlement.'},
+ {id:'whitescar',name:'White Scar',x:82,y:43,type:'wilderness',faction:'Independent',region:'farnorth',terrain:'ice-ravine',desc:'A vast frozen ravine and glacial fracture cutting through the eastern tundra.'},
+ {id:'velmora',name:'Velmora',x:75,y:63,type:'settlement',faction:'Independent',region:'farnorth',terrain:'snow-village',desc:'An isolated southeastern village built around shelter, livestock, hunting, and endurance.'},
+ {id:'roguehold',name:'Roguehold Castle',x:59,y:72,type:'ruins',faction:'Independent',region:'farnorth',terrain:'frozen-castle',desc:'An abandoned frozen castle southwest of Velmora. It is unsettled, but armed outlaws are known to use its halls and towers.'},
+ {id:'skallvik',name:'Skallvik',x:34,y:66,type:'settlement',faction:'Independent',region:'farnorth',terrain:'frontier-town',desc:'A rough snowbound frontier village of hunters, trappers, mercenaries, fugitives, and traders who do not ask many questions.'},
+ {id:'exium',name:'Exium',x:46,y:88,type:'settlement',faction:'Independent',region:'farnorth',terrain:'gateway-town',desc:'The southern gateway of the Far North and the practical limit of routine foreign faction travel and trade.'}
+];
+
 function worldLocation(id){return WORLD_LOCATIONS.find(x=>x.id===id)||WORLD_LOCATIONS[0]}
 function locationRegion(locOrId){const loc=typeof locOrId==='string'?worldLocation(locOrId):locOrId;return loc?.region||'shantium'}
 function regionDef(id=currentWorldRegion()){return WORLD_REGIONS[id]||WORLD_REGIONS.shantium}
@@ -12,14 +95,27 @@ function connectedRegions(region){return [...new Set(REGION_CONNECTIONS.flatMap(
 function regionNameForLocation(id){return regionDef(locationRegion(id)).name}
 
 
+// v1.6.19 — Trade Goods & Regional Economies II
+// Existing IDs are preserved for save compatibility. New goods are global commodities,
+// with intentionally uneven production so regional trade remains meaningful.
 const TRADE_GOODS=[
- {id:'food',name:SOSText("world_regions_security.regionNameForLocation.001"),base:18,sources:['river','northgate','southroad','norwegian','grainvalley','briarlake','glenbrook'],demand:['shantium','redoubt','zion','winterstone','sengia','tyrdon','pyreglade']},
- {id:'medicine',name:SOSText("world_regions_security.regionNameForLocation.002"),base:35,sources:['shantium','river','zion','sengia'],demand:['northgate','southroad','redoubt','lowcreek','ebonheart','winterstone','lockwood','tyrdon','pyreglade']},
- {id:'timber',name:SOSText("world_regions_security.regionNameForLocation.003"),base:24,sources:['northgate','river','ebonheart','norwegian','lockwood','pyreglade'],demand:['shantium','stonebridge','redoubt','zion','winterstone','sengia','briarlake']},
- {id:'cloth',name:SOSText("world_regions_security.regionNameForLocation.004"),base:28,sources:['river','stonebridge','zion','sengia'],demand:['shantium','northgate','southroad','lowcreek','ebonheart','lockwood','glenbrook','tyrdon','pyreglade']},
- {id:'iron',name:SOSText("world_regions_security.regionNameForLocation.005"),base:42,sources:['stonebridge','redoubt','winterstone','sengia'],demand:['shantium','northgate','southroad','zion','lowcreek','lockwood','glenbrook','tyrdon','pyreglade']},
- {id:'tools',name:SOSText("world_regions_security.regionNameForLocation.006"),base:38,sources:['stonebridge','redoubt','zion','winterstone','sengia','lockwood'],demand:['river','northgate','southroad','lowcreek','norwegian','ebonheart','briarlake','glenbrook','tyrdon','pyreglade']},
- {id:'luxury',name:SOSText("world_regions_security.regionNameForLocation.007"),base:55,sources:['shantium','stonebridge','zion','sengia'],demand:['river','northgate','redoubt','norwegian','ebonheart','lockwood','briarlake','glenbrook','tyrdon','pyreglade']}
+ {id:'food',name:SOSText("world_regions_security.regionNameForLocation.001"),base:18,sources:['river','northgate','southroad','norwegian','grainvalley','briarlake','glenbrook','azerdon','decius','velmora'],demand:['shantium','redoubt','zion','winterstone','sengia','tyrdon','pyreglade','karsen','skallvik','exium']},
+ {id:'medicine',name:SOSText("world_regions_security.regionNameForLocation.002"),base:35,sources:['shantium','river','zion','sengia','decius'],demand:['northgate','southroad','redoubt','lowcreek','ebonheart','winterstone','lockwood','tyrdon','pyreglade','azerdon','karsen','velmora','skallvik','exium']},
+ {id:'timber',name:SOSText("world_regions_security.regionNameForLocation.003"),base:24,sources:['northgate','river','ebonheart','norwegian','lockwood','pyreglade'],demand:['shantium','stonebridge','redoubt','zion','winterstone','sengia','briarlake','azerdon','karsen','velmora','skallvik','exium']},
+ {id:'cloth',name:SOSText("world_regions_security.regionNameForLocation.004"),base:28,sources:['river','stonebridge','zion','sengia','azerdon'],demand:['shantium','northgate','southroad','lowcreek','ebonheart','lockwood','glenbrook','tyrdon','pyreglade','decius','karsen','velmora','skallvik','exium']},
+ {id:'iron',name:SOSText("world_regions_security.regionNameForLocation.005"),base:42,sources:['stonebridge','redoubt','winterstone','sengia','karsen'],demand:['shantium','northgate','southroad','zion','lowcreek','lockwood','glenbrook','tyrdon','pyreglade','azerdon','decius','velmora','skallvik','exium']},
+ {id:'tools',name:SOSText("world_regions_security.regionNameForLocation.006"),base:38,sources:['stonebridge','redoubt','zion','winterstone','sengia','lockwood','karsen','azerdon'],demand:['river','northgate','southroad','lowcreek','norwegian','ebonheart','briarlake','glenbrook','tyrdon','pyreglade','decius','velmora','skallvik','exium']},
+ // Luxury Goods remain deliberately thin outside the eventual Spawn region: capitals are the main current producers.
+ {id:'luxury',name:SOSText("world_regions_security.regionNameForLocation.007"),base:55,sources:['shantium','zion','sengia','azerdon'],demand:['river','northgate','redoubt','norwegian','ebonheart','lockwood','briarlake','glenbrook','tyrdon','pyreglade','karsen','decius','velmora','skallvik','exium']},
+ {id:'hides',name:'Hides & Furs',base:40,sources:['northgate','ebonheart','norwegian','lockwood','pyreglade','decius','velmora','skallvik'],demand:['shantium','stonebridge','zion','sengia','azerdon','karsen','exium']},
+ {id:'stone',name:'Stone',base:26,sources:['quarry','stonebridge','winterstone','crownpass','tyrdon','karsen','standingstones'],demand:['shantium','redoubt','zion','sengia','lockwood','azerdon','velmora','skallvik','exium']},
+ // Livestock is present in every established region but intentionally sparse before the future Spawn expansion.
+ {id:'livestock',name:'Livestock',base:34,sources:['northgate','lowcreek','briarlake','velmora'],demand:['shantium','stonebridge','zion','sengia','grayhaven','azerdon','karsen','skallvik','exium']},
+ {id:'salt',name:'Salt',base:31,sources:['marsh','lowcreek','tyrdon'],demand:['shantium','river','northgate','zion','norwegian','sengia','briarlake','azerdon','karsen','decius','velmora','skallvik','exium']},
+ // Spirits are deliberately limited in the current world so Spawn can later become a major source.
+ {id:'spirits',name:'Spirits',base:46,sources:['shantium','norwegian','sengia','skallvik'],demand:['river','stonebridge','northgate','redoubt','zion','ebonheart','lockwood','grayhaven','briarlake','glenbrook','tyrdon','azerdon','karsen','decius','velmora','exium']},
+ // Dye is a high-value, unevenly produced commodity (and a deliberate Mount & Blade nod).
+ {id:'dye',name:'Dye',base:50,sources:['river','ebonheart','pyreglade'],demand:['shantium','stonebridge','zion','sengia','azerdon','karsen','decius','velmora','skallvik','exium']}
 ];
 const WORLD_PARTY_TYPES=[
  {kind:'bandits',name:SOSText("world_regions_security.regionNameForLocation.008"),faction:SOSText("world_regions_security.regionNameForLocation.009"),attitude:'hostile',size:[2,5]},
@@ -299,6 +395,17 @@ function autoResolveGuardianCaravanDispute(c){
  if(result)applyGuardianCaravanViolenceConsequences(c,{guardianJoined:false,caravanWon:result.winner?.id===pair.caravan.id,patrolWon:result.winner?.id===pair.patrol.id});
  return result
 }
+function applyGuardianRegionalConflictPoliticalChoice(c,ally,enemy,locId){
+ if(!c||c.guardianPoliticalChoice||!state.world.settlements?.[locId]||!OPEN_WORLD_FACTIONS[ally?.faction]||!OPEN_WORLD_FACTIONS[enemy?.faction]||ally.faction===enemy.faction)return false;
+ const backed=localPoliticalFactionState(locId,ally.faction),opposed=localPoliticalFactionState(locId,enemy.faction),reason=`The Guardian publicly sides with ${majorFaction(ally.faction).short} in the dispute with ${majorFaction(enemy.faction).short}.`;
+ backed.support=clamp((backed.support||0)+.6,-6,12);backed.legitimacy=clamp((backed.legitimacy||0)+.2,-6,12);
+ opposed.support=clamp((opposed.support||0)-.6,-6,12);opposed.legitimacy=clamp((opposed.legitimacy||0)-.15,-6,12);
+ recordFactionPower(locId,ally.faction,'guardian',.75,reason,7);recordFactionPower(locId,enemy.faction,'guardian',-.75,reason,7);
+ const ps=politicalSettlement(locId);ps.lean[ally.faction]=clamp((ps.lean[ally.faction]||0)+.2,-6,12);ps.lean[enemy.faction]=clamp((ps.lean[enemy.faction]||0)-.2,-6,12);
+ c.guardianPoliticalChoice={day:state.world.day,backedFaction:ally.faction,opposedFaction:enemy.faction,locId};
+ politicalHistory(`${worldLocation(locId).name}: ${reason} ${majorFaction(ally.faction).short} gains slight political ground; ${majorFaction(enemy.faction).short} loses slight ground.`,'info');
+ return true
+}
 function resolveLiveRegionalConflict(c){
  if(!c||c.status!=='active')return null;if(c.kind==='guardian_caravan_dispute'&&!c.escalated)return autoResolveGuardianCaravanDispute(c);const a=state.world.parties.find(p=>p.id===c.aId),b=state.world.parties.find(p=>p.id===c.bId);
  if(!a||!b){c.status='ended';c.resolvedDay=state.world.day;return null}
@@ -366,7 +473,7 @@ function namedGroupSentenceName(name){
 function resolvePartyVsParty(a,b,bonusA=0,bonusB=0){
  const sa=partyStrength(a)+Math.random()*3+(bonusA||0),sb=partyStrength(b)+Math.random()*3+(bonusB||0);
  const winner=sa>=sb?a:b,loser=winner===a?b:a;
- const lostContract=loser.questId?activeQuest(loser.questId):null;if(loser.tradeProcurementCaravan)homeTradeProcurementLost(loser,`${winner.name} defeated the procurement caravan near ${worldLocation(winner.location||winner.destination).name}.`);
+ const lostContract=loser.questId?activeQuest(loser.questId):null;if(loser.tradeProcurementCaravan)homeTradeProcurementLost(loser,`${winner.name} defeated the procurement caravan near ${worldLocation(winner.location||winner.destination).name}.`);if(loser.homeCommercialCaravan&&typeof homeCommercialCaravanLost==='function')homeCommercialCaravanLost(loser,`${winner.name} defeated the commercial caravan near ${worldLocation(winner.location||winner.destination).name}.`);
  if(loser.securityDeployment){const M=sengiaSecurityState(),d=M.deployments.find(x=>x.partyId===loser.id&&x.status==='moving');if(d){d.status='lost';d.endedDay=state.world.day;recordSengiaSecurity(SOSText("world_regions_security.resolvePartyVsParty.001",loser.name,worldLocation(d.to).name),'bad')}}
  if(lostContract?.spotContract&&!['hunt','recovery'].includes(lostContract.type)){
    const reason=SOSText("world_regions_security.resolvePartyVsParty.002",loser.name,winner.name);
@@ -403,12 +510,3 @@ const OPEN_WORLD_FACTIONS={
  Spawn:{name:SOSText("world_regions_security.simulateRegionalConflict.026"),short:SOSText("world_regions_security.simulateRegionalConflict.027"),desc:SOSText("world_regions_security.simulateRegionalConflict.028"),agenda:SOSText("world_regions_security.simulateRegionalConflict.029"),color:SOSText("world_regions_security.simulateRegionalConflict.030")},
  Mercenaries:{name:SOSText("world_regions_security.simulateRegionalConflict.031"),short:SOSText("world_regions_security.simulateRegionalConflict.032"),desc:SOSText("world_regions_security.simulateRegionalConflict.033"),agenda:SOSText("world_regions_security.simulateRegionalConflict.034"),color:SOSText("world_regions_security.simulateRegionalConflict.035")}
 };
-
-const FACTION_RELATION_DEFAULTS={
- 'Coalition|Redstone':-2,'Coalition|Shantium':2,'Coalition|Independent':2,'Coalition|Bluestone':0,'Coalition|Spawn':1,'Coalition|Mercenaries':0,
- 'Redstone|Shantium':-2,'Redstone|Independent':0,'Redstone|Bluestone':-1,'Redstone|Spawn':-1,'Redstone|Mercenaries':1,
- 'Shantium|Independent':2,'Shantium|Bluestone':0,'Shantium|Spawn':2,'Shantium|Mercenaries':1,
- 'Independent|Bluestone':0,'Independent|Spawn':1,'Independent|Mercenaries':2,
- 'Bluestone|Spawn':0,'Bluestone|Mercenaries':0,'Spawn|Mercenaries':0
-};
-

@@ -1,39 +1,3 @@
-function relationshipContractState(){
- ensureWorldState();if(!state.world.relationshipContracts||typeof state.world.relationshipContracts!=='object')state.world.relationshipContracts={messengers:[],history:[],lastGenDay:{},serial:0};
- const R=state.world.relationshipContracts;if(!Array.isArray(R.messengers))R.messengers=[];if(!Array.isArray(R.history))R.history=[];if(!R.lastGenDay)R.lastGenDay={};return R
-}
-function relationshipContractCandidates(locId){
- const rows=[],present=settlementNpcsPresent(locId),companions=activeRoadCompanions(),travelers=meaningfulTravelersForLocation(locId);
- for(const npc of present){const rel=npcRelationshipState(npc.id);if((rel.familiarity||0)>=4&&rel.opinion>-3)rows.push({kind:'npc',npc,weight:(rel.familiarity||0)+Math.max(0,rel.opinion||0)})}
- for(const m of companions){const ops=Object.values(companionNpcOpinionState()).filter(o=>o.compId===m.id&&Math.abs(o.score)>=2);if((m.trust||0)>=55||ops.length)rows.push({kind:'companion',companion:m,weight:Math.floor((m.trust||0)/15)+ops.length})}
- for(const r of travelers){if(travelerAttitudeScore(r)>=4&&(r.contractsCompleted||0)>=1)rows.push({kind:'traveler',traveler:r,weight:travelerAttitudeScore(r)+(r.contractsCompleted||0)*2})}
- return rows.sort((a,b)=>b.weight-a.weight)
-}
-function relationshipContractType(source,locId){
- const role=String(source.npc?.role||'').toLowerCase(),r=source.traveler,comp=source.companion;
- if(source.kind==='npc'){
-  if(role.includes('guard')||role.includes('watch')||role.includes('scout')||role.includes('officer'))return pick(['hunt','visit','delivery']);
-  if(role.includes('trader')||role.includes('factor')||role.includes('merchant')||role.includes('broker'))return pick(['delivery','procure','escort']);
-  if(role.includes('healer')||role.includes('teacher')||role.includes('baker')||role.includes('cook'))return pick(['procure','visit','delivery']);
-  return pick(['visit','delivery','procure']);
- }
- if(source.kind==='traveler')return r?.kind==='mercenary'?pick(['escort','hunt','visit']):pick(['delivery','escort','procure']);
- if(source.kind==='companion')return comp?.role==='ranger'||comp?.role==='rogue'?pick(['visit','hunt','delivery']):pick(['visit','delivery','escort']);
- return'visit'
-}
-function relationshipContractTarget(source,locId,type){
- const unlocked=state.world.unlockedRegions||['shantium'],all=unlocked.flatMap(r=>regionalSettlements(r)).filter(x=>!x.hidden&&x.id!==locId);
- if(source.kind==='npc'){
-  const moves=populationMovementState().history.filter(x=>x.type==='npc_move'&&(x.from===locId||x.to===locId)).slice(-8);
-  if(moves.length&&chance(.45)){const m=pick(moves);return m.to===locId?m.from:m.to}
- }
- if(source.kind==='traveler'&&source.traveler?.settledAt&&source.traveler.settledAt!==locId&&state.world.settlements[source.traveler.settledAt])return source.traveler.settledAt;
- if(source.kind==='companion'){
-  const ops=Object.values(companionNpcOpinionState()).filter(o=>o.compId===source.companion.id&&Math.abs(o.score)>=2);
-  const o=ops[0];if(o){const home=npcHomeLocation(o.npcId),cur=currentNpcLocation(o.npcId,home);if(cur&&cur!==locId)return cur}
- }
- return pick(all)?.id||locId
-}
 function relationshipContractName(source,type){
  const who=source.npc?.name||source.companion?.name||source.traveler?.name||SOSText("social_relationship_contracts.relationshipContractName.001");
  if(source.kind==='npc')return type==='delivery'?SOSText("social_relationship_contracts.relationshipContractName.002",who):type==='procure'?SOSText("social_relationship_contracts.relationshipContractName.003",who):type==='escort'?SOSText("social_relationship_contracts.relationshipContractName.004",who):SOSText("social_relationship_contracts.relationshipContractName.005",who);
@@ -118,4 +82,86 @@ function nextInterregionalTravelStep(from,to){
 }
 function travelTowardDestination(dest){
  if(!dest||dest===state.world.location)return showWorldArea();const step=nextInterregionalTravelStep(state.world.location,dest);return attemptWorldTravel(step)
+}
+
+
+// v1.6.7 — Economy & Trade III
+function economyIIIState(){
+ const T=tradeEconomyState();
+ if(!T.economyIII||typeof T.economyIII!=='object')T.economyIII={settlements:{},history:[],lastDay:0};
+ if(!T.economyIII.settlements)T.economyIII.settlements={};
+ if(!Array.isArray(T.economyIII.history))T.economyIII.history=[];
+ return T.economyIII
+}
+function settlementEconomyIII(locId){
+ const E=economyIIIState(),ss=settlementState(locId);
+ if(!E.settlements[locId])E.settlements[locId]={production:{},consumption:{},flowHealth:50,lastDay:0,shortageDays:0,surplusDays:0};
+ const row=E.settlements[locId];
+ for(const g of TRADE_GOODS){if(row.production[g.id]===undefined)row.production[g.id]=0;if(row.consumption[g.id]===undefined)row.consumption[g.id]=0}
+ if(row.flowHealth===undefined)row.flowHealth=50;if(row.shortageDays===undefined)row.shortageDays=0;if(row.surplusDays===undefined)row.surplusDays=0;return row
+}
+function tradeRoutePressureAround(locId){
+ const R=ensureRegionalSimulation(),keys=Object.entries(R.routePressure||{}).filter(([k])=>k.split('|').includes(locId));
+ if(!keys.length)return 0;return keys.reduce((n,[,v])=>n+(v||0),0)/keys.length
+}
+function settlementProductionRate(locId,gid){
+ const ss=settlementState(locId),role=tradeGoodRole(locId,gid),pressure=tradeRoutePressureAround(locId),problem=settlementProblem(locId);
+ let rate=role==='source'?1.0:role==='normal'?.22:.05;
+ rate*=clamp(.45+ss.prosperity/100,.45,1.45);rate*=clamp(.55+ss.security/130,.55,1.25);rate*=clamp(1-pressure*.055,.45,1);
+ if(problem?.type==='trade_slump')rate*=.7;if(problem?.type==='shortage'&&['food','medicine','tools'].includes(gid))rate*=.82;
+ return rate
+}
+function settlementConsumptionRate(locId,gid){
+ const ss=settlementState(locId),role=tradeGoodRole(locId,gid),problem=settlementProblem(locId);
+ let rate=role==='demand'?.72:.28;
+ if(['food','medicine'].includes(gid))rate+=.18;if(ss.prosperity>65&&['cloth','luxury','tools','spirits','dye'].includes(gid))rate+=.15;if(ss.security<35&&['food','medicine','tools'].includes(gid))rate+=.12;
+ if(problem?.type==='shortage'&&['food','medicine','tools'].includes(gid))rate+=.18;return rate
+}
+function economyIIIStockStatus(locId){
+ const vals=TRADE_GOODS.map(g=>tradeStock(locId,g.id)),ess=['food','medicine','tools'].map(g=>tradeStock(locId,g));
+ const avg=vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length),essential=ess.reduce((a,b)=>a+b,0)/ess.length;
+ return {avg,essential,critical:ess.filter(x=>x<=1).length,low:vals.filter(x=>x<=2).length,healthy:vals.filter(x=>x>=6).length}
+}
+function economyIIIFlowHealth(locId){
+ const ss=settlementState(locId),st=economyIIIStockStatus(locId),pressure=tradeRoutePressureAround(locId),recentDeliveries=tradeEconomyState().deliveries.filter(x=>x.destination===locId&&state.world.day-x.day<=6).length,recentLosses=tradeEconomyState().losses.filter(x=>x.destination===locId&&state.world.day-x.day<=6).length;
+ return clamp(Math.round(35+ss.security*.28+ss.prosperity*.20+st.avg*3+recentDeliveries*5-recentLosses*7-pressure*4),0,100)
+}
+function economyIIIStatusLabel(locId){const h=settlementEconomyIII(locId).flowHealth;return h>=75?'Strong trade flow':h>=55?'Stable trade flow':h>=35?'Strained trade flow':h>=18?'Disrupted trade flow':'Severe supply disruption'}
+function economyIIISettlementHTML(locId){
+ const r=settlementEconomyIII(locId),st=economyIIIStockStatus(locId),pressure=tradeRoutePressureAround(locId);
+ const prod=TRADE_GOODS.map(g=>({g,v:r.production[g.id]||0})).sort((a,b)=>b.v-a.v).slice(0,3).filter(x=>x.v>.1).map(x=>`${esc(x.g.name)} ${x.v.toFixed(1)}`).join(' • ')||'little current output';
+ return `<div class="notice compact economy-iii-summary"><b>${esc(economyIIIStatusLabel(locId))}</b><br>Flow health ${r.flowHealth}/100 • average stock ${st.avg.toFixed(1)} • essential stock ${st.essential.toFixed(1)} • route pressure ${pressure.toFixed(1)}<br><small>Recent local production: ${prod}. Production depends on prosperity, security, local resources, and road disruption.</small></div>`
+}
+function recordEconomyIII(locId,text,type='info'){const E=economyIIIState();E.history.push({day:state.world.day,locId,text,type});E.history=E.history.slice(-100)}
+function simulateEconomyIIIDay(){
+ const E=economyIIIState();if(E.lastDay===state.world.day)return;E.lastDay=state.world.day;
+ for(const loc of regionalSettlements()){
+  const id=loc.id,row=settlementEconomyIII(id),ss=settlementState(id);
+  for(const g of TRADE_GOODS){
+   const pr=settlementProductionRate(id,g.id),cr=settlementConsumptionRate(id,g.id);row.production[g.id]=pr;row.consumption[g.id]=cr;
+   if(Math.random()<pr)changeTradeStock(id,g.id,1);if(Math.random()<cr)changeTradeStock(id,g.id,-1);
+  }
+  row.flowHealth=economyIIIFlowHealth(id);row.lastDay=state.world.day;const st=economyIIIStockStatus(id),problem=settlementProblem(id);
+  if(st.essential<2.4||st.critical>=2){row.shortageDays++;row.surplusDays=0;state.world.marketShock[id]=Math.min(.45,(state.world.marketShock[id]||0)+.018);if(row.shortageDays>=3&&!problem&&chance(.35)){createSettlementProblem(id,'shortage');recordEconomyIII(id,`${loc.name} develops a sustained supply shortage.`,'bad')}}
+  else if(st.avg>=6&&row.flowHealth>=62){row.surplusDays++;row.shortageDays=Math.max(0,row.shortageDays-1);if(row.surplusDays>=3&&chance(.28))ss.prosperity=Math.min(100,ss.prosperity+1)}
+  else{row.shortageDays=Math.max(0,row.shortageDays-1);row.surplusDays=0}
+  if(problem?.type==='shortage'&&st.essential>=4.5&&row.flowHealth>=55){progressSettlementProblem(id,1,'sustained market recovery and restored deliveries');recordEconomyIII(id,`${loc.name}'s shortage eases as stocks recover.`,'good')}
+  if(row.flowHealth<25&&chance(.16))ss.prosperity=Math.max(0,ss.prosperity-1);
+ }
+}
+function reserveMerchantCargoAtOrigin(p){
+ if(!p||p.kind!=='merchant'||p.economyCargoReserved)return p;const origin=p.origin||p.location;if(!state.world.settlements?.[origin])return p;
+ for(const [gid,qty] of Object.entries(p.manifest||{})){const available=tradeStock(origin,gid),take=Math.min(qty,Math.max(0,available-1));if(take<qty)p.manifest[gid]=take;changeTradeStock(origin,gid,-take)}
+ p.cargo=manifestLots(p.manifest);p.economyCargoReserved=true;if(p.cargo<=0){p.manifest=merchantManifest(origin,p.destination,1);for(const gid of Object.keys(p.manifest))p.manifest[gid]=0}return p
+}
+
+function interregionalTradeSignals(limit=6){
+ if(!crossRegionTradeUnlocked())return [];const unlocked=state.world.unlockedRegions||['shantium'],settlements=unlocked.flatMap(r=>regionalSettlements(r)),rows=[];
+ for(const dest of settlements)for(const g of TRADE_GOODS){
+  const dStock=tradeStock(dest.id,g.id),demand=tradeDemandScore(dest.id,g.id);if(demand<1&&dStock>3)continue;
+  const sources=settlements.filter(s=>locationRegion(s.id)!==locationRegion(dest.id)).map(s=>({s,stock:tradeStock(s.id,g.id),price:tradePrice(s.id,g.id),role:tradeGoodRole(s.id,g.id)})).filter(x=>x.stock>=3).sort((a,b)=>(b.role==='source')-(a.role==='source')||a.price-b.price);
+  const src=sources[0];if(!src)continue;const sell=tradePrice(dest.id,g.id),margin=sell-src.price,days=tradeRouteDistanceDays(src.s.id,dest.id),score=margin+demand*8+Math.max(0,4-dStock)*5+(src.role==='source'?7:0)-days;
+  if(score>8)rows.push({from:src.s.id,to:dest.id,gid:g.id,margin,days,risk:crossRegionRouteLabel(src.s.id,dest.id),score,need:demand,stock:dStock})
+ }
+ const seen=new Set();return rows.sort((a,b)=>b.score-a.score).filter(x=>{const k=`${x.gid}:${locationRegion(x.from)}:${locationRegion(x.to)}`;if(seen.has(k))return false;seen.add(k);return true}).slice(0,limit)
 }

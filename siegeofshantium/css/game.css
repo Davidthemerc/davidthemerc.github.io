@@ -1,4 +1,3 @@
-
 :root{
   --bg:#bdbdbd;--panel:#d8d8d8;--ink:#111;--shadow:#555;--light:#fff;--mid:#888;
   --danger:#8b1e1e;--good:#1d6a2a;--gold:#7d5b08;--blue:#314b7d;
@@ -761,6 +760,26 @@ html,body{max-width:100%;overflow-x:hidden}
  .region-snapshot,.regional-story-inline,.town-rumor,.town-notice{overflow-wrap:anywhere}
  .dialog .notice,.dialog .card{max-width:100%;box-sizing:border-box}
 }
+/* v1.6.18.1 — Far North gateway + visual hotfix */
+.region-map-farnorth{background:linear-gradient(135deg,#9fb2bc,#d7e4e9 44%,#879da8)!important;border-color:#5a707b!important;box-shadow:inset 0 0 0 2px #eef7fa,0 2px 5px rgba(18,39,49,.30)!important}
+.region-map-farnorth .world-map-title{background:linear-gradient(#e9f3f6,#bed0d8)!important;color:#1f3945!important;border-color:#637985!important;text-shadow:none!important}
+.region-map-farnorth .world-map-title span{color:#385763!important;opacity:.9!important}
+.region-map-farnorth .world-map-viewport{background:#dbe8ed!important;border-color:#718791!important;box-shadow:inset 0 0 18px rgba(48,77,91,.22)!important}
+.region-map-farnorth .world-map-canvas{background:radial-gradient(ellipse at 48% 35%,rgba(255,255,255,.99) 0 23%,rgba(242,248,250,.98) 44%,rgba(220,233,239,.98) 72%,rgba(199,216,224,.98) 100%)!important;box-shadow:inset 0 0 85px rgba(75,105,120,.24)!important}
+.region-map-farnorth .map-paper-grain{opacity:.10!important;background-image:repeating-linear-gradient(8deg,rgba(64,91,104,.08) 0 1px,transparent 1px 10px),repeating-linear-gradient(98deg,rgba(255,255,255,.22) 0 1px,transparent 1px 14px)!important}
+.region-map-farnorth .world-location{background:linear-gradient(#fbfdfe,#dce8ed)!important;border-color:#607985!important;color:#20353f!important;box-shadow:1px 2px 2px rgba(38,65,76,.28),inset 0 0 0 1px rgba(255,255,255,.85)!important}
+.region-map-farnorth .world-location.current{background:linear-gradient(#e9fbff,#bcdfe9)!important;border-color:#315d70!important;outline-color:#315d70!important;box-shadow:0 0 0 3px rgba(151,211,230,.48),2px 3px 3px rgba(35,62,72,.28)!important}
+.region-map-farnorth .world-location b{color:#17313c!important}
+.region-map-farnorth .world-location span{color:#49646f!important}
+.region-map-farnorth .world-location .map-you-here{color:#174f65!important}
+.region-map-farnorth .world-loc-icon{color:#3b5966!important}
+.region-map-farnorth .world-type-wilderness .world-loc-icon{color:#416b70!important}
+.region-map-farnorth .world-type-ruins .world-loc-icon{color:#536570!important}
+.region-map-farnorth .map-region-name{color:rgba(45,74,88,.25)!important;text-shadow:0 1px rgba(255,255,255,.55)}
+.region-map-farnorth .map-compass{color:rgba(39,67,80,.58)!important;border-color:rgba(55,83,96,.36)!important}
+.far-icefield{position:absolute;color:rgba(100,130,145,.28);font-size:18px;letter-spacing:8px;white-space:nowrap;pointer-events:none}.far-ice-a{left:6%;top:20%;transform:rotate(-8deg)}.far-ice-b{right:3%;top:55%;transform:rotate(7deg)}
+.far-ridge{position:absolute;color:rgba(65,83,92,.38);font-size:18px;line-height:.8;pointer-events:none}.far-ridge-a{left:7%;top:8%}.far-ridge-b{right:4%;top:12%}.far-ridge-c{left:37%;bottom:5%}
+.far-road-network{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.far-road-network .road-shadow{fill:none;stroke:rgba(67,77,80,.35);stroke-width:1.4}.far-road-network .road-line{fill:none;stroke:#8a9699;stroke-width:.8;stroke-dasharray:1.2 1}.far-road-network .road-highlight{fill:none;stroke:rgba(255,255,255,.85);stroke-width:.22}
 /* v1.4.0 — Beyond Shantium / Bluestone Highlands */
 .region-map-bluestone .world-map-canvas{background:radial-gradient(ellipse at 45% 38%,rgba(230,226,204,.9) 0 20%,transparent 21%),linear-gradient(145deg,rgba(150,145,125,.22),transparent 34%),#d9d0ad}
 .blue-ridge{position:absolute;font-family:Georgia,serif;color:#57584e;font-size:22px;line-height:.85;letter-spacing:5px;opacity:.78;pointer-events:none;white-space:nowrap;text-shadow:0 1px rgba(255,255,255,.5)}
@@ -1487,3 +1506,1063 @@ body.modal-open .mobile-map-pan-toggle{display:none!important}
 
 /* v1.5.26.3.1 — settlement arrival law enforcement */
 #lawArrivalSneak small,#lawArrivalOpen small,#lawArrivalOutside small,#lawArrivalPolitical small{display:block;margin-top:3px}
+
+
+/* v1.5.26.3.6 — Player Party map-state cleanup */
+.player-party-marker{position:absolute;transform:translate(-50%,-50%);z-index:14;width:31px;height:31px;border:3px double #29271f;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#eee8cf;box-shadow:0 2px 4px rgba(0,0,0,.5),0 0 0 2px rgba(239,232,199,.8);pointer-events:none}
+.player-party-marker span{display:flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:3px;background:#3d5140;color:#fff;font-size:12px;font-weight:900;font-family:Georgia,serif}
+.world-map-legend .legend-player{display:inline-flex;width:13px;height:13px;border:2px double #29271f;border-radius:50%;align-items:center;justify-content:center;font-size:7px;font-weight:900;background:#eee8cf;color:#314534}
+@media(max-width:430px){.player-party-marker{width:27px;height:27px}.player-party-marker span{width:17px;height:17px;font-size:10px}}
+
+/* v1.5.28 — explicit combat target selection */
+.enemy-card{width:100%;min-height:0;text-align:left;color:inherit;font:inherit;border:2px solid #777;background:#eee;padding:6px;cursor:pointer;box-shadow:none}
+.enemy-card:hover:not(:disabled),.enemy-card:focus-visible{background:#f7f4e8;outline:2px solid #555;outline-offset:1px}
+.enemy-card.selected{outline:3px solid #222!important;outline-offset:1px;background:#fff7cf;border-color:#4d4532}
+.enemy-card.dead,.enemy-card:disabled{opacity:.45;text-decoration:line-through;cursor:default}
+.target-selected-badge{display:inline-block;padding:1px 5px;border:1px solid #4d4532;background:#2f2f2f;color:#fff;font-size:8px;font-weight:900;letter-spacing:.08em;margin-right:3px}
+.combat-target-status{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:7px 0;padding:7px 8px;border:2px solid #67604b;background:#f3edcf;font-size:11px}
+.combat-target-status>span:first-child{display:flex;flex-direction:column;gap:1px}.combat-target-status small{font-size:8px;letter-spacing:.08em}.combat-target-status b{font-size:13px}.target-opening-ready{color:#7b4d12;font-weight:900}
+@media(max-width:520px){.combat-target-status{align-items:flex-start;flex-direction:column;gap:3px}.target-selected-badge{font-size:7px}}
+
+/* v1.5.30 — tactical states, enemy roles & group combat */
+.tactical-state-row{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}
+.tactical-state{display:inline-block;border:1px solid #666;background:#eee;padding:1px 4px;font-size:8px;font-weight:800;letter-spacing:.04em;line-height:1.2}
+.tactical-exposed,.tactical-guardBroken{background:#efd4cc;border-color:#875044}
+.tactical-staggered,.tactical-offBalance{background:#eadfc2;border-color:#7b693b}
+.tactical-pinned,.tactical-distracted{background:#d8e1e8;border-color:#50697a}
+.tactical-marked{background:#ddd7e8;border-color:#66547d}
+.enemy-card.selected .tactical-state{box-shadow:0 0 0 1px rgba(255,255,255,.55) inset}
+@media(max-width:430px){.tactical-state{font-size:7px;padding:1px 3px}.tactical-state-row{gap:2px}}
+
+/* v1.5.31 — Companion Tactical AI & Teamwork */
+.target-opening-ready{font-weight:700}.combat-log .teamwork-note{font-style:italic}
+
+/* v1.6.0 — Combat overhaul consolidation */
+.combat-battlefield-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:7px 0}.combat-battlefield-summary>span{border:1px solid #8b846d;background:#eee8d4;padding:5px 6px;font-size:10px}.combat-target-preview{display:flex;flex-wrap:wrap;gap:5px;margin:5px 0 9px;padding:6px 7px;border:1px dashed #746b52;background:#f7f2df;font-size:10px}.combat-target-preview b{font-size:11px}.combat-target-preview .preview-opening{font-weight:900;color:#7b4d12}.enemy-priority{display:block!important;margin-top:3px;padding-top:3px;border-top:1px dotted #aaa;font-weight:700;color:#514832!important}.enemy-card.selected .enemy-priority{color:#2d281d!important}.combat-actions{border-top:1px solid #8c846e;padding-top:8px}.combat-actions button{min-width:112px}
+@media(max-width:520px){.combat-battlefield-summary{grid-template-columns:1fr}.combat-target-preview{font-size:9px}.combat-actions button{min-width:0;flex:1 1 calc(50% - 6px)}}
+
+/* v1.6.0.4 — combat interface + pursuit presentation */
+.combat-actions{display:block!important;margin:5px 0 8px!important;padding-top:5px!important;border-top:1px solid #9b947f!important}
+.combat-context-bar{display:flex;align-items:center;gap:5px 10px;flex-wrap:wrap;margin:2px 0 6px;padding:4px 6px;border:1px solid #9a9279;background:#eee9d9;font-size:10px;line-height:1.2}
+.combat-context-bar>span{display:inline-flex;align-items:baseline;gap:3px}
+.combat-context-bar small{font-size:9px;color:#555}
+.combat-difficulty-inline{font-weight:700}
+.combat-formation-inline{flex:1 1 auto}
+.combat-morale-inline{margin-left:auto;white-space:nowrap}
+.combat-target-status{margin:5px 0!important;padding:5px 7px!important;border-width:1px!important;min-height:0;background:#f3edcf}
+.combat-target-status>span:first-child{gap:0!important}.combat-target-status small{font-size:7px!important}.combat-target-status b{font-size:12px!important}
+.combat-target-preview,.combat-battlefield-summary,.combat-morale{display:none!important}
+.combat-action-buttons{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0 0}
+.combat-action-buttons button{flex:1 1 calc(50% - 5px);min-width:112px}
+.combat-action-buttons .combat-resource{order:-1;flex:1 0 100%;border:0;background:transparent;padding:1px 0 3px;font-size:10px;line-height:1.1}
+.combat-grid{gap:7px!important}.combat-grid h3{margin-bottom:5px!important}.combat-party{margin-bottom:5px!important}.combat-defender{padding:4px 5px!important}
+.combat-recovery-row{margin-top:5px!important}
+@media(max-width:520px){
+ .combat-context-bar{gap:4px 7px;padding:4px 5px;font-size:9px;margin-bottom:5px}
+ .combat-context-bar small{font-size:8px}.combat-morale-inline{margin-left:0}
+ .combat-target-status{flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:5px!important;font-size:10px!important}
+ .combat-action-buttons button{min-width:0;flex:1 1 calc(50% - 5px);padding:6px 4px}
+ .combat-grid{gap:5px!important}.combat-actions{margin-top:3px!important}
+}
+
+
+/* v1.6.1 — contextual road encounters */
+.road-encounter-scene{border:1px solid #716650;background:#eee7cf;margin:6px 0 9px;padding:9px 10px;box-shadow:inset 1px 1px #fff}
+.road-encounter-scene.risk-high{border-left:5px solid #8b3030}.road-encounter-scene.risk-caution{border-left:5px solid #9a7431}.road-encounter-scene.risk-routine{border-left:5px solid #5f7350}
+.road-encounter-meta{display:flex;justify-content:space-between;gap:8px;align-items:center;text-transform:uppercase;font-size:10px;letter-spacing:.06em;margin-bottom:5px}.road-encounter-meta b{font-size:9px}
+.road-encounter-scene p{margin:5px 0 8px;line-height:1.35}.road-encounter-route{border-top:1px dotted #8c8067;padding-top:6px;display:flex;flex-direction:column;gap:2px}.road-encounter-route small{font-size:10px;color:#575248}
+.road-encounter-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.road-encounter-actions button{text-align:left;min-height:42px}
+@media(max-width:520px){.road-encounter-scene{padding:7px 8px;margin:4px 0 7px}.road-encounter-actions{grid-template-columns:1fr}.road-encounter-actions button{min-height:38px}.road-encounter-meta{font-size:9px}.road-encounter-route small{font-size:9px}}
+
+/* v1.6.3 — Contracts III */
+.world-contract-source{margin:8px 0;padding:8px 10px;border-left:4px solid rgba(70,100,75,.65);background:rgba(225,239,226,.38)}
+
+/* v1.6.4 — Exploration III */
+.exploration-iii-panel{margin:12px 0;padding:10px;border:2px inset #aaa;background:#eee6c9}
+.exploration-iii-panel h3{margin-top:0}
+.exploration-iii-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:7px 0}
+.exploration-iii-grid>div{border:1px solid #888;background:rgba(255,255,255,.42);padding:6px;display:flex;flex-direction:column;gap:2px}
+.exploration-iii-grid span{font-size:10px;color:#555}
+.exploration-legend{border:1px dashed #7a6d4c;background:#e4dcc2;padding:7px;margin:7px 0;opacity:.72}
+.exploration-legend.known{border-style:solid;background:#eee0b5;opacity:1}
+.exploration-legend small{display:block;color:#5d5745;margin-top:2px}
+.exploration-iii-panel button{margin:3px 4px 3px 0}
+@media(max-width:520px){.exploration-iii-grid{grid-template-columns:1fr}.exploration-iii-panel{padding:7px}.exploration-legend{font-size:9px}}
+
+/* v1.6.4.1 — Interior Map Interface */
+.interior-map{
+  position:relative;display:block;min-height:430px;margin:12px 0 10px;
+  overflow:hidden;border:2px inset #8b8168;background:
+    radial-gradient(circle at 18% 22%,rgba(255,255,255,.12) 0 2px,transparent 3px),
+    radial-gradient(circle at 73% 68%,rgba(74,62,42,.10) 0 2px,transparent 3px),
+    linear-gradient(145deg,#b7ad8c,#d7cfaa 48%,#aaa080);
+  box-shadow:inset 0 0 0 7px rgba(77,66,48,.12);isolation:isolate;
+}
+.interior-map::before{content:"";position:absolute;inset:11px;border:1px dashed rgba(72,60,43,.3);pointer-events:none;z-index:0}
+.interior-map::after{content:"INTERIOR PLAN";position:absolute;right:14px;bottom:10px;font:700 9px Georgia,serif;letter-spacing:.16em;color:rgba(61,52,40,.55);z-index:1}
+.interior-map-lines{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;overflow:visible}
+.interior-map-lines line{stroke:#665942;stroke-width:2.2;stroke-linecap:round;opacity:.7}
+.interior-map-lines line.unknown{stroke-dasharray:5 5;opacity:.3}
+.interior-map-lines line.active{stroke:#2e4d65;stroke-width:4;opacity:.9}
+.interior-node{
+  position:absolute;transform:translate(-50%,-50%);width:132px;min-height:64px;margin:0;padding:7px 8px;
+  border:2px solid #615744;background:linear-gradient(#eee3bd,#d7ca9e);box-shadow:3px 3px 0 rgba(57,48,35,.28);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;z-index:3;
+  font-size:10px;line-height:1.15;cursor:default;color:#211e18;
+}
+button.interior-node{cursor:pointer}
+button.interior-node:hover,button.interior-node:focus-visible{background:linear-gradient(#fff2c9,#ead9a9);outline:3px solid rgba(255,255,255,.75);z-index:5}
+.interior-node.current{border:3px solid #243f56;background:linear-gradient(#f5edcb,#d9d2b5);box-shadow:0 0 0 3px rgba(45,76,99,.22),3px 3px 0 rgba(57,48,35,.25)}
+.interior-node.current::before{content:"◆";position:absolute;left:5px;top:3px;color:#243f56;font-size:12px}
+.interior-node.cleared{background:linear-gradient(#dce2c7,#c6cda8);border-color:#52603e}
+.interior-node.visited:not(.cleared):not(.current){background:linear-gradient(#e9dfbc,#d4c69d)}
+.interior-node.unknown{opacity:.58;background:repeating-linear-gradient(135deg,#aaa18a,#aaa18a 7px,#b8b09a 7px,#b8b09a 14px);border-style:dashed;color:#4d493e}
+.interior-node.reachable{opacity:1;border-color:#75552f;box-shadow:0 0 0 3px rgba(125,91,8,.12),3px 3px 0 rgba(57,48,35,.22)}
+.interior-node .interior-room-icon{font-size:17px;line-height:1;margin-bottom:3px}
+.interior-node b{font-family:Georgia,serif;font-size:11px}
+.interior-node small{margin-top:4px;font-size:8px;letter-spacing:.09em;font-weight:700}
+.interior-map-legend{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:4px 0 10px;font-size:9px}
+.interior-map-legend span{display:inline-flex;align-items:center;gap:3px;padding:2px 5px;border:1px solid rgba(70,60,45,.35);background:rgba(255,255,255,.28)}
+.interior-map-legend i{display:inline-block;width:9px;height:9px;border:1px solid #625745;background:#dfd4ac}.interior-map-legend .here i{background:#d9d2b5;border:2px solid #243f56}.interior-map-legend .done i{background:#c6cda8;border-color:#52603e}.interior-map-legend .unknown-key i{background:#aaa18a;border-style:dashed}.interior-route-help{margin-top:7px;font-size:10px;color:#5f594c}
+@media(max-width:700px){.interior-map{min-height:390px}.interior-node{width:104px;min-height:55px;padding:5px 6px;font-size:8.5px}.interior-node b{font-size:9px}.interior-node .interior-room-icon{font-size:14px}.interior-node small{font-size:7px}}
+@media(max-width:460px){.interior-map{min-height:350px;margin-left:-3px;margin-right:-3px}.interior-node{width:82px;min-height:48px;padding:4px;font-size:7.5px}.interior-node b{font-size:8px}.interior-node .interior-room-icon{font-size:12px}.interior-map::after{font-size:7px}.interior-map-legend{font-size:8px;gap:4px}}
+
+/* v1.6.5 — Camping & Wilderness Life II */
+.camp-status{border-left:5px solid #6d6145}.camp-task-list button{min-height:50px}.camp-task-list button small{display:block;margin-top:2px;color:#555}.camp-status .stat-row b{font-family:Georgia,serif}.camp-night-history{display:grid;gap:5px}
+@media(max-width:520px){.camp-task-list button{min-height:46px;padding:6px 7px}.camp-status{font-size:10px}}
+
+/* v1.6.6 — Crime, Law & Custody III */
+.law-custody-dialog .law-case-row,.law-hearing .law-case-row{display:grid;grid-template-columns:1fr auto;gap:3px 8px;border:1px solid #888;background:#f1eee3;padding:6px;margin:5px 0}.law-case-row small{grid-column:1/-1;color:#555}.law-custody-status{border-left:5px solid #7a3434}.law-custody-actions button small{display:block;margin-top:2px;color:#555}.law-location-card{width:100%;display:flex;justify-content:space-between;gap:12px;text-align:left;margin:4px 0}.law-location-card span:last-child{text-align:right}.law-location-card small{display:block;color:#555}.prisoner-card .choice-list{margin-top:7px}
+@media(max-width:520px){.law-custody-dialog .law-case-row,.law-hearing .law-case-row{grid-template-columns:1fr}.law-case-row small{grid-column:1}.law-custody-actions button{min-height:48px}.law-location-card{font-size:10px}}
+
+
+/* v1.6.9 — three-mode menu + Siege Mode II foundation */
+.continue-campaigns.continue-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.continue-siege2{border-left:5px solid #536b8d!important;background:#eef2f7!important}
+.continue-legacy{border-left:5px solid #777!important;background:#e4e4e4!important}
+.mode-grid.mode-grid-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.mode-card.siege2-primary{border-width:3px;background:#edf2f8}
+.mode-card.legacy-mode-card{opacity:.86;background:#d0d0d0}
+.siege2-command-panel{min-height:590px}
+.siege2-foundation-card{min-height:132px}
+.siege2-foundation-card p{margin:5px 0 8px;line-height:1.35}
+@media(max-width:900px){.continue-campaigns.continue-three,.mode-grid.mode-grid-three{grid-template-columns:1fr}.siege2-command-panel{min-height:0}}
+
+/* v1.6.10 — Siege Combat II command interface */
+.siege2-battlefield-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}.siege2-battlefield-summary>div{border:2px inset #aaa;background:#eee8d5;padding:10px}.siege2-battlefield-summary b{display:block;font:700 16px Georgia,serif;margin-bottom:4px}.siege2-battlefield-summary small{display:block;line-height:1.3;color:#555}.siege2-history-row{padding:7px 8px;border-bottom:1px dotted #888;background:rgba(255,255,255,.25)}.siege2-history-row:last-child{border-bottom:0}
+@media(max-width:680px){.siege2-battlefield-summary{grid-template-columns:1fr}.siege2-battlefield-summary>div{padding:7px}}
+
+/* v1.6.11 — Siege Forces & Armies II */
+.siege2-force-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}.siege2-force-card{border:2px solid #777;background:#eee;padding:10px;box-shadow:inset 1px 1px #fff,inset -1px -1px #aaa}.siege2-force-card.defender{border-left:5px solid #4d6646}.siege2-force-card.attacker{border-left:5px solid #7c3b36}.siege2-force-card h4{margin:0 0 4px;font-family:Georgia,serif}.force-big{font:700 28px Georgia,serif;line-height:1.05;margin:4px 0}.force-breakdown{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 8px;margin:8px 0;padding:6px;border:1px dotted #888;background:rgba(255,255,255,.35);font-size:10px}.force-breakdown span{display:flex;justify-content:space-between;gap:6px}.siege2-force-card small{color:#555}@media(max-width:700px){.siege2-force-grid{grid-template-columns:1fr}.force-big{font-size:24px}}
+/* v1.6.12 — Living Battlefield & Siege Events II */
+.siege2-district-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:9px 0}.siege2-district{border:1px solid #777;background:#eee;padding:7px;min-width:0}.siege2-district b,.siege2-district small{display:block}.siege2-district>span{float:right;font-weight:700}.siege2-district small{text-transform:capitalize;color:#666;margin-top:2px}.siege2-district.strained{background:#eee7cf}.siege2-district.damaged{background:#ecd9ca}.siege2-district.critical{background:#e7c9c7;border-color:#8b3434}.siege2-condition{height:6px;border:1px solid #777;background:#bbb;margin-top:5px;clear:both}.siege2-condition i{display:block;height:100%;background:#555}.siege2-incidents{display:grid;gap:7px;margin:10px 0}.siege2-incident{border:2px solid #777;background:#eee;padding:8px}.siege2-incident.breach,.siege2-incident.fire,.siege2-incident.sabotage,.siege2-incident.infiltrators{border-left:5px solid #833b35}.siege2-incident.wounded,.siege2-incident.civilians{border-left:5px solid #8a6b2a}.siege2-incident.sortie{border-left:5px solid #416541}.siege2-incident.damage{border-left:5px solid #6d6254}.siege2-incident-head{display:flex;justify-content:space-between;gap:8px}.siege2-incident-head small{display:block;color:#666;margin-top:2px}.siege2-incident p{margin:6px 0}.siege2-incident-action{margin-top:7px}.siege2-incident .badge.bad{background:#e7c9c7;border-color:#8b3434}@media(max-width:900px){.siege2-district-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:430px){.siege2-district-grid{grid-template-columns:1fr}.siege2-incident{font-size:10px}}
+/* v1.6.13 — Siege Economy & Logistics II */
+.siege2-logistics-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:10px 0}.siege2-logistics-summary>div{border:2px inset #aaa;background:#eee8d5;padding:8px;min-width:0}.siege2-logistics-summary b{display:block;font:700 15px Georgia,serif;margin-bottom:3px}.siege2-logistics-summary small{display:block;color:#555;line-height:1.2}.siege2-stock-meter{height:6px;border:1px solid #777;background:#bbb;margin-top:5px}.siege2-stock-meter i{display:block;height:100%;background:#555}.siege2-logistics-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.siege2-logistics-actions button:last-child{grid-column:1/-1}@media(max-width:800px){.siege2-logistics-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:430px){.siege2-logistics-summary,.siege2-logistics-actions{grid-template-columns:1fr}.siege2-logistics-actions button:last-child{grid-column:auto}}
+/* v1.6.14 — Siege Recovery & Downtime II */
+.siege2-recovery-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:8px 0}.siege2-recovery-summary>div{border:1px solid #777;background:#eee;padding:7px;text-align:center}.siege2-recovery-summary b{display:block;font-size:15px}.siege2-recovery-summary small{display:block;font-size:9px;color:#555;margin-top:2px}.siege2-recovery-actions button small{display:block;margin-top:2px;color:#555;font-size:9px;font-weight:400}@media(max-width:680px){.siege2-recovery-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* v1.6.15 — Siege Politics, Morale & Command II */
+.siege2-politics-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0}.siege2-politics-summary>div{border:1px solid #777;background:#eee;padding:7px;text-align:center}.siege2-politics-summary b{display:block;font-size:16px}.siege2-politics-summary small{display:block;color:#555}.siege2-faction-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:7px 0}.siege2-faction-card{border:1px solid #777;background:#eee;padding:7px}.siege2-faction-card>div:first-child{display:flex;justify-content:space-between;gap:8px}.siege2-faction-card small{display:block;margin-top:3px}.siege2-political-issues{display:grid;gap:7px}.siege2-political-issue{border:2px inset #aaa;background:#f2eedf;padding:8px}.siege2-political-issue p{margin:6px 0}.siege2-political-issue .choice-list{grid-template-columns:repeat(2,minmax(0,1fr));display:grid}.siege2-political-actions button small{display:block;color:#555;margin-top:2px}@media(max-width:620px){.siege2-politics-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.siege2-faction-grid{grid-template-columns:1fr}.siege2-political-issue .choice-list{grid-template-columns:1fr}}
+/* v1.6.17 — Siege Mode II integration & polish */
+.siege2-readiness{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:9px 0}.siege2-readiness>div{border:1px solid #777;background:#eee;padding:8px;text-align:center;min-width:0}.siege2-readiness b{display:block;font:700 17px Georgia,serif}.siege2-readiness small{display:block;color:#555;font-size:9px;margin-top:2px}.siege2-command-chips{display:flex;flex-wrap:wrap;gap:5px;margin:7px 0 10px}.siege2-command-chips span{border:1px solid #777;background:#ddd;padding:3px 6px;font-size:9px;font-weight:700}.siege2-command-chips span.open{background:#dce8d8;border-color:#4c7046}.siege2-command-chips span.used{color:#666;background:#e4e4e4}.siege2-integrated-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}.siege2-integrated-grid .card h4{margin-bottom:5px}.siege2-primary-action{font-weight:800;min-height:38px;border-width:3px}.siege2-integrated .siege2-command-panel h2{margin-bottom:8px}.siege2-integrated .choice-list button{line-height:1.15}
+@media(max-width:700px){.siege2-readiness,.siege2-integrated-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.siege2-command-chips span{flex:1 1 calc(50% - 5px);text-align:center}.siege2-integrated .choice-list button{min-height:34px;padding:5px 7px;font-size:11px}}
+@media(max-width:430px){.siege2-readiness{grid-template-columns:1fr 1fr}.siege2-readiness>div{padding:6px}.siege2-integrated-grid{grid-template-columns:1fr}.siege2-command-chips span{flex:1 1 100%}.siege2-integrated .titlebar .right span{display:none}}
+
+/* v1.6.17.2 — Siege Mode II playability & UX */
+.siege2-next-assault-strip{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:9px 0}.siege2-next-assault-strip>div{border:2px inset #aaa;background:#eee8d5;padding:9px;min-width:0}.siege2-next-assault-strip small,.siege2-forecast-head small{display:block;font-size:8px;letter-spacing:.08em;color:#666}.siege2-next-assault-strip b{display:block;font:700 15px Georgia,serif;margin:2px 0}.siege2-next-assault-strip span{display:block;font-size:9px;line-height:1.25;color:#555}.siege2-command-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}.siege2-command-action-grid button{min-width:0}.siege2-war-council-btn{font-weight:700}.siege2-war-council{border:2px solid #6f6653;background:#eee8d5;padding:10px;margin:8px 0}.siege2-forecast-head{display:grid;grid-template-columns:1fr 1fr;gap:8px}.siege2-forecast-head>div{border-bottom:1px dotted #888;padding-bottom:6px}.siege2-forecast-head b{display:block;font:700 17px Georgia,serif;margin:2px 0}.siege2-forecast-head span{font-size:9px;color:#555}.siege2-council-recommendation{border:2px solid #777;background:#f5f1df;padding:8px;margin:8px 0}.siege2-council-recommendation b,.siege2-council-recommendation span{display:block}.siege2-council-recommendation span{font-size:10px;margin-top:3px}.siege2-council-mini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;font-size:9px}.siege2-council-mini span{border:1px solid #999;background:rgba(255,255,255,.35);padding:5px;text-align:center}.siege2-council-mini b{display:block;font-size:13px}.siege2-council-actions{grid-template-columns:repeat(2,minmax(0,1fr));display:grid}.siege2-council-actions .siege2-recommended-action{border-width:3px;font-weight:800}.siege2-recap{border:1px solid #777;background:#f1ecda;padding:8px;margin:6px 0}.siege2-recap-title{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;border-bottom:1px dotted #888;padding-bottom:5px;margin-bottom:6px}.siege2-recap-title span{font-size:9px;color:#555;text-align:right}.siege2-recap-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 8px;font-size:9px}.siege2-recap-grid span{display:flex;justify-content:space-between;gap:5px}.siege2-recap>small{display:block;margin-top:6px;color:#555}.siege2-ux .sidebar .choice-list{gap:5px}
+@media(max-width:700px){.siege2-next-assault-strip,.siege2-forecast-head{grid-template-columns:1fr}.siege2-council-mini{grid-template-columns:repeat(2,minmax(0,1fr))}.siege2-recap-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.siege2-council-actions{grid-template-columns:1fr}}
+@media(max-width:430px){.siege2-command-action-grid{grid-template-columns:1fr 1fr}.siege2-next-assault-strip>div,.siege2-war-council,.siege2-recap{padding:7px}.siege2-recap-title{display:block}.siege2-recap-title span{display:block;text-align:left;margin-top:2px}.siege2-recap-grid{grid-template-columns:1fr 1fr}.siege2-ux .sidebar .choice-list button{font-size:10px;padding:5px 4px}}
+
+/* v1.6.17.4 — Siege Mode II final QA & aftermath presentation */
+.siege2-aftermath-hero{border:3px double #665;background:#eee8d5;padding:14px;margin:8px 0 12px;text-align:center}.siege2-aftermath-hero.victory{border-color:#4d6646;background:#e5eddf}.siege2-aftermath-hero.defeat{border-color:#7c3b36;background:#eeddda}.siege2-aftermath-hero small{display:block;letter-spacing:.14em;font-weight:700;color:#666}.siege2-aftermath-hero h2{margin:4px 0 3px}.siege2-aftermath-hero p{max-width:720px;margin:7px auto;line-height:1.4}.siege2-aftermath-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}.siege2-aftermath-timeline{display:grid;gap:6px}.siege2-aftermath-timeline>div{border-left:4px solid #777;background:#eee;padding:7px 9px}.siege2-aftermath-timeline>div.good{border-left-color:#4d6646}.siege2-aftermath-timeline>div.bad{border-left-color:#7c3b36}.siege2-aftermath-timeline small{display:block;margin-top:2px;color:#555;line-height:1.3}
+@media(max-width:620px){.siege2-aftermath-grid{grid-template-columns:1fr}.siege2-aftermath-hero{padding:10px}.siege2-aftermath-hero h2{font-size:22px}.siege2-integrated .sidebar .panel h3{font-size:13px}.siege2-integrated .stat-row{font-size:10px}.siege2-integrated .choice-list{gap:5px}}
+
+
+/* v1.6.20 — Far North Parties & Combat */
+.region-map-farnorth .world-party.northern-warband{outline:2px solid rgba(62,87,99,.78)!important;box-shadow:0 0 0 3px rgba(225,240,246,.52),1px 2px 5px rgba(27,50,60,.5)!important}
+.region-map-farnorth .world-party.northern-warband.hostile{background:#7f3d3f!important;border-color:#3d2024!important;color:#f8fbfc!important}
+.region-map-farnorth .world-party.northern-warband span{font-weight:900!important}
+.northern-warband-note{margin-top:6px;padding:6px 8px;border-left:3px solid #567785;background:rgba(204,225,233,.24);font-size:11px}
+
+
+/* v1.6.21 — Far North Exploration & Wilderness */
+.dialog.northern-expedition, .northern-expedition.dialog{background:linear-gradient(180deg,#eef6f8 0%,#ddebef 100%)!important;color:#253b45!important;border-color:#718b96!important}
+.northern-expedition h2,.northern-expedition h3,.northern-expedition b{color:#203842!important}
+.northern-expedition .muted,.northern-expedition small{color:#526d78!important}
+.northern-expedition .interior-map{background:linear-gradient(145deg,#f7fbfc,#d8e8ed)!important;border-color:#78929d!important;box-shadow:inset 0 0 24px rgba(92,129,143,.15)!important}
+.northern-expedition .interior-map-lines line{stroke:#79919b!important}
+.northern-expedition .interior-map-lines line.active{stroke:#315e73!important}
+.northern-expedition .interior-node{background:#eaf3f6!important;color:#2a4652!important;border-color:#78939e!important}
+.northern-expedition .interior-node.current{background:#c7e4ee!important;border-color:#2e657c!important;box-shadow:0 0 0 3px rgba(78,139,164,.22)!important}
+.northern-expedition .interior-node.cleared{background:#d7e7de!important;border-color:#557363!important}
+.northern-expedition .exploration-iii-panel{background:rgba(218,235,241,.62)!important;border:1px solid #87a3ae!important}
+.northern-expedition .exploration-legend{background:rgba(244,249,250,.75)!important;border-color:#93aab4!important}
+.north-expedition-banner{padding:8px 10px;margin:8px 0;border:1px solid #8ba4ae;border-left:4px solid #537a8c;background:rgba(224,239,244,.78);font-size:12px}
+
+
+/* v1.6.23 — Prisoner & Custody interface refresh */
+.custody-summary{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px!important;
+  margin:9px 0 12px!important;
+}
+.custody-summary .notice{
+  margin:0!important;
+  min-height:48px;
+  display:flex;
+  align-items:center;
+  padding:8px 10px!important;
+}
+.prisoner-card{
+  margin:9px 0!important;
+  padding:10px!important;
+  border:1px solid #827c69!important;
+  border-left:4px solid #5e594c!important;
+  border-radius:5px!important;
+  background:rgba(247,244,226,.92)!important;
+  box-shadow:0 1px 2px rgba(0,0,0,.16)!important;
+}
+.prisoner-card h4{
+  margin:0 0 3px!important;
+  font-size:14px!important;
+  line-height:1.15!important;
+}
+.prisoner-card>small{
+  display:block;
+  margin-bottom:8px!important;
+  line-height:1.3!important;
+}
+.prisoner-card .choice-list.compact{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px!important;
+  margin:0!important;
+}
+.prisoner-card .choice-list.compact button{
+  width:100%!important;
+  min-width:0!important;
+  min-height:42px!important;
+  margin:0!important;
+  padding:7px 8px!important;
+  text-align:left!important;
+  line-height:1.15!important;
+  white-space:normal!important;
+  display:flex!important;
+  align-items:center!important;
+}
+.prisoner-card .choice-list.compact button[data-handover],
+.prisoner-card .choice-list.compact button[data-deposit]{
+  grid-column:span 2;
+}
+.prisoner-card .choice-list.compact button[data-labor]{
+  grid-column:span 1;
+}
+.prisoner-card button:disabled{opacity:.48!important}
+.prisoner-card button[data-exchange]::before{content:"⇄";font-weight:900;margin-right:6px}
+.prisoner-card button[data-release]::before{content:"↗";font-weight:900;margin-right:6px}
+.prisoner-card button[data-ransom]::before{content:"¤";font-weight:900;margin-right:6px}
+.prisoner-card button[data-handover]::before{content:"⚖";font-weight:900;margin-right:6px}
+.prisoner-card button[data-deposit]::before{content:"▣";font-weight:900;margin-right:6px}
+.prisoner-card button[data-labor]::before{content:"⚒";font-weight:900;margin-right:6px}
+@media(max-width:700px){
+  .custody-summary{grid-template-columns:1fr 1fr}
+  .custody-summary .notice:last-child:nth-child(odd){grid-column:1/-1}
+  .prisoner-card{padding:8px!important}
+  .prisoner-card .choice-list.compact{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .prisoner-card .choice-list.compact button[data-handover],
+  .prisoner-card .choice-list.compact button[data-deposit]{grid-column:1/-1}
+  .prisoner-card .choice-list.compact button[data-labor]{grid-column:span 1}
+}
+@media(max-width:430px){
+  .custody-summary{gap:5px!important}
+  .custody-summary .notice{min-height:42px;padding:6px 7px!important;font-size:11px!important}
+  .prisoner-card{margin:7px 0!important;padding:7px!important}
+  .prisoner-card h4{font-size:13px!important}
+  .prisoner-card>small{font-size:9px!important;margin-bottom:6px!important}
+  .prisoner-card .choice-list.compact{gap:5px!important}
+  .prisoner-card .choice-list.compact button{
+    min-height:39px!important;
+    padding:6px!important;
+    font-size:10.5px!important;
+  }
+}
+
+
+/* v1.6.23 — Law & Authority mobile overflow hotfix */
+.dialog,
+.dialog.large{
+  box-sizing:border-box;
+  max-width:calc(100vw - 20px);
+}
+.dialog .two-col > *,
+.dialog .card,
+.dialog .notice,
+.dialog .history-entry{
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+.dialog .history-entry,
+.dialog .card,
+.dialog .notice,
+.dialog p,
+.dialog small{
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+.dialog .stat-row{
+  min-width:0;
+}
+.dialog .stat-row span{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+@media(max-width:700px){
+  .overlay{padding:8px!important}
+  .dialog,.dialog.large{
+    width:100%!important;
+    max-width:100%!important;
+    padding:10px!important;
+  }
+  .dialog-status{
+    gap:6px!important;
+    flex-wrap:wrap!important;
+  }
+  .dialog-status span{
+    min-width:0;
+  }
+}
+
+
+/* v1.6.23 — Trade Goods Procurement II */
+.trade-proc-dashboard{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:8px 0 10px}
+.trade-proc-dashboard>div{border:1px solid rgba(80,80,80,.32);background:rgba(255,255,255,.22);padding:8px;min-width:0}
+.trade-proc-dashboard small,.trade-proc-dashboard b,.trade-proc-dashboard span{display:block}
+.trade-proc-dashboard b{font-size:15px;margin:2px 0}.trade-proc-dashboard span{font-size:8px;opacity:.76}
+.trade-proc-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:8px 0 12px}
+.trade-proc-tabs button{min-height:38px}
+.trade-proc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.trade-proc-good{display:grid;grid-template-rows:auto 1fr auto;gap:7px;border:1px solid #817966;background:rgba(247,244,226,.9);padding:9px;min-width:0}
+.trade-proc-good-head{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;min-width:0}
+.trade-proc-good-head>b{font-size:13px}.trade-source-quality{font-size:7px;font-weight:900;white-space:nowrap;border:1px solid #777;padding:2px 4px}
+.trade-proc-facts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+.trade-proc-facts>span{min-width:0;border-top:1px solid rgba(90,90,90,.18);padding-top:4px}.trade-proc-facts small,.trade-proc-facts b{display:block;overflow-wrap:anywhere}.trade-proc-facts small{font-size:6.5px;opacity:.72}.trade-proc-facts b{font-size:9px}
+.trade-proc-good>button{width:100%;min-height:36px;margin:0}
+.proc-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.proc-choice-grid button{text-align:left;min-height:44px}.proc-choice-grid button small{display:block;margin-top:2px;font-size:7px}
+.proc-qty-presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;align-items:stretch}.proc-qty-presets label{display:flex;flex-direction:column;gap:3px;font-size:8px}.proc-qty-presets input{width:100%;box-sizing:border-box}
+.proc-order-source{border:1px solid #777;padding:8px;background:rgba(255,255,255,.18)}.proc-order-source b,.proc-order-source span,.proc-order-source small{display:block}
+.proc-source-picker{margin:8px 0}.proc-source-picker summary{cursor:pointer;font-weight:800}
+.standing-proc-card,.proc-caravan-card{border:1px solid #817966;background:rgba(247,244,226,.9);padding:9px;margin:7px 0}.standing-proc-card.paused{opacity:.68}.standing-proc-card>div:first-child,.proc-caravan-card>div:first-child{display:flex;justify-content:space-between;gap:8px}.standing-proc-card>div:first-child span,.proc-caravan-card>div:first-child span{font-size:8px;font-weight:900}
+.standing-proc-stock{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:7px 0}.standing-proc-stock span{border-top:1px solid rgba(80,80,80,.2);padding-top:4px;font-size:8px}
+.standing-proc-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.standing-good-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.standing-editor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0}.standing-editor-grid label{font-size:8px;font-weight:700}.standing-editor-grid input{display:block;width:100%;box-sizing:border-box;margin-top:3px}
+@media(max-width:700px){
+ .trade-proc-dashboard{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .trade-proc-grid{grid-template-columns:1fr}
+ .trade-proc-facts{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .standing-good-picker{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:430px){
+ .trade-proc-tabs{grid-template-columns:1fr}
+ .trade-proc-tabs button{min-height:34px}
+ .trade-proc-dashboard{gap:5px}.trade-proc-dashboard>div{padding:6px}
+ .trade-proc-facts{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+ .proc-choice-grid{grid-template-columns:1fr 1fr}.proc-choice-grid button{min-height:40px;padding:6px}
+ .proc-qty-presets{grid-template-columns:1fr 1fr}
+ .standing-editor-grid{grid-template-columns:1fr 1fr}
+}
+
+
+/* v1.6.23 — Mixed procurement planning */
+.mixed-proc-launch{margin:6px 0 12px}
+.mixed-proc-launch button{width:100%;text-align:left;min-height:48px}
+.mixed-proc-launch small{display:block;margin-top:3px}
+.mixed-proc-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0}
+.mixed-proc-row{display:grid;grid-template-columns:auto 1fr 64px;gap:7px;align-items:center;border:1px solid #817966;background:rgba(247,244,226,.9);padding:7px;min-width:0}
+.mixed-proc-row>span{min-width:0}.mixed-proc-row b,.mixed-proc-row small{display:block}.mixed-proc-row small{font-size:7px;margin-top:2px;overflow-wrap:anywhere}
+.mixed-proc-row input[type=number]{width:100%;box-sizing:border-box}
+.proc-plan-card{border:1px solid #6e745d;background:rgba(242,245,226,.9);padding:9px;margin:7px 0}
+.proc-plan-card>div{display:flex;justify-content:space-between;gap:8px}.proc-plan-card>div span{font-size:8px;font-weight:900}
+@media(max-width:700px){.mixed-proc-list{grid-template-columns:1fr}}
+
+
+/* v1.6.23 — Hall Operations & Armory Refresh */
+.prisoner-card{
+  border:1px solid #746c5d!important;
+  border-left:4px solid #49453d!important;
+  background:linear-gradient(180deg,rgba(250,248,233,.98),rgba(239,234,211,.96))!important;
+  padding:9px!important;
+  margin:7px 0!important;
+  box-shadow:0 1px 3px rgba(0,0,0,.16)!important;
+}
+.prisoner-card .prisoner-card-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;
+}
+.prisoner-card .prisoner-card-head h4{margin:0!important}
+.prisoner-card .prisoner-count-badge{
+  flex:0 0 auto;border:1px solid #77705f;background:rgba(255,255,255,.42);
+  padding:2px 6px;font-size:9px;font-weight:900;border-radius:10px;
+}
+.prisoner-card .prisoner-meta{font-size:9px;line-height:1.25;margin-bottom:7px;opacity:.88}
+.prisoner-actions{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:5px!important;margin:0!important;
+}
+.prisoner-actions button{
+  width:100%!important;min-width:0!important;min-height:36px!important;margin:0!important;
+  padding:5px 6px!important;font-size:9px!important;line-height:1.05!important;
+  white-space:normal!important;text-align:center!important;
+}
+.prisoner-actions button::before{display:block;font-size:13px;line-height:1;margin-bottom:2px}
+.prisoner-actions [data-release]::before{content:"↗"}
+.prisoner-actions [data-exchange]::before{content:"⇄"}
+.prisoner-actions [data-ransom]::before{content:"¤"}
+.prisoner-actions [data-handover]::before{content:"⚖"}
+.prisoner-actions [data-deposit]::before{content:"▣"}
+.prisoner-actions [data-labor]::before{content:"⚒"}
+@media(max-width:700px){
+  .prisoner-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:430px){
+  .prisoner-card{padding:7px!important}
+  .prisoner-card .prisoner-meta{font-size:8px}
+  .prisoner-actions{gap:4px!important}
+  .prisoner-actions button{min-height:34px!important;padding:4px!important;font-size:8px!important}
+}
+
+/* Hall Armory */
+.armory-dashboard{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:8px 0 10px}
+.armory-kpi{border:1px solid #7b7464;background:rgba(248,244,224,.9);padding:8px;min-width:0}
+.armory-kpi small,.armory-kpi b,.armory-kpi span{display:block}
+.armory-kpi b{font-size:14px;margin:2px 0}.armory-kpi span{font-size:8px;opacity:.75}
+.armory-stock-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.armory-item-card{border:1px solid #7b7464;background:rgba(248,244,224,.94);padding:8px;min-width:0}
+.armory-item-card h4{margin:0 0 3px;font-size:12px}
+.armory-item-card .armory-stats{font-size:8px;line-height:1.25;min-height:30px}
+.armory-item-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:7px}
+.armory-item-actions button{width:100%;margin:0;min-height:34px;font-size:8px;padding:5px}
+.armory-purchase-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;align-items:end}
+.armory-purchase-controls label{font-size:8px;font-weight:800}
+.armory-purchase-controls input{display:block;width:100%;box-sizing:border-box;margin-top:3px}
+.armory-fit-list .fit-row{margin:4px 0}
+.armory-market-preview{margin:8px 0}
+@media(max-width:700px){
+  .armory-dashboard{grid-template-columns:1fr 1fr}
+  .armory-dashboard .armory-kpi:last-child{grid-column:1/-1}
+  .armory-stock-grid{grid-template-columns:1fr}
+}
+@media(max-width:430px){
+  .armory-purchase-controls{grid-template-columns:1fr 1fr}
+}
+
+
+/* v1.6.23 — Guardian Office spacing & Guest Quarters refresh */
+.office-private-access{
+  margin-top:14px;
+  padding-top:11px;
+  border-top:1px solid rgba(86,76,59,.45);
+}
+.office-private-access>small{
+  display:block;
+  margin-bottom:5px;
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.08em;
+  opacity:.72;
+}
+.office-private-access button{
+  width:100%;
+  min-height:45px;
+  text-align:left;
+}
+.office-private-access button span{
+  display:block;
+  margin-top:2px;
+  font-size:8px;
+  opacity:.78;
+}
+
+.guest-quarters-summary{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
+  margin:8px 0 12px;
+}
+.guest-quarters-summary>div{
+  border:1px solid #7d7564;
+  background:rgba(248,244,224,.92);
+  padding:8px;
+  min-width:0;
+}
+.guest-quarters-summary small,
+.guest-quarters-summary b,
+.guest-quarters-summary span{display:block}
+.guest-quarters-summary b{font-size:14px;margin:2px 0}
+.guest-quarters-summary span{font-size:8px;overflow-wrap:anywhere}
+
+.guest-current-card{
+  border:1px solid #756d5d;
+  background:linear-gradient(180deg,rgba(250,247,229,.97),rgba(239,233,209,.95));
+  padding:10px;
+  margin:8px 0;
+}
+.guest-current-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:8px;
+}
+.guest-current-head small{font-size:7px;font-weight:900;letter-spacing:.06em;opacity:.7}
+.guest-current-head h3{margin:2px 0 0}
+.guest-current-head>span{
+  font-size:8px;
+  font-weight:900;
+  border:1px solid #77705f;
+  padding:3px 6px;
+  white-space:nowrap;
+}
+.guest-visit-stats{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;
+  margin:7px 0;
+}
+.guest-visit-stats span{
+  border-top:1px solid rgba(80,75,65,.25);
+  padding-top:4px;
+  font-size:8px;
+}
+.guest-actions{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;
+  margin-top:8px;
+}
+.guest-actions button{
+  width:100%;
+  min-width:0;
+  min-height:46px;
+  margin:0;
+  padding:6px;
+  text-align:left;
+}
+.guest-actions button b,
+.guest-actions button small{display:block}
+.guest-actions button small{margin-top:2px;font-size:7px}
+.guest-actions .guest-end-visit{grid-column:1/-1;min-height:36px}
+
+.guest-invite-list{display:flex;flex-direction:column;gap:6px}
+.guest-invite-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+  border:1px solid #817966;
+  background:rgba(247,244,226,.9);
+  padding:8px;
+  min-width:0;
+}
+.guest-invite-row>div:first-child{min-width:0}
+.guest-invite-row b,
+.guest-invite-row small{display:block}
+.guest-invite-row small{margin-top:2px;font-size:8px;overflow-wrap:anywhere}
+.guest-invite-actions{
+  display:flex;
+  gap:5px;
+  flex-wrap:nowrap;
+}
+.guest-invite-actions button{margin:0;white-space:nowrap}
+.guest-invite-history{margin:10px 0}
+.guest-invite-history summary{cursor:pointer;font-weight:800}
+.guest-group-members{margin:6px 0}
+
+@media(max-width:700px){
+  .guest-quarters-summary{grid-template-columns:1fr 1fr}
+  .guest-quarters-summary>div:last-child{grid-column:1/-1}
+  .guest-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .guest-invite-row{grid-template-columns:1fr}
+  .guest-invite-actions{display:grid;grid-template-columns:1fr 1fr}
+}
+@media(max-width:430px){
+  .guest-actions{grid-template-columns:1fr 1fr}
+  .guest-actions button{min-height:43px;padding:5px}
+  .guest-invite-actions button{white-space:normal}
+}
+
+
+/* v1.6.23 — Dining, Gatherings & Audiences refresh */
+.hall-social-dashboard{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
+  margin:8px 0 12px;
+}
+.hall-social-dashboard>div{
+  border:1px solid #7b7362;
+  background:rgba(248,244,224,.92);
+  padding:8px;
+  min-width:0;
+}
+.hall-social-dashboard small,
+.hall-social-dashboard b,
+.hall-social-dashboard span{display:block}
+.hall-social-dashboard b{font-size:14px;margin:2px 0}
+.hall-social-dashboard span{font-size:8px;opacity:.78}
+
+.dining-section{
+  border:1px solid #7c7463;
+  background:rgba(247,243,223,.91);
+  padding:9px;
+  margin:8px 0;
+}
+.dining-section h3{margin:0 0 4px}
+.dining-primary-actions{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;
+  margin-top:7px;
+}
+.dining-primary-actions button{
+  width:100%;
+  min-width:0;
+  min-height:45px;
+  margin:0;
+  text-align:left;
+  padding:6px;
+}
+.dining-primary-actions button b,
+.dining-primary-actions button small{display:block}
+.dining-primary-actions button small{font-size:7px;margin-top:2px}
+
+.gathering-invite-row,
+.audience-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+  border:1px solid #817966;
+  background:rgba(248,245,228,.91);
+  padding:8px;
+  margin:5px 0;
+  min-width:0;
+}
+.gathering-invite-row>div:first-child,
+.audience-row>div:first-child{min-width:0}
+.gathering-invite-row b,
+.gathering-invite-row small,
+.audience-row b,
+.audience-row small{display:block}
+.gathering-invite-row small,
+.audience-row small{font-size:8px;margin-top:2px;overflow-wrap:anywhere}
+.gathering-invite-actions,
+.audience-row-actions{display:flex;gap:5px;white-space:nowrap}
+.gathering-invite-actions button,
+.audience-row-actions button{margin:0}
+
+.audience-type-badge{
+  display:inline-block!important;
+  width:auto;
+  border:1px solid #77705f;
+  padding:2px 5px;
+  margin-bottom:3px;
+  font-size:7px!important;
+  font-weight:900;
+  letter-spacing:.04em;
+}
+.audience-detail-card{
+  border:1px solid #756d5c;
+  background:linear-gradient(180deg,rgba(250,247,230,.98),rgba(239,233,210,.96));
+  padding:10px;
+  margin:8px 0;
+}
+.audience-detail-meta{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  font-size:8px;
+  margin-bottom:7px;
+}
+.audience-decision-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:5px!important;
+  margin-top:8px!important;
+}
+.audience-decision-grid button{
+  width:100%!important;
+  margin:0!important;
+  min-height:48px!important;
+  text-align:left!important;
+}
+.audience-decision-grid button b,
+.audience-decision-grid button small{display:block}
+.audience-decision-grid button small{font-size:7px;margin-top:2px}
+.audience-decision-grid #audDecline{grid-column:1/-1;min-height:38px!important}
+
+.guest-early-warning{
+  border:2px solid #8c5b48;
+  background:rgba(249,232,218,.96);
+  padding:10px;
+  margin:8px 0;
+}
+
+@media(max-width:700px){
+  .hall-social-dashboard{grid-template-columns:1fr 1fr}
+  .hall-social-dashboard>div:last-child{grid-column:1/-1}
+  .dining-primary-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gathering-invite-row,.audience-row{grid-template-columns:1fr}
+  .gathering-invite-actions,.audience-row-actions{display:grid;grid-template-columns:1fr 1fr}
+}
+@media(max-width:430px){
+  .dining-primary-actions{grid-template-columns:1fr 1fr}
+  .audience-decision-grid{grid-template-columns:1fr}
+  .audience-decision-grid #audDecline{grid-column:auto}
+}
+
+
+/* v1.6.23 — Guardian Hall integration & consistency pass */
+.dialog .home-hall-grid,
+.dialog .hall-menu-section,
+.dialog .choice-list,
+.dialog .choice-list.compact,
+.dialog .trade-proc-grid,
+.dialog .trade-proc-dashboard,
+.dialog .guest-quarters-summary,
+.dialog .guest-actions,
+.dialog .hall-social-dashboard,
+.dialog .dining-primary-actions,
+.dialog .armory-dashboard,
+.dialog .armory-stock-grid,
+.dialog .prisoner-actions,
+.dialog .standing-editor-grid,
+.dialog .proc-choice-grid{
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+.dialog button,
+.dialog .card,
+.dialog .notice,
+.dialog .inventory-row,
+.dialog .stat-row,
+.dialog .fit-row,
+.dialog .guest-invite-row,
+.dialog .gathering-invite-row,
+.dialog .audience-row{
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+.dialog button b,
+.dialog button small,
+.dialog .card,
+.dialog .notice,
+.dialog .inventory-row span,
+.dialog .stat-row span{
+  overflow-wrap:anywhere;
+}
+.hall-menu-section + .hall-menu-section{margin-top:10px}
+.hall-menu-section h3{margin-bottom:6px}
+@media(max-width:700px){
+  .dialog .home-hall-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .dialog .choice-list:not(.compact)>button{width:100%}
+}
+@media(max-width:430px){
+  .dialog .home-hall-grid{grid-template-columns:1fr!important}
+  .dialog-footer{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:5px!important;
+  }
+  .dialog-footer button{width:100%!important;margin:0!important}
+}
+
+
+/* v1.6.23 — Guest Quarters / Hospitality visual refresh */
+.hospitality-shell{max-width:100%;min-width:0}
+.hospitality-status{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin:7px 0 11px;
+}
+.hospitality-status .hospitality-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  width:auto;
+  max-width:100%;
+  border:1px solid #7e7665;
+  background:rgba(248,244,224,.92);
+  padding:5px 7px;
+  font-size:8px;
+  line-height:1.1;
+}
+.hospitality-status .hospitality-chip b{font-size:10px}
+.hospitality-guest{
+  border:1px solid #756d5d;
+  background:linear-gradient(180deg,rgba(250,247,230,.98),rgba(239,233,210,.95));
+  padding:10px;
+  margin:7px 0;
+}
+.hospitality-guest-header{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:9px;
+  align-items:start;
+}
+.hospitality-guest-header h3{margin:1px 0 2px}
+.hospitality-guest-header>span{
+  border:1px solid #77705f;
+  padding:3px 6px;
+  font-size:8px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.hospitality-relationship{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+  padding:6px 0;
+  margin:5px 0 8px;
+  border-top:1px solid rgba(80,74,62,.2);
+  border-bottom:1px solid rgba(80,74,62,.2);
+}
+.hospitality-relationship small{display:block;font-size:7px;margin-top:2px}
+.hospitality-visit-mini{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin:6px 0 9px;
+}
+.hospitality-visit-mini span{
+  display:inline-flex;
+  gap:4px;
+  align-items:center;
+  width:auto;
+  border:1px solid rgba(100,92,75,.35);
+  padding:3px 6px;
+  font-size:7.5px;
+  background:rgba(255,255,255,.22);
+}
+.hospitality-actions{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;
+  margin-top:7px;
+}
+.hospitality-action{
+  width:100%!important;
+  min-width:0!important;
+  min-height:54px!important;
+  margin:0!important;
+  padding:6px 7px!important;
+  display:grid!important;
+  grid-template-columns:24px minmax(0,1fr);
+  grid-template-rows:auto auto;
+  column-gap:6px;
+  align-items:center;
+  text-align:left!important;
+}
+.hospitality-action .hosp-icon{
+  grid-row:1/3;
+  font-size:18px;
+  line-height:1;
+  text-align:center;
+  opacity:.88;
+}
+.hospitality-action b{font-size:9px;line-height:1.05}
+.hospitality-action small{
+  font-size:6.8px!important;
+  line-height:1.15;
+  margin:1px 0 0!important;
+  opacity:.75;
+}
+.hospitality-secondary{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:8px;
+  padding-top:7px;
+  border-top:1px solid rgba(80,74,62,.22);
+}
+.hospitality-secondary button{
+  width:auto!important;
+  min-height:31px!important;
+  margin:0!important;
+  padding:5px 8px!important;
+  font-size:8px!important;
+}
+.hospitality-secondary .danger-soft{margin-left:auto!important}
+
+.hospitality-invite-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+}
+.hospitality-contact{
+  border:1px solid #817966;
+  background:rgba(247,244,226,.91);
+  padding:8px;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+}
+.hospitality-contact-head{
+  display:flex;
+  justify-content:space-between;
+  gap:7px;
+  align-items:flex-start;
+}
+.hospitality-contact-head b{font-size:10px}
+.hospitality-contact .contact-detail{
+  font-size:7.5px;
+  line-height:1.2;
+  margin:3px 0 7px;
+  opacity:.78;
+  overflow-wrap:anywhere;
+}
+.hospitality-contact-actions{
+  display:flex;
+  gap:5px;
+  margin-top:auto;
+  justify-content:flex-end;
+}
+.hospitality-contact-actions button{
+  width:auto!important;
+  margin:0!important;
+  min-height:30px!important;
+  padding:5px 8px!important;
+  font-size:8px!important;
+}
+.hospitality-pending-actions{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
+.hospitality-pending-actions button{
+  width:auto!important;
+  margin:0!important;
+  min-height:31px!important;
+  padding:5px 8px!important;
+  font-size:8px!important;
+}
+.hospitality-history-actions button{
+  width:auto!important;
+  min-height:28px!important;
+  padding:4px 7px!important;
+  font-size:7.5px!important;
+}
+.hospitality-footer{
+  display:flex!important;
+  justify-content:flex-end!important;
+  gap:5px!important;
+}
+.hospitality-footer button{
+  width:auto!important;
+  min-width:120px;
+  margin:0!important;
+}
+
+@media(max-width:700px){
+  .hospitality-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .hospitality-invite-grid{grid-template-columns:1fr}
+}
+@media(max-width:430px){
+  .hospitality-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .hospitality-action{
+    min-height:50px!important;
+    grid-template-columns:20px minmax(0,1fr);
+    column-gap:5px;
+    padding:5px!important;
+  }
+  .hospitality-action .hosp-icon{font-size:15px}
+  .hospitality-action b{font-size:8.5px}
+  .hospitality-action small{font-size:6.4px!important}
+  .hospitality-secondary{justify-content:flex-start}
+  .hospitality-secondary .danger-soft{margin-left:0!important}
+  .hospitality-footer{display:flex!important;justify-content:flex-end!important}
+  .hospitality-footer button{width:auto!important;min-width:0!important}
+}
+
+
+/* v1.6.23 — Party Prisoners & Custody formatting */
+.prisoner-meta-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:4px 8px;
+  margin:5px 0 8px;
+  padding:6px 0;
+  border-top:1px solid rgba(80,75,65,.18);
+  border-bottom:1px solid rgba(80,75,65,.18);
+}
+.prisoner-meta-grid>div{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  gap:6px;
+  align-items:baseline;
+  min-width:0;
+}
+.prisoner-meta-grid .prisoner-meta-wide{grid-column:1/-1}
+.prisoner-meta-label{
+  font-size:7.5px;
+  font-weight:900;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  opacity:.68;
+  white-space:nowrap;
+}
+.prisoner-meta-label::after{
+  content:":";
+  margin-left:1px;
+  margin-right:2px;
+}
+.prisoner-meta-value{
+  min-width:0;
+  font-size:8.5px;
+  line-height:1.2;
+  overflow-wrap:anywhere;
+}
+@media(max-width:430px){
+  .prisoner-meta-grid{
+    grid-template-columns:1fr;
+    gap:3px;
+  }
+  .prisoner-meta-grid .prisoner-meta-wide{grid-column:auto}
+  .prisoner-meta-grid>div{
+    grid-template-columns:minmax(68px,auto) minmax(0,1fr);
+    gap:7px;
+  }
+}
+
+/* v1.6.22.6 — input responsiveness / performance */
+button, [role="button"], .world-location, .world-party { touch-action: manipulation; }
+button:active, [role="button"]:active, .world-location:active, .world-party:active { filter:brightness(.9); }
+button.sos-pressed:not(.world-location):not(.world-party), [role="button"].sos-pressed:not(.world-location):not(.world-party) {
+  transform: translateY(1px) scale(.985) !important;
+  filter: brightness(.88) contrast(1.04);
+  transition: transform 35ms linear, filter 35ms linear !important;
+}
+.world-location.sos-pressed, .world-party.sos-pressed {
+  filter: brightness(.84) contrast(1.08);
+  transition: filter 35ms linear !important;
+}
+.sos-busy-hint { opacity:.78; cursor:progress !important; }
+
+/* v1.6.24 — Guardian Hall Economy & Workforce II */
+.home-profit-policy-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:7px 0 12px}
+.home-profit-policy-grid button{width:100%;min-height:58px;text-align:left;padding:7px 8px}
+.home-profit-policy-grid button b{display:block;margin-bottom:3px}
+.home-profit-policy-grid button small{display:block;line-height:1.25}
+@media(max-width:680px){.home-profit-policy-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:430px){.home-profit-policy-grid{grid-template-columns:1fr}.home-profit-policy-grid button{min-height:0}}
+
+
+/* v1.6.26 — Hall construction, repairs & material economy */
+.artisan-material-row{display:flex;flex-wrap:wrap;gap:4px;margin:7px 0}.artisan-material{border:1px solid #777;background:#eee;padding:3px 5px;font-size:10px}.artisan-material.ready{background:#dbe8d3;border-color:#58704d}.artisan-material.missing{background:#ead1d1;border-color:#8b1e1e}.project-method{border-top:1px dotted #888;margin-top:8px;padding-top:7px}.project-method.external{opacity:.88}.project-method>small{display:block;margin:2px 0 5px;color:#555}.project-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.project-action-grid button{min-width:0}.compact-project-button{width:auto!important;margin-top:5px;padding:4px 7px}.artisan-active-project{border-left:5px solid #7d5b08;background:#f2ead0}.hall-project-card{display:flex;flex-direction:column}.hall-project-card .project-method.external{margin-top:auto}@media(max-width:520px){.project-action-grid{grid-template-columns:1fr}.artisan-material{font-size:9px}}
+
+/* v1.6.30 — Masterworks & Hall Prestige */
+.prestige-card{text-align:center}.prestige-score{font:700 30px Georgia,serif;margin:7px 0}.masterwork-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}

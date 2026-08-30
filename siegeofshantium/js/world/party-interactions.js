@@ -1,21 +1,3 @@
-function guardianHallAffiliatedParty(p){if(!p)return false;if(p.guardianCaravan||p.logisticsShipment||p.guardianAffiliation||p.guardianHallAffiliated)return true;const r=p.travelerId?travelerRegistryState().records[p.travelerId]:null;return !!r?.guardianHallAffiliated}
-function ensureGuardianHallPartyRecognition(p){
- if(!guardianHallAffiliatedParty(p))return null;const s=ensurePartySocial(p),r=travelerRecord(p);
- s.familiarity=Math.max(2,s.familiarity||0);s.hallRecognized=true;
- r.guardianHallAffiliated=true;r.guardianHallCordial=true;r.social=r.social||{talks:0,topics:{},firstDay:state.world.day,lastDay:state.world.day,familiarity:0,helped:0};
- r.social.familiarity=Math.max(2,r.social.familiarity||0);r.social.hallRecognized=true;r.lastContactDay=state.world.day;return r
-}
-function guardianHallPartyRecognitionHTML(p){if(!guardianHallAffiliatedParty(p))return'';return SOSText("world_party_interactions.guardianHallPartyRecognitionHTML.001",esc(p.name))}
-function worldPartyDisposition(p){if(p.kind==='bounty')return hasWarrant(p.bountyLocId||state.world.location)?'hostile':'neutral';if(guardianHallAffiliatedParty(p))return'friendly';const standing=state.world.factionStanding[p.faction]||0;if(p.attitude==='hostile')return standing>=8?'wary':'hostile';if(p.attitude==='friendly')return standing<-5?'wary':'friendly';if(p.attitude==='conditional')return standing<-2?'hostile':standing>=5?'friendly':'wary';return standing<-5?'wary':standing>=8?'friendly':'neutral'}
-
-function findRegionalBattleNearPlayer(){
- const region=currentWorldRegion(),me=worldLocation(state.world.location),rows=[];
- for(const c of activeLiveRegionalConflicts()){
-  if(c.region!==region)continue;const a=state.world.parties.find(p=>p.id===c.aId),b=state.world.parties.find(p=>p.id===c.bId);if(!a||!b)continue;
-  const pos=liveConflictPosition(c),dist=Math.hypot(pos.x-me.x,pos.y-me.y);if(dist<24)rows.push({a,b,c,dist})
- }
- rows.sort((x,y)=>x.dist-y.dist);return rows.length?[rows[0].a,rows[0].b,rows[0].c]:null
-}
 function showLiveRegionalConflict(id){modalRouteEnter(SOSText("world_party_interactions.showLiveRegionalConflict.001"),Array.from(arguments));
  const c=liveRegionalConflict(id);if(!c)return actionResult(SOSText("world_party_interactions.showLiveRegionalConflict.002"),SOSText("world_party_interactions.showLiveRegionalConflict.003"),'info',renderOpenWorld);
  const a=state.world.parties.find(p=>p.id===c.aId),b=state.world.parties.find(p=>p.id===c.bId);if(!a||!b)return renderOpenWorld();showRegionalBattle(a,b,c)
@@ -41,7 +23,7 @@ function joinRegionalBattle(ally,enemy,c=null){
  const locId=c?.locId||state.world.location;if(c&&state.world.location!==locId)return actionResult(SOSText("world_party_interactions.joinRegionalBattle.001"),SOSText("world_party_interactions.joinRegionalBattle.002",worldLocation(locId).name),'info',()=>showRegionalBattle(ally,enemy,c));
  if(!c&&!worldPartyAtPlayer(ally)&&!worldPartyAtPlayer(enemy))return actionResult(SOSText("world_party_interactions.joinRegionalBattle.003"),SOSText("world_party_interactions.joinRegionalBattle.004"),'info',renderOpenWorld);
  const pair=c?.kind==='guardian_caravan_dispute'?guardianCaravanDisputeParties(c):null,defendingGuardian=pair&&ally.id===pair.caravan.id&&enemy.id===pair.patrol.id;
- if(!defendingGuardian){state.world.factionStanding[ally.faction]=(state.world.factionStanding[ally.faction]||0)+2;state.world.factionStanding[enemy.faction]=(state.world.factionStanding[enemy.faction]||0)-3;companionReaction(ally.faction,2);companionReaction(enemy.faction,-3)}
+ if(!defendingGuardian){state.world.factionStanding[ally.faction]=(state.world.factionStanding[ally.faction]||0)+2;state.world.factionStanding[enemy.faction]=(state.world.factionStanding[enemy.faction]||0)-3;companionReaction(ally.faction,2);companionReaction(enemy.faction,-3);if(c&&typeof applyGuardianRegionalConflictPoliticalChoice==='function')applyGuardianRegionalConflictPoliticalChoice(c,ally,enemy,locId)}
  else recordGuardianFactionIncident(locId,pair.patrol.faction,SOSText("world_party_interactions.joinRegionalBattle.005",pair.caravan.name,pair.patrol.name),{severity:2,witnessed:false,kind:'guardian_intervention',incidentId:c?.incidentId||null,actorRefs:['guardian:guardian',pair.caravan.actorRef||`world_party:${pair.caravan.id}`,pair.patrol.actorRef||`world_party:${pair.patrol.id}`]});
  if(c){c.status='guardian_intervened';c.intervenedDay=state.world.day;c.guardianSide=ally.id}
  const gr=makeWorldCombatGroup(enemy);gr.name=SOSText("world_party_interactions.joinRegionalBattle.006",enemy.name,ally.name);gr.worldPartyId=enemy.id;gr.regionalConflictId=c?.id||null;gr.incidentId=c?.incidentId||null;gr.regionalAllyPartyId=ally.id;
@@ -50,12 +32,12 @@ function joinRegionalBattle(ally,enemy,c=null){
 }
 function showWorldParty(id){modalRouteEnter(SOSText("world_party_interactions.showWorldParty.001"),Array.from(arguments));
  const p=state.world.parties.find(x=>x.id===id);if(!p)return renderOpenWorld();if(p.kind==='bounty')return handleBountyPartyEncounter(p);const underway=activeEscortQuest();if(underway&&p.id!==underway.partyId)return actionResult(SOSText("world_party_interactions.showWorldParty.002"),SOSText("world_party_interactions.showWorldParty.003",escortCaravan(underway)?.name||'the contracted caravan'),'info',()=>showEscortStatus(underway.id));
- const q=p.questId?activeQuest(p.questId):null;if(guardianHallAffiliatedParty(p))ensureGuardianHallPartyRecognition(p);const d=worldPartyDisposition(p),est=worldPartyTravelEstimate(p),inReach=canEngageWorldParty(p),tracked=state.world.trackedPartyId===p.id,plan=worldPartyInterceptPlan(p);
+ const q=p.questId?activeQuest(p.questId):null;const d=worldPartyDisposition(p),est=worldPartyTravelEstimate(p),inReach=canEngageWorldParty(p),tracked=state.world.trackedPartyId===p.id,plan=worldPartyInterceptPlan(p);
  if(q?.type==='escort'){
    overlay(SOSText("world_party_interactions.showWorldParty.004",esc(p.name),q.spotContract?'On-the-Spot Escort':'Escort Contract',q.spotContract?esc(p.name):esc(contractIssuerName(q)),esc(contractTargetName(q)),esc(contractObjective(q)),q.escortStage==='rendezvous'&&inReach?'<button id="partyBeginEscort">Begin Escort</button>':'',q.escortStage==='rendezvous'&&!inReach?'<button id="partyPursueEscort">Travel to Caravan</button>':'',q.escortStage==='escorting'?'<button id="partyResumeEscort">Resume Escort</button>':''));
    if($('#partyBeginEscort'))$('#partyBeginEscort').onclick=()=>beginEscortContract(q);if($('#partyPursueEscort'))$('#partyPursueEscort').onclick=()=>attemptWorldTravel(q.origin);if($('#partyResumeEscort'))$('#partyResumeEscort').onclick=()=>showEscortStatus(q.id);$('#partyEscortDetails').onclick=()=>showContractDetails(q.id);$('#worldAvoid').onclick=()=>{closeOverlay();renderOpenWorld()};return
  }
- ensureTravelerGroupIdentity(p);overlay(SOSText("world_party_interactions.showWorldParty.005",esc(p.name),esc(p.faction),esc(d.toUpperCase()),tracked?' • TRACKED':'',`${guardianHallPartyRecognitionHTML(p)}${recurringTravelerText(p)}`,travelerGroupIdentityHTML(p),esc(p.purpose||partyPurpose(p.kind)),esc(worldLocation(p.origin||p.location).name),esc(worldLocation(p.destination).name),esc(est.label),p.kind==='merchant'?`<br><b>Trade cargo:</b> ${p.cargo||0} lots — ${esc(manifestText(p.manifest))}`:'',!inReach?`<div class="notice">Route: ${esc(worldLocation(p.location).name)} → ${esc(worldLocation(p.destination).name)}. ${plan.likely?`An intercept near ${esc(plan.target.name)} looks possible.`:`The Guardian can follow toward ${esc(plan.target.name)} and pick up the trail there.`}</div>`:'',p.questId&&activeQuest(p.questId)?'<div class="warning notice"><b>Contract target.</b></div>':'',inReach&&d==='hostile'?(()=>{const a=worldPartyCombatAssessment(p);return `<div class="${a.gap>0?'warning':'notice'} compact"><b>Preliminary combat assessment: ${esc(a.label)}</b><br>Estimated enemy level ${a.level} • Company level ${state.level}</div>`})():'',inReach&&d==='hostile'?'<button id="worldFight">Engage / Assess</button>':'',inReach&&d!=='hostile'?'<button id="worldTalk">Approach / Talk</button><button id="worldHostile">Take Hostile Action…</button>':'',!inReach?'<button id="worldPursue">Travel / Pursue Party</button>':'',tracked?'Stop Tracking':'Track Party'));
+ ensureTravelerGroupIdentity(p);overlay(SOSText("world_party_interactions.showWorldParty.005",esc(p.name),esc(p.faction),esc(d.toUpperCase()),tracked?' • TRACKED':'',`${recurringTravelerText(p)}`,travelerGroupIdentityHTML(p),esc(p.purpose||partyPurpose(p.kind)),esc(worldLocation(p.origin||p.location).name),esc(worldLocation(p.destination).name),esc(est.label),p.kind==='merchant'?`<br><b>Trade cargo:</b> ${p.cargo||0} lots — ${esc(manifestText(p.manifest))}`:'',!inReach?`<div class="notice">Route: ${esc(worldLocation(p.location).name)} → ${esc(worldLocation(p.destination).name)}. ${plan.likely?`An intercept near ${esc(plan.target.name)} looks possible.`:`The Guardian can follow toward ${esc(plan.target.name)} and pick up the trail there.`}</div>`:'',p.questId&&activeQuest(p.questId)?'<div class="warning notice"><b>Contract target.</b></div>':'',inReach&&d==='hostile'?(()=>{const a=worldPartyCombatAssessment(p);return SOSText("world_party_interactions.showWorldParty.006",a.tone==='warning'?'warning':'notice',esc(a.label),a.count,a.level,esc(a.text))})():'',inReach&&d==='hostile'?'<button id="worldFight">Engage / Assess</button>':'',inReach&&d!=='hostile'?'<button id="worldTalk">Approach / Talk</button><button id="worldHostile">Take Hostile Action…</button>':'',!inReach?'<button id="worldPursue">Travel / Pursue Party</button>':'',tracked?'Stop Tracking':'Track Party'));
  if($('#worldFight'))$('#worldFight').onclick=()=>showWorldEncounterPlan(p);if($('#worldTalk'))$('#worldTalk').onclick=()=>worldPartyTalk(p);if($('#worldHostile'))$('#worldHostile').onclick=()=>confirmHostileAction(p);if($('#worldPursue'))$('#worldPursue').onclick=()=>pursueWorldParty(p);$('#worldTrack').onclick=()=>{setTrackedWorldParty(tracked?null:p);closeOverlay();renderOpenWorld()};$('#worldAvoid').onclick=()=>{closeOverlay();renderOpenWorld()}
 }
 function informationOfferCost(p){
@@ -94,7 +76,7 @@ function confirmHostileAction(p){
 }
 function beginHostileWorldAction(p){
  if(!canEngageWorldParty(p))return actionResult(SOSText("world_party_interactions.beginHostileWorldAction.001"),SOSText("world_party_interactions.beginHostileWorldAction.002"),'info',renderOpenWorld);
- p.attitude='hostile';
+ playerPartyApproachWorldParty(p);p.attitude='hostile';
  state.world.factionStanding[p.faction]=(state.world.factionStanding[p.faction]||0)-5;
  state.reputation=Math.max(0,(state.reputation||0)-2);
  companionReaction(p.faction,-3);
@@ -125,8 +107,8 @@ const PARTY_TALK_TOPICS={
   ['route',SOSText("world_party_interactions.beginHostileWorldAction.032")],['destination',SOSText("world_party_interactions.beginHostileWorldAction.033")],['faction',SOSText("world_party_interactions.beginHostileWorldAction.034")],['help',SOSText("world_party_interactions.beginHostileWorldAction.035")]
  ]
 };
-function partyTalkTopics(p){const base=[...(PARTY_TALK_TOPICS[p.kind]||[['route',SOSText("world_party_interactions.partyTalkTopics.001")],['destination',SOSText("world_party_interactions.partyTalkTopics.002")],['help',SOSText("world_party_interactions.partyTalkTopics.003")]])];if(ensureTravelerGroupIdentity(p))base.splice(Math.min(2,base.length),0,['people',p.kind==='refugees'?'Ask About Their Family':SOSText("world_party_interactions.partyTalkTopics.004")]);return base}
-function ensurePartySocial(p){if(!p.social)p.social={talks:0,topics:{},firstDay:state.world.day,lastDay:state.world.day,familiarity:0,helped:0};if(!p.social.topics)p.social.topics={};if(!p.travelerId)assignTravelerIdentity(p,worldPartyDisplayRegion(p));ensureTravelerGroupIdentity(p);return p.social}
+function partyTalkTopics(p){const base=[...(PARTY_TALK_TOPICS[p.kind]||[['route',SOSText("world_party_interactions.partyTalkTopics.001")],['destination',SOSText("world_party_interactions.partyTalkTopics.002")],['help',SOSText("world_party_interactions.partyTalkTopics.003")]])];if(p?.travelerId&&travelerIdentityEligibleKind(p.kind))base.splice(Math.min(2,base.length),0,['people',p.kind==='refugees'?'Ask About Their Family':SOSText("world_party_interactions.partyTalkTopics.004")]);return base}
+function ensurePartySocial(p){if(!p.social)p.social={talks:0,topics:{},firstDay:state.world.day,lastDay:state.world.day,familiarity:0,helped:0};if(!p.social.topics)p.social.topics={};if(!p.travelerId)assignTravelerIdentity(p,worldPartyDisplayRegion(p));return p.social}
 function partyRelationshipLabel(p){const s=ensurePartySocial(p),d=worldPartyDisposition(p);if(s.familiarity>=4)return SOSText("world_party_interactions.partyRelationshipLabel.001");if(s.familiarity>=2)return SOSText("world_party_interactions.partyRelationshipLabel.002");return d==='friendly'?'Friendly':d==='wary'?'Wary':SOSText("world_party_interactions.partyRelationshipLabel.003")}
 function partyTalkText(p,topic){
  const loc=worldLocation(p.location||state.world.location),dest=worldLocation(p.destination),origin=worldLocation(p.origin||p.location),ss=settlementState(p.destination);
@@ -144,7 +126,7 @@ function partyTalkText(p,topic){
 function discussWorldPartyTopic(p,topic){
  if(!canEngageWorldParty(p))return actionResult(SOSText("world_party_interactions.discussWorldPartyTopic.001"),SOSText("world_party_interactions.discussWorldPartyTopic.002"),'info',renderOpenWorld);
  const s=ensurePartySocial(p),prior=s.topics[topic]||0;s.topics[topic]=prior+1;s.talks++;s.lastDay=state.world.day;if(!prior)s.familiarity=Math.min(6,s.familiarity+1);
- syncTravelerRecord(p);ensureTravelerGroupIdentity(p);const text=partyTalkText(p,topic);syncTravelerRecord(p,'meeting',topic);recordWorldHistory(SOSText("world_party_interactions.discussWorldPartyTopic.003",state.name,p.name,text),'info',SOSText("world_party_interactions.discussWorldPartyTopic.004"));save();
+ syncTravelerRecord(p);const text=partyTalkText(p,topic);syncTravelerRecord(p,'meeting',topic);recordWorldHistory(SOSText("world_party_interactions.discussWorldPartyTopic.003",state.name,p.name,text),'info',SOSText("world_party_interactions.discussWorldPartyTopic.004"));save();
  actionResult(prior?'Continuing the Conversation':SOSText("world_party_interactions.discussWorldPartyTopic.005"),`${text}${prior?'\n\nYou have discussed this subject with them before.':''}`,'info',()=>showFriendlyPartyInteraction(p))
 }
 function partyAidCost(p){return p.kind==='refugees'?12:p.kind==='merchant'?8:10}
@@ -195,7 +177,7 @@ function showSpotContractOffer(p,o=p?.spotContractOffer){modalRouteEnter(SOSText
  if(!p||!o||o.status!=='offered')return showFriendlyPartyInteraction(p);
  const escort=o.type==='escort',preview={...o,type:o.type==='security'||o.type==='aid'?'spotservice':o.type,origin:p.location||p.origin,target:o.target||p.destination,faction:p.faction,spotContract:true,spotIssuerFaction:p.faction,escortPartyName:p.name};if(o.paymentMode){preview.paymentMode=o.paymentMode;preview.paymentLocation=o.paymentLocation;preview.paymentPayer=o.paymentPayer;preview.paymentExplanation=o.paymentExplanation}else{ensureContractPaymentTerms(preview);o.paymentMode=preview.paymentMode;o.paymentLocation=preview.paymentLocation;o.paymentPayer=preview.paymentPayer;o.paymentExplanation=preview.paymentExplanation}
  overlay(SOSText("world_party_interactions.showSpotContractOffer.004",esc(p.name),esc(o.title),esc(o.desc),o.reward,esc(preview.paymentExplanation),o.dueDay),true);
- $('#spotAccept').onclick=()=>acceptSpotContract(p,o);$('#spotDecline').onclick=()=>{o.status='declined';p.spotContractDeclinedDay=state.world.day;save();actionResult(SOSText("world_party_interactions.showSpotContractOffer.005"),SOSText("world_party_interactions.showSpotContractOffer.006",p.name),'info',()=>showFriendlyPartyInteraction(p))};$('#spotBack').onclick=()=>showFriendlyPartyInteraction(p)
+ $('#spotAccept').onclick=()=>acceptSpotContract(p,o);$('#spotDecline').onclick=()=>{o.status='declined';p.spotContractDeclinedDay=state.world.day;save();actionResult(SOSText("world_party_interactions.showSpotContractOffer.005"),SOSText("world_party_interactions.showSpotContractOffer.006",p.name),'info',()=>showFriendlyPartyInteraction(p))};$('#spotBack').onclick=()=>SOSServices.navigation.back(()=>showFriendlyPartyInteraction(p))
 }
 function acceptSpotContract(p,o){
  if(!partySpotContractEligible(p)||!o||o.status!=='offered')return actionResult(SOSText("world_party_interactions.acceptSpotContract.001"),SOSText("world_party_interactions.acceptSpotContract.002"),'info',()=>showFriendlyPartyInteraction(p));
@@ -223,8 +205,8 @@ function finishSpotPartyContract(q){
 function showFriendlyPartyInteraction(p){modalRouteEnter(SOSText("world_party_interactions.showFriendlyPartyInteraction.001"),Array.from(arguments));
  if(!canEngageWorldParty(p))return actionResult(SOSText("world_party_interactions.showFriendlyPartyInteraction.002"),SOSText("world_party_interactions.showFriendlyPartyInteraction.003"),'info',renderOpenWorld);
  const d=worldPartyDisposition(p),s=ensurePartySocial(p),topics=partyTalkTopics(p),offer=interregionalSpotContractOffer(p)||spotContractOffer(p,false),info=['merchant','mercenary'].includes(p.kind);
- if(guardianHallAffiliatedParty(p))ensureGuardianHallPartyRecognition(p);syncTravelerRecord(p,'meeting',SOSText("world_party_interactions.showFriendlyPartyInteraction.004"));ensureTravelerGroupIdentity(p);recognizeTravelerWithCompanions(p);overlay(SOSText("world_party_interactions.showFriendlyPartyInteraction.005",esc(p.name),`${guardianHallPartyRecognitionHTML(p)}${recurringTravelerText(p)}`,travelerGroupIdentityHTML(p),esc(p.faction),esc(partyRelationshipLabel(p)),esc(p.purpose||partyPurpose(p.kind)),esc(worldLocation(p.destination).name),s.talks?`<p class="muted compact">You have spoken with this party ${s.talks} time${s.talks===1?'':'s'} about ${Object.keys(s.topics).length} subject${Object.keys(s.topics).length===1?'':'s'}.</p>`:'',topics.map(([id,label])=>`<button data-partytopic="${id}">${esc(label)}${s.topics[id]?` <small>• discussed ${s.topics[id]}×</small>`:''}</button>`).join(''),partyAidCost(p),info?'<button id="partyInfoBusiness">Ask About Information for Sale</button>':'',offer?`<button id="partySpotOffer"><b>Hear Their Job Offer</b><br><small>${esc(offer.title)}</small></button>`:''),true);
- document.querySelectorAll('[data-partytopic]').forEach(b=>b.onclick=()=>discussWorldPartyTopic(p,b.dataset.partytopic));$('#partyShareInfo').onclick=()=>shareRoadInformation(p);$('#partyAid').onclick=()=>giveWorldPartyAid(p);if($('#partyInfoBusiness'))$('#partyInfoBusiness').onclick=()=>showInformationPartyInteraction(p);if($('#partySpotOffer'))$('#partySpotOffer').onclick=()=>showSpotContractOffer(p,offer);$('#partyTalkBack').onclick=()=>showWorldParty(p.id)
+ if(guardianHallAffiliatedParty(p))ensureGuardianHallPartyRecognition(p);syncTravelerRecord(p,'meeting',SOSText("world_party_interactions.showFriendlyPartyInteraction.004"));if(p.groupIdentity)recognizeTravelerWithCompanions(p);overlay(SOSText("world_party_interactions.showFriendlyPartyInteraction.005",esc(p.name),`${guardianHallPartyRecognitionHTML(p)}${recurringTravelerText(p)}`,travelerGroupIdentityHTML(p),esc(p.faction),esc(partyRelationshipLabel(p)),esc(p.purpose||partyPurpose(p.kind)),esc(worldLocation(p.destination).name),s.talks?`<p class="muted compact">You have spoken with this party ${s.talks} time${s.talks===1?'':'s'} about ${Object.keys(s.topics).length} subject${Object.keys(s.topics).length===1?'':'s'}.</p>`:'',topics.map(([id,label])=>`<button data-partytopic="${id}">${esc(label)}${s.topics[id]?` <small>• discussed ${s.topics[id]}×</small>`:''}</button>`).join(''),partyAidCost(p),info?'<button id="partyInfoBusiness">Ask About Information for Sale</button>':'',offer?`<button id="partySpotOffer"><b>Hear Their Job Offer</b><br><small>${esc(offer.title)}</small></button>`:''),true);
+ document.querySelectorAll('[data-partytopic]').forEach(b=>b.onclick=()=>discussWorldPartyTopic(p,b.dataset.partytopic));$('#partyShareInfo').onclick=()=>shareRoadInformation(p);$('#partyAid').onclick=()=>giveWorldPartyAid(p);if($('#partyInfoBusiness'))$('#partyInfoBusiness').onclick=()=>showInformationPartyInteraction(p);if($('#partySpotOffer'))$('#partySpotOffer').onclick=()=>showSpotContractOffer(p,offer);$('#partyTalkBack').onclick=()=>SOSServices.navigation.back(()=>showWorldParty(p.id))
 if($('#partyAskKnownGroup'))$('#partyAskKnownGroup').onclick=()=>showTravelerInquiryPicker('party',p,()=>showFriendlyPartyInteraction(p));}
 function showInformationPartyInteraction(p){modalRouteEnter(SOSText("world_party_interactions.showInformationPartyInteraction.001"),Array.from(arguments));
  if(!canEngageWorldParty(p))return actionResult(SOSText("world_party_interactions.showInformationPartyInteraction.002"),SOSText("world_party_interactions.showInformationPartyInteraction.003"),'info',renderOpenWorld);
@@ -234,11 +216,11 @@ function showInformationPartyInteraction(p){modalRouteEnter(SOSText("world_party
  $('#declineRoadInfo').onclick=()=>{recordWorldHistory(SOSText("world_party_interactions.showInformationPartyInteraction.005",state.name,p.name),'info','encounter');save();actionResult(SOSText("world_party_interactions.showInformationPartyInteraction.006"),SOSText("world_party_interactions.showInformationPartyInteraction.007"),'info',renderOpenWorld)};
  $('#threatenRoadInfo').onclick=()=>threatenForInformation(p);
  $('#hostileRoadAction').onclick=()=>confirmHostileAction(p);
- $('#roadInfoBack').onclick=()=>showWorldParty(p.id)
+ $('#roadInfoBack').onclick=()=>SOSServices.navigation.back(()=>showWorldParty(p.id))
 }
 function worldPartyTalk(p){
  if(!canEngageWorldParty(p)){const est=worldPartyTravelEstimate(p);return actionResult(SOSText("world_party_interactions.worldPartyTalk.001"),SOSText("world_party_interactions.worldPartyTalk.002",p.name,est.label.toLowerCase()),'info',renderOpenWorld)}
- ensurePartySocial(p);
+ playerPartyApproachWorldParty(p);ensurePartySocial(p);
  if(currentWorldRegion()==='redstone'&&p.kind==='redstone'&&!activeSengiaAuthorityCase(state.world.location)&&chance(.22)){generateSengiaAuthorityCase(state.world.location,true);return actionResult(SOSText("world_party_interactions.worldPartyTalk.003"),SOSText("world_party_interactions.worldPartyTalk.004",p.name),'info',()=>showSengiaAuthority(state.world.location))}
  if(currentWorldRegion()==='redstone'&&p.kind==='redstone'&&chance(.18)){return actionResult(SOSText("world_party_interactions.worldPartyTalk.005"),SOSText("world_party_interactions.worldPartyTalk.006",p.name,worldLocation(state.world.location).name,sengiaSecurityCondition(state.world.location).toLowerCase(),sengiaSecurityAdvice(state.world.location)),'info',()=>showSengiaSecurity(state.world.location))}
  if(maybeOfferSpotContract(p))return;showFriendlyPartyInteraction(p)
@@ -284,23 +266,25 @@ function openWorldEnemyPool(p,level){
  };
  const names=(lists[p?.kind]||lists.bandits)[tier],pool=names.map(enemyByName).filter(Boolean);return pool.length?pool:ENEMIES.slice(0,12)
 }
+function combatProtectionRate(value){const v=Math.max(0,Number(value)||0);return clamp((v/(v+42))*.62,0,.56)}
 function openWorldGuardianCombatRating(){
- const hit=clamp(accuracy(),25,97)/100,w=weapon(),dmg=Math.max(4,(w.damage||6)+stat(state,'str')*.45+2+guardianClassBonus().damage);
- return maxHP()+defense()*5+dmg*6*hit+maxStamina()*.15
+ const hit=combatHitChance(accuracy(),6,20,94)/100,w=weapon(),dmg=Math.max(4,(w.damage||6)+boundedStatValue(stat(state,'str'))*.42+2+guardianClassBonus().damage),prot=combatProtectionRate(defense()),enemyHit=combatHitChance(76,guardianEvasion(),26,94)/100,survive=maxHP()*(1+prot*.9+(1-enemyHit)*.45);
+ return survive+dmg*6*hit+maxStamina()*.13
 }
 function openWorldAllyCombatRating(m){
- const hit=clamp(allyAccuracy(m),25,97)/100,w=allyWeapon(m),dmg=Math.max(4,(w.damage||6)+allyStat(m,'str')*.45+2+allyClassBonus(m).damage+companionBonuses(m).damage);
- return allyMaxHP(m)+allyDefense(m)*5+dmg*6*hit+allyMaxStamina(m)*.15
+ const hit=combatHitChance(allyAccuracy(m),6,24,93)/100,w=allyWeapon(m),dmg=Math.max(4,(w.damage||6)+boundedStatValue(allyStat(m,'str'))*.38+2+allyClassBonus(m).damage+companionBonuses(m).damage),prot=combatProtectionRate(allyDefense(m)),enemyHit=combatHitChance(76,allyEvasion(m),26,94)/100,survive=allyMaxHP(m)*(1+prot*.9+(1-enemyHit)*.45);
+ return survive+dmg*6*hit+allyMaxStamina(m)*.13
 }
 function openWorldCompanyCombatRating(){return Math.max(120,openWorldGuardianCombatRating()+partyMembers(true).reduce((n,m)=>n+openWorldAllyCombatRating(m),0))}
 function openWorldEnemyCombatRating(e){
- const hit=clamp(e.acc||60,25,97)/100,trait={commander:20,elite:18,assassin:16,mage:14,healer:13,shield:12,stone:16,regen:15,brute:12,duelist:16,charger:13,engineer:12}[e.trait]||6;
- return (e.maxHp||e.hp||20)+(e.damage||5)*6*hit+(e.acc||60)*.35+(e.init||5)*1.4+trait
+ const hit=combatHitChance(e.acc||60,7,26,94)/100,trait={commander:20,elite:18,assassin:16,mage:14,healer:13,shield:12,stone:16,regen:15,brute:12,duelist:16,charger:13,engineer:12}[e.trait]||6,evasion=enemyEvasion(e);
+ return (e.maxHp||e.hp||20)*(1+Math.min(.16,evasion*.008))+(e.damage||5)*6*hit+(e.init||5)*1.15+trait
 }
 function openWorldEnemyGroupRating(members){return members.reduce((n,e)=>n+openWorldEnemyCombatRating(e),0)}
-function tuneOpenWorldEnemyGroup(members,targetPower,levelGap){
+function tuneOpenWorldEnemyGroup(members,targetPower,levelGap,p=null){
  let rating=openWorldEnemyGroupRating(members);if(!rating)return members;
- const factor=clamp(Math.sqrt(targetPower/rating),.88,1.24),hpFactor=factor,dmgFactor=clamp(1+(factor-1)*.58,.92,1.14),accShift=levelGap>0?levelGap*2:levelGap<0?levelGap:0;
+ const kind=p?.kind||'spawn',boostCap=({refugees:1.02,merchant:1.04,bandits:1.08,raiders:1.12,spawn:1.14,coalition:1.18,mercenary:1.18,redstone:1.18,bluestone:1.18,bounty:1.20})[kind]||1.14,trimFloor=['redstone','bluestone','coalition','mercenary','bounty'].includes(kind)?.88:.84;
+ const factor=clamp(Math.sqrt(targetPower/rating),trimFloor,boostCap),hpFactor=factor,dmgFactor=clamp(1+(factor-1)*.48,.91,1.10),accShift=levelGap>0?Math.min(3,levelGap):levelGap<0?Math.max(-5,Math.ceil(levelGap*.6)):0;
  for(const e of members){e.maxHp=e.hp=Math.max(8,Math.round(e.maxHp*hpFactor));e.damage=Math.max(3,Math.round(e.damage*dmgFactor));e.acc=clamp(Math.round(e.acc+accShift),45,92)}
  return members
 }
@@ -323,7 +307,7 @@ function travelerNamedCombatMembers(p,targetLevel,d,scaleRound,pool=[]){
 function recordNamedTravelerBattleOutcome(gr,incidentResult=null){
  if(!gr?.worldPartyId)return;const p=state.world.parties.find(x=>x.id===gr.worldPartyId),r=p?.travelerId?travelerRegistryState().records[p.travelerId]:null;if(!p||!r?.identity)return;
  r.history=r.history||[];const named=(incidentResult?.outcomes||[]).filter(x=>x.ref&&String(x.ref).startsWith('traveler_person:')),detail=named.length?named.map(x=>`${x.name} ${x.outcome}`).join(', '):(gr.members||[]).filter(x=>x.namedTravelerCombatant).map(x=>x.name).join(', ');
- r.history.push({day:state.world.day,event:'defeated_by_guardian',detail:SOSText("world_party_interactions.recordNamedTravelerBattleOutcome.001",r.identity.groupName,detail?` — ${detail}`:''),region:locationRegion(p.location),incidentId:gr.incidentId||null});r.history=r.history.slice(-24);r.lastDefeatedByGuardianDay=state.world.day;if(travelerAllMembersDead(r)){r.deathKnown=true;r.deathDay=r.deathDay||state.world.day;r.deathLocation=r.deathLocation||p.location;r.locationStatus='deceased'}else resolveTravelerDependentPlacements(r,p.location,SOSText("world_party_interactions.recordNamedTravelerBattleOutcome.002"));
+ const withdrew=gr.enemyYield==='withdrawal';r.history.push({day:state.world.day,event:withdrew?'withdrew_from_guardian':'defeated_by_guardian',detail:withdrew?`${r.identity.groupName} withdrew from combat with the Guardian${detail?` — ${detail}`:''}.`:SOSText("world_party_interactions.recordNamedTravelerBattleOutcome.001",r.identity.groupName,detail?` — ${detail}`:''),region:locationRegion(p.location),incidentId:gr.incidentId||null});r.history=r.history.slice(-24);if(!withdrew)r.lastDefeatedByGuardianDay=state.world.day;if(travelerAllMembersDead(r)){r.deathKnown=true;r.deathDay=r.deathDay||state.world.day;r.deathLocation=r.deathLocation||p.location;r.locationStatus='deceased'}else resolveTravelerDependentPlacements(r,p.location,SOSText("world_party_interactions.recordNamedTravelerBattleOutcome.002"));
  if(!incidentResult)for(const x of r.identity.members||[])if((gr.members||[]).some(e=>e.travelerPersonId===x.id)){x.lastBattleDay=state.world.day;x.status='recovering';x.recoverAfterDay=state.world.day+5}
 }
 function refreshTravelerMemberStatuses(){
@@ -367,12 +351,12 @@ function worldEncounterLeader(p,members){
  leader.encounterLeader=true;return {name:leader.name,role:leader.travelerRole||leader.worldPartyRole||p.leaderRole||'',quote:worldEncounterLeaderQuote(p),actorRef:leader.actorRef||null}
 }
 function makeWorldCombatGroup(p){
- ensureWorldPartyComposition(p);const doctrine=ensureWorldPartyDoctrine(p),day=state.world.day,targetLevel=worldPartyCombatLevel(p),levelGap=clamp(targetLevel-(state.level||1),-2,2),mature=matureCampaignTier(),pool=openWorldEnemyPool(p,targetLevel),soloGuardian=!!p.guardianSolo,companyPower=soloGuardian?Math.max(120,openWorldGuardianCombatRating()):openWorldCompanyCombatRating(),targetRatio=worldCombatTargetRatio(targetLevel),targetPower=companyPower*targetRatio,scaleRound=clamp(targetLevel+5,2,18),d=DIFFICULTIES[state.difficulty],named=travelerNamedCombatMembers(p,targetLevel,d,scaleRound,pool),members=named||genericWorldPartyCombatMembers(p,d,scaleRound,pool);
+ ensureWorldPartyComposition(p);const doctrine=ensureWorldPartyDoctrine(p),day=state.world.day,targetLevel=worldPartyCombatLevel(p),threatProfile=worldPartyThreatProfile(p),levelGap=clamp(targetLevel-(state.level||1),-6,3),mature=matureCampaignTier(),pool=openWorldEnemyPool(p,targetLevel),soloGuardian=!!p.guardianSolo,companyPower=soloGuardian?Math.max(120,openWorldGuardianCombatRating()):openWorldCompanyCombatRating(),targetRatio=worldCombatTargetRatio(p),targetPower=companyPower*targetRatio,scaleRound=clamp(targetLevel+5,2,18),d=DIFFICULTIES[state.difficulty],named=travelerNamedCombatMembers(p,targetLevel,d,scaleRound,pool),members=named||genericWorldPartyCombatMembers(p,d,scaleRound,pool);
  if(!members.length){const e=makeEnemy(pool[0]||ENEMIES[0],d.enemy,scaleRound);e.name=p.kind==='refugees'?SOSText("world_party_interactions.makeWorldCombatGroup.002"):SOSText("world_party_interactions.makeWorldCombatGroup.003");members.push(e)}
- tuneOpenWorldEnemyGroup(members,targetPower,levelGap);encounterFormationTuning(doctrine,members);p.combatantCount=members.length;
+ tuneOpenWorldEnemyGroup(members,targetPower,levelGap,p);encounterFormationTuning(doctrine,members);p.combatantCount=members.length;
  const leader=worldEncounterLeader(p,members),finalPower=openWorldEnemyGroupRating(members),powerRatio=finalPower/Math.max(1,companyPower),groupActor=worldActorRef('world_party',p.id,{name:p.name,location:p.location,meta:{kind:p.kind,faction:p.faction,memberCount:p.memberCount||members.length,combatantCount:members.length,travelerId:p.travelerId||null,doctrine:doctrine.name,formation:p.formation}});
  p.actorRef=groupActor?.key||p.actorRef;
- return {id:`world_${p.id}`,worldPartyId:p.id,actorRef:p.actorRef,name:p.name,faction:p.faction,route:'north',distance:3,speed:1,members,objective:'patrol',status:SOSText("world_party_interactions.makeWorldCombatGroup.001"),camp:null,progress:0,retreating:false,combatLevel:targetLevel,powerRatio,threat:Math.round(finalPower/10),loot:28+day*3+members.length*8+mature*15,xp:40+day*4+members.length*12+mature*20,commander:null,encounterLeader:leader,doctrine:{...doctrine},formation:p.formation,morale:p.morale,reinforcementChance:doctrine.reinforce,engaged:false}
+ return {id:`world_${p.id}`,worldPartyId:p.id,actorRef:p.actorRef,name:p.name,faction:p.faction,route:'north',distance:3,speed:1,members,objective:'patrol',status:SOSText("world_party_interactions.makeWorldCombatGroup.001"),camp:null,progress:0,retreating:false,combatLevel:targetLevel,powerRatio,threatProfile:{ratio:targetRatio,count:threatProfile.count,label:worldThreatAssessmentRow(targetRatio)[0]},threat:Math.round(finalPower/10),loot:28+day*3+members.length*8+mature*15,xp:28+members.length*18+Math.min(110,targetLevel*2)+(mature?22:0),commander:null,encounterLeader:leader,doctrine:{...doctrine},formation:p.formation,morale:p.morale,reinforcementChance:doctrine.reinforce,engaged:false}
 }
 function startWorldPartyCombat(p){return showWorldEncounterPlan(p)}
 function removeWorldParty(id){
@@ -391,3 +375,6 @@ const ADVENTURE_SITES={
  woods:{name:SOSText("world_party_interactions.removeWorldParty.008"),location:'woods',stages:2,desc:SOSText("world_party_interactions.removeWorldParty.009"),reward:SOSText("world_party_interactions.removeWorldParty.010")},
  marsh:{name:SOSText("world_party_interactions.removeWorldParty.011"),location:'marsh',stages:3,desc:SOSText("world_party_interactions.removeWorldParty.012"),reward:SOSText("world_party_interactions.removeWorldParty.013")}
 };
+
+function adventureSiteForLocation(id){return Object.values(ADVENTURE_SITES).find(s=>s.location===id)}
+function adventureState(id){ensureWorldState();if(!state.world.adventures[id])state.world.adventures[id]={stage:0,completed:false,visits:0,lastDay:0};return state.world.adventures[id]}

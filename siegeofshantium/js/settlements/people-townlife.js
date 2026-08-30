@@ -1,5 +1,3 @@
-function defaultLocalReputation(){return Object.fromEntries(WORLD_LOCATIONS.filter(x=>['town','settlement','camp','fort'].includes(x.type)).map(x=>[x.id,x.id==='shantium'?4:0]))}
-function localReputation(id){ensureWorldState();return state.world.localReputation[id]||0}
 function localRepTier(v){return v<=-6?'Resented':v<=-2?'Distrusted':v<3?'Unknown':v<7?'Known':v<12?'Trusted':SOSText("settlements_people_townlife.localRepTier.001")}
 function changeLocalReputation(id,delta,reason=''){
  ensureWorldState();state.world.localReputation[id]=clamp((state.world.localReputation[id]||0)+delta,-12,20);
@@ -183,7 +181,7 @@ function talkSettlementNPC(locId,npcId,topic){
 function showSettlementNPCConversation(locId,npcId){modalRouteEnter(SOSText("settlements_people_townlife.showSettlementNPCConversation.001"),Array.from(arguments));
  const npc=settlementNpc(locId,npcId);if(!npc)return showSettlementPeople(locId);syncSengiaNpcMemory(npc,locId);const r=npcRelationshipState(npcId),tier=npcFamiliarityTier(r.familiarity),att=npcAttitudeLabel(r),red=locationRegion(locId)==='redstone',roadReaction=travelerNpcReaction(locId,npc),compInterest=npcCompanionInterest(locId,npc);
  overlay(SOSText("settlements_people_townlife.showSettlementNPCConversation.002",esc(npc.name),esc(npc.role),esc(tier),r.familiarity,esc(att),(()=>{const a=npcFactionAlignment(npc.id);return a&&Math.abs(a.support)>=1?`<div class="notice compact"><b>Political leaning:</b> ${esc(npcPoliticalSupportLabel(a.support))} — ${a.support<0?'opposes':'supports'} ${esc(majorFaction(a.faction).short)}<br><small>${esc(a.reason)}</small></div>`:''})(),(()=>{const rr=npcResidenceRecord(npc.id);return rr&&rr.current!==rr.home?`<div class="notice compact"><b>Now based in ${esc(worldLocation(rr.current).name)}</b><br>Originally from ${esc(worldLocation(rr.home).name)} • ${esc(rr.reason)}</div>`:''})(),r.memory.length?`<div class="notice compact"><b>What ${esc(npc.name)} remembers:</b><br>${esc(npcMemorySummary(npcId))}</div>`:'',red?`<div class="npc-current-context">${sengiaNpcContext(npc,locId).map(x=>`<span>${esc(x)}</span>`).join('')}</div>`:'',roadReaction?`<div class="notice compact road-contact-reaction">${esc(roadReaction)}</div>`:'',esc(worldLocation(locId).name),red?'<button data-npctopic="changed">Ask What Has Changed</button>':'',r.familiarity>=6?'':'disabled',r.familiarity>=3?'':'disabled',r.familiarity>=4?'':'disabled',r.familiarity>=2?'':'disabled',travelerInquiryTargets().length?'':'disabled',compInterest?`<button id="npcAskCompanion">Ask About ${esc(compInterest.name)}</button>`:''));
- document.querySelectorAll('[data-npctopic]').forEach(b=>b.onclick=()=>talkSettlementNPC(locId,npcId,b.dataset.npctopic));$('#npcProblem').onclick=()=>npcLocalProblem(npc,locId,r);$('#npcFavor').onclick=()=>npcFavor(npc,locId,r);if($('#npcLocalPolitics'))$('#npcLocalPolitics').onclick=()=>showNpcPoliticalConversation(locId,npcId);if($('#npcAskTraveler'))$('#npcAskTraveler').onclick=()=>showTravelerInquiryPicker('npc',npc,()=>showSettlementNPCConversation(locId,npcId));if($('#npcAskCompanion'))$('#npcAskCompanion').onclick=()=>npcAskAboutCompanion(locId,npcId,compInterest.id);$('#npcConversationBack').onclick=()=>showSettlementPeople(locId)
+ document.querySelectorAll('[data-npctopic]').forEach(b=>b.onclick=()=>talkSettlementNPC(locId,npcId,b.dataset.npctopic));$('#npcProblem').onclick=()=>npcLocalProblem(npc,locId,r);$('#npcFavor').onclick=()=>npcFavor(npc,locId,r);if($('#npcLocalPolitics'))$('#npcLocalPolitics').onclick=()=>showNpcPoliticalConversation(locId,npcId);if($('#npcAskTraveler'))$('#npcAskTraveler').onclick=()=>showTravelerInquiryPicker('npc',npc,()=>showSettlementNPCConversation(locId,npcId));if($('#npcAskCompanion'))$('#npcAskCompanion').onclick=()=>npcAskAboutCompanion(locId,npcId,compInterest.id);$('#npcConversationBack').onclick=()=>SOSServices.navigation.back(()=>showSettlementPeople(locId))
 }
 function meetSettlementNPC(locId,npcId){showSettlementNPCConversation(locId,npcId)}
 function showSettlementPeople(locId=state.world.location){modalRouteEnter(SOSText("settlements_people_townlife.showSettlementPeople.001"),Array.from(arguments));
@@ -478,3 +476,18 @@ function npcLocalProblem(npc,locId,r){
 }
 
 
+
+function ensureRegionalSimulation(){ensureWorldState();const r=state.world.regionalSimulation||(state.world.regionalSimulation={threads:[],flows:[],routePressure:{},lastResponseDay:{}});if(!Array.isArray(r.threads))r.threads=[];if(!Array.isArray(r.flows))r.flows=[];if(!r.routePressure)r.routePressure={};if(!r.lastResponseDay)r.lastResponseDay={};if(!Array.isArray(r.opportunities))r.opportunities=[];if(!Array.isArray(r.interventions))r.interventions=[];return r}
+function regionalSettlements(region=null){return WORLD_LOCATIONS.filter(x=>state.world.settlements?.[x.id]&&(!region||locationRegion(x)===region))}
+
+function regionalEvidenceState(){const r=ensureRegionalSimulation();if(!r.evidence)r.evidence={settlements:{},routes:{},history:[]};return r.evidence}
+function addSettlementEvidence(locId,text,type='info',days=4){
+ const E=regionalEvidenceState();if(!E.settlements[locId])E.settlements[locId]=[];const row={id:uid(),day:state.world.day,expiresDay:state.world.day+days,text,type};E.settlements[locId].push(row);E.settlements[locId]=E.settlements[locId].slice(-10);E.history.push({...row,locId});E.history=E.history.slice(-80);return row
+}
+function settlementEvidence(locId){const E=regionalEvidenceState();return (E.settlements[locId]||[]).filter(x=>x.expiresDay>=state.world.day)}
+function routeEvidenceKey(a,b){return routePressureKey(a,b)}
+function updateRouteEvidence(a,b,reason=''){
+ if(!a||!b||a===b)return;const E=regionalEvidenceState(),k=routeEvidenceKey(a,b),p=routePressure(a,b);let status=p>=7?'dangerous':p>=4?'risky':p>=1?'watched':'open';
+ E.routes[k]={a,b,status,pressure:p,lastDay:state.world.day,reason};return E.routes[k]
+}
+function routeEvidence(a,b){const k=routeEvidenceKey(a,b),E=regionalEvidenceState();return E.routes[k]||updateRouteEvidence(a,b)}

@@ -1,11 +1,15 @@
-
-const VERSION='1.5.26.3.4';
+const VERSION='1.6.33.6';
 const SAVE_KEY='siegeOfShantium.save.v1'; // legacy/current mirror
 const SAVE_OPEN_WORLD_KEY='siegeOfShantium.save.openworld.v1';
-const SAVE_SIEGE_KEY='siegeOfShantium.save.siege.v1';
+const SAVE_SIEGE_KEY='siegeOfShantium.save.siege.v1'; // pre-v1.6.9 Siege migration source only
+const SAVE_LEGACY_SIEGE_KEY='siegeOfShantium.save.legacySiege.v1';
+const SAVE_SIEGE_II_KEY='siegeOfShantium.save.siegeII.v1';
 const SAVE_OPEN_WORLD_BACKUP_KEY='siegeOfShantium.save.openworld.backup.v1';
-const SAVE_SIEGE_BACKUP_KEY='siegeOfShantium.save.siege.backup.v1';
+const SAVE_SIEGE_BACKUP_KEY='siegeOfShantium.save.siege.backup.v1'; // pre-v1.6.9 backup migration source
+const SAVE_LEGACY_SIEGE_BACKUP_KEY='siegeOfShantium.save.legacySiege.backup.v1';
+const SAVE_SIEGE_II_BACKUP_KEY='siegeOfShantium.save.siegeII.backup.v1';
 const SAVE_SLOT_MIGRATION_KEY='siegeOfShantium.saveSlotsMigrated.v1536';
+const SAVE_SIEGE_SPLIT_MIGRATION_KEY='siegeOfShantium.siegeSplitMigrated.v169';
 const META_KEY='siegeOfShantium.meta.v1';
 const $=s=>document.querySelector(s);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -17,11 +21,13 @@ const esc=s=>String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const fmt=n=>Math.round(n).toLocaleString();
 
 const DIFFICULTIES={
- Story:{enemy:0.78,economy:1.18,town:1.2,advance:0.82,label:SOSText("core_bootstrap_data.top.008")},
- Guardian:{enemy:1,economy:1,town:1,advance:1,label:SOSText("core_bootstrap_data.top.009")},
- Veteran:{enemy:1.13,economy:.88,town:.92,advance:1.08,label:SOSText("core_bootstrap_data.top.010")},
- Siege:{enemy:1.26,economy:.76,town:.84,advance:1.18,label:SOSText("core_bootstrap_data.top.011")}
+ Story:{enemy:.90,economy:1.18,town:1.2,advance:.82,label:SOSText("core_bootstrap_data.top.008"),aiNoise:18,moraleLoss:1.18,yield:1.32,injury:.55,retreat:.10,enemyCrit:.68,enemyHealing:.30,staminaRecovery:1.18,innRecovery:1.00,reinforcement:.72},
+ Guardian:{enemy:1,economy:1,town:1,advance:1,label:SOSText("core_bootstrap_data.top.009"),aiNoise:8,moraleLoss:1,yield:1,injury:1,retreat:0,enemyCrit:1,enemyHealing:.45,staminaRecovery:1,innRecovery:.86,reinforcement:1},
+ Veteran:{enemy:1.05,economy:.88,town:.92,advance:1.08,label:SOSText("core_bootstrap_data.top.010"),aiNoise:4,moraleLoss:.88,yield:.80,injury:1.24,retreat:-.06,enemyCrit:1.18,enemyHealing:.55,staminaRecovery:.92,innRecovery:.74,reinforcement:1.12},
+ Siege:{enemy:1.10,economy:.76,town:.84,advance:1.18,label:SOSText("core_bootstrap_data.top.011"),aiNoise:1,moraleLoss:.76,yield:.62,injury:1.48,retreat:-.12,enemyCrit:1.35,enemyHealing:.66,staminaRecovery:.84,innRecovery:.64,reinforcement:1.28}
 };
+function difficultyProfile(){return DIFFICULTIES[state?.difficulty]||DIFFICULTIES.Guardian}
+function difficultySummary(){const d=state?.difficulty||'Guardian';return d==='Story'?'Forgiving combat: less coordinated enemies, faster morale breaks, lighter injuries, easier withdrawal, and stronger recovery.':d==='Veteran'?'Demanding combat: smarter targeting, steadier enemies, harsher injuries, less recovery, and more dangerous reinforcement pressure.':d==='Siege'?'Severe combat: highly coordinated enemies, resilient morale, serious injury pressure, difficult withdrawal, limited recovery, and aggressive reinforcements.':'Balanced combat: baseline enemy judgment, morale, injuries, recovery, and withdrawal.'}
 const ROUTES=[
  {id:'north',name:SOSText("core_bootstrap_data.top.012"),x:48,y:5},{id:'west',name:SOSText("core_bootstrap_data.top.013"),x:5,y:38},{id:'quarry',name:SOSText("core_bootstrap_data.top.014"),x:13,y:76},
  {id:'river',name:SOSText("core_bootstrap_data.top.015"),x:73,y:10},{id:'south',name:SOSText("core_bootstrap_data.top.016"),x:46,y:86},{id:'east',name:SOSText("core_bootstrap_data.top.017"),x:82,y:54}
@@ -47,5 +53,3 @@ const COMMANDERS=[
  {name:SOSText("core_bootstrap_data.top.081"),faction:SOSText("core_bootstrap_data.top.082"),trait:'elite',quote:SOSText("core_bootstrap_data.top.083")},
  {name:SOSText("core_bootstrap_data.top.084"),faction:SOSText("core_bootstrap_data.top.085"),trait:'commander',quote:SOSText("core_bootstrap_data.top.086")}
 ];
-
-const TIERS=[[SOSText("core_bootstrap_data.top.087"),.82,.75],[SOSText("core_bootstrap_data.top.088"),1,1],[SOSText("core_bootstrap_data.top.089"),1.18,1.35],[SOSText("core_bootstrap_data.top.090"),1.32,1.7],[SOSText("core_bootstrap_data.top.091"),1.48,2.05],[SOSText("core_bootstrap_data.top.092"),1.68,2.7],[SOSText("core_bootstrap_data.top.093"),1.88,3.4],[SOSText("core_bootstrap_data.top.094"),2.15,4.4]];

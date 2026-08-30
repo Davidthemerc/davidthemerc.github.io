@@ -174,7 +174,7 @@ function resolveFactionIncident(locId,choice){
 function showFactionIncident(locId){modalRouteEnter(SOSText("politics_control_incidents.showFactionIncident.001"),Array.from(arguments));
  const inc=activeFactionIncident(locId);if(!inc)return showSettlementFactions(locId);const [a,b]=inc.factions;
  overlay(SOSText("politics_control_incidents.showFactionIncident.002",esc(inc.title),esc(inc.text),esc(majorFaction(a).name),esc(majorFaction(b).name),esc(majorFaction(a).short),esc(majorFaction(b).short)));
- document.querySelectorAll('[data-incchoice]').forEach(x=>x.onclick=()=>resolveFactionIncident(locId,x.dataset.incchoice));$('#factionIncidentBack').onclick=()=>showSettlementFactions(locId)
+ document.querySelectorAll('[data-incchoice]').forEach(x=>x.onclick=()=>resolveFactionIncident(locId,x.dataset.incchoice));$('#factionIncidentBack').onclick=()=>SOSServices.navigation.back(()=>showSettlementFactions(locId))
 }
 function factionCheckpointAt(locId){
  const rr=roadRights(locId);if(!rr)return null;const control=settlementControl(locId),pres=factionPresenceAt(locId);if((rr.openness??7)>=9)return null;if((pres[control]||0)>=7&&[SOSText("politics_control_incidents.factionCheckpointAt.001"),SOSText("politics_control_incidents.factionCheckpointAt.002"),SOSText("politics_control_incidents.factionCheckpointAt.003")].includes(control))return control;
@@ -239,3 +239,5 @@ function ensureFactionPresence(){
  }
 }
 
+
+function factionSocialState(){ensureWorldState();if(!state.world.factionSocial||typeof state.world.factionSocial!=='object')state.world.factionSocial={npcAlignment:{},travelerInfluence:{},history:[],lastDay:state.world.day,lastPressureDay:{}};const F=state.world.factionSocial;if(!F.npcAlignment)F.npcAlignment={};if(!F.travelerInfluence)F.travelerInfluence={};if(!Array.isArray(F.history))F.history=[];if(!F.lastPressureDay||typeof F.lastPressureDay!=='object')F.lastPressureDay={};return F}

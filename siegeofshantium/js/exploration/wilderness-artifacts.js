@@ -1,5 +1,3 @@
-function isMinorHiddenSite(site){return !!site?.minor}
-function fieldDiscovery(id){return explorationState().fieldDiscoveries.find(x=>x.id===id)||null}
 function createFieldDiscovery(nearId,forcedKind=null,forcedName=null){
  const E=explorationState(),base=worldLocation(nearId),t=forcedKind?FIELD_DISCOVERY_TEMPLATES.find(x=>x.kind===forcedKind):pick(FIELD_DISCOVERY_TEMPLATES),id=`field_${E.nextFieldId++}`,name=forcedName||pick(t.names),d={id,name,kind:t.kind,nearId,day:state.world.day,text:pick(t.texts),searched:false,used:0,x:clamp(base.x+rnd(-7,7),3,97),y:clamp(base.y+rnd(-7,7),3,97)};
  E.fieldDiscoveries.push(d);E.fieldDiscoveries=E.fieldDiscoveries.slice(-24);recordWorldHistory(SOSText("exploration_wilderness_artifacts.createFieldDiscovery.001",name,base.name),'good','exploration');return d
@@ -56,7 +54,16 @@ function hiddenSiteUsefulActionsComplete(id){
 function retireHiddenSite(id){
  if(!hiddenSiteUsefulActionsComplete(id))return actionResult(SOSText("exploration_wilderness_artifacts.retireHiddenSite.001"),SOSText("exploration_wilderness_artifacts.retireHiddenSite.002"),'info',()=>showWildernessSite(id));const E=explorationState();E.retiredSites=E.retiredSites||{};E.retiredSites[id]={day:state.world.day,status:explorationSiteState(id).status||'cleared'};recordWorldHistory(SOSText("exploration_wilderness_artifacts.retireHiddenSite.003",worldLocation(id).name),'info','exploration');save();closeOverlay();renderOpenWorld()
 }
-function restoreRetiredHiddenSite(id){const E=explorationState();if(E.retiredSites)delete E.retiredSites[id];save();showWildernessSite(id)}
+function restoreRetiredHiddenSite(id){const E=explorationState();if(E.retiredSites)delete E.retiredSites[id];const S=explorationSiteState(id);if(S.status==='abandoned')S.status=interiorState(id).completed?'cleared':'discovered';save();showWildernessSite(id)}
+function giveUpHiddenSiteExploration(id){
+ const loc=worldLocation(id),E=explorationState(),S=explorationSiteState(id),I=interiorState(id);if(!loc?.hidden)return;
+ if(!confirm(`Give up exploration of ${loc.name}?
+
+This removes the site from the active map without granting completion rewards. You can restore it later from the Exploration Journal.`))return;
+ E.retiredSites=E.retiredSites||{};E.retiredSites[id]={day:state.world.day,status:'abandoned',reason:'gave up exploration'};
+ I.abandoned=true;I.abandonedDay=state.world.day;S.status='abandoned';S.notes=S.notes||[];S.notes.push(`Day ${state.world.day}: The Guardian gave up further exploration. The site was removed from the active map.`);
+ recordWorldHistory(`${loc.name}: the Guardian gave up further exploration and removed the site from the active map.`,'info','exploration');save();closeOverlay();renderOpenWorld()
+}
 function explorationSiteState(id){const E=explorationState();if(!E.sites[id])E.sites[id]={visits:0,searched:0,status:'discovered',notes:[],lastVisit:0};return E.sites[id]}
 function discoverWildernessSite(site,reason='exploration'){
  if(!site||state.world.discovered.includes(site.id))return false;state.world.discovered.push(site.id);const E=explorationState(),S=explorationSiteState(site.id);S.status='discovered';E.discoveries.push({id:site.id,day:state.world.day,reason});E.discoveries=E.discoveries.slice(-30);state.world.mapView.lastLocation=null;recordWorldHistory(SOSText("exploration_wilderness_artifacts.discoverWildernessSite.001",site.name,reason),'good','exploration');log(SOSText("exploration_wilderness_artifacts.discoverWildernessSite.002",site.name),'good');return true
@@ -181,7 +188,7 @@ function resolveCompanionExplorationDecision(id,key){
 function showCompanionExplorationQuest(id){modalRouteEnter(SOSText("exploration_wilderness_artifacts.showCompanionExplorationQuest.001"),Array.from(arguments));
  const m=state.party.members[id],d=companionExplorationDef(id),q=companionExplorationQuest(id);if(!m||!d)return showWorldJournal();const site=worldLocation(d.site),progress=interiorProgress(d.site);
  overlay(SOSText("exploration_wilderness_artifacts.showCompanionExplorationQuest.002",esc(m.name),esc(d.title),esc(q.status),esc(site.name),progress.done,progress.total,esc(companionExplorationObjective(id)),esc(d.intro),q.status==='available'?`<button id="compExpStart">Follow ${esc(m.name)}'s Lead</button>`:'',q.status==='active'?`<div class="choice-list"><button id="compExpTravel">Travel to ${esc(site.name)}</button>${state.world.location===d.site?'<button id="compExpSite">Open Site</button>':''}</div>`:'',q.status==='decision'?`<h3>What should be done?</h3><div class="choice-list">${d.choice.map(k=>`<button data-compexpchoice="${k}">${esc(companionExplorationChoiceText(id,k))}</button>`).join('')}</div>`:'',q.status==='complete'?`<div class="success notice"><b>Completed Day ${q.completedDay}</b><br>${esc(companionExplorationChoiceText(id,q.choice))}</div>`:''),true);
- if($('#compExpStart'))$('#compExpStart').onclick=()=>startCompanionExplorationQuest(id);if($('#compExpTravel'))$('#compExpTravel').onclick=()=>{closeOverlay();attemptWorldTravel(d.site)};if($('#compExpSite'))$('#compExpSite').onclick=()=>showWildernessSite(d.site);document.querySelectorAll('[data-compexpchoice]').forEach(b=>b.onclick=()=>resolveCompanionExplorationDecision(id,b.dataset.compexpchoice));$('#compExpBack').onclick=()=>showWorldJournal()
+ if($('#compExpStart'))$('#compExpStart').onclick=()=>startCompanionExplorationQuest(id);if($('#compExpTravel'))$('#compExpTravel').onclick=()=>{closeOverlay();attemptWorldTravel(d.site)};if($('#compExpSite'))$('#compExpSite').onclick=()=>showWildernessSite(d.site);document.querySelectorAll('[data-compexpchoice]').forEach(b=>b.onclick=()=>resolveCompanionExplorationDecision(id,b.dataset.compexpchoice));$('#compExpBack').onclick=()=>SOSServices.navigation.back(()=>showWorldJournal())
 }
 function activeCompanionExplorationQuests(){return Object.keys(COMPANION_EXPLORATION_DEFS).map(id=>({id,d:companionExplorationDef(id),q:companionExplorationQuest(id),m:state.party.members[id]})).filter(x=>x.m&&['available','active','decision'].includes(x.q.status))}
 function companionSiteRecognition(siteId){
@@ -207,13 +214,13 @@ function equippedArtifactItems(ownerId='guardian'){
 }
 function guardianArtifactBonus(kind){
  let n=0;for(const a of equippedArtifactItems('guardian')){
-  if(a.artifactEffect==='survivor'&&state.guardian.hp<=maxHP()*.5){if(kind==='accuracy')n+=3;if(kind==='defense')n+=2}
+  if(a.artifactEffect==='survivor'&&state.guardian.hp<=maxHP()*.5){if(kind==='accuracy')n+=2;if(kind==='defense')n+=2}
   if(a.artifactEffect==='command'&&kind==='defense')n+=2;
-  if(a.artifactEffect==='focus'){if(kind==='accuracy')n+=2;if(kind==='defense')n+=2}
+  if(a.artifactEffect==='focus'){if(kind==='accuracy')n+=1;if(kind==='defense')n+=2}
   if(a.artifactEffect==='echo'){if(kind==='defense')n+=2;if(kind==='initiative')n+=2}
   if(a.artifactEffect==='shadow'&&kind==='retreat')n+=.08;
   if(a.artifactEffect==='traveler'&&kind==='retreat')n+=.05;
-  if(a.artifactEffect==='highground'&&kind==='accuracy'&&['quarry','watchfort','oldtower','battlefield'].includes(state.world?.location))n+=3;
+  if(a.artifactEffect==='highground'&&kind==='accuracy'&&['quarry','watchfort','oldtower','battlefield'].includes(state.world?.location))n+=2;
  }
  return n
 }
@@ -312,13 +319,22 @@ HIDDEN_INTERIORS.oldtower.rooms.push({id:'roof',name:SOSText("exploration_wilder
 HIDDEN_INTERIORS.sinkhole.rooms.find(r=>r.id==='chamber').links.push('sidechamber');
 HIDDEN_INTERIORS.sinkhole.rooms.push({id:'sidechamber',name:SOSText("exploration_wilderness_artifacts.showArtifactCollection.109"),text:SOSText("exploration_wilderness_artifacts.showArtifactCollection.110"),links:['chamber'],action:'strange'});
 function interiorDef(id){return HIDDEN_INTERIORS[id]}
-function interiorState(id){ensureWorldState();if(!state.world.interiors[id])state.world.interiors[id]={room:null,visited:[],cleared:[],notes:[],completed:false,startedDay:state.world.day};return state.world.interiors[id]}
+function interiorState(id){
+ ensureWorldState();
+ if(!state.world.interiors[id])state.world.interiors[id]={room:null,visited:[],cleared:[],notes:[],completed:false,startedDay:state.world.day};
+ const I=state.world.interiors[id],d=interiorDef(id),valid=new Set((d?.rooms||[]).map(r=>r.id));
+ if(!Array.isArray(I.visited))I.visited=[];if(!Array.isArray(I.cleared))I.cleared=[];if(!Array.isArray(I.notes))I.notes=[];
+ I.visited=[...new Set(I.visited.filter(x=>valid.has(x)))];I.cleared=[...new Set(I.cleared.filter(x=>valid.has(x)))];
+ if(I.room&&valid.has(I.room)&&!I.visited.includes(I.room))I.visited.push(I.room);
+ if(I.room&&!valid.has(I.room))I.room=interiorStartRoom(id);
+ return I
+}
 function interiorRoom(id,roomId){const d=interiorDef(id);return d?.rooms.find(r=>r.id===roomId)||d?.rooms[0]}
 function interiorStartRoom(id){return interiorDef(id)?.rooms[0]?.id}
 function enterHiddenInterior(id){
  const d=interiorDef(id);if(!d)return showWildernessSite(id);const I=interiorState(id);if(!I.room)I.room=interiorStartRoom(id);if(!I.visited.includes(I.room))I.visited.push(I.room);showHiddenInterior(id)
 }
-function interiorProgress(id){const d=interiorDef(id),I=interiorState(id);return {done:I.cleared.length,total:d?.rooms.length||0}}
+function interiorProgress(id){const d=interiorDef(id),I=interiorState(id),total=d?.rooms.length||0;return {done:I.visited.length,explored:I.visited.length,investigated:I.cleared.length,total}}
 function interiorActionLabel(a){return ({search:SOSText("exploration_wilderness_artifacts.interiorActionLabel.001"),observe:SOSText("exploration_wilderness_artifacts.interiorActionLabel.002"),supplies:SOSText("exploration_wilderness_artifacts.interiorActionLabel.003"),threat:SOSText("exploration_wilderness_artifacts.interiorActionLabel.004"),trap:SOSText("exploration_wilderness_artifacts.interiorActionLabel.005"),lore:SOSText("exploration_wilderness_artifacts.interiorActionLabel.006"),treasure:SOSText("exploration_wilderness_artifacts.interiorActionLabel.007"),strange:SOSText("exploration_wilderness_artifacts.interiorActionLabel.008")})[a]||SOSText("exploration_wilderness_artifacts.interiorActionLabel.009")}
 function resolveInteriorAction(id,roomId){
  const d=interiorDef(id),I=interiorState(id),r=interiorRoom(id,roomId);if(!d||!r)return;
@@ -336,13 +352,26 @@ function resolveInteriorAction(id,roomId){
  save();actionResult(r.final?'Interior Cleared':r.name,text,tone,()=>showHiddenInterior(id))
 }
 function moveInterior(id,roomId){const I=interiorState(id);I.room=roomId;if(!I.visited.includes(roomId))I.visited.push(roomId);save();showHiddenInterior(id)}
+function interiorRoomIcon(action){return ({search:'⌕',observe:'◉',supplies:'▣',threat:'⚔',trap:'⚠',lore:'✦',treasure:'◆',strange:'✧'})[action]||'•'}
+function interiorMapLayout(id){
+ const d=interiorDef(id);if(!d)return {pos:{},edges:[]};const start=d.rooms[0]?.id,depth={},queue=[];if(start){depth[start]=0;queue.push(start)}
+ while(queue.length){const rid=queue.shift(),r=interiorRoom(id,rid);for(const n of (r?.links||[])){if(depth[n]===undefined){depth[n]=depth[rid]+1;queue.push(n)}}}
+ let fallback=Math.max(0,...Object.values(depth));for(const r of d.rooms)if(depth[r.id]===undefined)depth[r.id]=++fallback;
+ const levels={};for(const r of d.rooms)(levels[depth[r.id]]??=[]).push(r);const keys=Object.keys(levels).map(Number).sort((a,b)=>a-b),max=Math.max(1,...keys),pos={};
+ for(const k of keys){const row=levels[k],y=12+(k/max)*76;row.forEach((r,i)=>{pos[r.id]={x:12+((i+1)/(row.length+1))*76,y}})}
+ const seen=new Set,edges=[];for(const r of d.rooms)for(const n of (r.links||[])){const key=[r.id,n].sort().join('|');if(!seen.has(key)&&pos[r.id]&&pos[n]){seen.add(key);edges.push([r.id,n])}}
+ return {pos,edges}
+}
 function hiddenInteriorMapHTML(id){
- const d=interiorDef(id),I=interiorState(id);return `<div class="interior-map">${d.rooms.map((r,i)=>`<div class="interior-node ${I.room===r.id?'current':''} ${I.cleared.includes(r.id)?'cleared':''} ${I.visited.includes(r.id)?'visited':'unknown'}"><b>${I.visited.includes(r.id)?esc(r.name):'Unknown Area'}</b><small>${I.cleared.includes(r.id)?'CLEARED':I.room===r.id?'HERE':I.visited.includes(r.id)?'VISITED':'?'}</small></div>`).join('')}</div>`
+ const d=interiorDef(id),I=interiorState(id),layout=interiorMapLayout(id),current=interiorRoom(id,I.room),reachable=new Set(current?.links||[]);
+ const lines=layout.edges.map(([a,b])=>{const A=layout.pos[a],B=layout.pos[b],known=I.visited.includes(a)&&I.visited.includes(b),active=(a===I.room&&reachable.has(b))||(b===I.room&&reachable.has(a));return `<line class="${known?'':'unknown'} ${active?'active':''}" x1="${A.x}%" y1="${A.y}%" x2="${B.x}%" y2="${B.y}%"></line>`}).join('');
+ const nodes=d.rooms.map(r=>{const P=layout.pos[r.id],visited=I.visited.includes(r.id),here=I.room===r.id,cleared=I.cleared.includes(r.id),canMove=reachable.has(r.id),label=visited?esc(r.name):(canMove?'Unexplored Passage':'Unknown Area'),status=cleared?'CLEARED':here?'YOU ARE HERE':visited?'VISITED':canMove?'AVAILABLE':'UNKNOWN',cls=`interior-node ${here?'current':''} ${cleared?'cleared':''} ${visited?'visited':'unknown'} ${canMove?'reachable':''}`;const inner=`<span class="interior-room-icon">${visited?interiorRoomIcon(r.action):(canMove?'?':'·')}</span><b>${label}</b><small>${status}</small>`;return canMove&&!here?`<button class="${cls}" data-interiorroom="${r.id}" style="left:${P.x}%;top:${P.y}%" title="Move to ${label}">${inner}</button>`:`<div class="${cls}" style="left:${P.x}%;top:${P.y}%">${inner}</div>`}).join('');
+ return `<div class="interior-map"><svg class="interior-map-lines" aria-hidden="true">${lines}</svg>${nodes}</div><div class="interior-map-legend"><span class="here"><i></i>Current room</span><span class="done"><i></i>Cleared</span><span><i></i>Known</span><span class="unknown-key"><i></i>Unexplored</span></div>`
 }
 function showHiddenInterior(id){modalRouteEnter(SOSText("exploration_wilderness_artifacts.showHiddenInterior.001"),Array.from(arguments));
  const d=interiorDef(id),I=interiorState(id);if(!d)return showWildernessSite(id);const r=interiorRoom(id,I.room),p=interiorProgress(id);
- overlay(SOSText("exploration_wilderness_artifacts.showHiddenInterior.002",esc(d.title),esc(r.name),p.done,p.total,I.completed?' • CLEARED':'',esc(r.text),hiddenInteriorMapHTML(id),I.cleared.includes(r.id)?'<div class="success notice">This area has already been investigated.</div>':`<button id="interiorAct">${esc(interiorActionLabel(r.action))}</button>`,r.links.map(x=>{const rr=interiorRoom(id,x);return `<button data-interiorroom="${x}">${I.visited.includes(x)?esc(rr.name):'Explore passage'}</button>`}).join(''),I.notes.length?`<h3>Expedition Notes</h3><div class="card compact">${esc(I.notes[I.notes.length-1])}</div>`:''),true);
- if($('#interiorAct'))$('#interiorAct').onclick=()=>resolveInteriorAction(id,r.id);document.querySelectorAll('[data-interiorroom]').forEach(b=>b.onclick=()=>moveInterior(id,b.dataset.interiorroom));$('#interiorOutside').onclick=()=>showWildernessSite(id)
+ overlay(SOSText("exploration_wilderness_artifacts.showHiddenInterior.002",esc(d.title),esc(r.name),p.explored,p.total,I.completed?' • CLEARED':'',esc(r.text),hiddenInteriorMapHTML(id),I.cleared.includes(r.id)?'<div class="success notice">This area has already been investigated.</div>':`<button id="interiorAct">${esc(interiorActionLabel(r.action))}</button>`,`<div class="interior-route-help">${p.investigated}/${p.total} room actions completed. Select a connected room directly on the map to move through the interior.</div>${!I.completed&&!hiddenSiteRetired(id)?'<button id="interiorGiveUp">Give Up Exploration</button>':''}`,I.notes.length?`<h3>Expedition Notes</h3><div class="card compact">${esc(I.notes[I.notes.length-1])}</div>`:''),true);
+ if($('#interiorAct'))$('#interiorAct').onclick=()=>resolveInteriorAction(id,r.id);if($('#interiorGiveUp'))$('#interiorGiveUp').onclick=()=>giveUpHiddenSiteExploration(id);document.querySelectorAll('[data-interiorroom]').forEach(b=>b.onclick=()=>moveInterior(id,b.dataset.interiorroom));$('#interiorOutside').onclick=()=>showWildernessSite(id)
 }
 
 function minorSiteState(id){const E=explorationState();if(!E.minorUses[id])E.minorUses[id]=0;return E.minorUses[id]}
@@ -362,8 +391,8 @@ function showMinorHiddenSite(id){modalRouteEnter(SOSText("exploration_wilderness
 }
 function showWildernessSite(id=state.world.location){modalRouteEnter(SOSText("exploration_wilderness_artifacts.showWildernessSite.001"),Array.from(arguments));
  const site=worldLocation(id);if(isMinorHiddenSite(site))return showMinorHiddenSite(id);const S=explorationSiteState(id),E=explorationState();
- const art=explorationArtifactForSite(id);if(art&&interiorState(id).completed&&!artifactState().found[art.id])awardExplorationArtifact(id);const artFound=art&&artifactState().found[art.id],recognitions=companionSiteRecognition(id);overlay(SOSText("exploration_wilderness_artifacts.showWildernessSite.002",esc(site.name),esc(site.desc),recognitions.map(x=>`<div class="companion-site-recognition"><b>${esc(x.m.name)}</b><br>${esc(x.line)} ${x.q.status==='locked'?`<button data-sitesidestory="${x.m.id}">Ask About This Place</button>`:''}${['available','active','decision','complete'].includes(x.q.status)?`<button data-sitesidestory="${x.m.id}">Open Personal Expedition</button>`:''}</div>`).join(''),art?`<div class="${artFound?'success':'notice'} notice"><b>Unique artifact:</b> ${artFound?esc(art.name):'Something unique may remain inside.'}${artFound?`<br><small>${esc(art.special)}</small>`:''}</div>`:'',esc(site.siteKind||'wilderness'),(E.discoveries.find(x=>x.id===id)||{}).day||'—',S.visits||0,esc(S.status||'discovered'),S.notes.length?`<h3>Field Notes</h3>${S.notes.slice(-4).map(n=>`<div class="card compact">${esc(n)}</div>`).join('')}`:'',interiorState(id).completed?'Re-enter Cleared Interior':'Explore Interior',S.searched?'Search Outside Again':'Search the Outskirts',hiddenSiteUsefulActionsComplete(id)?`<button id="siteMapToggle">${hiddenSiteRetired(id)?'Restore to Map':'Clear from Map'}</button>`:''),true);
- document.querySelectorAll('[data-sitesidestory]').forEach(b=>b.onclick=()=>{const q=companionExplorationQuest(b.dataset.sitesidestory);if(q.status==='locked')q.status='available';showCompanionExplorationQuest(b.dataset.sitesidestory)});if($('#siteMapToggle'))$('#siteMapToggle').onclick=()=>hiddenSiteRetired(id)?restoreRetiredHiddenSite(id):retireHiddenSite(id);$('#siteInterior').onclick=()=>enterHiddenInterior(id);$('#siteSearch').onclick=()=>searchWildernessSite(id);$('#siteObserve').onclick=()=>{gainScouting(1);S.notes.push(SOSText("exploration_wilderness_artifacts.showWildernessSite.003"));save();actionResult(SOSText("exploration_wilderness_artifacts.showWildernessSite.004"),SOSText("exploration_wilderness_artifacts.showWildernessSite.005"),'good',()=>showWildernessSite(id))};$('#siteRoadLife').onclick=()=>{const m=pick(activeRoadCompanions());if(!m)return actionResult(SOSText("exploration_wilderness_artifacts.showWildernessSite.006"),SOSText("exploration_wilderness_artifacts.showWildernessSite.007"),'info',()=>showWildernessSite(id));roadLifePush({type:'place',a:m.id,title:`${m.name} — ${site.name}`,summary:companionRoadPlaceLine(m,id)});save();showRoadLife()};wireClose()
+ const art=explorationArtifactForSite(id);if(art&&interiorState(id).completed&&!artifactState().found[art.id])awardExplorationArtifact(id);const artFound=art&&artifactState().found[art.id],recognitions=companionSiteRecognition(id),I=interiorState(id),retired=hiddenSiteRetired(id);overlay(SOSText("exploration_wilderness_artifacts.showWildernessSite.002",esc(site.name),esc(site.desc),recognitions.map(x=>`<div class="companion-site-recognition"><b>${esc(x.m.name)}</b><br>${esc(x.line)} ${x.q.status==='locked'?`<button data-sitesidestory="${x.m.id}">Ask About This Place</button>`:''}${['available','active','decision','complete'].includes(x.q.status)?`<button data-sitesidestory="${x.m.id}">Open Personal Expedition</button>`:''}</div>`).join(''),art?`<div class="${artFound?'success':'notice'} notice"><b>Unique artifact:</b> ${artFound?esc(art.name):'Something unique may remain inside.'}${artFound?`<br><small>${esc(art.special)}</small>`:''}</div>`:'',esc(site.siteKind||'wilderness'),(E.discoveries.find(x=>x.id===id)||{}).day||'—',S.visits||0,esc(S.status||'discovered'),S.notes.length?`<h3>Field Notes</h3>${S.notes.slice(-4).map(n=>`<div class="card compact">${esc(n)}</div>`).join('')}`:'',I.completed?'Re-enter Cleared Interior':'Explore Interior',S.searched?'Search Outside Again':'Search the Outskirts',retired?'<button id="siteMapToggle">Restore to Map</button>':hiddenSiteUsefulActionsComplete(id)?'<button id="siteMapToggle">Clear from Map</button>':!I.completed?'<button id="siteGiveUp">Give Up Exploration</button>':''),true);
+ document.querySelectorAll('[data-sitesidestory]').forEach(b=>b.onclick=()=>{const q=companionExplorationQuest(b.dataset.sitesidestory);if(q.status==='locked')q.status='available';showCompanionExplorationQuest(b.dataset.sitesidestory)});if($('#siteMapToggle'))$('#siteMapToggle').onclick=()=>hiddenSiteRetired(id)?restoreRetiredHiddenSite(id):retireHiddenSite(id);if($('#siteGiveUp'))$('#siteGiveUp').onclick=()=>giveUpHiddenSiteExploration(id);$('#siteInterior').onclick=()=>enterHiddenInterior(id);$('#siteSearch').onclick=()=>searchWildernessSite(id);$('#siteObserve').onclick=()=>{gainScouting(1);S.notes.push(SOSText("exploration_wilderness_artifacts.showWildernessSite.003"));save();actionResult(SOSText("exploration_wilderness_artifacts.showWildernessSite.004"),SOSText("exploration_wilderness_artifacts.showWildernessSite.005"),'good',()=>showWildernessSite(id))};$('#siteRoadLife').onclick=()=>{const m=pick(activeRoadCompanions());if(!m)return actionResult(SOSText("exploration_wilderness_artifacts.showWildernessSite.006"),SOSText("exploration_wilderness_artifacts.showWildernessSite.007"),'info',()=>showWildernessSite(id));roadLifePush({type:'place',a:m.id,title:`${m.name} — ${site.name}`,summary:companionRoadPlaceLine(m,id)});save();showRoadLife()};wireClose()
 }
 function showExplorationJournal(){modalRouteEnter(SOSText("exploration_wilderness_artifacts.showExplorationJournal.001"),Array.from(arguments));
  const E=explorationState(),found=discoveredHiddenSites(),unknown=unexploredHiddenSites().length,major=found.filter(s=>!s.minor),minor=found.filter(s=>s.minor),fields=E.fieldDiscoveries.slice().reverse();
@@ -371,12 +400,12 @@ function showExplorationJournal(){modalRouteEnter(SOSText("exploration_wildernes
  document.querySelectorAll('[data-expsite]').forEach(b=>b.onclick=()=>showWildernessSite(b.dataset.expsite));document.querySelectorAll('[data-fieldsite]').forEach(b=>b.onclick=()=>showFieldDiscovery(b.dataset.fieldsite));$('#explorationArtifacts').onclick=showArtifactCollection;$('#explorationCompanions').onclick=showCompanionExpeditionJournal;$('#explorationClues').onclick=showExplorationClues;wireClose()
 }
 function showWorldArea(){modalRouteEnter(SOSText("exploration_wilderness_artifacts.showWorldArea.001"),Array.from(arguments));
- ensureWorldState();const loc=worldLocation(state.world.location);if(loc.hidden)return showWildernessSite(loc.id);
+ ensureWorldState();const loc=worldLocation(state.world.location);if(loc.hidden){if(hiddenSiteRetired(loc.id))return actionResult('Exploration Retired',`${loc.name} has been removed from the active map. Restore it from the Exploration Journal if you want to investigate it again.`,'info',renderOpenWorld);return showWildernessSite(loc.id)};
  const regionalHere=regionalThreadAt(loc.id),opportunitiesHere=opportunityAt(loc.id),storyHere=activeCompanionStories().filter(x=>state.party.active.includes(x.id)&&((x.s.stage===1&&x.d.loc1===loc.id)||(x.s.stage===2&&x.d.loc2===loc.id)||x.s.status==='decision')),known=knownCompanionsAt(loc.id),near=state.world.parties.filter(worldPartyAtPlayer),battle=findRegionalBattleNearPlayer(),site=adventureSiteForLocation(loc.id),maps=treasureMapsAtLocation(loc.id),ledgerReady=storyLedgerResolutionReady(),fqAvailable=availableFactionQuestlinesHere(),fqDecision=(factionQuestState(SOSText("exploration_wilderness_artifacts.showWorldArea.002")).active&&factionQuestState(SOSText("exploration_wilderness_artifacts.showWorldArea.003")).stage===3&&['northgate','shantium'].includes(loc.id))||(factionQuestState(SOSText("exploration_wilderness_artifacts.showWorldArea.004")).active&&factionQuestState(SOSText("exploration_wilderness_artifacts.showWorldArea.005")).stage===3&&loc.id==='redoubt'),town=isTownLikeLocation(loc);
  const townActions=town?SOSText("exploration_wilderness_artifacts.showWorldArea.006",loc.id==='shantium'?'<button id="areaCouncilHall"><b>Council Hall</b><small>Civic administration, law & public affairs</small></button>':''):'';
  const peopleActions=SOSText("exploration_wilderness_artifacts.showWorldArea.007",known.length?'Known contacts and local information':'Local information',known.map(c=>`<button data-seekcomp="${c.id}"><b>${esc(allyDef(c.id).name)}</b><small>${esc(allyDef(c.id).title)} • known to be here</small></button>`).join(''),town?'<button id="areaPeople"><b>Familiar Faces</b><small>Residents you already know</small></button>':'');
  const partyActions=near.length?SOSText("exploration_wilderness_artifacts.showWorldArea.008",nearbyPartyGroupHTML(near)):'';
- overlay(SOSText("exploration_wilderness_artifacts.showWorldArea.009",esc(loc.name),esc(loc.desc),state.world.settlements[loc.id]?`${settlementSnapshotHTML(loc.id,true)}<p class="living-welcome">${esc(settlementWelcomeText(loc.id))}</p><div class="town-scene-inline">${esc(townSceneText(loc.id))}</div>${settlementProblemHTML(loc.id)}${settlementEventHTML(loc.id)}`:'',opportunitiesHere.map(opportunityMarkerHTML).join(''),regionalHere.length?`<div class="regional-thread-card"><b>Regional consequence:</b><br>${regionalHere.map(t=>`${esc(t.title)} — ${esc(t.notes[t.notes.length-1]||t.text)}`).join('<br>')}<br><button id="areaRegionalSimulation">Region Overview</button></div>`:'',storyHere.length?`<div class="success notice"><b>Companion story:</b><br>${storyHere.map(x=>`${esc(state.party.members[x.id].name)} — ${esc(x.d.title)}`).join('<br>')}<br>${storyHere.map(x=>`<button data-storyhere="${x.id}">Continue ${esc(x.d.title)}</button>`).join('')}</div>`:'',battle?`<div class="warning notice"><b>Nearby battle:</b> ${esc(battle[0].name)} vs ${esc(battle[1].name)}<br><button id="viewBattle">Intervene</button></div>`:'',maps.length?`<div class="success notice"><b>Treasure lead:</b> ${maps.map(m=>esc(m.name)).join(', ')}<br>${maps.map(m=>`<button data-digmap="${m.id}">Follow ${esc(m.name)}</button>`).join('')}</div>`:'',ledgerReady?`<div class="warning notice"><b>The Watchfort Ledger:</b> This location can receive the recovered evidence.<br><button id="ledgerDecision">Decide Recipient</button></div>`:'',fqAvailable.length?`<div class="success notice"><b>Faction work available:</b> ${fqAvailable.map(x=>esc(x.name)).join(', ')}<br><button id="factionQuestBtn">View Faction Questlines</button></div>`:'',fqDecision?`<div class="warning notice"><b>Faction quest decision ready.</b><br><button id="factionDecisionBtn">Make Decision</button></div>`:'',regionConnectionAt(loc.id)?`<div class="mountain-route notice"><b>${esc(regionConnectionAt(loc.id).name)}</b><br>${esc(regionConnectionAt(loc.id).desc)}<br><button id="areaRegionTravel">Regional Travel</button></div>`:'',loc.id==='shantium'?`<div class="success notice"><b>Guardian Hall:</b> Shantium is the company’s permanent home base.<br><button id="areaHomeBase">Open Home Base</button></div>`:'',site?`<div class="success notice"><b>Adventure Site:</b> ${esc(site.name)} • ${adventureProgressText(site)}<br><button id="exploreSite">Explore Interior</button></div>`:'',townActions,peopleActions,partyActions));
+ overlay(SOSText("exploration_wilderness_artifacts.showWorldArea.009",esc(loc.name),esc(loc.desc),state.world.settlements[loc.id]?`${settlementSnapshotHTML(loc.id,true)}<p class="living-welcome">${esc(settlementWelcomeText(loc.id))}</p><div class="town-scene-inline">${esc(townSceneText(loc.id))}</div>${settlementProblemHTML(loc.id)}${settlementEventHTML(loc.id)}`:'',opportunitiesHere.map(opportunityMarkerHTML).join(''),regionalHere.length?`<div class="regional-thread-card"><b>Regional consequence:</b><br>${regionalHere.map(t=>`${esc(t.title)} — ${esc(t.notes[t.notes.length-1]||t.text)}`).join('<br>')}<br><button id="areaRegionalSimulation">Region Overview</button></div>`:'',storyHere.length?`<div class="success notice"><b>Companion story:</b><br>${storyHere.map(x=>`${esc(state.party.members[x.id].name)} — ${esc(x.d.title)}`).join('<br>')}<br>${storyHere.map(x=>`<button data-storyhere="${x.id}">Continue ${esc(x.d.title)}</button>`).join('')}</div>`:'',battle?`<div class="warning notice"><b>Nearby battle:</b> ${esc(battle[0].name)} vs ${esc(battle[1].name)}<br><button id="viewBattle">Intervene</button></div>`:'',maps.length?`<div class="success notice"><b>Treasure lead:</b> ${maps.map(m=>esc(m.name)).join(', ')}<br>${maps.map(m=>`<button data-digmap="${m.id}">Follow ${esc(m.name)}</button>`).join('')}</div>`:'',ledgerReady?`<div class="warning notice"><b>The Watchfort Ledger:</b> This location can receive the recovered evidence.<br><button id="ledgerDecision">Decide Recipient</button></div>`:'',fqAvailable.length?`<div class="success notice"><b>Faction work available:</b> ${fqAvailable.map(x=>esc(x.name)).join(', ')}<br><button id="factionQuestBtn">View Faction Questlines</button></div>`:'',fqDecision?`<div class="warning notice"><b>Faction quest decision ready.</b><br><button id="factionDecisionBtn">Make Decision</button></div>`:'',regionConnectionAt(loc.id)?`<div class="mountain-route notice"><b>${esc(regionConnectionAt(loc.id).name)}</b><br>${esc(regionConnectionAt(loc.id).desc)}<br><button id="areaRegionTravel">Regional Travel</button></div>`:'',loc.id==='shantium'&&canAccessGuardianHall()?`<div class="success notice"><b>Guardian Hall:</b> Shantium is the company’s permanent home base.<br><button id="areaHomeBase">Open Home Base</button></div>`:'',site?`<div class="success notice"><b>Adventure Site:</b> ${esc(site.name)} • ${adventureProgressText(site)}<br><button id="exploreSite">Explore Interior</button></div>`:'',townActions,peopleActions,partyActions));
  wireSettlementEvent(loc.id);if($('#areaTownLife'))$('#areaTownLife').onclick=()=>showTownLife(loc.id);document.querySelectorAll('[data-openopportunity]').forEach(b=>b.onclick=()=>showRegionalOpportunity(b.dataset.openopportunity));if($('#areaRegionalSimulation'))$('#areaRegionalSimulation').onclick=showRegionOverview;if($('#helpLocalProblem'))$('#helpLocalProblem').onclick=()=>helpSettlementProblem(loc.id);document.querySelectorAll('[data-storyhere]').forEach(b=>b.onclick=()=>{if(!companionStoryScene(b.dataset.storyhere))showCompanionStory(b.dataset.storyhere)});if($('#areaRegionTravel'))$('#areaRegionTravel').onclick=showRegionTravel;if($('#areaHomeBase'))$('#areaHomeBase').onclick=showHomeBase;if($('#factionQuestBtn'))$('#factionQuestBtn').onclick=showFactionQuestlines;if($('#factionDecisionBtn'))$('#factionDecisionBtn').onclick=showFactionQuestDecision;document.querySelectorAll('[data-digmap]').forEach(b=>b.onclick=()=>recoverTreasureMap(b.dataset.digmap));if($('#ledgerDecision'))$('#ledgerDecision').onclick=showLedgerResolution;document.querySelectorAll('[data-seekcomp]').forEach(b=>b.onclick=()=>showPersistentCompanion(b.dataset.seekcomp));document.querySelectorAll('[data-nearparty]').forEach(b=>b.onclick=()=>showWorldParty(b.dataset.nearparty));
  if($('#exploreSite'))$('#exploreSite').onclick=()=>showAdventureSite(site.location);if($('#viewBattle'))$('#viewBattle').onclick=()=>showRegionalBattle(battle[0],battle[1],battle[2]);$('#askLocals').onclick=askAroundWorld;if($('#areaServices'))$('#areaServices').onclick=()=>navigateTownMenu('services',{locId:loc.id});if($('#areaPeople'))$('#areaPeople').onclick=()=>navigateTownMenu('people',{locId:loc.id});if($('#areaFactions'))$('#areaFactions').onclick=()=>navigateTownMenu('factions',{locId:loc.id});if($('#areaPolitics'))$('#areaPolitics').onclick=()=>navigateTownMenu('politics',{locId:loc.id});if($('#areaContracts'))$('#areaContracts').onclick=()=>navigateTownMenu('contracts',{locId:loc.id});if($('#areaCouncilHall'))$('#areaCouncilHall').onclick=()=>openLocation('council');wireClose();
 }
@@ -390,3 +419,163 @@ function askAroundWorld(){
  const rumors=(state.world.news||[]).slice(-5);if(rumors.length)return actionResult(SOSText("exploration_wilderness_artifacts.askAroundWorld.012"),pick(rumors).text,'info',renderOpenWorld);
  actionResult(SOSText("exploration_wilderness_artifacts.askAroundWorld.013"),SOSText("exploration_wilderness_artifacts.askAroundWorld.014",loc.name),'info',renderOpenWorld)
 }
+
+/* v1.6.4 — Exploration III
+   Persistent sites, multi-stage environmental challenges, investigators/occupants,
+   regional legends, hidden routes, and consequences that feed back into the living world. */
+
+const EXPLORATION_III_SITE_PROFILES={
+ ashfarm:{legend:'The Black Orchard',summary:'Travelers insist the ash around the farm never blows toward Shantium.',hazard:'smoke',linkedSettlement:'southroad',worldEffect:'recovery',routeTo:'southroad'},
+ oldshrine:{legend:'The Bell Beneath the Hill',summary:'Old road prayers claim a buried bell rings before violence reaches the north road.',hazard:'collapse',linkedSettlement:'northgate',worldEffect:'security',routeTo:'northgate'},
+ wolfcave:{legend:'The White Fang Den',summary:'Hunters tell of a cave network used by beasts, fugitives, and scouts for generations.',hazard:'beasts',linkedSettlement:'westwood',worldEffect:'security',routeTo:'westwood'},
+ battlefield:{legend:'The Unburied Standard',summary:'A lost field standard is said to mark a forgotten route through the old defensive earthworks.',hazard:'unstable_ground',linkedSettlement:'stonebridge',worldEffect:'route',routeTo:'stonebridge'},
+ smugglerhide:{legend:'The Reed Door',summary:'Boatmen whisper that one reed-lined cut bypasses the watched road entirely.',hazard:'flooding',linkedSettlement:'river',worldEffect:'trade',routeTo:'river'},
+ collapsedmine:{legend:'The Second Gallery',summary:'Miners still argue that the collapse sealed a richer working than the one officially abandoned.',hazard:'collapse',linkedSettlement:'quarry',worldEffect:'trade',routeTo:'quarry'},
+ hermit:{legend:'The Last Surveyor',summary:'A solitary mapmaker supposedly recorded paths no modern road patrol uses.',hazard:'weather',linkedSettlement:'eastwatch',worldEffect:'route',routeTo:'eastwatch'},
+ oldtower:{legend:'The Far Lantern',summary:'The ruined tower was once part of a chain of signal posts spanning the eastern approaches.',hazard:'heights',linkedSettlement:'eastwatch',worldEffect:'security',routeTo:'eastwatch'},
+ sinkhole:{legend:'The Hollow Wind',summary:'Locals say the fissures below the sinkhole breathe before storms and troop movements.',hazard:'fumes',linkedSettlement:'southroad',worldEffect:'scouting',routeTo:'southroad'},
+ banditcamp:{legend:'The Knives Road',summary:'The camp sits over an older smugglers’ path that predates the modern road.',hazard:'occupants',linkedSettlement:'northgate',worldEffect:'security',routeTo:'northgate'}
+};
+
+const EXPLORATION_III_HAZARDS={
+ smoke:{name:'Ash and Smoke',stat:'wis',dc:14,success:'The party reads the wind and crosses the worst ash safely.',failure:'Smoke and drifting ash force a painful, exhausting passage.',hp:[2,6]},
+ collapse:{name:'Unstable Masonry',stat:'dex',dc:15,success:'Loose stone is identified and crossed without bringing the structure down.',failure:'Stone breaks loose during the crossing.',hp:[4,10]},
+ beasts:{name:'Predator Signs',stat:'wis',dc:15,success:'Tracks and scent are read early enough to avoid being surrounded.',failure:'The party pushes too far before recognizing the danger.',hp:[3,8]},
+ unstable_ground:{name:'Broken Earthworks',stat:'dex',dc:14,success:'The safest line through the collapsed works is found.',failure:'A concealed drop and rotten timbers slow the expedition.',hp:[3,8]},
+ flooding:{name:'Flooded Passage',stat:'str',dc:15,success:'The party forces a safe line through the flooded cut.',failure:'Cold water and a hard current batter the party.',hp:[3,9]},
+ weather:{name:'Exposed Ground',stat:'wis',dc:13,success:'The expedition uses the terrain and reaches shelter before the weather turns.',failure:'Exposure drains the party before shelter is found.',hp:[2,7]},
+ heights:{name:'Ruined Heights',stat:'dex',dc:15,success:'The ascent is secured before anyone commits weight to the broken stairs.',failure:'A bad section gives way during the climb.',hp:[4,9]},
+ fumes:{name:'Deep Fumes',stat:'wis',dc:16,success:'The strange air is recognized and the party waits for a safer draft.',failure:'The party presses into bad air and pays for it.',hp:[4,10]},
+ occupants:{name:'Occupied Ground',stat:'cha',dc:15,success:'Signs of occupation are read correctly and the party advances without walking into a prepared position.',failure:'The expedition gives away its approach to whoever is using the site.',hp:[2,6]}
+};
+
+const EXPLORATION_III_OCCUPANTS=[
+ {kind:'investigators',names:['A survey crew','A local antiquarian team','A pair of independent cartographers'],attitude:'neutral'},
+ {kind:'salvagers',names:['A salvage crew','Independent scavengers','A rough recovery crew'],attitude:'wary'},
+ {kind:'pilgrims',names:['A small pilgrim party','Local shrine keepers','Traveling devotees'],attitude:'friendly'},
+ {kind:'squatters',names:['Displaced travelers','A hidden family camp','Road refugees using the ruins'],attitude:'neutral'},
+ {kind:'hostiles',names:['Armed looters','A concealed raiding party','Bandit scouts'],attitude:'hostile'}
+];
+
+function ensureExplorationIIIState(){
+ const E=explorationState();
+ if(!E.explorationIII||typeof E.explorationIII!=='object')E.explorationIII={sites:{},legends:{},hiddenRoutes:{},history:[],regionDiscoveries:{}};
+ const X=E.explorationIII;if(!X.sites)X.sites={};if(!X.legends)X.legends={};if(!X.hiddenRoutes)X.hiddenRoutes={};if(!Array.isArray(X.history))X.history=[];if(!X.regionDiscoveries)X.regionDiscoveries={};
+ return X
+}
+function explorationIIIProfile(id){return EXPLORATION_III_SITE_PROFILES[id]||null}
+function explorationIIISiteState(id,skipOccupantInit=false){
+ const X=ensureExplorationIIIState(),p=explorationIIIProfile(id);if(!X.sites[id])X.sites[id]={phase:'discovered',condition:'untouched',hazardResolved:false,occupant:null,occupantStatus:'unknown',investigations:0,discoveries:[],consequenceApplied:false,lastChangedDay:state.world.day};
+ const S=X.sites[id];
+ // v1.6.4.4: occupant initialization must not recurse back into itself.
+ if(!skipOccupantInit&&p&&!S.occupant&&interiorState(id).visited.length)assignExplorationIIIOccupant(id,S);
+ return S
+}
+function explorationIIIRecord(id,text,tone='info'){
+ const X=ensureExplorationIIIState(),S=explorationIIISiteState(id);S.lastChangedDay=state.world.day;S.discoveries.push({day:state.world.day,text});S.discoveries=S.discoveries.slice(-12);X.history.push({day:state.world.day,site:id,text,tone});X.history=X.history.slice(-80);recordWorldHistory(`${worldLocation(id).name}: ${text}`,tone,'exploration')
+}
+function explorationLegendState(id){const X=ensureExplorationIIIState();if(!X.legends[id])X.legends[id]={known:false,day:null,source:null};return X.legends[id]}
+function learnExplorationLegend(id,source='field investigation'){
+ const p=explorationIIIProfile(id);if(!p)return false;const L=explorationLegendState(id);if(L.known)return false;L.known=true;L.day=state.world.day;L.source=source;explorationIIIRecord(id,`Regional legend recorded: ${p.legend}.`,'good');return true
+}
+function knownRegionalLegends(region=currentWorldRegion()){
+ return Object.keys(EXPLORATION_III_SITE_PROFILES).filter(id=>locationRegion(id)===region&&explorationLegendState(id).known)
+}
+function explorationIIIHiddenRoute(id){return ensureExplorationIIIState().hiddenRoutes[id]||null}
+function unlockExplorationIIIHiddenRoute(id){
+ const p=explorationIIIProfile(id);if(!p||!p.routeTo)return false;const X=ensureExplorationIIIState();if(X.hiddenRoutes[id]?.unlocked)return false;X.hiddenRoutes[id]={unlocked:true,day:state.world.day,to:p.routeTo,name:`Hidden route to ${worldLocation(p.routeTo).name}`,uses:0};explorationIIIRecord(id,`A usable hidden route to ${worldLocation(p.routeTo).name} has been mapped.`,'good');gainScouting(1);return true
+}
+function assignExplorationIIIOccupant(id,siteState=null){
+ const p=explorationIIIProfile(id),S=siteState||explorationIIISiteState(id,true);if(!p||S.occupant)return S.occupant;
+ let pool=EXPLORATION_III_OCCUPANTS;if(['banditcamp','smugglerhide','wolfcave'].includes(id))pool=pool.concat(EXPLORATION_III_OCCUPANTS.filter(x=>x.kind==='hostiles'));
+ const d=pick(pool),name=pick(d.names);S.occupant={id:`expocc_${id}_${state.world.day}`,name,kind:d.kind,attitude:d.attitude,arrivedDay:state.world.day};S.occupantStatus='present';explorationIIIRecord(id,`${name} are now associated with the site.`,'info');return S.occupant
+}
+function explorationIIIOccupantText(id){
+ const S=explorationIIISiteState(id),o=S.occupant;if(!o||S.occupantStatus==='gone')return 'No current occupants or investigators are known.';return `${o.name} • ${o.kind} • ${S.occupantStatus}`
+}
+function resolveExplorationIIIHazard(id){
+ const p=explorationIIIProfile(id),S=explorationIIISiteState(id);if(!p||S.hazardResolved)return {ok:true,text:'The main environmental hazard has already been addressed.'};const h=EXPLORATION_III_HAZARDS[p.hazard];if(!h)return {ok:true,text:'No major environmental hazard remains.'};
+ advanceWorldDays(1,`Navigating ${h.name} at ${worldLocation(id).name}`);const ok=adventureSkillCheck(h.stat,h.dc)||explorationSearchSkill()>=h.dc-5;S.hazardResolved=true;S.phase='penetrated';
+ if(ok){explorationIIIRecord(id,`${h.name} was successfully navigated.`,'good');return {ok:true,text:h.success}}
+ const dmg=rnd(h.hp[0],h.hp[1]);state.guardian.hp=Math.max(1,state.guardian.hp-dmg);explorationIIIRecord(id,`${h.name} injured or exhausted the expedition (${dmg} HP).`,'bad');return {ok:false,text:`${h.failure} Guardian loses ${dmg} HP.`}
+}
+function resolveExplorationIIIOccupant(id){
+ const S=explorationIIISiteState(id),o=S.occupant||assignExplorationIIIOccupant(id);if(!o||S.occupantStatus!=='present')return {tone:'info',text:'No active occupants remain to deal with.'};
+ advanceWorldDays(1,`Dealing with occupants at ${worldLocation(id).name}`);S.investigations++;
+ if(o.attitude==='friendly'){S.occupantStatus='cooperating';gainScouting(1);learnExplorationLegend(id,o.name);explorationIIIRecord(id,`${o.name} shared what they know and agreed to coexist with the expedition.`,'good');return {tone:'good',text:`${o.name} cooperate and share local knowledge.`}}
+ if(o.attitude==='neutral'){const ok=adventureSkillCheck('cha',13)||state.reputation>=8;if(ok){S.occupantStatus='cooperating';learnExplorationLegend(id,o.name);explorationIIIRecord(id,`${o.name} accepted an arrangement with the Guardian.`,'good');return {tone:'good',text:`${o.name} accept an arrangement and exchange information.`}}S.occupantStatus='wary';explorationIIIRecord(id,`${o.name} remain wary and unwilling to share the site.`,'info');return {tone:'info',text:`${o.name} remain wary. They do not leave, but they avoid the Player Party.`}}
+ if(o.attitude==='wary'){const ok=adventureSkillCheck('cha',15);S.occupantStatus=ok?'cooperating':'gone';explorationIIIRecord(id,ok?`${o.name} agreed to a controlled salvage arrangement.`:`${o.name} withdrew rather than risk a confrontation.`,'info');return {tone:ok?'good':'info',text:ok?`${o.name} accept strict salvage terms.`:`${o.name} leave the site rather than contest it.`}}
+ S.occupantStatus='gone';const linked=explorationIIIProfile(id)?.linkedSettlement;if(linked&&state.world.settlements?.[linked])settlementState(linked).security=Math.min(100,settlementState(linked).security+1);explorationIIIRecord(id,`${o.name} were driven away from the site.`,'good');return {tone:'good',text:`${o.name} abandon the site after the Guardian's intervention.`}
+}
+function applyExplorationIIIWorldConsequence(id){
+ const p=explorationIIIProfile(id),S=explorationIIISiteState(id);if(!p||S.consequenceApplied)return null;const loc=p.linkedSettlement&&state.world.settlements?.[p.linkedSettlement]?p.linkedSettlement:null;let text='';
+ if(loc){const ss=settlementState(loc);if(p.worldEffect==='security'){ss.security=Math.min(100,ss.security+3);progressSettlementProblem(loc,1,`information and pressure relieved by exploration of ${worldLocation(id).name}`);text=`Security around ${worldLocation(loc).name} improves as the site is understood and cleared.`}
+ else if(p.worldEffect==='trade'){ss.prosperity=Math.min(100,ss.prosperity+2);if(typeof tradeStock==='function'&&typeof setTradeStock==='function'){/* optional newer economy helper */}progressSettlementProblem(loc,1,`access and supplies improved through ${worldLocation(id).name}`);text=`Trade and supply conditions around ${worldLocation(loc).name} improve.`}
+ else if(p.worldEffect==='route'){addRoutePressure(id,loc,-2);ss.security=Math.min(100,ss.security+1);text=`A safer route and better local knowledge reduce pressure near ${worldLocation(loc).name}.`}
+ else if(p.worldEffect==='recovery'){ss.prosperity=Math.min(100,ss.prosperity+2);text=`Recovered knowledge and materials modestly improve conditions around ${worldLocation(loc).name}.`}
+ else {gainScouting(2);text=`The expedition materially improves regional intelligence around ${worldLocation(loc).name}.`}}
+ else{gainScouting(2);text='The completed expedition materially improves regional intelligence.'}
+ S.consequenceApplied=true;S.phase='resolved';S.condition='understood';explorationIIIRecord(id,text,'good');recordWorldNews(`${worldLocation(id).name} has changed after the Guardian's expedition. ${text}`,'good');return text
+}
+function explorationIIICompletionCheck(id){
+ const d=interiorDef(id),I=interiorState(id),S=explorationIIISiteState(id);if(!d||!I.completed)return null;learnExplorationLegend(id,'completed expedition');unlockExplorationIIIHiddenRoute(id);if(!S.occupant)assignExplorationIIIOccupant(id);const c=applyExplorationIIIWorldConsequence(id);return c
+}
+function useExplorationIIIHiddenRoute(id){
+ const R=explorationIIIHiddenRoute(id);if(!R?.unlocked)return showWildernessSite(id);const dest=R.to;R.uses=(R.uses||0)+1;advanceWorldDays(1,`Using the hidden route from ${worldLocation(id).name} to ${worldLocation(dest).name}`);state.world.location=dest;state.world.region=locationRegion(dest);const F=playerPartyFieldState();const dl=worldLocation(dest);F.active=!state.world.settlements?.[dest];F.region=locationRegion(dest);F.x=dl.x;F.y=dl.y;F.anchorLocation=dest;F.targetPartyId=null;ensureMapView().lastLocation=null;recordWorldHistory(`Hidden route used: ${worldLocation(id).name} → ${worldLocation(dest).name}.`,'good','exploration');save();closeOverlay();renderOpenWorld()
+}
+function showExplorationIIISitePanel(id){
+ const p=explorationIIIProfile(id);if(!p)return;const S=explorationIIISiteState(id),L=explorationLegendState(id),R=explorationIIIHiddenRoute(id),dialog=document.querySelector('.dialog');if(!dialog||dialog.querySelector('.exploration-iii-panel'))return;
+ const box=document.createElement('div');box.className='exploration-iii-panel';box.innerHTML=`<h3>Expedition State</h3><div class="exploration-iii-grid"><div><b>Site condition</b><span>${esc(S.condition)}</span></div><div><b>Expedition phase</b><span>${esc(S.phase)}</span></div><div><b>Environmental risk</b><span>${esc(S.hazardResolved?'addressed':EXPLORATION_III_HAZARDS[p.hazard]?.name||'unknown')}</span></div><div><b>Occupants / investigators</b><span>${esc(explorationIIIOccupantText(id))}</span></div></div><div class="exploration-legend ${L.known?'known':''}"><b>${L.known?esc(p.legend):'Unconfirmed regional legend'}</b><br>${L.known?esc(p.summary):'Investigate the site, speak with occupants, or complete the interior to learn what local stories are attached to this place.'}</div>${!S.hazardResolved?'<button id="expIIIHazard">Address Environmental Hazard</button>':''}${S.occupantStatus==='present'?'<button id="expIIIOccupant">Approach Occupants / Investigators</button>':''}${R?.unlocked?`<button id="expIIIRoute">Use ${esc(R.name)}</button>`:''}${S.discoveries.length?`<details><summary>Persistent site history</summary>${S.discoveries.slice(-6).reverse().map(x=>`<div class="card compact"><b>Day ${x.day}</b><br>${esc(x.text)}</div>`).join('')}</details>`:''}`;
+ const footer=dialog.querySelector('.dialog-footer');dialog.insertBefore(box,footer||null);
+ if($('#expIIIHazard'))$('#expIIIHazard').onclick=()=>{const r=resolveExplorationIIIHazard(id);save();actionResult(EXPLORATION_III_HAZARDS[p.hazard]?.name||'Environmental Challenge',r.text,r.ok?'good':'bad',()=>showWildernessSite(id))};
+ if($('#expIIIOccupant'))$('#expIIIOccupant').onclick=()=>{const r=resolveExplorationIIIOccupant(id);save();actionResult('Site Occupants',r.text,r.tone,()=>showWildernessSite(id))};
+ if($('#expIIIRoute'))$('#expIIIRoute').onclick=()=>useExplorationIIIHiddenRoute(id)
+}
+function showExplorationIIILegends(){
+ const X=ensureExplorationIIIState(),regions=(state.world.unlockedRegions||['shantium']);const cards=[];for(const region of regions){const defs=Object.entries(EXPLORATION_III_SITE_PROFILES).filter(([id])=>locationRegion(id)===region);if(!defs.length)continue;cards.push(`<h3>${esc(regionDef(region).name)} Legends</h3>${defs.map(([id,p])=>{const L=explorationLegendState(id);return `<div class="exploration-legend ${L.known?'known':''}"><b>${L.known?esc(p.legend):'Unknown legend'}</b><small>${L.known?` • ${esc(worldLocation(id).name)} • learned Day ${L.day}`:` • ${esc(worldLocation(id).name)}`}</small><p>${L.known?esc(p.summary):'This story has not yet been confirmed.'}</p></div>`}).join('')}`)}
+ overlay(`<h2>Regional Legends</h2><p>Legends are persistent leads tied to real places. Clearing sites, investigating clues, and speaking with people at those sites can confirm them.</p>${cards.join('')}<div class="dialog-footer"><button id="close">Close</button></div>`,true);wireClose()
+}
+
+/* Expand the original major sites into longer expeditions. Existing saves keep cleared rooms;
+   only the new areas remain to investigate. */
+function addExplorationIIIRoom(siteId,fromId,room){const d=HIDDEN_INTERIORS[siteId];if(!d||d.rooms.some(x=>x.id===room.id))return;const from=d.rooms.find(x=>x.id===fromId);if(from&&!from.links.includes(room.id))from.links.push(room.id);d.rooms.push(room)}
+addExplorationIIIRoom('ashfarm','cellar',{id:'orchard',name:'Black Orchard',text:'Behind a collapsed wall, rows of dead trees point toward a narrow drainage cut. Old markers suggest the farm once served as more than a homestead.',links:['cellar','culvert'],action:'observe'});
+addExplorationIIIRoom('ashfarm','orchard',{id:'culvert',name:'Ash Culvert',text:'A low stone culvert continues beneath the field toward the old road. Fresh signs show that people still use it.',links:['orchard'],action:'lore'});
+addExplorationIIIRoom('oldshrine','crypt',{id:'undercrypt',name:'Undercrypt',text:'A broken slab reveals an older chamber beneath the shrine, packed with road tokens and weathered warning marks.',links:['crypt','bellway'],action:'trap'});
+addExplorationIIIRoom('oldshrine','undercrypt',{id:'bellway',name:'Bell Passage',text:'A narrow passage follows the hill toward the north road. Its stonework is older than the shrine above.',links:['undercrypt'],action:'lore'});
+addExplorationIIIRoom('collapsedmine','toolroom',{id:'deepgallery',name:'Deep Gallery',text:'The abandoned tools give way to an intact gallery with old survey marks and a persistent draft from beyond the collapse.',links:['toolroom','ventcut'],action:'trap'});
+addExplorationIIIRoom('collapsedmine','deepgallery',{id:'ventcut',name:'Ventilation Cut',text:'A narrow cut climbs toward daylight and overlooks an old haul route no longer shown on current maps.',links:['deepgallery'],action:'observe'});
+addExplorationIIIRoom('oldtower','roof',{id:'signalroom',name:'Signal Room',text:'Below the ruined roof is a cramped signal room with sight-lines and coded marks pointing toward the eastern approaches.',links:['roof','postern'],action:'lore'});
+addExplorationIIIRoom('oldtower','signalroom',{id:'postern',name:'Hidden Postern',text:'A concealed stair exits on the far side of the ridge, bypassing the obvious tower approach.',links:['signalroom'],action:'observe'});
+addExplorationIIIRoom('sinkhole','sidechamber',{id:'windchamber',name:'Wind Chamber',text:'The stone narrows into a chamber where shifting drafts carry distant sounds from the southern road.',links:['sidechamber','fissurepath'],action:'strange'});
+addExplorationIIIRoom('sinkhole','windchamber',{id:'fissurepath',name:'Fissure Path',text:'A tight natural corridor reaches a second opening hidden from the ordinary approach.',links:['windchamber'],action:'observe'});
+
+/* Major-site completion is based on finishing the whole mapped interior, regardless of room order. */
+for(const id of Object.keys(EXPLORATION_III_SITE_PROFILES)){const d=HIDDEN_INTERIORS[id];if(d)for(const r of d.rooms)r.final=false}
+
+/* Completion must now mean the entire expanded interior, not just the old final room. */
+const _explorationIIIResolveInteriorAction=resolveInteriorAction;
+resolveInteriorAction=function(id,roomId){
+ const p=explorationIIIProfile(id),S=p?explorationIIISiteState(id):null,I=interiorState(id),d=interiorDef(id),r=interiorRoom(id,roomId);if(!d||!r)return;
+ /* v1.6.4.2: environmental setup must never consume a labeled room-action click. */
+ if(p&&!S.hazardResolved){const h=resolveExplorationIIIHazard(id);I.notes.push(`${EXPLORATION_III_HAZARDS[p.hazard]?.name||'Environmental Challenge'}: ${h.text}`)}
+ if(p&&!I.completed)r.final=d.rooms.every(x=>x.id===roomId||I.cleared.includes(x.id));
+ _explorationIIIResolveInteriorAction(id,roomId);
+ if(p&&r)r.final=false;if(p&&I.completed){explorationIIICompletionCheck(id);save()}
+};
+
+const _explorationIIIShowWildernessSite=showWildernessSite;
+showWildernessSite=function(id=state.world.location){
+ _explorationIIIShowWildernessSite(id);const site=worldLocation(id);if(site&&!site.minor&&explorationIIIProfile(id)){explorationIIISiteState(id);if(interiorState(id).completed)explorationIIICompletionCheck(id);showExplorationIIISitePanel(id)}
+};
+
+const _explorationIIIShowExplorationJournal=showExplorationJournal;
+showExplorationJournal=function(){
+ _explorationIIIShowExplorationJournal();const dialog=document.querySelector('.dialog');if(!dialog||dialog.querySelector('#explorationLegends'))return;const footer=dialog.querySelector('.dialog-footer');const btn=document.createElement('button');btn.id='explorationLegends';btn.textContent='Regional Legends';btn.onclick=showExplorationIIILegends;(footer||dialog).appendChild(btn)
+};
+
+/* Surveying can reveal legends even when it does not discover a new site. */
+const _explorationIIISurveyCurrentRegion=surveyCurrentRegion;
+surveyCurrentRegion=function(){
+ const before=knownRegionalLegends(currentWorldRegion()).length;_explorationIIISurveyCurrentRegion();const candidates=Object.keys(EXPLORATION_III_SITE_PROFILES).filter(id=>locationRegion(id)===currentWorldRegion()&&!explorationLegendState(id).known&&state.world.discovered.includes(id));if(candidates.length&&chance(.24)){learnExplorationLegend(pick(candidates),'regional survey');save();if(knownRegionalLegends(currentWorldRegion()).length>before)log('A regional legend has been added to the Exploration Journal.','good')}
+};

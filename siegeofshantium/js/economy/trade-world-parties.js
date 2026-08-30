@@ -1,13 +1,3 @@
-function interregionalTradeSignals(limit=6){
- if(!crossRegionTradeUnlocked())return [];const unlocked=state.world.unlockedRegions||['shantium'],settlements=unlocked.flatMap(r=>regionalSettlements(r)),rows=[];
- for(const dest of settlements)for(const g of TRADE_GOODS){
-  const dStock=tradeStock(dest.id,g.id),demand=tradeDemandScore(dest.id,g.id);if(demand<1&&dStock>3)continue;
-  const sources=settlements.filter(s=>locationRegion(s.id)!==locationRegion(dest.id)).map(s=>({s,stock:tradeStock(s.id,g.id),price:tradePrice(s.id,g.id),role:tradeGoodRole(s.id,g.id)})).filter(x=>x.stock>=3).sort((a,b)=>(b.role==='source')-(a.role==='source')||a.price-b.price);
-  const src=sources[0];if(!src)continue;const sell=tradePrice(dest.id,g.id),margin=sell-src.price,days=tradeRouteDistanceDays(src.s.id,dest.id),score=margin+demand*8+Math.max(0,4-dStock)*5+(src.role==='source'?7:0)-days;
-  if(score>8)rows.push({from:src.s.id,to:dest.id,gid:g.id,margin,days,risk:crossRegionRouteLabel(src.s.id,dest.id),score,need:demand,stock:dStock})
- }
- const seen=new Set();return rows.sort((a,b)=>b.score-a.score).filter(x=>{const k=`${x.gid}:${locationRegion(x.from)}:${locationRegion(x.to)}`;if(seen.has(k))return false;seen.add(k);return true}).slice(0,limit)
-}
 function interregionalSignalsHTML(limit=4){
  const rows=interregionalTradeSignals(limit);if(!rows.length)return SOSText("economy_trade_world_parties.interregionalSignalsHTML.001");
  return rows.map(r=>SOSText("economy_trade_world_parties.interregionalSignalsHTML.002",esc(worldGood(r.gid).name),esc(regionDef(locationRegion(r.from)).name),esc(regionDef(locationRegion(r.to)).name),esc(worldLocation(r.from).name),esc(worldLocation(r.to).name),r.margin,r.days,esc(r.risk),r.stock)).join('')
@@ -33,12 +23,15 @@ function tradeEconomyState(){ensureWorldState();return state.world.tradeEconomy}
 const CROSS_REGION_TRADE={
  routes:[
   {id:'northwest_high_road',connection:'northwest_highroad',name:SOSText("economy_trade_world_parties.tradeEconomyState.001")},
-  {id:'eastern_redstone_road',connection:'eastern_redstone_road',name:SOSText("economy_trade_world_parties.tradeEconomyState.002")}
+  {id:'eastern_redstone_road',connection:'eastern_redstone_road',name:SOSText("economy_trade_world_parties.tradeEconomyState.002")},
+  {id:'frozen_north_road',connection:'grayhaven_exium',name:'Frozen North Road'},
+  {id:'high_crown_ice_road',connection:'crownpass_exium',name:'High Crown–Exium Ice Road'}
  ],
  exports:{
-  shantium:{food:2,medicine:2,cloth:2,luxury:2,tools:1},
-  bluestone:{iron:3,tools:3,timber:2,food:2,medicine:1},
-  redstone:{food:3,timber:3,tools:2,cloth:2,luxury:2}
+  shantium:{food:3,medicine:2,cloth:2,luxury:1,tools:1,hides:1,livestock:1,salt:2,spirits:1,dye:2},
+  bluestone:{iron:4,tools:3,timber:3,food:2,medicine:1,stone:4,hides:2,livestock:1,salt:1,spirits:1,dye:1},
+  redstone:{food:4,timber:3,tools:2,cloth:2,luxury:1,hides:2,livestock:1,salt:3,spirits:1,dye:3},
+  farnorth:{hides:5,stone:4,iron:3,food:2,tools:2,livestock:1,spirits:1}
  }
 };
 function crossRegionTradeUnlocked(){return (state.world?.unlockedRegions||[]).length>1}
@@ -63,9 +56,15 @@ function crossRegionRoutePlan(from,to){
 }
 function crossRegionRouteDays(a,b){return crossRegionRoutePlan(a,b).days}
 function directlyConnectedDestinationRegions(from){const r=locationRegion(from),unlocked=state.world.unlockedRegions||['shantium'];return connectedRegions(r).filter(x=>unlocked.includes(x))}
+function crossRegionTradeDestinationAllowed(from,dest){
+ if(!from||!dest)return false;const fr=locationRegion(from),dr=locationRegion(dest);
+ // Far North isolation: routine foreign trade goes no farther than Exium. Northern internal merchants redistribute from there.
+ if(dr==='farnorth'&&fr!=='farnorth')return dest==='exium';
+ return true
+}
 function crossRegionDestination(from){
  if(!crossRegionTradeUnlocked())return null;const candidates=[];
- for(const other of directlyConnectedDestinationRegions(from))for(const loc of regionalSettlements(other)){if(loc.hidden)continue;let score=0;for(const g of TRADE_GOODS)score+=(tradeGoodRole(from,g.id)==='source'?2:0)+tradeDemandScore(loc.id,g.id)+(tradePrice(loc.id,g.id)-tradePrice(from,g.id))/18;candidates.push({id:loc.id,score})}
+ for(const other of directlyConnectedDestinationRegions(from))for(const loc of regionalSettlements(other)){if(loc.hidden||!crossRegionTradeDestinationAllowed(from,loc.id))continue;let score=0;for(const g of TRADE_GOODS)score+=(tradeGoodRole(from,g.id)==='source'?2:0)+tradeDemandScore(loc.id,g.id)+(tradePrice(loc.id,g.id)-tradePrice(from,g.id))/18;candidates.push({id:loc.id,score})}
  return candidates.sort((a,b)=>b.score-a.score)[0]?.id||null
 }
 function crossRegionMerchantManifest(origin,destination,lots=rnd(3,7)){
@@ -75,11 +74,12 @@ function crossRegionMerchantManifest(origin,destination,lots=rnd(3,7)){
 }
 function assignCrossRegionMerchant(p,destination=null){
  if(!p||p.kind!=='merchant'||!crossRegionTradeUnlocked())return p;const dest=destination||crossRegionDestination(p.location);if(!dest)return p;
- p.origin=p.location;p.destination=dest;p.region=locationRegion(p.location);p.crossRegion=true;p.tradeRoute=connectionRouteName(p.origin,dest);p.travelTotal=p.travelLeft=crossRegionRouteDays(p.location,dest);p.manifest=crossRegionMerchantManifest(p.origin,dest,p.cargo||rnd(3,7));p.cargo=manifestLots(p.manifest);
+ p.origin=p.location;p.destination=dest;p.region=locationRegion(p.location);p.crossRegion=true;p.tradeRoute=connectionRouteName(p.origin,dest);p.travelTotal=p.travelLeft=crossRegionRouteDays(p.location,dest);p.manifest=crossRegionMerchantManifest(p.origin,dest,p.cargo||rnd(3,7));p.cargo=manifestLots(p.manifest);p.economyCargoReserved=false;reserveMerchantCargoAtOrigin(p);
  crossRegionTradeState().flows.push({day:state.world.day,status:'departed',partyId:p.id,party:p.name,origin:p.origin,destination:p.destination,route:p.tradeRoute,manifest:{...p.manifest}});crossRegionTradeState().flows=crossRegionTradeState().flows.slice(-60);return p
 }
 function regionalMerchantStarts(region){
- return {shantium:['shantium','river','stonebridge','northgate','redoubt'],bluestone:['zion','norwegian','winterstone','ebonheart','lowcreek'],redstone:['sengia','lockwood','grayhaven','briarlake','glenbrook','tyrdon','pyreglade']}[region]||regionalSettlements(region).map(x=>x.id)
+ // Cross-region Far North caravans stage at Exium; deeper northern commerce is handled by internal regional merchants.
+ return {shantium:['shantium','river','stonebridge','northgate','redoubt'],bluestone:['zion','norwegian','winterstone','ebonheart','lowcreek','crownpass'],redstone:['sengia','lockwood','grayhaven','briarlake','glenbrook','tyrdon','pyreglade'],farnorth:['exium']}[region]||regionalSettlements(region).map(x=>x.id)
 }
 function spawnCrossRegionMerchant(fromRegion=null){
  if(!crossRegionTradeUnlocked())return null;const unlocked=state.world.unlockedRegions||['shantium'],eligible=unlocked.filter(r=>directlyConnectedDestinationRegions(regionalMerchantStarts(r)[0]||'shantium').length||connectedRegions(r).some(x=>unlocked.includes(x))),region=fromRegion&&unlocked.includes(fromRegion)?fromRegion:pick(eligible.length?eligible:unlocked),starts=regionalMerchantStarts(region);
@@ -95,7 +95,7 @@ function recordCrossRegionDelivery(p,locId){
 }
 function crossRegionSupplyPressure(){
  if(!crossRegionTradeUnlocked())return;const X=crossRegionTradeState(),recentLoss=X.disruptions.filter(x=>state.world.day-x.day<=8);
- for(const x of recentLoss){const dest=x.destination;if(!state.world.settlements[dest])continue;for(const [gid,qty] of Object.entries(x.manifest||{})){if(qty<1)continue;changeTradeStock(dest,gid,-1);if(['food','medicine','iron','tools'].includes(gid))state.world.marketShock[dest]=(state.world.marketShock[dest]||0)+.015}}
+ for(const x of recentLoss){const dest=x.destination;if(!state.world.settlements[dest])continue;const age=state.world.day-x.day,weight=Math.max(0,1-age/9),er=settlementEconomyIII(dest);er.flowHealth=clamp((er.flowHealth||50)-.45*weight,0,100);for(const [gid,qty] of Object.entries(x.manifest||{})){if(qty<1)continue;if(['food','medicine','iron','tools'].includes(gid))state.world.marketShock[dest]=Math.min(.45,(state.world.marketShock[dest]||0)+.0025*qty*weight)}}
 }
 function crossRegionRouteRisk(from,to){
  const plan=crossRegionRoutePlan(from,to);if(!plan.connections.length)return .16;let sec=0,n=0,danger=0;
@@ -120,7 +120,7 @@ function tradeStock(locId,goodId){return ensureTradeStock(locId)[goodId]||0}
 function changeTradeStock(locId,goodId,delta){const s=ensureTradeStock(locId);s[goodId]=clamp((s[goodId]||0)+delta,0,30);return s[goodId]}
 function tradeDemandScore(locId,goodId){
  let score=tradeGoodRole(locId,goodId)==='demand'?2:tradeGoodRole(locId,goodId)==='source'?-1:0;
- const p=settlementProblem(locId);if(p?.type==='shortage'&&['food','medicine','tools'].includes(goodId))score+=2;if(p?.type==='trade_slump'&&['cloth','iron','tools','luxury'].includes(goodId))score+=1;
+ const p=settlementProblem(locId);if(p?.type==='shortage'&&['food','medicine','tools'].includes(goodId))score+=2;if(p?.type==='trade_slump'&&['cloth','iron','tools','luxury','hides','stone','livestock','salt','spirits','dye'].includes(goodId))score+=1;
  const ss=settlementState(locId);if(ss.prosperity<40)score+=1;if(ss.security<35&&['food','medicine'].includes(goodId))score+=1;return score
 }
 function tradePrice(locId,goodId){
@@ -148,14 +148,14 @@ function merchantManifest(origin,destination,lots=rnd(2,6)){
 }
 function manifestLots(manifest){return Object.values(manifest||{}).reduce((a,b)=>a+b,0)}
 function manifestText(manifest){return Object.entries(manifest||{}).filter(([,q])=>q>0).map(([id,q])=>`${worldGood(id)?.name||id} ×${q}`).join(', ')||SOSText("economy_trade_world_parties.manifestText.001")}
-function assignMerchantManifest(p){if(!p||p.kind!=='merchant')return p;const lots=p.cargo||rnd(2,6);p.manifest=merchantManifest(p.origin||p.location,p.destination,lots);p.cargo=manifestLots(p.manifest);return p}
+function assignMerchantManifest(p){if(!p||p.kind!=='merchant')return p;const lots=p.cargo||rnd(2,6);p.manifest=merchantManifest(p.origin||p.location,p.destination,lots);p.cargo=manifestLots(p.manifest);p.economyCargoReserved=false;reserveMerchantCargoAtOrigin(p);return p}
 function recordTradeDelivery(p,locId){
- const T=tradeEconomyState(),manifest=p.manifest||{};for(const [gid,qty] of Object.entries(manifest))changeTradeStock(locId,gid,qty);
+ const T=tradeEconomyState(),manifest=p.manifest||{};for(const [gid,qty] of Object.entries(manifest))changeTradeStock(locId,gid,qty);const er=settlementEconomyIII(locId);er.flowHealth=clamp((er.flowHealth||50)+Math.min(10,manifestLots(manifest)*2),0,100);recordEconomyIII(locId,`${p.name} delivered ${manifestText(manifest)}.`,'good');
  T.deliveries.push({day:state.world.day,party:p.name,origin:p.origin,destination:locId,manifest:{...manifest}});T.deliveries=T.deliveries.slice(-40)
 }
 function recordTradeLoss(p,nearId){
  const T=tradeEconomyState(),manifest=p.manifest||{};T.losses.push({day:state.world.day,party:p.name,origin:p.origin,destination:p.destination,near:nearId,manifest:{...manifest}});T.losses=T.losses.slice(-40);
- const dest=p.destination;if(state.world.settlements[dest]){for(const [gid,qty] of Object.entries(manifest)){changeTradeStock(dest,gid,-Math.max(1,Math.ceil(qty/2)));if(['food','medicine'].includes(gid))state.world.marketShock[dest]=(state.world.marketShock[dest]||0)+.035*qty}}
+ const dest=p.destination;if(state.world.settlements[dest]){const er=settlementEconomyIII(dest);er.flowHealth=clamp((er.flowHealth||50)-Math.min(12,manifestLots(manifest)*2),0,100);recordEconomyIII(dest,`${p.name} was lost before delivering ${manifestText(manifest)}.`,'bad');for(const [gid,qty] of Object.entries(manifest)){if(['food','medicine'].includes(gid))state.world.marketShock[dest]=(state.world.marketShock[dest]||0)+.035*qty}}
 }
 
 function showInterregionalTradeSignals(){modalRouteEnter(SOSText("economy_trade_world_parties.showInterregionalTradeSignals.001"),Array.from(arguments));
@@ -167,17 +167,29 @@ function showMarketIntelligence(){modalRouteEnter(SOSText("economy_trade_world_p
  const rows=bestKnownTradeRoutes(10),known=Object.keys(tradeEconomyState().intel).filter(id=>state.world.settlements[id]);
  overlay(SOSText("economy_trade_world_parties.showMarketIntelligence.002",known.length,state.world.day,known.map(id=>{const age=marketIntelAge(id);return `<div class="card compact"><b>${esc(worldLocation(id).name)}</b> • observed Day ${marketIntel(id).day}${age?` • ${age} day${age===1?'':'s'} old`:''}</div>`}).join('')||'<p class="muted">Inspect a settlement market to begin collecting price intelligence.</p>',rows.map(r=>`<div class="trade-route-card"><b>${esc(worldGood(r.gid).name)}</b><br>${esc(worldLocation(r.from).name)} ${r.buy}g → ${esc(worldLocation(r.to).name)} ~${r.sell}g<br><small>Estimated margin ${r.profit}g/lot • ${r.days} travel day${r.days===1?'':'s'} • ${esc(r.risk)}${r.cross?' • Cross-region':''} • intelligence up to ${r.age} day${r.age===1?'':'s'} old</small></div>`).join('')||'<p class="muted">Observe at least two markets before profitable routes can be compared.</p>'),true);wireClose()
 }
+function worldPartySafeLocationId(id,fallback=state?.world?.location||'shantium'){
+ if(WORLD_LOCATIONS.some(x=>x.id===id))return id;
+ if(WORLD_LOCATIONS.some(x=>x.id===fallback))return fallback;
+ return 'shantium'
+}
+function repairWorldPartyMapRoute(p){
+ if(!p)return null;const loc=worldPartySafeLocationId(p.location),dest=worldPartySafeLocationId(p.destination,loc);
+ if(p.location!==loc)p.location=loc;if(p.destination!==dest)p.destination=dest;
+ if(!Number.isFinite(p.travelTotal)||p.travelTotal<0)p.travelTotal=0;if(!Number.isFinite(p.travelLeft)||p.travelLeft<0)p.travelLeft=0;
+ return {loc,dest}
+}
 function worldPartyDisplayRegion(p){
- const a=locationRegion(p.location),b=locationRegion(p.destination||p.location);if(a===b)return a;const f=p.travelTotal?clamp(1-(p.travelLeft||0)/p.travelTotal,0,1):0;return f<.5?a:b
+ const route=repairWorldPartyMapRoute(p);if(!route)return currentWorldRegion();const a=locationRegion(route.loc),b=locationRegion(route.dest);if(a===b)return a;const f=p.travelTotal?clamp(1-(p.travelLeft||0)/p.travelTotal,0,1):0;return f<.5?a:b
 }
 function worldPartyPosition(p){
- const a=worldLocation(p.location),b=worldLocation(p.destination||p.location),ar=locationRegion(a.id),br=locationRegion(b.id),f=p.travelTotal?clamp(1-(p.travelLeft||0)/p.travelTotal,0,1):0;
+ const route=repairWorldPartyMapRoute(p);if(!route){const l=worldLocation(state.world.location);return{x:l.x,y:l.y}}
+ const a=worldLocation(route.loc),b=worldLocation(route.dest),ar=locationRegion(a.id),br=locationRegion(b.id),f=p.travelTotal?clamp(1-(p.travelLeft||0)/p.travelTotal,0,1):0;
  if(ar!==br){const c=regionConnectionForRegions(ar,br);if(c){const aGate=locationRegion(c.a)===ar?worldLocation(c.a):worldLocation(c.b),bGate=locationRegion(c.a)===br?worldLocation(c.a):worldLocation(c.b),gate=f<.5?aGate:bGate;return{x:clamp(gate.x+(f<.5?2:-2),2,98),y:clamp(gate.y,2,98)}}return{x:f<.5?a.x:b.x,y:f<.5?a.y:b.y}}
  return{x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f}
 }
 function randomWorldDestination(from){const choices=WORLD_LOCATIONS.filter(x=>x.id!==from&&x.id!=='redoubt');return pick(choices).id}
 
-function defaultSettlementState(){const custom={shantium:[72,62],redoubt:[78,55],zion:[76,61],lowcreek:[61,48],ebonheart:[66,46],norwegian:[58,54],winterstone:[68,57],skybreak:[82,40],sengia:[86,82],lockwood:[63,55],grayhaven:[69,48],briarlake:[56,59],glenbrook:[58,49],tyrdon:[54,37],pyreglade:[61,52]};return Object.fromEntries(WORLD_LOCATIONS.filter(x=>['town','settlement','camp','fort'].includes(x.type)).map(x=>{const v=custom[x.id]||[58,55];return[x.id,{security:v[0],prosperity:v[1],lastEventDay:0}]}))}
+function defaultSettlementState(){const custom={shantium:[72,62],redoubt:[78,55],zion:[76,61],lowcreek:[61,48],ebonheart:[66,46],norwegian:[58,54],winterstone:[68,57],skybreak:[82,40],sengia:[86,82],lockwood:[63,55],grayhaven:[69,48],briarlake:[56,59],glenbrook:[58,49],tyrdon:[54,37],pyreglade:[61,52],azerdon:[76,58],karsen:[60,46],decius:[52,39],velmora:[55,42],skallvik:[38,34],exium:[62,47],crownpass:[66,39]};return Object.fromEntries(WORLD_LOCATIONS.filter(x=>['town','settlement','camp','fort'].includes(x.type)).map(x=>{const v=custom[x.id]||[58,55];return[x.id,{security:v[0],prosperity:v[1],lastEventDay:0}]}))}
 function settlementState(id){ensureWorldState();return state.world.settlements[id]||{security:50,prosperity:50,lastEventDay:0}}
 function partyPurpose(kind){
  return {bandits:SOSText("economy_trade_world_parties.partyPurpose.001"),raiders:SOSText("economy_trade_world_parties.partyPurpose.002"),redstone:SOSText("economy_trade_world_parties.partyPurpose.003"),coalition:SOSText("economy_trade_world_parties.partyPurpose.004"),merchant:SOSText("economy_trade_world_parties.partyPurpose.005"),refugees:SOSText("economy_trade_world_parties.partyPurpose.006"),mercenary:SOSText("economy_trade_world_parties.partyPurpose.007")}[kind]||SOSText("economy_trade_world_parties.partyPurpose.008")
@@ -195,10 +207,10 @@ function resolveWorldPartyArrival(p){
  const loc=worldLocation(p.location),ss=state.world.settlements[p.location];
  if(!ss)return;
  if(['bandits','raiders'].includes(p.kind)){if(!settlementProblem(p.location)&&chance(.28))createSettlementProblem(p.location,'raider_pressure');const hit=rnd(2,6);ss.security=Math.max(0,ss.security-hit);ss.prosperity=Math.max(0,ss.prosperity-rnd(1,4));if(state.world.day-ss.lastEventDay>=2){log(SOSText("economy_trade_world_parties.resolveWorldPartyArrival.001",p.name,loc.name),'bad');ss.lastEventDay=state.world.day}}
- if(p.kind==='merchant'){ss.prosperity=Math.min(100,ss.prosperity+2);if(settlementProblem(p.location)&&['shortage','trade_slump'].includes(settlementProblem(p.location).type))progressSettlementProblem(p.location,1,SOSText("economy_trade_world_parties.resolveWorldPartyArrival.002",p.name))}if(p.kind==='merchant'&&p.crossRegion)recordCrossRegionDelivery(p,p.location);
- if(p.kind==='refugees'){ss.prosperity=Math.max(0,ss.prosperity-1);if(p.location==='shantium')state.town.population=Math.min(260,state.town.population+rnd(1,3))}
- if(p.kind==='coalition'&&loc.faction===SOSText("economy_trade_world_parties.resolveWorldPartyArrival.003"))ss.security=Math.min(100,ss.security+2)
- if(p.kind==='redstone'&&loc.faction===SOSText("economy_trade_world_parties.resolveWorldPartyArrival.004"))ss.security=Math.min(100,ss.security+2)
+ if(p.kind==='merchant'&&p.crossRegion)recordCrossRegionDelivery(p,p.location);
+ if(p.kind==='refugees'&&p.location==='shantium')state.town.population=Math.min(260,state.town.population+rnd(1,3));
+ // Settlement prosperity/security/problem effects are applied once by regionalArrivalConsequences().
+ // Keeping those effects out of this legacy arrival layer prevents double-counting after the living-world modernization.
  regionalArrivalConsequences(p,p.location);if(p.securityDeployment){const M=sengiaSecurityState(),d=M.deployments.find(x=>x.partyId===p.id&&x.status==='moving');if(d){d.status='arrived';d.arrivedDay=state.world.day;const sm=M.settlements[p.location];if(sm){sm.patrols=Math.min(100,sm.patrols+3);sm.manpower=Math.min(100,sm.manpower+1)}recordSengiaSecurity(SOSText("economy_trade_world_parties.resolveWorldPartyArrival.005",p.name,worldLocation(p.location).name,d.reason),'good')}p.securityDeployment=false}if(p.investmentId)completeCaravanInvestment(p);for(const o of activeRegionalOpportunities().filter(x=>x.stage==='tracking'&&x.partyId===p.id&&x.location===p.location)){o.status='resolved';o.resolvedDay=state.world.day;o.result=SOSText("economy_trade_world_parties.resolveWorldPartyArrival.006",p.name,worldLocation(p.location).name);progressSettlementProblem(p.location,1,SOSText("economy_trade_world_parties.resolveWorldPartyArrival.007",p.name));ensureRegionalSimulation().interventions.push({day:state.world.day,opportunityId:o.id,title:o.title,action:'escort',result:o.result});recordWorldHistory(`${o.title}: ${o.result}`,'good',SOSText("economy_trade_world_parties.resolveWorldPartyArrival.008"))}const q=p.questId?activeQuest(p.questId):null;
  if(q&&q.type==='escort'&&q.target===p.location)markQuestReady(q);
 }
@@ -326,7 +338,7 @@ function spawnWorldParty(kind=null,regionHint=null){
  const p={id:uid(),kind:t.kind,name:t.name,faction:t.faction,attitude:t.attitude,purpose:partyPurpose(t.kind),origin:start,location:start,destination:dest,travelLeft:days,travelTotal:days,createdDay:state.world.day,questId:null,cargo:t.kind==='merchant'?rnd(2,6):0,region:locationRegion(start),combatLevel:rollWorldPartyCombatLevel(t.kind)};if(t.kind==='merchant')assignMerchantManifest(p);p.combatComposition=generateWorldPartyComposition(t.kind,t);p.memberCount=p.combatComposition.length;p.combatantCount=p.combatComposition.length;p.compositionSource='spawned';assignTravelerIdentity(p,region);ensureWorldPartyComposition(p);ensureWorldPartyDoctrine(p);state.world.parties.push(p);syncTravelerRecord(p);return p
 }
 function regionalPartyTarget(region){const settlements=regionalSettlements(region),avg=settlements.length?settlements.reduce((n,l)=>n+(settlementState(l.id).security||50),0)/settlements.length:55;return {total:region==='shantium'?7:6,hostile:avg>=78?1:avg>=62?2:3}}
-function maintainWorldParties(){ensureWorldState();refreshTravelerMemberStatuses();const keep=[];for(const p of state.world.parties){const live=p.tradeProcurementCaravan||p.contractProtected||(p.questId&&activeQuest(p.questId))||p.id===state.world.trackedPartyId||state.world.day-(p.createdDay||1)<22;if(live)keep.push(p);else archiveTravelerParty(p,SOSText("economy_trade_world_parties.maintainWorldParties.001"))}state.world.parties=keep;if(state.world.trackedPartyId&&!state.world.parties.some(p=>p.id===state.world.trackedPartyId))state.world.trackedPartyId=null;manageNamedTravelerPopulation();reconcileNamedTravelerLifecycles(false);const unlocked=state.world.unlockedRegions||['shantium'];for(const region of unlocked){const target=regionalPartyTarget(region);let local=state.world.parties.filter(p=>worldPartyDisplayRegion(p)===region);let hostile=local.filter(p=>['bandits','raiders'].includes(p.kind));while(hostile.length<target.hostile){const p=spawnWorldParty(chance(.56)?'bandits':'raiders',region);hostile.push(p);local.push(p)}const trafficKinds=region==='redstone'?['redstone','merchant','merchant','mercenary','refugees','coalition','spawn']:region==='bluestone'?['bluestone','merchant','merchant','mercenary','refugees','coalition','spawn']:['merchant','merchant','coalition','redstone','mercenary','refugees','spawn'];while(local.length<target.total){const p=spawnWorldParty(pick(trafficKinds),region);local.push(p)}}}
+function maintainWorldParties(force=false){ensureWorldState();if(!force&&typeof SOSPerfRuntime!=='undefined'&&SOSPerfRuntime.lastPartyMaintenanceDay===state.world.day)return state.world.parties;refreshTravelerMemberStatuses();const keep=[];for(const p of state.world.parties){const live=p.tradeProcurementCaravan||p.homeCommercialCaravan||p.contractProtected||(p.questId&&activeQuest(p.questId))||p.id===state.world.trackedPartyId||state.world.day-(p.createdDay||1)<22;if(live)keep.push(p);else archiveTravelerParty(p,SOSText("economy_trade_world_parties.maintainWorldParties.001"))}state.world.parties=keep;if(state.world.trackedPartyId&&!state.world.parties.some(p=>p.id===state.world.trackedPartyId))state.world.trackedPartyId=null;manageNamedTravelerPopulation();reconcileNamedTravelerLifecycles(false);const unlocked=state.world.unlockedRegions||['shantium'];for(const region of unlocked){const target=regionalPartyTarget(region);let local=state.world.parties.filter(p=>worldPartyDisplayRegion(p)===region);let hostile=local.filter(p=>['bandits','raiders'].includes(p.kind));while(hostile.length<target.hostile){const p=spawnWorldParty(chance(.56)?'bandits':'raiders',region);hostile.push(p);local.push(p)}const trafficKinds=region==='redstone'?['redstone','merchant','merchant','mercenary','refugees','coalition','spawn']:region==='bluestone'?['bluestone','merchant','merchant','mercenary','refugees','coalition','spawn']:['merchant','merchant','coalition','redstone','mercenary','refugees','spawn'];while(local.length<target.total){const p=spawnWorldParty(pick(trafficKinds),region);local.push(p)}}if(typeof SOSPerfRuntime!=='undefined')SOSPerfRuntime.lastPartyMaintenanceDay=state.world.day;return state.world.parties}
 
 function regionalPartyMeetingAcceptance(p,req){
  const d=worldPartyDisposition(p);if(d==='hostile')return .08;let chanceBase=d==='friendly'?.92:d==='wary'?.42:.72;const standing=state.world.factionStanding?.[p.faction]||0;chanceBase+=Math.max(-.18,Math.min(.14,standing*.012));if(guardianHallAffiliatedParty?.(p))chanceBase=Math.max(chanceBase,.97);return clamp(chanceBase,.05,.98)
@@ -345,21 +357,86 @@ function moveWorldParties(){
   if(p.meetingRequest?.status==='waiting'){if(state.world.day<=p.meetingRequest.waitUntil)continue;p.meetingRequest.status='expired';p.meetingRequest.resolvedDay=state.world.day;p.origin=p.location;p.destination=purposefulDestination(p.kind,p.location);p.travelTotal=p.travelLeft=Math.max(1,worldTravelDays(p.location,p.destination))}
   if(partyInLiveConflict(p.id))continue;
   if(p.contractProtected&&(p.escortWaiting||p.escortActive||p.contractRole==='escort'))continue;
-  if(!p.contractProtected&&p.crossRegion&&chance(crossRegionRouteRisk(p.origin,p.destination)*.035*(p.tradeProcurementCaravan?(HOME_TRADE_PROCUREMENT_PRIORITIES[homeTradeProcurementOrders().find(o=>o.id===p.procurementOrderId)?.priority||'balanced']?.risk||1):1))){
-   if(p.tradeProcurementCaravan)homeTradeProcurementLost(p,'The caravan disappeared or was destroyed on a dangerous cross-region route.');
+  if(!p.contractProtected&&p.crossRegion&&chance(crossRegionRouteRisk(p.origin,p.destination)*.035*(p.tradeProcurementCaravan?(HOME_TRADE_PROCUREMENT_PRIORITIES[homeTradeProcurementOrders().find(o=>o.id===p.procurementOrderId)?.priority||'balanced']?.risk||1):(p.homeCommercialCaravan?((HOME_TRADE_PROCUREMENT_SECURITY[p.procurementSecurity]||{}).risk||1):1)))){
+   if(p.tradeProcurementCaravan)homeTradeProcurementLost(p,'The caravan disappeared or was destroyed on a dangerous cross-region route.');if(p.homeCommercialCaravan&&typeof homeCommercialCaravanLost==='function')homeCommercialCaravanLost(p,'The caravan disappeared or was destroyed on a dangerous cross-region route.');
    recordTradeLoss(p,p.location);const X=crossRegionTradeState();X.lost=(X.lost||0)+1;X.disruptions.push({day:state.world.day,party:p.name,origin:p.origin,destination:p.destination,near:p.location,manifest:{...(p.manifest||{})}});X.disruptions=X.disruptions.slice(-40);recordWorldHistory(SOSText("economy_trade_world_parties.moveWorldParties.001",p.name,p.tradeRoute||'cross-region road',worldLocation(p.destination).name),'bad','trade');removeWorldParty(p.id);continue
   }
   p.travelLeft=Math.max(0,(p.travelLeft||0)-1);
-  if(p.travelLeft<=0){p.location=p.destination;resolveWorldPartyArrival(p);if(p.tradeProcurementCaravan){if(state.world.parties.some(x=>x.id===p.id))syncTravelerRecord(p);continue}p.origin=p.location;if(resolveRegionalPartyMeetingArrival(p))continue;
-   if(p.kind==='merchant'&&p.crossRegion&&crossRegionTradeUnlocked()){const nextCross=crossRegionDestination(p.location);if(nextCross){p.destination=nextCross;p.region=locationRegion(p.location);p.crossRegion=true;p.tradeRoute=connectionRouteName(p.location,p.destination);p.cargo=rnd(3,7);p.manifest=crossRegionMerchantManifest(p.location,p.destination,p.cargo);p.cargo=manifestLots(p.manifest);p.travelTotal=p.travelLeft=crossRegionRouteDays(p.location,p.destination)}else{p.crossRegion=false;p.tradeRoute=null;p.destination=purposefulDestination(p.kind,p.location);p.cargo=rnd(2,6);assignMerchantManifest(p);p.travelTotal=p.travelLeft=Math.max(1,worldTravelDays(p.location,p.destination))}}
+  if(p.travelLeft<=0){p.location=p.destination;resolveWorldPartyArrival(p);if(p.tradeProcurementCaravan){if(state.world.parties.some(x=>x.id===p.id))syncTravelerRecord(p);continue}if(p.homeCommercialCaravan&&typeof resolveHomeCommercialCaravanArrival==='function'){resolveHomeCommercialCaravanArrival(p);if(state.world.parties.some(x=>x.id===p.id))syncTravelerRecord(p);continue}p.origin=p.location;if(resolveRegionalPartyMeetingArrival(p))continue;
+   if(p.kind==='merchant'&&p.crossRegion&&crossRegionTradeUnlocked()){const nextCross=crossRegionDestination(p.location);if(nextCross){p.destination=nextCross;p.region=locationRegion(p.location);p.crossRegion=true;p.tradeRoute=connectionRouteName(p.location,p.destination);p.cargo=rnd(3,7);p.manifest=crossRegionMerchantManifest(p.location,p.destination,p.cargo);p.cargo=manifestLots(p.manifest);p.economyCargoReserved=false;reserveMerchantCargoAtOrigin(p);p.travelTotal=p.travelLeft=crossRegionRouteDays(p.location,p.destination)}else{p.crossRegion=false;p.tradeRoute=null;p.destination=purposefulDestination(p.kind,p.location);p.cargo=rnd(2,6);assignMerchantManifest(p);p.travelTotal=p.travelLeft=Math.max(1,worldTravelDays(p.location,p.destination))}}
    else{p.destination=purposefulDestination(p.kind,p.location);if(p.kind==='merchant'){p.cargo=rnd(2,6);assignMerchantManifest(p)}p.travelTotal=p.travelLeft=Math.max(1,worldTravelDays(p.location,p.destination))}
   }
  }
  maintainWorldParties();maybeSpawnCrossRegionTrade();maybeCompanionWorldEvent()
 }
+function playerPartyFieldState(){
+ ensureWorldState();
+ if(!state.world.playerPartyField||typeof state.world.playerPartyField!=='object')state.world.playerPartyField={active:false,region:null,x:null,y:null,anchorLocation:null,targetPartyId:null,sinceDay:null};
+ return state.world.playerPartyField
+}
+function playerPartyInField(){return !!playerPartyFieldState().active}
+function playerPhysicalContext(){
+ if(!isOpenWorld())return{type:'non_open_world',anchor:state.world?.location||null,settlementId:null};
+ const anchor=state.world?.location||null,F=playerPartyFieldState();
+ if(state.world?.homeBase?.secretPassage?.sheltering)return{type:'guardian_hall',anchor:'shantium',settlementId:'shantium'};
+ if(state.world?.pursuit?.active)return{type:'pursuit',anchor,settlementId:null};
+ if(state.world?.travel?.active)return{type:'travel',anchor,settlementId:null};
+ if(F.active)return{type:'field',anchor:F.anchorLocation||anchor,settlementId:null,region:F.region,x:F.x,y:F.y,targetPartyId:F.targetPartyId||null};
+ const loc=worldLocation(anchor);
+ if(loc&&state.world.settlements?.[loc.id])return{type:'settlement',anchor:loc.id,settlementId:loc.id};
+ return{type:'field',anchor,settlementId:null,region:currentWorldRegion()};
+}
+function playerPartyInsideSettlement(locId=state.world.location){
+ const C=playerPhysicalContext();
+ return C.type==='settlement'&&C.settlementId===locId;
+}
+function playerPartyMapPosition(){
+ const F=playerPartyFieldState(),region=currentWorldRegion();
+ if(F.active&&F.region===region&&Number.isFinite(F.x)&&Number.isFinite(F.y))return{x:F.x,y:F.y};
+ const loc=worldLocation(state.world.location);return{x:loc.x,y:loc.y}
+}
+function playerPartyMarkFieldPosition(x,y,opts={}){
+ const F=playerPartyFieldState(),wasInside=!F.active,anchor=opts.anchorLocation||state.world.location;
+ if(wasInside&&anchor==='shantium'&&typeof homeMarkDeparture==='function')homeMarkDeparture();
+ if(wasInside&&typeof clearLawEntryState==='function')clearLawEntryState(anchor);
+ F.active=true;F.region=opts.region||currentWorldRegion();F.x=clamp(Number(x)||0,2,98);F.y=clamp(Number(y)||0,2,98);F.anchorLocation=anchor;F.targetPartyId=opts.targetPartyId||null;F.sinceDay=F.sinceDay||state.world.day;
+ return F
+}
+function playerPartyMoveBesideWorldParty(p){
+ if(!p)return false;const pos=worldPartyPosition(p),seed=[...String(p.id||p.name||'party')].reduce((n,c)=>n+c.charCodeAt(0),0),a=(seed%360)*Math.PI/180;
+ playerPartyMarkFieldPosition(pos.x+Math.cos(a)*3.4,pos.y+Math.sin(a)*3.4,{region:worldPartyDisplayRegion(p),anchorLocation:state.world.location,targetPartyId:p.id});save();return true
+}
+function playerPartyBeginFieldTravel(){
+ if(playerPartyInField())return playerPartyFieldState();const loc=worldLocation(state.world.location),seed=(state.world.day||1)*31+(state.world.location||'').length*17,a=(seed%360)*Math.PI/180;
+ return playerPartyMarkFieldPosition(loc.x+Math.cos(a)*4.2,loc.y+Math.sin(a)*4.2,{region:currentWorldRegion(),anchorLocation:state.world.location})
+}
+function placePlayerPartyOutsideSettlement(locId=state.world.location){
+ const loc=worldLocation(locId);if(!loc||!state.world.settlements?.[locId])return false;
+ // Settlement buttons can occupy roughly 10-12% of the map width on desktop. Keep the
+ // Player Party beyond the label/click footprint, with a little organic variation.
+ const minRadius=8.8,maxRadius=10.8;let best=null;
+ for(let i=0;i<24;i++){const a=Math.random()*Math.PI*2,r=minRadius+Math.random()*(maxRadius-minRadius),x=loc.x+Math.cos(a)*r,y=loc.y+Math.sin(a)*r;if(x>=3&&x<=97&&y>=3&&y<=97){best={x,y};break}}
+ if(!best){const a=Math.random()*Math.PI*2,r=minRadius;best={x:clamp(loc.x+Math.cos(a)*r,3,97),y:clamp(loc.y+Math.sin(a)*r,3,97)}}
+ playerPartyMarkFieldPosition(best.x,best.y,{region:locationRegion(locId),anchorLocation:locId,targetPartyId:null});
+ const F=playerPartyFieldState();F.sinceDay=state.world.day;save();return F
+}
+function leaveCurrentSettlementToField(){
+ const locId=state.world?.location,C=playerPhysicalContext();
+ if(C.type!=='settlement'||C.settlementId!==locId||!state.world.settlements?.[locId])return renderOpenWorld();
+ if(!placePlayerPartyOutsideSettlement(locId))return renderOpenWorld();
+ recordWorldHistory(`The Player Party leaves ${worldLocation(locId).name} and moves into the nearby field.`,'info','travel');
+ save();renderOpenWorld()
+}
+function playerPartyClearFieldPosition(){
+ const F=playerPartyFieldState();F.active=false;F.region=null;F.x=null;F.y=null;F.anchorLocation=null;F.targetPartyId=null;F.sinceDay=null;save();return F
+}
+function playerPartyApproachWorldParty(p){
+ if(!p||!canEngageWorldParty(p))return false;
+ playerPartyMoveBesideWorldParty(p);return true
+}
 function worldPartyDistanceToPlayer(p){
  if(worldPartyDisplayRegion(p)!==currentWorldRegion())return Infinity;
- const pos=worldPartyPosition(p),me=worldLocation(state.world.location);return Math.hypot(pos.x-me.x,pos.y-me.y)
+ const pos=worldPartyPosition(p),me=playerPartyMapPosition();return Math.hypot(pos.x-me.x,pos.y-me.y)
 }
 function worldPartyAtPlayer(p){return worldPartyDistanceToPlayer(p)<10}
 function worldPartyTravelEstimate(p){
@@ -380,11 +457,11 @@ function pursuitCaughtParty(p){const P=pursuitState();return !!p&&P.targetId===p
 function pursuitClosingNeed(p){return Math.max(3,Math.ceil(worldPartyDistanceToPlayer(p)/5.5))}
 function continuePersistentPursuit(p,forced=false){
  if(!p||!state.world.parties.some(x=>x.id===p.id)){clearPursuit();return actionResult(SOSText("economy_trade_world_parties.continuePersistentPursuit.001"),SOSText("economy_trade_world_parties.continuePersistentPursuit.002"),'info',renderOpenWorld)}
- const P=pursuitState();if(P.targetId!==p.id){P.targetId=p.id;P.progress=0;P.startedDay=state.world.day;P.caught=false}P.lastDay=state.world.day;
+ const P=pursuitState();playerPartyBeginFieldTravel();if(P.targetId!==p.id){P.targetId=p.id;P.progress=0;P.startedDay=state.world.day;P.caught=false}P.lastDay=state.world.day;
  const before=worldPartyPosition(p),gain=1.5+pursuitSpeedBonus()+(forced?1.5:0);P.progress+=gain;if(forced){state.guardian.stamina=Math.max(0,state.guardian.stamina-18)}
  advanceWorldDays(1,`${forced?'Forced pursuit of':'Pursued'} ${p.name}`);const live=state.world.parties.find(x=>x.id===p.id);if(!live){clearPursuit();return actionResult(SOSText("economy_trade_world_parties.continuePersistentPursuit.003"),SOSText("economy_trade_world_parties.continuePersistentPursuit.004",p.name),'info',renderOpenWorld)}
- const need=pursuitClosingNeed(live);if(P.progress>=need){const pos=worldPartyPosition(live),near=nearestWorldLocationToPosition(currentWorldRegion(),pos);state.world.location=near;P.caught=true;setTrackedWorldParty(live);save();return actionResult(SOSText("economy_trade_world_parties.continuePersistentPursuit.005"),SOSText("economy_trade_world_parties.continuePersistentPursuit.006",live.name,worldLocation(near).name),'good',()=>showWorldParty(live.id))}
- setTrackedWorldParty(live);save();return actionResult(SOSText("economy_trade_world_parties.continuePersistentPursuit.007"),SOSText("economy_trade_world_parties.continuePersistentPursuit.008",live.name,Math.floor(P.progress),need),'info',()=>showWorldParty(live.id))
+ const need=pursuitClosingNeed(live);if(P.progress>=need){const pos=worldPartyPosition(live),near=nearestWorldLocationToPosition(currentWorldRegion(),pos);state.world.location=near;playerPartyMoveBesideWorldParty(live);P.caught=true;setTrackedWorldParty(live);save();return actionResult(SOSText("economy_trade_world_parties.continuePersistentPursuit.005"),SOSText("economy_trade_world_parties.continuePersistentPursuit.006",live.name,worldLocation(near).name),'good',()=>showWorldParty(live.id))}
+ {const target=worldPartyPosition(live),F=playerPartyFieldState(),ratio=clamp(P.progress/Math.max(1,need),.08,.92);F.x=clamp(F.x+(target.x-F.x)*ratio*.55,2,98);F.y=clamp(F.y+(target.y-F.y)*ratio*.55,2,98);F.targetPartyId=live.id}setTrackedWorldParty(live);save();renderOpenWorld();return actionResult(SOSText("economy_trade_world_parties.continuePersistentPursuit.007"),SOSText("economy_trade_world_parties.continuePersistentPursuit.008",live.name,Math.floor(P.progress),need),'info',()=>showWorldParty(live.id))
 }
 function worldPartyInterceptPlan(p){
  const target=worldLocation(p.destination),crossRegion=locationRegion(p.location)!==currentWorldRegion()||locationRegion(p.destination)!==currentWorldRegion();if(crossRegion)return {target,travel:null,eta:Math.max(0,p.travelLeft||0),wait:0,likely:false,total:null,crossRegion:true};
@@ -397,3 +474,7 @@ function pursueWorldParty(p){
  overlay(SOSText("economy_trade_world_parties.pursueWorldParty.003",active?'Continue Pursuit':'Begin Pursuit',esc(p.name),esc(worldLocation(p.destination).name),Math.floor(progress),need,pursuitSpeedBonus().toFixed(1),active?'Continue Pursuit':'Begin Pursuit',state.guardian.stamina<18?'disabled':''));
  $('#pursuitTrack').onclick=()=>{setTrackedWorldParty(p);closeOverlay();renderOpenWorld()};$('#pursuitGo').onclick=()=>{closeOverlay();continuePersistentPursuit(p,false)};$('#pursuitForce').onclick=()=>{closeOverlay();continuePersistentPursuit(p,true)};wireClose()
 }
+
+function activeQuest(id){return state.world.quests.find(q=>q.id===id&&['active','ready'].includes(q.status))}
+function availableQuestLocations(){return WORLD_LOCATIONS.filter(x=>['town','settlement','camp'].includes(x.type))}
+function contractTemplate(type){return QUEST_TEMPLATES.find(t=>t.type===type)}

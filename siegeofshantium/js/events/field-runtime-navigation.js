@@ -1,4 +1,3 @@
-function fieldTemplate(e){return FIELD_ENCOUNTER_TEMPLATES.find(t=>t.id===e.template)||e}
 function showFieldEncounter(id){modalRouteEnter(SOSText("events_field_runtime_navigation.showFieldEncounter.001"),Array.from(arguments));const e=state.fieldEncounters.find(x=>x.id===id);if(!e)return;const a=allyDef(e.allyId),t=fieldTemplate(e);overlay(SOSText("events_field_runtime_navigation.showFieldEncounter.002",esc(e.name),e.kind==='friendly'?'notable':'',e.kind==='friendly'?'FRIENDLY':'NEUTRAL',esc(e.text),esc(ROUTES.find(r=>r.id===e.route)?.name||e.route),e.distance,e.rescue?`<div class="warning notice">This contact is under attack. A rescue costs 1 field action.</div>`:`<div class="notice">Approaching and negotiating costs 1 field action.</div>`,state.roundActions<=0?'disabled':'',e.rescue?'Attempt Rescue':'Approach / Negotiate'));$('#fieldApproach').onclick=()=>resolveFieldEncounter(e);wireClose()}
 function recruitFieldCompanion(e,origin){const a=allyDef(e.allyId);if(!a||state.allies.includes(a.id))return null;state.allies.push(a.id);state.party.members[a.id]=makePartyMember(a.id,origin,0);if(origin==='rescued')state.party.members[a.id].trust=Math.max(60,state.party.members[a.id].trust);if(state.party.active.length<partyLimit())state.party.active.push(a.id);chronicle(SOSText("events_field_runtime_navigation.recruitFieldCompanion.001"),SOSText("events_field_runtime_navigation.recruitFieldCompanion.002",a.name,origin==='rescued'?'rescued in the field':'met on the road'),'companion');return a}
 function resolveFieldEncounter(e){const __encId=typeof e==='string'?e:(e?.id||null);if(__encId)resolveFieldEncounterOnce(__encId);if(state.roundActions<=0)return;state.roundActions--;const a=allyDef(e.allyId);if(e.rescue){const roll=rnd(1,12)+Math.floor(stat(state,'str')/3)+state.level+partyMembers(true).filter(m=>m.hp>0).length*2;if(roll>=9+Math.floor(state.round/3)){const joined=recruitFieldCompanion(e,'rescued');resolveFieldEncounterOnce(e.id);save();return actionResult(SOSText("events_field_runtime_navigation.resolveFieldEncounter.001"),SOSText("events_field_runtime_navigation.resolveFieldEncounter.002",joined.name,joined.name),'good')}state.town.morale=Math.max(0,state.town.morale-1);e.expires=state.round;save();return actionResult(SOSText("events_field_runtime_navigation.resolveFieldEncounter.003"),SOSText("events_field_runtime_navigation.resolveFieldEncounter.004",a.name),'bad')}const roll=rnd(1,12)+stat(state,'cha')+Math.floor(state.reputation/2);if(roll>=14+Math.floor(state.round/4)){const joined=recruitFieldCompanion(e,SOSText("events_field_runtime_navigation.resolveFieldEncounter.005"));resolveFieldEncounterOnce(e.id);save();return actionResult(SOSText("events_field_runtime_navigation.resolveFieldEncounter.006"),SOSText("events_field_runtime_navigation.resolveFieldEncounter.007",joined.name),'good')}e.expires=state.round;save();actionResult(SOSText("events_field_runtime_navigation.resolveFieldEncounter.008"),SOSText("events_field_runtime_navigation.resolveFieldEncounter.009",a.name),'info')}
@@ -213,7 +212,13 @@ function navigationRouteIsTransient(name){
  ]).has(name)
 }
 function navigationPruneDuplicateTarget(stack,next){
- while(stack.length&&modalNavEntryKey(stack[stack.length-1])===modalNavEntryKey(next))stack.pop()
+ const key=modalNavEntryKey(next);if(!key)return;
+ // Returning to a route that is already in the stack closes the intervening branch.
+ // This prevents A → B → A → B loops when an older screen uses a direct parent link.
+ let found=-1;for(let i=stack.length-1;i>=0;i--)if(modalNavEntryKey(stack[i])===key){found=i;break}
+ if(found>=0)stack.splice(found);
+ while(stack.length&&modalNavEntryKey(stack[stack.length-1])===key)stack.pop();
+ if(stack.length>48)stack.splice(0,stack.length-48)
 }
 function guardianHallRouteEnter(name,args=[]){
  if(!isOpenWorld())return;
@@ -324,6 +329,8 @@ function navigationRouteFunction(name){
   case 'showHiddenInterior':return showHiddenInterior;
   case 'showHomeArchives':return showHomeArchives;
   case 'showHomeArmory':return showHomeArmory;
+  case 'showHomeArmoryItem':return showHomeArmoryItem;
+  case 'showHomeArmoryPurchase':return showHomeArmoryPurchase;
   case 'showHomeAudienceDetail':return showHomeAudienceDetail;
   case 'showHomeBase':return showHomeBase;
   case 'showHomeBaseStorage':return showHomeBaseStorage;
@@ -338,11 +345,14 @@ function navigationRouteFunction(name){
   case 'showHomeEmergencyProcurement':return showHomeEmergencyProcurement;
   case 'showHomeFieldProcurement':return showHomeFieldProcurement;
   case 'showHomeGuestQuarters':return showHomeGuestQuarters;
+  case 'showHomeGuestGroupInfo':return showHomeGuestGroupInfo;
   case 'showHomeInfirmary':return showHomeInfirmary;
   case 'showHomeLogistics':return showHomeLogistics;
   case 'showHomeLogisticsReports':return showHomeLogisticsReports;
   case 'showHomeTradeProcurement':return showHomeTradeProcurement;
   case 'showHomeTradeProcurementOrder':return showHomeTradeProcurementOrder;
+  case 'showHomeStandingProcurementEditor':return showHomeStandingProcurementEditor;
+  case 'showHomeMixedProcurementPlanner':return showHomeMixedProcurementPlanner;
   case 'showHomeMailDetail':return showHomeMailDetail;
   case 'showHomeMediationChooser':return showHomeMediationChooser;
   case 'showHomePartyPresets':return showHomePartyPresets;
@@ -480,6 +490,16 @@ function navigationRouteFunction(name){
   case 'showWorldMapFilters':return showWorldMapFilters;
   case 'showWorldParty':return showWorldParty;
   case 'showWorldTrade':return showWorldTrade;
+  case 'showCampingWildernessMenu':return showCampingWildernessMenu;
+  case 'showHomeArtisan':return showHomeArtisan;
+  case 'showHomeCommercialDelegation':return showHomeCommercialDelegation;
+  case 'showHomeCommercialOpportunities':return showHomeCommercialOpportunities;
+  case 'showHomeMasterworks':return showHomeMasterworks;
+  case 'showRegionalIntelligence':return showRegionalIntelligence;
+  case 'showRegionalPartyActions':return showRegionalPartyActions;
+  case 'showRegionalPartyMessenger':return showRegionalPartyMessenger;
+  case 'showRegionalWorldParties':return showRegionalWorldParties;
+  case 'showSecretPassageStatus':return showSecretPassageStatus;
  }
  return null
 }
@@ -520,4 +540,3 @@ function modalNavBackOrFallback(fallback){
  if(isOpenWorld()&&!townNavCurrent)resetModalNavigation();
  return typeof fallback==='function'?fallback():closeAndRender()
 }
-

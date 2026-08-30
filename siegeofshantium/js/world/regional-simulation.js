@@ -1,17 +1,3 @@
-function ensureRegionalSimulation(){ensureWorldState();const r=state.world.regionalSimulation||(state.world.regionalSimulation={threads:[],flows:[],routePressure:{},lastResponseDay:{}});if(!Array.isArray(r.threads))r.threads=[];if(!Array.isArray(r.flows))r.flows=[];if(!r.routePressure)r.routePressure={};if(!r.lastResponseDay)r.lastResponseDay={};if(!Array.isArray(r.opportunities))r.opportunities=[];if(!Array.isArray(r.interventions))r.interventions=[];return r}
-function regionalSettlements(region=null){return WORLD_LOCATIONS.filter(x=>state.world.settlements?.[x.id]&&(!region||locationRegion(x)===region))}
-
-function regionalEvidenceState(){const r=ensureRegionalSimulation();if(!r.evidence)r.evidence={settlements:{},routes:{},history:[]};return r.evidence}
-function addSettlementEvidence(locId,text,type='info',days=4){
- const E=regionalEvidenceState();if(!E.settlements[locId])E.settlements[locId]=[];const row={id:uid(),day:state.world.day,expiresDay:state.world.day+days,text,type};E.settlements[locId].push(row);E.settlements[locId]=E.settlements[locId].slice(-10);E.history.push({...row,locId});E.history=E.history.slice(-80);return row
-}
-function settlementEvidence(locId){const E=regionalEvidenceState();return (E.settlements[locId]||[]).filter(x=>x.expiresDay>=state.world.day)}
-function routeEvidenceKey(a,b){return routePressureKey(a,b)}
-function updateRouteEvidence(a,b,reason=''){
- if(!a||!b||a===b)return;const E=regionalEvidenceState(),k=routeEvidenceKey(a,b),p=routePressure(a,b);let status=p>=7?'dangerous':p>=4?'risky':p>=1?'watched':'open';
- E.routes[k]={a,b,status,pressure:p,lastDay:state.world.day,reason};return E.routes[k]
-}
-function routeEvidence(a,b){const k=routeEvidenceKey(a,b),E=regionalEvidenceState();return E.routes[k]||updateRouteEvidence(a,b)}
 function routeConditionText(a,b){
  const r=routeEvidence(a,b);return r.status==='dangerous'?'Travelers report repeated attacks and some caravans are avoiding this road.':r.status==='risky'?'The road is still used, but guards and merchants are treating it cautiously.':r.status==='watched'?'There are recent signs of trouble, though traffic continues.':SOSText("world_regional_simulation.routeConditionText.001")
 }
@@ -89,7 +75,7 @@ function simulateTradeEconomyDay(){
  const T=tradeEconomyState();for(const id of Object.keys(T.intel)){if(state.world.day-(T.intel[id]?.day||0)>12)delete T.intel[id]}
 }
 function simulateRegionalConsequencesII(){
- clearExpiredRegionalEvidence();decayRegionalMarketShock();capitalSecurityDailyTick();simulateTradeEconomyDay();simulateRegionalRaidDamage();simulateRefugeeIntegration();simulateFactionPersonnelShift();
+ clearExpiredRegionalEvidence();decayRegionalMarketShock();capitalSecurityDailyTick();simulateEconomyIIIDay();simulateRegionalRaidDamage();simulateRefugeeIntegration();simulateFactionPersonnelShift();
  const E=regionalEvidenceState();for(const [k,v] of Object.entries(ensureRegionalSimulation().routePressure)){const [a,b]=k.split('|');updateRouteEvidence(a,b,SOSText("world_regional_simulation.simulateRegionalConsequencesII.001"))}
 }
 function regionalFlow(type,from,to,text,partyId=null){
