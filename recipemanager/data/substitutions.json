@@ -1,0 +1,11 @@
+[
+  {"id":"veg-general","source":"Fit Girls source guides","from":"vegetable","to":["another vegetable"],"rule":"Use the same measurement of another vegetable you prefer, generally excluding potato when the source specifies that exception.","kind":"source"},
+  {"id":"fruit-general","source":"Fit Girls source guides","from":"fruit","to":["another fruit"],"rule":"Use the same measurement of another fruit you prefer; avocado is treated separately in source substitution tables.","kind":"source"},
+  {"id":"brown-rice","source":"Fit Girls source guides","from":"brown rice","to":["quinoa","black rice","white rice"],"rule":"Use the same amount of quinoa or black rice; white rice is listed as a fallback in source guides.","kind":"source"},
+  {"id":"quinoa","source":"Fit Girls source guides","from":"quinoa","to":["brown rice","black rice","pasta"],"rule":"Source plans permit equal-amount grain swaps in several contexts.","kind":"source"},
+  {"id":"honey","source":"Fit Girls source guides","from":"honey","to":["agave","maple syrup"],"rule":"Use the same amount.","kind":"source"},
+  {"id":"almond-butter","source":"Fit Girls source guides","from":"almond butter","to":["peanut butter","cashew butter","nut butter"],"rule":"Any other nut butter may be substituted where the source allows it.","kind":"source"},
+  {"id":"greek-yogurt","source":"Fit Girls source guides","from":"greek yogurt","to":["plain yogurt"],"rule":"Regular plain yogurt is listed when necessary, although the source notes Greek yogurt is higher in protein.","kind":"source"},
+  {"id":"gluten-free-bread","source":"Fit Girls source guides","from":"bread","to":["gluten-free bread","brown rice","quinoa"],"rule":"Use gluten-free bread/pasta versions or substitute brown rice/quinoa where appropriate.","kind":"source"},
+  {"id":"protein-choice","source":"Fit Girl's Choice of Protein","from":"fit girl's choice protein","to":["chicken breast","turkey","tofu","tempeh","eggs","lean steak","salmon","tuna","shrimp","fish","seafood"],"rule":"Choose an appropriately portioned Fit Girl's Choice of Protein according to the source plan.","kind":"source"}
+]

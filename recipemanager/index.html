@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#6a6f5b">
+  <meta name="description" content="Private local recipe, pantry, meal planning, and grocery manager.">
+  <title>Recipe Manager</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./assets/icon-192.png">
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/layout.css">
+  <link rel="stylesheet" href="./css/components.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><div class="brand-mark">RM</div><div><strong>Recipe Manager</strong><small>Private kitchen library</small></div></div>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="#home" data-route="home">⌂ <span>Home</span></a>
+        <a href="#recipes" data-route="recipes">▤ <span>Recipes</span></a>
+        <a href="#planner" data-route="planner">▦ <span>Meal Planner</span></a>
+        <a href="#cook-now" data-route="cook-now">⌕ <span>Cook Now</span></a>
+        <a href="#grocery" data-route="grocery">✓ <span>Grocery List</span></a>
+        <a href="#pantry" data-route="pantry">▣ <span>Pantry</span></a>
+        <a href="#collections" data-route="collections">★ <span>Collections</span></a>
+        <a href="#sources" data-route="sources">◫ <span>Sources</span></a>
+        <a href="#settings" data-route="settings">⚙ <span>Settings</span></a>
+      </nav>
+      <div class="sidebar-foot"><span id="recipeCountSide">Loading recipes…</span><span class="offline-dot" title="Local-only application"></span></div>
+    </aside>
+    <div class="main-wrap">
+      <header class="topbar">
+        <button class="icon-btn mobile-only" id="menuBtn" aria-label="Open menu">☰</button>
+        <div class="global-search"><span>⌕</span><input id="globalSearch" placeholder="Search recipes or ingredients…" aria-label="Search recipes"></div>
+        <button class="btn quiet" id="quickCookBtn">Cook with what I have</button>
+      </header>
+      <main id="main" tabindex="-1"></main>
+    </div>
+  </div>
+  <div id="toastHost" class="toast-host" aria-live="polite"></div>
+  <dialog id="modal"><div id="modalBody"></div></dialog>
+  <input type="file" id="importFile" accept="application/json" hidden>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

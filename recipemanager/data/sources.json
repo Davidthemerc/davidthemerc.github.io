@@ -1,0 +1,60 @@
+[
+  {
+    "id": "cookbook",
+    "title": "Fit Girls Cook",
+    "file": "FG-Cookbook.pdf"
+  },
+  {
+    "id": "cookbook2",
+    "title": "Fit Girls Cookbook Volume 2",
+    "file": "FG-Cookbook-2a.pdf"
+  },
+  {
+    "id": "jumpstart",
+    "title": "The 28 Day Jumpstart",
+    "file": "FG-28DayJumpstart.pdf"
+  },
+  {
+    "id": "fitkini",
+    "title": "The Fitkini Body Challenge",
+    "file": "FG-FitkiniChallenge.pdf"
+  },
+  {
+    "id": "detox",
+    "title": "Fit Girl Detox",
+    "file": "FG-Detox.pdf"
+  },
+  {
+    "id": "mealplan1",
+    "title": "Fit Girl Meal Plan",
+    "file": "FG-MealPlan.pdf"
+  },
+  {
+    "id": "mealplan2",
+    "title": "Fit Girl Meal Plan 2",
+    "file": "FG-MealPlan-2-1.pdf"
+  },
+  {
+    "id": "mealplan3",
+    "title": "Fit Girl Meal Plan 3",
+    "file": "FG-MealPlan-3.pdf"
+  },
+  {
+    "id": "natashas-kitchen",
+    "title": "Natasha's Kitchen",
+    "file": "https://natashaskitchen.com/greek-chicken-bowls/",
+    "type": "web"
+  },
+  {
+    "id": "5itemsorless",
+    "title": "Trader Joe's 5 Items or Less",
+    "file": "https://5itemsorless.com/",
+    "type": "web"
+  },
+  {
+    "id": "healthy-archive",
+    "title": "Healthy Recipe Archive",
+    "file": "healthy(1).zip",
+    "type": "import"
+  }
+]

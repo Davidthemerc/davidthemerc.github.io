@@ -1,0 +1,4 @@
+const FRACTIONS=[[.125,'1/8'],[.25,'1/4'],[.333333,'1/3'],[.375,'3/8'],[.5,'1/2'],[.625,'5/8'],[.666667,'2/3'],[.75,'3/4'],[.875,'7/8']];
+export function formatQuantity(n){if(n==null||Number.isNaN(Number(n)))return '';n=Number(n);const whole=Math.floor(n+1e-7),frac=n-whole;let f='';let best=FRACTIONS.reduce((a,b)=>Math.abs(b[0]-frac)<Math.abs(a[0]-frac)?b:a,FRACTIONS[0]);if(frac>.04&&Math.abs(best[0]-frac)<.04)f=best[1];else if(frac>.04)f=Number(frac.toFixed(2)).toString().replace(/^0/,'');return [whole||'',f].filter(Boolean).join(' ')||'0';}
+export function scaleIngredient(ing,fromServings,toServings){if(ing.quantity==null||!fromServings||!toServings)return {...ing,displayQuantity:ing.quantity==null?'':formatQuantity(ing.quantity)};const q=ing.quantity*toServings/fromServings;return {...ing,scaledQuantity:q,displayQuantity:formatQuantity(q)};}
+export function compatibleUnit(a,b){return (a||'')===(b||'');}

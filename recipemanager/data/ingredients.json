@@ -1,0 +1,12 @@
+{
+  "aliases": {
+    "yellow onion":"onion","red onion":"onion","white onion":"onion","green onion":"scallion","green onions":"scallion",
+    "bell peppers":"bell pepper","red bell pepper":"bell pepper","green bell pepper":"bell pepper","yellow bell pepper":"bell pepper",
+    "boneless skinless chicken breast":"chicken breast","chicken breasts":"chicken breast","chicken":"chicken breast",
+    "2% greek yogurt":"greek yogurt","plain greek yogurt":"greek yogurt","vanilla greek yogurt":"greek yogurt",
+    "fresh garlic":"garlic","garlic clove":"garlic","garlic cloves":"garlic","minced garlic":"garlic",
+    "shredded mozzarella":"mozzarella","mozzarella cheese":"mozzarella","fresh mozzarella":"mozzarella",
+    "shredded cheddar":"cheddar","cheddar cheese":"cheddar",
+    "canned black beans":"black bean","black beans":"black bean","chickpeas":"chickpea","garbanzo beans":"chickpea"
+  }
+}
