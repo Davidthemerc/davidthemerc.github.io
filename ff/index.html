@@ -3840,6 +3840,248 @@ body:not(.post-draft-mode) .home-shortcut-grid [data-home-nav="trade"]{
 @media(min-width:1280px){.audit-diagnostics-link{font-size:10px}}
 @media(max-width:720px){.audit-diagnostics-link{font-size:6px;margin-top:3px;padding-top:3px}}
 
+
+/* v1.7.60 Draft Log accent-bar text clearance */
+#logView .log-row,
+#logView .draft-log-row,
+#logView [class*="log-row"]{
+  padding-left:14px!important;
+}
+#logView .log-row::before,
+#logView .draft-log-row::before{
+  left:0!important;
+  width:4px!important;
+}
+@media(min-width:1280px){
+  #logView .log-row,
+  #logView .draft-log-row,
+  #logView [class*="log-row"]{
+    padding-left:16px!important;
+  }
+}
+@media(max-width:720px){
+  #logView .log-row,
+  #logView .draft-log-row,
+  #logView [class*="log-row"]{
+    padding-left:12px!important;
+  }
+}
+
+
+/* v1.7.61 Draft Log accent-bar gutter */
+#logView .log-row,
+#logView .draft-log-row,
+#logView [class*="log-row"]{
+  padding-left:22px!important;
+}
+#logView .log-row::before,
+#logView .draft-log-row::before{
+  left:3px!important;
+  width:4px!important;
+}
+@media(min-width:1280px){
+  #logView .log-row,
+  #logView .draft-log-row,
+  #logView [class*="log-row"]{
+    padding-left:26px!important;
+  }
+}
+@media(max-width:720px){
+  #logView .log-row,
+  #logView .draft-log-row,
+  #logView [class*="log-row"]{
+    padding-left:18px!important;
+  }
+}
+
+
+/* v1.7.62 Draft Log mobile status-bar clearance */
+#logView .log-row,
+#logView .draft-log-row,
+#logView [class*="log-row"]{
+  padding-left:30px!important;
+}
+#logView .log-row>*:first-child,
+#logView .draft-log-row>*:first-child,
+#logView [class*="log-row"]>*:first-child{
+  padding-left:8px!important;
+}
+#logView .log-row::before,
+#logView .draft-log-row::before{
+  left:5px!important;
+  width:4px!important;
+}
+@media(min-width:1280px){
+  #logView .log-row,
+  #logView .draft-log-row,
+  #logView [class*="log-row"]{
+    padding-left:30px!important;
+  }
+}
+@media(max-width:720px){
+  #logView .log-row,
+  #logView .draft-log-row,
+  #logView [class*="log-row"]{
+    padding-left:32px!important;
+  }
+  #logView .log-row>*:first-child,
+  #logView .draft-log-row>*:first-child,
+  #logView [class*="log-row"]>*:first-child{
+    padding-left:10px!important;
+  }
+}
+
+
+/* v1.7.63 Draft Log mine-marker structural fix
+   Put the marker on the actual first cell so spacing is deterministic. */
+#logView .log-table tr.mine-log{
+  box-shadow:none!important;
+}
+#logView .log-table tr.mine-log td:first-child{
+  box-shadow:inset 4px 0 0 #67bd84!important;
+  padding-left:22px!important;
+}
+@media(min-width:1280px){
+  #logView .log-table tr.mine-log td:first-child{
+    padding-left:24px!important;
+  }
+}
+@media(max-width:720px){
+  #logView .log-table tr.mine-log td:first-child{
+    padding-left:20px!important;
+  }
+}
+@media(max-width:420px){
+  #logView .log-table tr.mine-log td:first-child{
+    padding-left:20px!important;
+  }
+}
+
+
+/* v1.7.64 Draft Log pick-column refinement */
+#logView .log-table th:first-child,
+#logView .log-table td:first-child{
+  width:118px!important;
+  min-width:118px!important;
+  max-width:118px!important;
+}
+#logView .log-table tr.mine-log td:first-child{
+  padding-left:16px!important;
+}
+@media(min-width:1280px){
+  #logView .log-table th:first-child,
+  #logView .log-table td:first-child{
+    width:124px!important;
+    min-width:124px!important;
+    max-width:124px!important;
+  }
+  #logView .log-table tr.mine-log td:first-child{padding-left:18px!important}
+}
+@media(max-width:720px){
+  #logView .log-table th:first-child,
+  #logView .log-table td:first-child{
+    width:102px!important;
+    min-width:102px!important;
+    max-width:102px!important;
+  }
+  #logView .log-table tr.mine-log td:first-child{padding-left:14px!important}
+}
+
+
+/* v1.7.65 Draft Log column + header cleanup */
+#logView .log-table{
+  table-layout:fixed!important;
+}
+#logView .log-table th,
+#logView .log-table td{
+  box-sizing:border-box;
+}
+#logView .log-table th{
+  vertical-align:middle!important;
+  line-height:1.1!important;
+  padding-top:7px!important;
+  padding-bottom:7px!important;
+}
+#logView .log-table th:first-child,
+#logView .log-table td:first-child{
+  width:92px!important;
+  min-width:92px!important;
+  max-width:92px!important;
+}
+#logView .log-table th:nth-child(2),
+#logView .log-table td:nth-child(2){
+  width:70px!important;
+  min-width:70px!important;
+  max-width:70px!important;
+}
+#logView .log-table th:nth-child(3),
+#logView .log-table td:nth-child(3){
+  width:108px!important;
+  min-width:108px!important;
+  max-width:108px!important;
+}
+#logView .log-table tr.mine-log td:first-child{
+  padding-left:14px!important;
+}
+#logView .log-table th:nth-child(2),
+#logView .log-table th:nth-child(3){
+  text-align:center!important;
+}
+#logView .log-table td:nth-child(2),
+#logView .log-table td:nth-child(3){
+  text-align:center!important;
+}
+
+@media(min-width:1280px){
+  #logView .log-table th:first-child,
+  #logView .log-table td:first-child{
+    width:100px!important;
+    min-width:100px!important;
+    max-width:100px!important;
+  }
+  #logView .log-table th:nth-child(2),
+  #logView .log-table td:nth-child(2){
+    width:78px!important;
+    min-width:78px!important;
+    max-width:78px!important;
+  }
+  #logView .log-table th:nth-child(3),
+  #logView .log-table td:nth-child(3){
+    width:118px!important;
+    min-width:118px!important;
+    max-width:118px!important;
+  }
+}
+
+@media(max-width:720px){
+  #logView .log-table th{
+    padding-top:5px!important;
+    padding-bottom:5px!important;
+    font-size:7.5px!important;
+  }
+  #logView .log-table th:first-child,
+  #logView .log-table td:first-child{
+    width:78px!important;
+    min-width:78px!important;
+    max-width:78px!important;
+  }
+  #logView .log-table th:nth-child(2),
+  #logView .log-table td:nth-child(2){
+    width:58px!important;
+    min-width:58px!important;
+    max-width:58px!important;
+  }
+  #logView .log-table th:nth-child(3),
+  #logView .log-table td:nth-child(3){
+    width:86px!important;
+    min-width:86px!important;
+    max-width:86px!important;
+  }
+  #logView .log-table tr.mine-log td:first-child{
+    padding-left:12px!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4627,7 +4869,7 @@ body:not(.post-draft-mode) .home-shortcut-grid [data-home-nav="trade"]{
       <h2>Settings</h2>
       <p>Everyday preferences first. Connection, saved data, and troubleshooting are below.</p>
     </div>
-    <span class="settings-status" id="settingsVersion">v1.7.59 RC</span>
+    <span class="settings-status" id="settingsVersion">v1.7.65 RC</span>
   </div>
 
   <div class="settings-section-label">Preferences</div>
@@ -7034,7 +7276,7 @@ let lastKnownWeek=0;
 let dataIntegrityState={repairs:0,notes:[]};
 const RUNTIME_CACHE_KEY=KEY+'-runtime-cache-v2';
 const RUNTIME_STALE_AFTER_MS=15*60*1000;
-const APP_VERSION='1.7.59';
+const APP_VERSION='1.7.65';
 const RELEASE_CHANNEL='RC';
 const SLEEPER_POLL_MS=30000;
 

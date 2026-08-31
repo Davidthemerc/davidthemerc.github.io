@@ -121,7 +121,7 @@ function applyHomeUpgradeCompletion(id,targetLevel,source='hall',method='artisan
 }
 function buyHomeUpgrade(id,source='hall'){return startHomeUpgradeProject(id,'external',source)}
 
-// v1.6.33.6 — restore Hidden Passage project constants lost during modular Hall refactor
+// v1.6.34 — restore Hidden Passage project constants lost during modular Hall refactor
 const HOME_SECRET_PASSAGE_COST=3000;
 const HOME_SECRET_PASSAGE_DAYS=7;
 const HOME_SECRET_PASSAGE_MATERIALS={timber:18,iron:8,tools:6};
