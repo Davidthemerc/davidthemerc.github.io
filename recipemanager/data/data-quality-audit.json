@@ -1,6 +1,6 @@
 {
-  "release": "0.2.5",
-  "activeRecipes": 425,
+  "release": "0.2.9",
+  "activeRecipes": 417,
   "importedHealthyArchive": 214,
-  "note": "No PDF re-audit performed in this release. User can mark any recipe Bad to exclude it from normal app use."
+  "note": "Seven additional recipes with clearly invalid merged ingredient rows were removed. Clean printouts added for weekly meal plans and grocery lists."
 }

@@ -2,7 +2,7 @@
   {
     "source": "The 28 Day Jumpstart",
     "file": "FG-28DayJumpstart.pdf",
-    "recipesImported": 30,
+    "recipesImported": 24,
     "needsReview": 0,
     "recipes": [
       {
@@ -21,28 +21,8 @@
         "needsReview": false
       },
       {
-        "title": "Sweet Potato Street Tacos",
-        "page": "131",
-        "needsReview": false
-      },
-      {
-        "title": "Pita Pizza Party",
-        "page": "134",
-        "needsReview": false
-      },
-      {
         "title": "Egg McFitFun",
         "page": "142",
-        "needsReview": false
-      },
-      {
-        "title": "Salade Niçoise Redux",
-        "page": "145",
-        "needsReview": false
-      },
-      {
-        "title": "Pumpkin Lasagna Rolls",
-        "page": "151",
         "needsReview": false
       },
       {
@@ -53,16 +33,6 @@
       {
         "title": "Apple Pie Fridge Oats",
         "page": "163",
-        "needsReview": false
-      },
-      {
-        "title": "Quinoa Cleanse Bowl",
-        "page": "165",
-        "needsReview": false
-      },
-      {
-        "title": "Growed-Up Girl Cheese",
-        "page": "170",
         "needsReview": false
       },
       {
@@ -523,7 +493,7 @@
   {
     "source": "Fit Girl Detox",
     "file": "FG-Detox.pdf",
-    "recipesImported": 33,
+    "recipesImported": 32,
     "needsReview": 0,
     "recipes": [
       {
@@ -609,11 +579,6 @@
       {
         "title": "Capreggse Cups",
         "page": "56",
-        "needsReview": false
-      },
-      {
-        "title": "Party in My Mouth Bowl",
-        "page": "58",
         "needsReview": false
       },
       {
@@ -932,7 +897,7 @@
   {
     "source": "Fit Girl Meal Plan 3",
     "file": "FG-MealPlan-3.pdf",
-    "recipesImported": 12,
+    "recipesImported": 11,
     "needsReview": 0,
     "recipes": [
       {
@@ -953,11 +918,6 @@
       {
         "title": "Lemon Crumble",
         "page": "38",
-        "needsReview": false
-      },
-      {
-        "title": "Veg Burrito",
-        "page": "51",
         "needsReview": false
       },
       {
@@ -1142,6 +1102,7 @@
     "recipesDiscovered": 214,
     "recipesImported": 214,
     "needsReview": 0,
-    "missing": 0
+    "missing": 0,
+    "recipes": []
   }
 ]

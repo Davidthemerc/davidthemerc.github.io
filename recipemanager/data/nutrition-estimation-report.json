@@ -1,0 +1,71 @@
+{
+  "release": "0.2.9",
+  "healthyArchiveRecipes": 214,
+  "estimatedNutritionRecipes": 203,
+  "remainingUnknownNutritionRecipes": 11,
+  "confidenceCounts": {
+    "high": 58,
+    "medium": 128,
+    "low": 17
+  },
+  "averageIngredientCoverage": 0.793,
+  "method": "Ingredient-quantity model using standard food-composition reference values; estimated serving yield uses explicit directions when detectable, otherwise a recipe-type/calorie heuristic.",
+  "provenancePolicy": "Estimated values are marked approximate and are kept distinct from publisher/source-supplied nutrition.",
+  "remainingUnknown": [
+    {
+      "id": "healthy-healthier-bbq-pork-for-sandwiches",
+      "title": "Healthier BBQ Pork for Sandwiches",
+      "sourceUrl": "http://allrecipes.com/recipe/222143/healthier-bbq-pork-for-sandwiches/"
+    },
+    {
+      "id": "healthy-healthier-buffalo-chicken-dip",
+      "title": "Healthier Buffalo Chicken Dip",
+      "sourceUrl": "http://allrecipes.com/recipe/219456/healthier-buffalo-chicken-dip/"
+    },
+    {
+      "id": "healthy-healthier-butternut-squash-fries",
+      "title": "Healthier Butternut Squash Fries",
+      "sourceUrl": "http://allrecipes.com/recipe/239168/healthier-butternut-squash-fries/"
+    },
+    {
+      "id": "healthy-healthier-easy-baked-tilapia",
+      "title": "Healthier Easy Baked Tilapia",
+      "sourceUrl": "http://allrecipes.com/recipe/219446/healthier-easy-baked-tilapia/"
+    },
+    {
+      "id": "healthy-healthier-monkey-bread-i",
+      "title": "Healthier Monkey Bread I",
+      "sourceUrl": "http://allrecipes.com/recipe/222076/healthier-monkey-bread-i/"
+    },
+    {
+      "id": "healthy-healthier-taco-seasoning-i",
+      "title": "Healthier Taco Seasoning I",
+      "sourceUrl": "http://allrecipes.com/recipe/222105/healthier-taco-seasoning-i/"
+    },
+    {
+      "id": "healthy-healthy-chocolate-energy-balls",
+      "title": "Healthy Chocolate Energy Balls",
+      "sourceUrl": "http://allrecipes.com/recipe/245017/healthy-chocolate-energy-balls/"
+    },
+    {
+      "id": "healthy-healthy-hot-cocoa",
+      "title": "Healthy Hot Cocoa",
+      "sourceUrl": "http://allrecipes.com/recipe/246479/healthy-hot-cocoa/"
+    },
+    {
+      "id": "healthy-healthy-lamb-meatballs",
+      "title": "Healthy Lamb Meatballs",
+      "sourceUrl": "http://allrecipes.com/recipe/239825/healthy-lamb-meatballs/"
+    },
+    {
+      "id": "healthy-healthy-mexican-chicken-bake",
+      "title": "Healthy Mexican Chicken Bake",
+      "sourceUrl": "http://allrecipes.com/recipe/232326/healthy-mexican-chicken-bake/"
+    },
+    {
+      "id": "healthy-healthy-vegan-pumpkin-bread",
+      "title": "Healthy Vegan Pumpkin Bread",
+      "sourceUrl": "http://allrecipes.com/recipe/255626/healthy-vegan-pumpkin-bread/"
+    }
+  ]
+}
