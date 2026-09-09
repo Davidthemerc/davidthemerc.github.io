@@ -1,0 +1,1528 @@
+/* v1.7.3 desktop typography repair
+   The app accumulated many 5-8px desktop labels while optimizing dense panels.
+   Desktop now gets a readable floor without forcing the mobile layout to expand. */
+@media(min-width:721px){
+  html{font-size:16px}
+  body{font-size:14px;line-height:1.4}
+
+  /* Global navigation / controls */
+  .tab-btn{font-size:12px!important}
+  .btn,.filter-btn,.status-btn,.team-position-btn,.why-close{font-size:12px!important}
+  select,input,textarea{font-size:13px!important}
+  .command-kicker{font-size:10px!important}
+  .command-strip-status b{font-size:14px!important}
+  .command-strip-status small{font-size:11px!important}
+  .command-actions button{font-size:11px!important;padding:6px 9px!important}
+  .command-health{font-size:10px!important;padding:5px 8px!important}
+
+  /* General supporting text */
+  .team-sub,.home-sub,.season-sub,.muted,.empty,.helper,.hint,.note,.meta,
+  .season-card-head>span,.season-card-head>div>span{font-size:11px!important}
+  .season-card-head h3{font-size:15px!important}
+  .weekly-report-subhead{font-size:11px!important}
+
+  /* Season hierarchy */
+  .season-group-head>div>span{font-size:10px!important}
+  .season-group-head h2{font-size:18px!important}
+  .season-group-note,.season-group-jump{font-size:11px!important}
+  .season-player,.season-player b,.season-player span{font-size:11px!important}
+  .season-intel-hero,.season-intel-grid,.season-grid{font-size:12px}
+
+  /* CTESPN / weekly reports */
+  .newsroom-lead .nr-kicker{font-size:10px!important}
+  .newsroom-lead b{font-size:20px!important}
+  .newsroom-lead span{font-size:12px!important}
+  .newsroom-controls .btn{font-size:11px!important;padding:5px 8px!important}
+  .news-card .nc-tag,.news-card .nc-when{font-size:10px!important}
+  .news-card h4{font-size:14px!important}
+  .news-card p{font-size:12px!important}
+  .news-card .nc-fact,.newsroom-footnote{font-size:10px!important}
+
+  /* Playoffs */
+  .playoff-machine-summary span{font-size:11px!important}
+  .playoff-game .pg-week{font-size:10px!important}
+  .playoff-game b{font-size:12px!important}
+  .playoff-outcome button{font-size:10px!important;padding:5px 7px!important}
+  .playoff-scenario-result .psr-kicker{font-size:10px!important}
+  .playoff-scenario-result b{font-size:17px!important}
+  .playoff-scenario-result p{font-size:12px!important}
+  .playoff-scenario-row span{font-size:10px!important}
+  .playoff-scenario-row b{font-size:12px!important}
+  .rooting-card b{font-size:12px!important}
+  .rooting-card small{font-size:10px!important}
+
+  /* Archive / rivalry */
+  .history-check span{font-size:10px!important}
+  .history-check b{font-size:13px!important}
+  .history-check small{font-size:10px!important}
+  .history-team-row,.htr-meta,.htr-chips span,.rivalry-source-note{font-size:11px!important}
+
+  /* Draft board, log, teams, analysis: establish sane readable floors */
+  .table-wrap table,.log-table,.draft-table{font-size:12px!important}
+  .table-wrap th,.table-wrap td,.log-table th,.log-table td,.draft-table th,.draft-table td{font-size:11px!important}
+  .player-name,.team-player-name{font-size:13px!important}
+  .player-meta,.team-player-meta,.rank-meta,.pick-meta{font-size:10px!important}
+  .analysis-card,.team-card,.home-card{font-size:12px}
+  .analysis-card h3,.team-card h3,.home-card h3{font-size:15px}
+  .analysis-card small,.team-card small,.home-card small{font-size:10px!important}
+
+  /* Dialogs */
+  .why-kicker{font-size:10px!important}
+  .why-sub,.why-footnote{font-size:11px!important}
+  .why-score-row span{font-size:10px!important}
+  .why-score-row b{font-size:16px!important}
+  .why-section h3{font-size:13px!important}
+  .why-summary,.why-breakdown,.research-links{font-size:12px!important}
+}
+
+/* Mobile remains deliberately compact, but prevent truly microscopic text. */
+@media(max-width:720px){
+  body{font-size:11px}
+  .tab-btn{font-size:7px}
+  .command-strip-status small,.command-actions button,.command-health{font-size:6px!important}
+  .season-group-head>div>span{font-size:5.5px}
+  .season-group-head h2{font-size:9px}
+  .season-group-note,.season-group-jump{font-size:5.5px}
+  #seasonView .season-card-head h3{font-size:8px}
+  #seasonView .season-card-head>span,#seasonView .season-card-head>div>span{font-size:5.5px}
+  .news-card p,.newsroom-lead span{font-size:6px!important}
+}
+
+
+/* v1.7.4 Command Center home cleanup */
+.home-hero-actions{display:flex;align-items:center;gap:7px}
+.home-main-action{border:0;border-radius:8px;background:var(--navy);color:#fff;padding:8px 12px;font-size:11px;font-weight:950;white-space:nowrap;box-shadow:0 2px 7px rgba(16,42,86,.18);cursor:pointer}
+.home-main-action:hover{filter:brightness(1.08)}
+.home-view-season .home-focus-card{border-color:#9bbce4;background:#f7faff}
+.home-view-live .home-focus-card{border-color:#e6c765;background:#fffdf5}
+@media(min-width:721px){
+  .home-card-head h3{font-size:14px!important}
+  .home-card-head button,.home-card-head>span{font-size:10px!important;padding:5px 7px!important}
+  .home-focus-value{font-size:26px!important}
+  .home-focus-detail{font-size:12px!important}
+  .home-mini-row span{font-size:10px!important;padding:4px 6px!important}
+  .home-rec .num{font-size:10px!important;width:24px;height:24px}
+  .home-rec b{font-size:13px!important}.home-rec small{font-size:10px!important}.home-rec .score{font-size:12px!important}
+  .home-list-row>span:first-child{font-size:10px!important}.home-list-row b{font-size:12px!important}.home-list-row small{font-size:10px!important}
+  .home-shortcut-grid b{font-size:12px!important}.home-shortcut-grid span{font-size:10px!important}
+  .home-phase{font-size:10px!important}
+}
+@media(max-width:720px){
+  .home-hero-actions{gap:4px}.home-main-action{font-size:6.5px;padding:4px 6px}
+  .home-hero{align-items:center}
+}
+
+
+/* v1.7.5 full-app typography + density audit */
+@media(min-width:721px){
+  /* Draft Board + Draft Intelligence */
+  .summary .stat .n{font-size:22px!important}
+  .summary .stat .l{font-size:10px!important}
+  .panel,.card,.intel-panel,.draft-grade-box,.report-card{padding:11px 12px}
+  .field label,.legend{font-size:10px!important}
+  .field input,.field select{font-size:13px!important}
+  .chip{font-size:11px!important}
+  .intel-head strong{font-size:16px!important}
+  .intel-sub,.intel-context,.intel-muted{font-size:11px!important}
+  .intel-label{font-size:10px!important}
+  .best-name{font-size:13px!important}.best-meta,.best-score{font-size:10px!important}.best-why{font-size:10px!important}
+  .intel-chip{font-size:10px!important;padding:5px 7px!important}
+  .draft-grade-kicker{font-size:10px!important}
+  .draft-grade-head h2{font-size:20px!important}
+  .draft-grade-metrics b{font-size:16px!important}
+  .draft-grade-metrics span{font-size:10px!important}
+  .draft-grade-league b{font-size:17px!important}
+  .draft-grade-league span,.draft-grade-league small{font-size:12px!important}
+
+  /* Team Analysis */
+  .analysis-head h2,.team-title,.teams-head h2,.log-title{font-size:24px!important}
+  .analysis-summary span,.analysis-league-chip{font-size:11px!important}
+  .teams-picker button{font-size:11px!important;padding:6px 9px!important}
+  .team-analysis-card{padding:10px 11px!important}
+  .team-analysis-card h3{font-size:15px!important}
+  .team-analysis-card small{font-size:10px!important}
+  .team-analysis-card p,.team-analysis-card li,.analysis-copy{font-size:11px!important}
+  .analysis-pill,.analysis-tag,.analysis-chip{font-size:10px!important}
+
+  /* Teams overview + individual Team Pages */
+  .team-page-kicker{font-size:10px!important}
+  .team-page-title h2{font-size:24px!important}
+  .team-page-title>div:last-child{font-size:11px!important}
+  .team-page-grade{width:62px;height:62px;font-size:25px!important}
+  .team-page-metrics>div{padding:8px 9px!important}
+  .team-page-metrics b{font-size:16px!important}
+  .team-page-metrics span{font-size:10px!important}
+  .team-page-card{padding:10px 11px!important}
+  .team-page-card-head h3{font-size:14px!important}
+  .team-page-card-head span{font-size:10px!important}
+  .team-page-pos span,.team-page-patterns span{font-size:10px!important;padding:4px 6px!important}
+  .team-page-copy{font-size:11px!important}
+  .team-page-highlight span{font-size:10px!important}
+  .team-page-highlight b{font-size:12px!important}
+  .team-page-player{padding:7px 8px!important}
+  .team-page-player b{font-size:12px!important}
+  .team-page-player small,.team-page-player .tp-rank,.team-page-player .tp-role{font-size:10px!important}
+  .team-page-draft-row>span:first-child{font-size:10px!important}
+  .team-page-draft-row b{font-size:12px!important}
+  .team-page-draft-row small{font-size:10px!important}
+  .team-trend-metric span,.team-season-item span,.team-strength span{font-size:10px!important}
+  .team-trend-metric b,.team-season-item b,.team-strength b{font-size:13px!important}
+  .team-trend-metric small,.team-season-item small,.team-strength small{font-size:10px!important}
+  .team-trend-profile{font-size:11px!important}
+  .team-trend-chip{font-size:10px!important}
+
+  /* My Team */
+  .team-metric b{font-size:20px!important}
+  .team-metric span{font-size:10px!important}
+  .team-note{font-size:12px!important}
+  .roster-slot,.bench-slot,.team-player-row{font-size:12px!important}
+  .team-position-btn{font-size:11px!important}
+
+  /* Trade Center */
+  .trade-side-title{font-size:12px!important}
+  .trade-player-list{max-height:360px}
+  .trade-player-option{padding:7px 8px!important;grid-template-columns:22px minmax(0,1fr) auto}
+  .trade-player-option b{font-size:12px!important}
+  .trade-player-option small{font-size:10px!important}
+  .trade-verdict b{font-size:18px!important}
+  .trade-verdict span{font-size:10px!important}
+  .trade-score-grid b{font-size:15px!important}
+  .trade-score-grid span{font-size:10px!important}
+  .trade-reasons{font-size:11px!important}
+  .trade-partner-card{padding:8px 9px!important}
+  .trade-partner-card b{font-size:13px!important}
+  .trade-partner-card p{font-size:11px!important}
+
+  /* Post-draft report */
+  .report-kicker{font-size:10px!important}
+  .report-sub{font-size:12px!important}
+  .report-score span,.report-highlights span,.position-grade span,.position-grade small{font-size:10px!important}
+  .report-highlights b{font-size:13px!important}
+  .report-card h3{font-size:15px!important}
+  .position-grade b{font-size:18px!important}
+  .report-tag{font-size:11px!important}
+  .report-eval p{font-size:12px!important}
+  .report-section-head span,.position-commentary,.report-strategy-copy{font-size:11px!important}
+
+  /* Draft Log */
+  .log-wrap{border-radius:10px}
+  .log-table{min-width:860px}
+  .log-table th{font-size:11px!important;padding:10px 9px!important}
+  .log-table td{font-size:12px!important;padding:9px!important}
+  .log-player-col{width:auto!important;max-width:240px}
+  .log-table td:nth-child(4){max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* Season non-card leftovers */
+  .activity-summary span,.activity-move,.activity-impact,.activity-head span,
+  .waiver-need,.waiver-role{font-size:10px!important}
+  .waiver-card-head b{font-size:13px!important}.waiver-card-head span,.waiver-card-meta,.waiver-card-why{font-size:10px!important}
+  .waiver-links a{font-size:10px!important}
+  .standing-team b{font-size:12px!important}.standing-team small,.standing-record,.standing-pf,.standing-gb,.standing-move,.playoff-status{font-size:10px!important}
+  .standings-header{font-size:9px!important}
+}
+
+/* Mobile consistency: preserve compact layouts but avoid 4-5px labels. */
+@media(max-width:720px){
+  .team-page-card-head span,.team-page-player small,.team-page-player .tp-rank,.team-page-patterns span,
+  .trade-player-option small,.trade-verdict span,.trade-score-grid span,.trade-partner-card p,
+  .analysis-summary span,.analysis-league-chip,.teams-picker button,
+  .activity-head span,.activity-impact,.waiver-card-meta,.waiver-card-why,.waiver-links a,
+  .standing-team small,.playoff-status{font-size:5.5px!important}
+  .team-page-player b,.trade-player-option b,.team-analysis-card h3,.standing-team b{font-size:6.5px!important}
+  .log-table th{font-size:8px!important}.log-table td{font-size:9px!important}
+}
+
+
+/* v1.7.6 visual hierarchy + interaction polish */
+:root{
+  --focus-ring:0 0 0 3px rgba(33,86,160,.20);
+  --hover-lift:0 7px 18px rgba(16,42,86,.10);
+  --card-border-strong:#c9d4e2;
+}
+
+/* Universal interactive feedback */
+button,a,select,input,textarea{transition:border-color .15s ease,background-color .15s ease,box-shadow .15s ease,transform .15s ease,filter .15s ease}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{
+  outline:2px solid #2f66ad;outline-offset:2px;box-shadow:var(--focus-ring)
+}
+button:active{transform:translateY(1px)}
+button:disabled{opacity:.48;cursor:not-allowed;filter:none!important;transform:none!important}
+
+/* Primary vs secondary action hierarchy */
+.btn.primary,.home-main-action,.sync-btn{
+  box-shadow:0 2px 7px rgba(16,42,86,.14)
+}
+.btn.primary:hover,.home-main-action:hover,.sync-btn:hover{filter:brightness(1.06);box-shadow:0 5px 12px rgba(16,42,86,.17)}
+.btn.ghost,.home-card-head button,.season-group-jump,.teams-picker button{
+  box-shadow:none
+}
+.btn.ghost:hover,.home-card-head button:hover,.season-group-jump:hover,.teams-picker button:hover{
+  background:#eef4fc;border-color:#9eb6d8;color:var(--navy)
+}
+
+/* Tabs */
+.tab-btn{position:relative}
+.tab-btn.active::after{
+  content:"";position:absolute;left:18%;right:18%;bottom:-2px;height:2px;border-radius:2px;background:currentColor
+}
+.tab-btn:not(.active):hover{background:rgba(255,255,255,.10)}
+
+/* Stronger card hierarchy without making the app heavier */
+.home-card,.season-card,.team-page-card,.team-analysis-card,.report-card,.intel-panel,.draft-grade-box,.trade-verdict{
+  border-color:var(--card-border-strong)
+}
+.home-card:hover,.team-page-card:hover,.team-analysis-card:hover{
+  box-shadow:var(--hover-lift)
+}
+.season-group-head{scroll-margin-top:150px}
+.season-group-body>.season-card:first-child{border-top-width:2px}
+
+/* Draft Board */
+.card{transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
+.card:hover{border-color:#a8bdd7;box-shadow:var(--hover-lift)}
+.card.mine{border-color:#93c8a4}
+.card.other{border-color:#d8a5a5}
+.card-actions .action:hover{filter:brightness(.98);box-shadow:inset 0 0 0 1px rgba(16,42,86,.10)}
+.best-card{transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
+.best-card:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(16,42,86,.08)}
+.intel-block{border-color:#d2dbe6}
+.intel-best{background:#f8fbff}
+
+/* Team analysis / team pages */
+.team-analysis-card.me,.team-page-hero{border-width:2px}
+.teams-picker button.active{box-shadow:0 2px 6px rgba(16,42,86,.12)}
+.team-page-player:hover,.team-page-draft-row:hover{background:#f3f7fc;border-color:#b7c8dd}
+.team-page-highlight{min-height:34px;align-items:center}
+
+/* Trade Center */
+.trade-player-option{cursor:pointer}
+.trade-player-option:hover{background:#f1f6fc;border-color:#a8bfdf}
+.trade-player-option:has(input:checked){background:#eaf2fd;border-color:#8fb1dc}
+.trade-player-option input{accent-color:#174e8c}
+.trade-verdict.good{box-shadow:inset 4px 0 0 #67bd84}
+.trade-verdict.bad{box-shadow:inset 4px 0 0 #d66c6c}
+.trade-verdict.even{box-shadow:inset 4px 0 0 #d1aa45}
+
+/* Season */
+.matchup-team.me{border-width:2px}
+.matchup-intel-row,.rooting-card,.news-card,.weekly-award,.rivalry-game,.history-check,.waiver-card{
+  transition:border-color .15s ease,background-color .15s ease,box-shadow .15s ease
+}
+.news-card:hover,.rivalry-game:hover,.waiver-card:hover{border-color:#a8bfdf;box-shadow:0 4px 10px rgba(16,42,86,.06)}
+.playoff-outcome button:hover{border-color:#9bbce4;background:#f3f7fc}
+.playoff-status,.waiver-role,.team-trend-chip,.weekly-trend{letter-spacing:.01em}
+
+/* Tables: stronger scan lines and row feedback */
+.log-table tbody tr:nth-child(even),.draft-table tbody tr:nth-child(even){background:#fbfcfe}
+.log-table tbody tr:hover,.draft-table tbody tr:hover{background:#eef4fc}
+.log-table tr.mine-log{box-shadow:inset 4px 0 0 #67bd84}
+.log-table th,.draft-table th{letter-spacing:.02em}
+.log-table td,.draft-table td{vertical-align:middle}
+
+/* Dialogs */
+dialog{border:1px solid #c9d4e2}
+.dialog-actions .btn.primary{min-width:92px}
+.why-close:hover{background:#eef4fc}
+
+/* Back to top */
+.back-top:hover{transform:translateY(-2px);box-shadow:0 13px 28px rgba(16,42,86,.28)}
+.back-top:active{transform:translateY(0)}
+
+/* Desktop rhythm */
+@media(min-width:721px){
+  main{padding-top:12px}
+  .home-primary-grid,.home-secondary-grid{gap:10px}
+  .season-group{margin-bottom:14px}
+  .season-group-body{gap:8px}
+  .team-page-card,.team-analysis-card,.season-card{margin-bottom:0}
+  .trade-builder-grid{gap:10px}
+  .log-table tbody tr{height:42px}
+}
+
+/* Mobile: retain density, improve tap clarity */
+@media(max-width:720px){
+  button,.btn,.tab-btn,.sync-btn,.teams-picker button,.playoff-outcome button{
+    min-height:28px
+  }
+  .home-shortcut-grid button,.command-actions button{min-height:34px}
+  .card-actions .action{min-height:30px}
+  .trade-player-option{min-height:34px}
+  .team-page-player,.team-page-draft-row{min-height:32px}
+  .season-group-head{scroll-margin-top:112px}
+  .log-table tbody tr:hover,.draft-table tbody tr:hover{background:inherit}
+  .home-card:hover,.team-page-card:hover,.team-analysis-card:hover{box-shadow:none}
+}
+
+
+/* v1.7.7 final responsive + UI consistency audit */
+
+/* Prevent accidental horizontal page overflow from dense cards/tables. */
+html,body{max-width:100%;overflow-x:hidden}
+main,.tab-view,.home-card,.season-card,.team-page-card,.team-analysis-card,.intel-panel,.report-card,
+.trade-player-option,.news-card,.rivalry-game,.playoff-game{min-width:0}
+img,svg,canvas{max-width:100%}
+
+/* Sticky header/navigation should not cover anchored content. */
+[id^="season"],#tradeView,#teamsView,#teamView,#analysisView,#draftView,#logView{scroll-margin-top:150px}
+
+/* Header/tab resilience on narrower desktop/laptop widths. */
+.tabs{min-width:0}
+.tab-btn{flex:0 0 auto}
+.command-actions{min-width:0}
+.sleeper-bar>*{min-width:0}
+.sleeper-select{max-width:100%}
+
+/* Dense grids become more graceful before mobile. */
+@media(max-width:1180px) and (min-width:721px){
+  .home-primary-grid{grid-template-columns:1fr 1fr}
+  .home-primary-grid>.home-card:last-child{grid-column:1/-1}
+  .home-secondary-grid{grid-template-columns:1fr 1fr}
+  .home-secondary-grid>.home-card:last-child{grid-column:1/-1}
+  .home-shortcut-grid{grid-template-columns:repeat(3,1fr)}
+  .team-page-roster{grid-template-columns:repeat(2,1fr)}
+  .team-page-metrics{grid-template-columns:repeat(3,1fr)}
+  .team-trend-metrics{grid-template-columns:repeat(3,1fr)}
+  .newsroom-grid{grid-template-columns:1fr 1fr}
+  .matchup-pos-context{grid-template-columns:repeat(3,1fr)}
+  .history-validation{grid-template-columns:repeat(2,1fr)}
+}
+
+/* Laptop / tablet landscape. */
+@media(max-width:980px) and (min-width:721px){
+  header{position:sticky;top:0}
+  .header-inner{padding-left:12px;padding-right:12px}
+  .tabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .command-strip{grid-template-columns:1fr auto}
+  .command-actions{grid-column:1/-1;grid-row:2;padding-bottom:2px}
+  .sleeper-bar{grid-template-columns:minmax(0,1fr) auto auto}
+  .sleeper-label{display:none}
+  .sync-status{grid-column:1/-1}
+  .intel-grid{grid-template-columns:1fr 1fr}
+  .intel-best{grid-column:1/-1}
+  .analysis-grid{grid-template-columns:1fr 1fr}
+  .trade-builder-grid{grid-template-columns:1fr}
+  .trade-player-list{max-height:310px}
+  .season-lineup-grid,.matchup-intel-grid,.weekly-report-grid,.rivalry-grid,.playoff-machine-grid{grid-template-columns:1fr}
+  .standings-list{grid-template-columns:1fr}
+  .playoff-rooting-list{grid-template-columns:1fr}
+  .report-score-grid{grid-template-columns:repeat(3,1fr)}
+  .report-grid{grid-template-columns:1fr}
+}
+
+/* Keep very wide tables usable instead of compressing text into unreadable columns. */
+.table-wrap,.log-wrap,.draft-table-wrap,.standings-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.log-table,.draft-table{width:max-content;min-width:100%}
+.log-table th,.log-table td,.draft-table th,.draft-table td{white-space:nowrap}
+.log-table td:nth-child(4),.draft-table td.player-cell{white-space:nowrap}
+
+/* Consistent wrapping for status rows/chips. */
+.home-mini-row,.season-chips,.intel-chips,.team-page-pos,.team-page-patterns,.team-trend-chips,
+.analysis-summary,.teams-picker,.history-bridge-summary,.playoff-machine-summary{
+  align-items:center
+}
+.home-mini-row span,.season-chip,.intel-chip,.team-page-pos span,.team-page-patterns span,
+.team-trend-chip,.analysis-summary span,.teams-picker button,
+.history-bridge-summary span,.playoff-machine-summary span{max-width:100%}
+
+/* Mobile refinement: compact, but less brittle. */
+@media(max-width:720px){
+  [id^="season"],#tradeView,#teamsView,#teamView,#analysisView,#draftView,#logView{scroll-margin-top:112px}
+
+  .header-inner{padding-left:7px;padding-right:7px}
+  .title-row{min-width:0}
+  h1{max-width:100%;overflow-wrap:anywhere}
+  .subtitle{overflow-wrap:anywhere}
+
+  .tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;padding-bottom:2px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab-btn{flex:0 0 auto;white-space:nowrap}
+
+  .sleeper-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px}
+  .sleeper-label{grid-column:1/-1}
+  .sleeper-select{width:100%;min-width:0}
+  .verify-wrap{grid-column:auto}
+  .sync-status{grid-column:1/-1}
+
+  .command-strip{overflow:hidden}
+  .command-actions{overflow-x:auto;max-width:100%}
+
+  .home-hero{gap:5px}
+  .home-hero>div:first-child{min-width:0}
+  .home-hero h2{overflow-wrap:anywhere}
+  .home-main-action{max-width:43vw;overflow:hidden;text-overflow:ellipsis}
+  .home-shortcut-grid{grid-template-columns:repeat(2,1fr)}
+  .home-rec-list{grid-template-columns:1fr}
+  .home-rec{display:grid;grid-template-columns:18px minmax(0,1fr) auto}
+  .home-rec .num{float:none;margin:0}
+  .home-rec .score{float:none}
+
+  .summary{overflow-x:auto;scrollbar-width:none}
+  .summary::-webkit-scrollbar{display:none}
+  .stat{min-width:62px}
+
+  .intel-head{align-items:flex-start}
+  .intel-title-wrap{min-width:0}
+  .intel-sub{display:block;margin:2px 0 0}
+  .best-list{display:grid;grid-template-columns:1fr}
+  .best-card{width:100%}
+
+  .analysis-summary{justify-content:flex-start}
+  .analysis-league-strip{padding-bottom:2px}
+  .team-analysis-card,.team-page-card,.season-card,.home-card{overflow:hidden}
+  .team-page-roster,.team-page-draft-list{grid-template-columns:1fr}
+  .team-page-metrics{grid-template-columns:repeat(2,1fr)}
+  .team-trend-metrics{grid-template-columns:repeat(2,1fr)}
+
+  .trade-builder-grid{grid-template-columns:1fr}
+  .trade-player-list{max-height:230px}
+  .trade-score-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .trade-score-grid b{overflow-wrap:anywhere}
+  .trade-partner-ideas{grid-template-columns:1fr}
+
+  .season-lineup-grid,.matchup-intel-grid,.weekly-report-grid,.rivalry-grid,.playoff-machine-grid{display:grid;grid-template-columns:1fr}
+  .matchup-teams{grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr)}
+  .matchup-team{padding-left:5px;padding-right:5px}
+  .matchup-team span,.matchup-team small{white-space:normal;overflow-wrap:anywhere}
+  .matchup-pos-context{grid-template-columns:repeat(2,1fr)}
+  .weekly-report-awards{grid-template-columns:repeat(2,1fr)}
+  .newsroom-grid,.standings-list,.playoff-rooting-list,.history-bridge-grid{grid-template-columns:1fr}
+  .history-validation{grid-template-columns:1fr 1fr}
+  .rivalry-metrics{grid-template-columns:repeat(2,1fr)}
+
+  .playoff-game{grid-template-columns:38px minmax(0,1fr) auto}
+  .playoff-outcome{flex-wrap:nowrap}
+  .playoff-outcome button{min-width:28px}
+
+  .report-score-grid{grid-template-columns:repeat(2,1fr)}
+  .report-highlights{grid-template-columns:repeat(2,1fr)}
+  .report-actions{flex-wrap:wrap}
+  .report-actions .btn{flex:1 1 180px}
+
+  .log-wrap,.table-wrap{margin-left:-1px;margin-right:-1px;border-radius:8px}
+  .log-table{min-width:760px}
+}
+
+/* Small phones. */
+@media(max-width:480px){
+  .home-shortcut-grid{grid-template-columns:1fr 1fr}
+  .team-page-metrics,.team-trend-metrics,.matchup-pos-context,.weekly-report-awards,
+  .history-validation,.rivalry-metrics{grid-template-columns:1fr 1fr}
+  .report-score-grid,.report-highlights{grid-template-columns:1fr 1fr}
+  .trade-score-grid{grid-template-columns:1fr}
+  .playoff-game{grid-template-columns:34px minmax(0,1fr)}
+  .playoff-outcome{grid-column:1/-1;justify-content:flex-end}
+  .home-main-action{max-width:40vw}
+}
+
+/* Extra narrow fallback. */
+@media(max-width:360px){
+  .home-shortcut-grid,.team-page-metrics,.team-trend-metrics,.matchup-pos-context,
+  .weekly-report-awards,.history-validation,.rivalry-metrics,
+  .report-score-grid,.report-highlights{grid-template-columns:1fr}
+  .home-main-action{display:none}
+  .command-health{display:none}
+}
+
+
+/* v1.7.9 recovery states */
+.command-health.bad{color:#ffc1c1;border-color:rgba(229,144,144,.55)}
+.command-health.stale{color:#f0d98d;border-color:rgba(230,199,101,.55)}
+.data-health-chip.saved,.data-health-chip.stale{background:#fff4cf;color:#735700;border-color:#e6c765}
+.data-health-chip.offline{background:#ffe1e1;color:#922b2b;border-color:#e59090}
+
+
+/* v1.7.14 duplicate navigation cleanup */
+.command-strip{grid-template-columns:minmax(0,1fr) auto!important}
+.command-actions{display:none!important}
+@media(max-width:720px){
+  .command-strip{grid-template-columns:minmax(0,1fr) auto!important}
+  .command-actions{display:none!important}
+  .command-strip-status small{white-space:normal;line-height:1.25}
+}
+
+
+/* v1.7.15 mobile Draft Board cleanup */
+.intel-collapse-label{
+  display:inline-flex;align-items:center;gap:5px;cursor:pointer;user-select:none;
+}
+.intel-collapse-label::before{
+  content:"";width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;
+  border-top:6px solid currentColor;transition:transform .15s ease;flex:0 0 auto;
+}
+.intel-panel.collapsed .intel-collapse-label::before{transform:rotate(-90deg)}
+.intel-collapse-label:focus-visible{outline:2px solid #2f66ad;outline-offset:3px;border-radius:4px}
+.intel-collapse-btn{display:none!important}
+
+.search-panel-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin:-2px 0 8px;padding:2px 1px 6px;border-bottom:1px solid var(--line);
+  cursor:pointer;user-select:none;color:var(--navy)
+}
+.search-panel-head strong{display:inline-flex;align-items:center;gap:5px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.search-panel-head strong::before{
+  content:"";width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;
+  border-top:6px solid currentColor;transition:transform .15s ease
+}
+.search-panel.collapsed .search-panel-head strong::before{transform:rotate(-90deg)}
+.search-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
+.search-summary{font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search-clear{border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--navy);font-size:9px;font-weight:850;padding:3px 6px;line-height:1}
+.search-clear:hover{background:#f3f7fc}
+#searchBody[hidden]{display:none!important}
+.search-panel.collapsed .search-panel-head{margin-bottom:0;padding-bottom:2px;border-bottom:0}
+
+.command-health{
+  width:28px!important;height:28px!important;min-width:28px!important;padding:0!important;
+  border-radius:50%!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  font-size:0!important;line-height:1!important
+}
+.command-health::after{content:"•";font-size:17px;font-weight:950}
+.command-health.good::after{content:"✓";font-size:14px}
+.command-health.warn::after,.command-health.stale::after{content:"!";font-size:14px}
+.command-health.bad::after{content:"×";font-size:17px}
+.command-health:not(.good):not(.warn):not(.stale):not(.bad)::after{content:"•"}
+
+@media(max-width:720px){
+  .intel-head{align-items:flex-start!important}
+  .intel-title-wrap{column-gap:5px!important;row-gap:3px!important;padding-right:2px}
+  .intel-collapse-label{font-size:8px!important;min-height:24px}
+  .intel-sub{flex-basis:100%;margin-left:0!important;padding-left:13px;line-height:1.25}
+  .intel-context{max-width:34%;overflow:hidden;text-overflow:ellipsis;padding:3px 5px!important}
+  .audit-help-btn{flex:0 0 auto}
+
+  .search-panel{padding-top:7px!important}
+  .search-panel-head{min-height:30px;margin-bottom:6px}
+  .search-panel-head strong{font-size:8px}
+  .search-summary{font-size:6px;max-width:68%}
+  .search-panel .controls{gap:5px}
+  .search-panel .field.search{grid-column:1/-1}
+  .search-panel .field.search input{width:100%}
+
+  .command-health{width:25px!important;height:25px!important;min-width:25px!important}
+}
+
+
+
+/* v1.7.33 Draft Board live-use cleanup */
+.mobile-primary-actions,.mobile-secondary-actions{display:none}
+@media(max-width:720px){
+  .mobile-list .card:not(.mine):not(.other){padding:6px 7px!important}
+  .mobile-list .card:not(.mine):not(.other) .card-top{grid-template-columns:34px minmax(0,1fr) auto;gap:5px}
+  .mobile-list .card:not(.mine):not(.other) .rankbox{padding:4px 2px!important}
+  .mobile-list .card:not(.mine):not(.other) .card-info:empty{display:none}
+  .mobile-list .card:not(.mine):not(.other) .card-info{margin:2px 0!important}
+  .mobile-list .card:not(.mine):not(.other)>.card-actions{display:none!important}
+  .mobile-primary-actions{display:grid;grid-template-columns:1fr 1fr auto;gap:3px;margin-top:4px}
+  .mobile-primary-actions .action{min-height:25px!important;padding:3px 4px!important;font-size:8px!important}
+  .mobile-more-actions{margin:0;min-width:52px}
+  .mobile-more-actions summary{
+    list-style:none;display:flex;align-items:center;justify-content:center;height:100%;min-height:25px;
+    border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--navy);
+    font-size:8px;font-weight:850;cursor:pointer;padding:3px 6px
+  }
+  .mobile-more-actions summary::-webkit-details-marker{display:none}
+  .mobile-more-actions[open] summary{background:var(--soft)}
+  .mobile-secondary-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;grid-column:1/-1;margin-top:1px}
+  .mobile-secondary-actions .action{min-width:0;padding:3px 2px!important;font-size:7px!important;white-space:nowrap}
+  .search-head-actions{max-width:72%}
+  .search-clear{font-size:7px;padding:3px 5px}
+  .rec-quick-actions{gap:3px;margin-top:2px}
+  .rec-quick-actions .why-player-btn,.rec-quick-actions .whatif-player-btn{font-size:6.5px!important;padding:3px 4px!important}
+}
+
+/* v1.7.16 startup team loading */
+.sleeper-bar.loading-team .sleeper-select{border-color:#9bbce4;box-shadow:0 0 0 2px rgba(33,86,160,.10)}
+
+
+/* v1.7.17 Draft Intelligence mobile cleanup */
+.intel-panel.collapsed .intel-sub{display:none!important}
+.intel-panel.collapsed .intel-context{align-self:center}
+.intel-panel.collapsed .intel-head{align-items:center!important}
+
+@media(max-width:720px){
+  .intel-head{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:start!important;
+    gap:4px 6px!important;
+  }
+  .intel-title-wrap{
+    display:flex!important;
+    align-items:center!important;
+    flex-wrap:wrap!important;
+    gap:3px 5px!important;
+    min-width:0;
+  }
+  .intel-collapse-label{font-size:8px!important;min-height:22px!important}
+  .audit-help-btn{width:20px!important;height:20px!important;min-height:20px!important}
+  .intel-sub{
+    flex:1 0 100%!important;
+    width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    font-size:6.5px!important;
+    line-height:1.25!important;
+  }
+  .intel-context{
+    align-self:start;
+    max-width:112px!important;
+    padding:3px 6px!important;
+    font-size:6px!important;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  /* Keep recommendation cards compact and stop the explanation buttons
+     from stretching into large empty boxes. */
+  .best-list{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:6px!important;
+  }
+  .best-card-wrap{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:3px!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  .best-card-wrap .best-card{
+    height:auto!important;
+    min-height:0!important;
+    padding:5px 6px!important;
+  }
+  .why-player-btn{
+    min-height:24px!important;
+    height:24px!important;
+    padding:2px 6px!important;
+    font-size:6px!important;
+    line-height:1!important;
+  }
+  .best-top{min-height:18px}
+  .best-name{font-size:7.5px!important}
+  .best-meta{font-size:5.8px!important}
+  .best-score{font-size:6.5px!important}
+  .best-why{font-size:5.8px!important;margin-top:1px!important}
+
+  .intel-best{padding:5px 6px!important}
+  .decision-row{gap:4px!important}
+  .decision-card{padding:5px!important}
+  .whatif-panel,.quick-research-panel,.confidence-panel{margin-top:5px!important}
+}
+
+/* With the subtitle removed, keep the title row compact. */
+.title-row{align-items:center}
+
+
+/* v1.7.18 mobile density + draft grade calibration */
+@media(max-width:720px){
+  /* Command Center: remove the remaining excess whitespace between cards and
+     around the small navigation buttons shown in the screenshot. */
+  #homeView{padding-top:5px!important}
+  .home-hero{margin-bottom:3px!important}
+  .home-primary-grid,.home-secondary-grid{margin-bottom:3px!important}
+  .home-card{
+    padding:5px 6px!important;
+    margin-bottom:3px!important;
+    border-radius:8px!important;
+  }
+  .home-card-head{margin-bottom:3px!important}
+  .home-card-head button{
+    min-height:24px!important;
+    padding:2px 5px!important;
+  }
+  .home-focus-card{padding-top:5px!important;padding-bottom:5px!important}
+  .home-focus-value{margin-top:1px!important}
+  .home-focus-detail{margin-top:2px!important}
+  .home-mini-row{margin-top:3px!important}
+  .home-rec-list{gap:2px!important}
+  .home-rec{padding:3px 4px!important}
+  .home-grade-wrap{gap:6px!important}
+  .home-list-row{padding:2px 0!important}
+  .home-shortcuts{margin-bottom:4px!important}
+
+  /* Live draft grade is intentionally compact and no longer visually reads
+     like a severe warning card just because the draft is unfinished. */
+  .home-grade{border-width:2px!important}
+}
+
+/* Slightly soften grade presentation without changing the established palette. */
+.grade-Aplus,.grade-A,.grade-Aminus,.grade-Bplus,.grade-B,.grade-Bminus{font-weight:950}
+
+
+/* v1.7.20 mobile control density */
+@media(max-width:720px){
+  /* Buttons: remove the residual vertical padding that accumulates throughout
+     the mobile interface while preserving a usable touch target. */
+  button,
+  .btn,
+  .tab,
+  .nav-btn,
+  .chip{
+    padding-top:3px!important;
+    padding-bottom:3px!important;
+  }
+
+  .top-tabs button,
+  .home-tabs button,
+  .command-tabs button,
+  .home-card-head button,
+  .intel-btn,
+  .why-player-btn{
+    min-height:26px!important;
+  }
+
+  /* Sleeper team row: the team selector uses only the width its visible label
+     needs instead of consuming the whole row. */
+  .sleeper-bar{
+    display:flex!important;
+    align-items:center!important;
+    flex-wrap:wrap!important;
+    gap:5px!important;
+  }
+  .sleeper-bar .sync-status{margin-left:0!important}
+  .sleeper-team-select,
+  #sleeperUser{
+    flex:0 1 auto!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:calc(100% - 42px)!important;
+    field-sizing:content;
+    padding-top:4px!important;
+    padding-bottom:4px!important;
+    padding-left:9px!important;
+    padding-right:25px!important;
+  }
+
+  /* Sync is icon-only on mobile. */
+  #syncSleeper,
+  #syncNow,
+  .sleeper-bar button[aria-label="Sync now"]{
+    flex:0 0 32px!important;
+    width:32px!important;
+    min-width:32px!important;
+    max-width:32px!important;
+    height:32px!important;
+    min-height:32px!important;
+    padding:0!important;
+    border-radius:8px!important;
+    font-size:14px!important;
+    line-height:1!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+}
+
+
+/* v1.7.21 compact connection status */
+.sync-status{
+  width:26px!important;height:26px!important;min-width:26px!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  flex:0 0 26px!important;border-radius:50%!important;
+  border:1px solid rgba(255,255,255,.24)!important;
+  background:rgba(255,255,255,.08)!important;
+  overflow:hidden!important;
+}
+.sync-detail{
+  position:absolute!important;width:1px!important;height:1px!important;
+  padding:0!important;margin:-1px!important;overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;
+}
+.sync-dot{
+  width:22px!important;height:22px!important;border-radius:50%!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  font-style:normal!important;background:#94a3b8!important;color:#fff!important;
+  font-size:0!important;font-weight:950!important;
+}
+.sync-dot::after{content:"•";font-size:14px!important;line-height:1}
+.sync-dot.ok{background:#2f9d61!important}
+.sync-dot.ok::after{content:"✓";font-size:13px!important}
+.sync-dot.busy{background:#d6a62d!important}
+.sync-dot.busy::after{content:"…";font-size:14px!important;transform:translateY(-2px)}
+.sync-dot.err{background:#c94747!important}
+.sync-dot.err::after{content:"×";font-size:15px!important}
+
+.command-health{
+  background:#94a3b8!important;color:#fff!important;border-color:rgba(255,255,255,.28)!important;
+}
+.command-health.good{background:#2f9d61!important;color:#fff!important;border-color:#79c999!important}
+.command-health.good::after{content:"✓"!important;color:#fff!important}
+.command-health.bad{background:#c94747!important;color:#fff!important;border-color:#e08b8b!important}
+.command-health.bad::after{content:"×"!important;color:#fff!important}
+.command-health.warn,.command-health.stale{background:#d6a62d!important;color:#fff!important;border-color:#e9c66e!important}
+.command-health.warn::after,.command-health.stale::after{content:"!"!important;color:#fff!important}
+
+@media(max-width:720px){
+  .sync-status{width:24px!important;height:24px!important;min-width:24px!important;flex-basis:24px!important}
+  .sync-dot{width:20px!important;height:20px!important}
+}
+
+
+/* v1.7.27 saved vs stale cache clarity */
+.sync-dot.saved,.sync-dot.stale{background:#d6a62d!important}
+.sync-dot.saved::after,.sync-dot.stale::after{content:"!";font-size:13px!important}
+
+/* v1.7.22 Sleeper API debug reporting */
+.verify-pop{max-height:min(72vh,620px);overflow:auto}
+.debug-divider{height:1px;background:var(--line);margin:9px 0 8px}
+.debug-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+.debug-head>span{font-size:9px;color:var(--muted);font-weight:800}
+.debug-summary{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px}
+.debug-summary span{display:block;border:1px solid var(--line);border-radius:6px;padding:4px 5px;background:#f8fafc;font-size:9px}
+.debug-summary b{display:block;font-size:9px;margin-bottom:1px}
+.debug-errors{display:grid;gap:4px;max-height:185px;overflow:auto}
+.debug-error{border:1px solid #e7b0b0;background:#fff5f5;border-radius:7px;padding:5px 6px;font-size:9px;line-height:1.35}
+.debug-error b{color:#8f2828}
+.debug-error code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:8px;word-break:break-all}
+.debug-error small{display:block;color:var(--muted);margin-top:2px}
+.debug-empty{font-size:9px;color:var(--muted);padding:3px 0}
+.debug-actions{display:flex;gap:5px;margin-top:7px}
+.debug-actions .btn{font-size:9px!important;padding:3px 6px!important;min-height:24px!important}
+@media(max-width:720px){
+  .verify-pop{width:min(360px,calc(100vw - 18px));max-height:76vh}
+  .debug-summary{grid-template-columns:1fr 1fr}
+  .debug-errors{max-height:150px}
+}
+
+
+/* v1.7.23 endpoint isolation diagnostics */
+.debug-endpoints{display:grid;gap:3px;margin:5px 0 7px}
+.debug-endpoint{display:grid;grid-template-columns:9px minmax(0,1fr) auto;align-items:center;gap:5px;font-size:8.5px}
+.debug-endpoint i{width:7px;height:7px;border-radius:50%;background:#94a3b8}
+.debug-endpoint.fresh i{background:#2f9d61}
+.debug-endpoint.stale i{background:#d6a62d}
+.debug-endpoint.failed i{background:#c94747}
+.debug-endpoint code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.debug-endpoint small{font-size:8px;color:var(--muted);white-space:nowrap}
+
+
+/* v1.7.25.1 single connection-health indicator */
+.command-strip,.command-health{display:none!important}
+
+/* v1.7.25 mobile compact controls */
+@media(max-width:720px){
+  button,.btn,.tab-btn,.chip,.sync-btn,.teams-picker button,.playoff-outcome button{
+    padding-top:2.16px!important;
+    padding-bottom:2.16px!important;
+    min-height:24px!important;
+  }
+  .top-tabs button,.home-tabs button,.command-tabs button,.home-card-head button,.intel-btn,.why-player-btn{
+    min-height:22px!important;
+  }
+  .home-shortcut-grid button,.command-actions button{min-height:28px!important}
+  .card-actions .action{min-height:25px!important;padding-top:2.7px!important;padding-bottom:2.7px!important}
+  .sync-btn,#syncNowBtn{height:28px!important;min-height:28px!important}
+  .verify-btn{width:28px!important;height:28px!important;min-height:28px!important}
+}
+
+/* v1.7.25.2 wide-desktop readability + button-density pass */
+@media(min-width:721px){
+  /* Another 10% reduction in vertical button padding without shrinking labels. */
+  .btn{padding-top:7.2px!important;padding-bottom:7.2px!important}
+  .tab-btn{padding-top:6.3px!important;padding-bottom:6.3px!important}
+  .sync-btn{padding-top:5.4px!important;padding-bottom:5.4px!important}
+  .chip{padding-top:5.4px!important;padding-bottom:5.4px!important}
+  .action{padding-top:4.5px!important;padding-bottom:4.5px!important}
+  .home-main-action{padding-top:7.2px!important;padding-bottom:7.2px!important}
+  .home-card-head button{padding-top:4.5px!important;padding-bottom:4.5px!important}
+  .home-shortcut-grid button{padding-top:6.3px!important;padding-bottom:6.3px!important}
+  .teams-picker button{padding-top:5.4px!important;padding-bottom:5.4px!important}
+  .playoff-outcome button{padding-top:4.5px!important;padding-bottom:4.5px!important}
+}
+
+/* On large desktop canvases, use the screen instead of leaving a narrow island in the middle.
+   This deliberately does not affect tablet/mobile layouts. */
+@media(min-width:1280px){
+  .header-inner,main{
+    width:calc(100% - 40px);
+    max-width:1900px;
+  }
+  body{font-size:16px;line-height:1.45}
+  h1{font-size:clamp(26px,1.8vw,36px)!important}
+  .tabs{gap:8px}
+  .tab-btn{font-size:13px!important}
+  .sleeper-label{font-size:12px!important}
+  .sleeper-select{font-size:14px!important}
+  .sync-btn{font-size:12px!important}
+  .ticker-label{font-size:11px!important}
+  .ticker-track{font-size:12px!important;gap:16px}
+  .pick-focus-label{font-size:9px!important}
+  .pick-focus-main b{font-size:13px!important}
+  .condensed-toggle{font-size:10px!important}
+
+  .home-hero{margin-bottom:12px}
+  .home-kicker{font-size:10px!important}
+  .home-hero h2{font-size:30px!important}
+  .home-sub{font-size:13px!important}
+  .home-phase{font-size:11px!important;padding:6px 10px}
+  .home-primary-grid,.home-secondary-grid{gap:12px;margin-bottom:12px}
+  .home-card{padding:13px 15px;border-radius:12px}
+  .home-card-head{margin-bottom:9px}
+  .home-card-head h3{font-size:16px!important}
+  .home-card-head button,.home-card-head>span{font-size:11px!important}
+  .home-focus-value{font-size:32px!important}
+  .home-focus-detail{font-size:13px!important;line-height:1.45}
+  .home-mini-row{gap:5px;margin-top:8px}
+  .home-mini-row span{font-size:11px!important;padding:5px 7px!important}
+  .home-rec-list{gap:6px}
+  .home-rec{grid-template-columns:28px minmax(0,1fr) auto;gap:8px;padding:8px 9px}
+  .home-rec .num{width:24px;height:24px;font-size:10px!important}
+  .home-rec b{font-size:14px!important}
+  .home-rec small{font-size:11px!important}
+  .home-rec .score{font-size:13px!important}
+  .home-grade{min-width:62px;height:62px;font-size:27px}
+  .home-grade-wrap>div:last-child b{font-size:19px!important}
+  .home-grade-wrap>div:last-child span{font-size:10px!important}
+  .home-list-row{padding:6px 0;gap:8px}
+  .home-list-row>span:first-child{font-size:10px!important}
+  .home-list-row b{font-size:13px!important}
+  .home-list-row small{font-size:10px!important}
+  .home-shortcuts{margin-bottom:12px}
+  .home-shortcut-grid{gap:8px}
+  .home-shortcut-grid b{font-size:13px!important}
+  .home-shortcut-grid span{font-size:11px!important}
+
+  /* Shared desktop reading sizes outside the Command Center. */
+  .team-sub,.season-sub,.muted,.empty,.helper,.hint,.meta{font-size:12px!important}
+  .intel-head strong{font-size:18px!important}
+  .intel-sub,.intel-context,.intel-muted{font-size:12px!important}
+  .intel-label{font-size:11px!important}
+  .best-name{font-size:14px!important}
+  .best-meta,.best-score,.best-why{font-size:11px!important}
+  .intel-chip{font-size:11px!important}
+  .analysis-head h2,.team-title,.teams-head h2,.log-title{font-size:27px!important}
+  .team-analysis-card h3,.team-page-card-head h3,.season-card-head h3,.report-card h3{font-size:16px!important}
+  .team-analysis-card p,.team-analysis-card li,.analysis-copy,.team-page-copy,.report-eval p{font-size:12px!important}
+  .log-table th{font-size:12px!important}
+  .log-table td{font-size:13px!important}
+}
+
+
+
+/* v1.7.25.3 large-desktop typography audit
+   Large desktop gets a 12px minimum for remaining secondary/microcopy across every view.
+   Existing larger desktop type stays larger; mobile/tablet rules remain untouched. */
+@media(min-width:1280px){
+  body{font-size:17px;line-height:1.5}
+  .header-inner,main{max-width:2000px}
+  .stat .l ,
+  .field label ,
+  .chip ,
+  .legend ,
+  .action ,
+  .compact-edit ,
+  .compact-status ,
+  .drafted-line .compact-meta ,
+  .drafted-line .compact-status ,
+  .card .projected span ,
+  .team-metric span ,
+  .slot-pos ,
+  .slot-proj small ,
+  .slot-bye ,
+  .sync-status ,
+  .sleeper-badge ,
+  .sleeper-teamname ,
+  .verify-pop ,
+  .ticker-label ,
+  .drafted-by ,
+  .mine-pick ,
+  .needs-title ,
+  .need-chip ,
+  .intel-label ,
+  .best-num ,
+  .best-score ,
+  .best-meta ,
+  .best-why ,
+  .intel-chip ,
+  .draft-grade-kicker ,
+  .draft-grade-metrics span ,
+  .draft-grade-copy ,
+  .grade-pick ,
+  .grade-pick b ,
+  .report-kicker ,
+  .report-score span ,
+  .report-highlights span ,
+  .position-grade span ,
+  .position-grade small ,
+  .report-tag ,
+  .archived-board-banner ,
+  .position-commentary ,
+  .report-section-head span ,
+  .league-rank-team b ,
+  .league-rank-team small ,
+  .league-rank-grade small ,
+  .award-title ,
+  .award-winner ,
+  .award-detail ,
+  .nr-badge ,
+  .grade-f::after ,
+  .need-state ,
+  .decision-card>span ,
+  .decision-card>b ,
+  .decision-card>small ,
+  .pick-focus-label ,
+  .condensed-toggle ,
+  .draft-finished-banner ,
+  .season-week-box span ,
+  .season-card-head span ,
+  .matchup-team span ,
+  .matchup-team small ,
+  .matchup-vs ,
+  .season-note ,
+  .season-chip ,
+  .season-subhead ,
+  .season-player b ,
+  .season-player small ,
+  .season-player-rank ,
+  .standing-rank ,
+  .standing-team small ,
+  .standing-record ,
+  .why-player-btn ,
+  .why-kicker ,
+  .why-sub ,
+  .why-score-row span ,
+  .why-row ,
+  .why-row b ,
+  .research-link ,
+  .why-footnote ,
+  .whatif-head>span ,
+  .audit-head>span ,
+  .whatif-head small ,
+  .audit-head b ,
+  .whatif-name b ,
+  .whatif-rank ,
+  .whatif-line ,
+  .whatif-chip ,
+  .audit-item ,
+  .quick-research-head span ,
+  .quick-research-head small ,
+  .quick-research-name ,
+  .quick-research-links a ,
+  .quick-compare-row a ,
+  .confidence-head span ,
+  .confidence-head b ,
+  .confidence-copy ,
+  .sensitivity-card span ,
+  .sensitivity-card b ,
+  .sensitivity-card small ,
+  .strategy-history-metrics span ,
+  .strategy-history-metrics b ,
+  .strategy-history-copy ,
+  .strategy-history-item .strategy-pick ,
+  .strategy-history-item b ,
+  .strategy-history-item small ,
+  .report-strategy-grid span ,
+  .report-strategy-copy ,
+  .audit-help-btn ,
+  .audit-help-pop>b ,
+  .audit-help-pop>span ,
+  .log-value ,
+  .log-table .log-value small ,
+  .analysis-summary span ,
+  .analysis-league-chip ,
+  .ta-name b ,
+  .ta-name small ,
+  .ta-grade small ,
+  .ta-metric span ,
+  .ta-metric b ,
+  .ta-pos ,
+  .ta-tendency ,
+  .ta-picks-title ,
+  .ta-pick-row .pick ,
+  .ta-pick-row .player ,
+  .ta-pick-row .player small ,
+  .ta-pick-row .value ,
+  .threat-head span ,
+  .threat-head b ,
+  .threat-head small ,
+  .threat-card .tc-team ,
+  .threat-card .tc-risk ,
+  .threat-card .tc-pick ,
+  .threat-card .tc-needs span ,
+  .threat-card .tc-copy ,
+  .ta-projection ,
+  .ta-pattern ,
+  .ta-for-you ,
+  .ta-picks>summary::before ,
+  .log-summary-strip span ,
+  .engine-selfcheck b ,
+  .engine-selfcheck span ,
+  .post-transition-strip span ,
+  .post-transition-strip b ,
+  .stable-badge ,
+  .home-kicker ,
+  .home-phase ,
+  .home-card-head button ,
+  .home-card-head>span ,
+  .home-mini-row span ,
+  .home-rec .num ,
+  .home-rec small ,
+  .home-grade-wrap>div:last-child span ,
+  .home-list-row>span:first-child ,
+  .home-list-row small ,
+  .home-shortcut-grid span ,
+  .teams-picker button ,
+  .team-page-kicker ,
+  .team-page-title>div:last-child ,
+  .team-page-metrics span ,
+  .team-page-card-head span ,
+  .team-page-pos span ,
+  .team-page-patterns span ,
+  .team-page-highlight span ,
+  .team-page-player small ,
+  .team-page-player .tp-rank ,
+  .team-page-draft-row>span:first-child ,
+  .team-page-draft-row small ,
+  .team-page-draft-row .tp-value ,
+  .season-intel-hero span ,
+  .season-intel-hero b ,
+  .season-intel-state ,
+  .season-watch-item .sev ,
+  .season-watch-item b ,
+  .season-watch-item small ,
+  .season-pressure span ,
+  .season-pressure b ,
+  .season-pressure small ,
+  .season-opponent-item span ,
+  .season-opponent-item b ,
+  .season-opponent-item small ,
+  .matchup-center-summary span ,
+  .matchup-center-summary small ,
+  .matchup-pos-player b ,
+  .matchup-pos-player small ,
+  .matchup-pos-score ,
+  .matchup-pos-slot ,
+  .matchup-center-footnote ,
+  .waiver-need ,
+  .waiver-card-head span ,
+  .waiver-card-meta ,
+  .waiver-card-why ,
+  .waiver-links a ,
+  .waiver-empty ,
+  .waiver-footnote ,
+  .activity-summary span ,
+  .activity-head b ,
+  .activity-head span ,
+  .activity-main ,
+  .activity-move ,
+  .activity-impact ,
+  .team-page-player .tp-role ,
+  .team-season-item span ,
+  .team-season-item small ,
+  .team-strength span ,
+  .team-strength small ,
+  .team-week-row>span:first-child ,
+  .team-week-row b ,
+  .team-week-row small ,
+  .team-week-row .week-score ,
+  .team-activity-row .ta-date ,
+  .team-activity-row b ,
+  .team-activity-row small ,
+  .playoff-race-summary span ,
+  .standings-header ,
+  .standings-list.rich .standing-rank ,
+  .standings-list.rich .standing-team b ,
+  .standings-list.rich .standing-team small ,
+  .standings-list.rich .standing-record ,
+  .standing-pf ,
+  .standing-gb ,
+  .standing-move ,
+  .playoff-status ,
+  .playoff-race-note ,
+  .history-bridge-summary span ,
+  .history-team-row .htr-head b ,
+  .history-team-row .htr-head span ,
+  .history-team-row .htr-meta ,
+  .history-team-row .htr-chips span ,
+  .history-bridge-actions span ,
+  .data-health-chip ,
+  .season-freshness ,
+  .trade-player-option small ,
+  .trade-verdict span ,
+  .trade-score-grid span ,
+  .trade-reasons ,
+  .trade-partner-card p ,
+  .waiver-role ,
+  .waiver-swap .swap-arrow ,
+  .waiver-swap b ,
+  .waiver-swap small ,
+  .weekly-report-controls span ,
+  .weekly-report-controls select ,
+  .weekly-report-hero .wr-kicker ,
+  .weekly-report-hero span ,
+  .weekly-award span ,
+  .weekly-award b ,
+  .weekly-award small ,
+  .weekly-report-subhead ,
+  .weekly-report-copy ,
+  .weekly-move-row>span:first-child ,
+  .weekly-move-row b ,
+  .weekly-move-row small ,
+  .weekly-trend ,
+  .team-trend-metric span ,
+  .team-trend-metric small ,
+  .team-trend-profile ,
+  .team-trend-chip ,
+  .matchup-intel-state .mi-kicker ,
+  .matchup-intel-state b ,
+  .matchup-intel-state span ,
+  .matchup-intel-row b ,
+  .matchup-intel-row small ,
+  .matchup-pos-context-card span ,
+  .matchup-pos-context-card b ,
+  .matchup-pos-context-card small ,
+  .playoff-machine-summary span ,
+  .playoff-game .pg-week ,
+  .playoff-outcome button ,
+  .playoff-scenario-result .psr-kicker ,
+  .playoff-scenario-row span ,
+  .rooting-card small ,
+  .achievement-summary span ,
+  .achievement-controls .btn ,
+  .achievement-card .ach-title ,
+  .achievement-card .ach-status{font-size:12px!important}
+
+  .achievement-card .ach-desc ,
+  .achievement-card .ach-winner ,
+  .achievement-card .ach-meta ,
+  .achievement-manual-copy ,
+  .achievement-manual-row b ,
+  .achievement-manual-row select ,
+  .achievement-manual-row button ,
+  .rivalry-head-actions span ,
+  .rivalry-head-actions .btn ,
+  .rivalry-hero .rh-kicker ,
+  .rivalry-hero b ,
+  .rivalry-hero span ,
+  .rivalry-metric span ,
+  .rivalry-metric b ,
+  .rivalry-metric small ,
+  .rivalry-game .rg-date ,
+  .rivalry-game b ,
+  .rivalry-game small ,
+  .rivalry-game .rg-margin ,
+  .rivalry-note b ,
+  .rivalry-note small ,
+  .rivalry-source-note ,
+  .newsroom-lead .nr-kicker ,
+  .newsroom-controls .btn ,
+  .news-card .nc-tag ,
+  .news-card .nc-when ,
+  .news-card .nc-fact ,
+  .newsroom-footnote ,
+  .history-check span ,
+  .history-check small ,
+  .command-kicker ,
+  .command-strip-status small ,
+  .command-actions button ,
+  .command-health ,
+  .season-group-head>div>span ,
+  .season-group-note ,
+  .season-group-jump ,
+  .team-position-btn ,
+  .note ,
+  .season-card-head>span ,
+  .season-card-head>div>span ,
+  .season-player ,
+  .season-player span ,
+  .history-team-row ,
+  .htr-meta ,
+  .htr-chips span ,
+  .table-wrap th ,
+  .table-wrap td ,
+  .draft-table th ,
+  .draft-table td ,
+  .player-meta ,
+  .team-player-meta ,
+  .rank-meta ,
+  .pick-meta ,
+  .analysis-card small ,
+  .team-card small ,
+  .home-card small ,
+  .home-main-action ,
+  .summary .stat .l ,
+  .team-analysis-card small ,
+  .analysis-pill ,
+  .analysis-tag ,
+  .analysis-chip ,
+  .search-panel-head strong ,
+  .search-summary ,
+  .debug-head>span ,
+  .debug-summary span ,
+  .debug-summary b ,
+  .debug-error ,
+  .debug-error code ,
+  .debug-empty ,
+  .debug-actions .btn ,
+  .debug-endpoint ,
+  .debug-endpoint code ,
+  .debug-endpoint small ,
+  .verify-pop small ,
+  .team-page-card small ,
+  .season-card small ,
+  .report-card small ,
+  .news-card small{font-size:12px!important}
+}
+
+
+/* v1.7.25.4 mobile Best Available compaction + recommendation regressions */
+@media(max-width:720px){
+  #bestForMe.best-list{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:3px!important;
+    overflow:visible!important;
+  }
+  #bestForMe .best-card-wrap{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 46px!important;
+    align-items:stretch!important;
+    gap:3px!important;
+    width:100%!important;
+    flex:0 0 auto!important;
+  }
+  #bestForMe .best-card{
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    padding:4px 5px!important;
+    margin:0!important;
+  }
+  #bestForMe .best-top{min-height:0!important;line-height:1.05!important}
+  #bestForMe .best-meta{
+    margin-top:2px!important;
+    line-height:1.05!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  #bestForMe .best-why{display:none!important}
+  #bestForMe .why-player-btn{
+    width:46px!important;
+    height:auto!important;
+    min-height:0!important;
+    padding:2px 3px!important;
+    margin:0!important;
+    font-size:0!important;
+    line-height:1!important;
+    white-space:normal!important;
+  }
+  #bestForMe .why-player-btn::after{content:'Why?';font-size:7px;font-weight:900}
+  #bestForMe .need-state{
+    font-size:5.5px!important;
+    padding:1px 3px!important;
+    margin-left:3px!important;
+    vertical-align:1px!important;
+  }
+}
+
+/* v1.7.25.6 centered header/navigation */
+.title-row{justify-content:center!important;text-align:center}
+.title-row>div:first-child{flex:0 1 auto!important;min-width:0}
+.header-actions{display:none!important}
+@media(min-width:721px){
+  .tabs{justify-content:center!important;width:100%}
+}
+@media(max-width:720px){
+  .title-row{justify-content:center!important;text-align:center}
+  .title-row>div:first-child{flex:1 1 auto!important}
+  .tabs{justify-content:flex-start!important}
+}
+
+
+/* v1.9.23 compact Trade Center UI */
+#tradeView .season-head{margin-bottom:6px;align-items:center}
+#tradeView .season-head .team-sub{margin-top:1px}
+#tradeView .season-grid{gap:6px;margin-bottom:6px}
+#tradeView .season-card{padding:7px 8px;border-radius:9px}
+#tradeView .season-card-head{margin-bottom:5px;gap:6px}
+#tradeView .season-card-head h3{margin:0}
+#tradeView .field-label{margin-bottom:2px}
+#tradeView #tradePartner{padding:5px 7px;min-height:30px}
+#tradeView .trade-builder-grid{gap:6px;margin:5px 0}
+#tradeView .trade-side-title{font-size:10px!important;margin-bottom:2px}
+#tradeView .trade-player-list{gap:2px;max-height:220px}
+#tradeView .trade-player-option{min-height:0;padding:4px 5px!important;grid-template-columns:18px minmax(0,1fr) auto;gap:4px;border-radius:6px}
+#tradeView .trade-player-option b{font-size:10.5px!important;line-height:1.15}
+#tradeView .trade-player-option small{font-size:8.5px!important;line-height:1.15;white-space:nowrap}
+#tradeView #evaluateTradeBtn{padding:5px 9px;min-height:30px}
+#tradeView .trade-evaluation{gap:4px}
+#tradeView .trade-evaluation .empty{padding:18px 10px}
+#tradeView .trade-verdict{padding:6px 7px;border-radius:7px}
+#tradeView .trade-verdict b{font-size:14px!important}
+#tradeView .trade-verdict span{font-size:9px!important}
+#tradeView .trade-score-grid{gap:3px}
+#tradeView .trade-score-grid>div{padding:4px;border-radius:6px}
+#tradeView .trade-score-grid b{font-size:12px!important}
+#tradeView .trade-score-grid span{font-size:8px!important}
+#tradeView .trade-reasons{font-size:9.5px!important;line-height:1.3}
+#tradeView #tradePartnerIdeasSection,#tradeView #tradeRetrospectivesSection{margin-top:6px}
+#tradeView .trade-partner-ideas{gap:3px}
+#tradeView .trade-partner-card{padding:6px 7px!important;border-radius:7px}
+#tradeView .trade-partner-card b{font-size:11px!important}
+#tradeView .trade-partner-card p{font-size:9px!important;line-height:1.3;margin-top:2px}
+#tradeView #tradeRetrospectives.activity-feed{gap:3px}
+
+@media(max-width:980px) and (min-width:721px){
+  #tradeView .trade-builder-grid{grid-template-columns:1fr 1fr}
+  #tradeView .trade-player-list{max-height:205px}
+}
+
+@media(max-width:720px){
+  #tradeView .season-head{margin-bottom:4px}
+  #tradeView .season-card{padding:6px}
+  #tradeView .season-card-head{margin-bottom:4px}
+  #tradeView .trade-builder-grid{gap:4px;margin:4px 0}
+  #tradeView .trade-player-list{max-height:175px;gap:2px}
+  #tradeView .trade-player-option{min-height:27px;padding:3px 4px!important;grid-template-columns:17px minmax(0,1fr) auto;gap:3px}
+  #tradeView .trade-player-option b{font-size:9px!important}
+  #tradeView .trade-player-option small{font-size:7.5px!important}
+  #tradeView .trade-side-title{font-size:9px!important}
+  #tradeView #evaluateTradeBtn{padding:4px 7px;min-height:28px;font-size:9px!important}
+  #tradeView .trade-evaluation .empty{padding:12px 7px}
+  #tradeView .trade-verdict{padding:5px 6px}
+  #tradeView .trade-verdict b{font-size:11px!important}
+  #tradeView .trade-verdict span{font-size:8px!important}
+  #tradeView .trade-score-grid b{font-size:10px!important}
+  #tradeView .trade-score-grid span{font-size:7px!important}
+  #tradeView .trade-reasons{font-size:8px!important}
+  #tradeView .trade-partner-card{padding:5px 6px!important}
+  #tradeView .trade-partner-card b{font-size:9.5px!important}
+  #tradeView .trade-partner-card p{font-size:8px!important}
+}
+
+@media(max-width:430px){
+  #tradeView .trade-player-list{max-height:155px}
+}
+
+
+/* v1.9.24 Trade Center layout + UCL Trade Value */
+#tradeView .trade-partner-selector{border:0;border-radius:8px;background:#fafbfd;padding:6px 7px;margin-bottom:6px}
+#tradeView .trade-partner-selector #tradePartner{width:100%;max-width:none;border:2px solid var(--blue2)!important}
+#tradeView .trade-side-panel{border:1px solid var(--line);border-radius:8px;background:#fff;padding:6px;min-width:0}
+#tradeView .trade-player-list{display:block;max-height:300px;padding-right:2px}
+#tradeView .trade-position-group+.trade-position-group{margin-top:5px}
+#tradeView .trade-position-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:1px 2px 3px;margin-bottom:3px;color:var(--navy)}
+#tradeView .trade-position-head b{font-size:9px;letter-spacing:.04em}.trade-position-head span{font-size:7px;color:var(--muted);font-weight:850}
+#tradeView .trade-position-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px}
+#tradeView .trade-player-option{grid-template-columns:17px minmax(0,1fr) auto!important;min-height:35px!important;padding:4px 5px!important}
+#tradeView .trade-player-main{min-width:0;display:block}
+#tradeView .trade-player-main>b{display:block;font-size:10px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
+#tradeView .trade-player-main>small{display:block;font-size:7.5px!important;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+#tradeView .trade-value{min-width:30px;text-align:right;line-height:1}
+#tradeView .trade-value>b{display:block;font-size:13px!important;color:var(--navy);font-variant-numeric:tabular-nums}
+#tradeView .trade-value>small{display:block;font-size:6px!important;color:var(--muted);text-transform:uppercase;margin-top:2px}
+@media(max-width:720px){
+  #tradeView .trade-partner-selector{padding:5px;margin-bottom:4px}
+  #tradeView .trade-side-panel{padding:4px}
+  #tradeView .trade-player-list{max-height:235px}
+  #tradeView .trade-position-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:2px}
+  #tradeView .trade-player-option{min-height:33px!important;padding:3px!important;grid-template-columns:15px minmax(0,1fr) auto!important}
+  #tradeView .trade-player-main>b{font-size:8.5px!important}
+  #tradeView .trade-player-main>small{font-size:6.5px!important}
+  #tradeView .trade-value{min-width:25px}.trade-value>b{font-size:11px!important}.trade-value>small{font-size:5px!important}
+}
+@media(max-width:360px){#tradeView .trade-position-grid{grid-template-columns:1fr}}

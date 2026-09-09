@@ -235,6 +235,7 @@ function worldTravelDays(from,to){
  const a=worldLocation(from),b=worldLocation(to),dx=a.x-b.x,dy=a.y-b.y,base=Math.max(1,Math.round(Math.sqrt(dx*dx+dy*dy)/32));
  if(ra==='bluestone'){const rough=[a.terrain,b.terrain].some(x=>['pass','gorge','mountain','mountain-road','quarry','mountain-fort'].includes(x));return base+(rough?1:0)}
  if(ra==='farnorth')return Math.max(2,base*2);
+ if(ra==='spawn')return 0; // district-to-district movement is urban travel, not a multi-day road journey
  if(ra==='redstone'){const rough=[a.terrain,b.terrain].some(x=>['mountain-valley','pass-road','forest','forest-slope'].includes(x)),pair=new Set([from,to]),mountainLink=(pair.has('grayhaven')&&pair.has('briarlake'))||(pair.has('lockwood')&&pair.has('briarlake'));return base+(rough||mountainLink?1:0)}
  return base
 }
@@ -253,36 +254,54 @@ function moveWorldCompanions(){
 function advanceWorldDays(days,reason=SOSText("openworld_state_captivity.advanceWorldDays.001")){
  if(!isOpenWorld())return;
  ensureWorldState();
+ const perf=(name,fn)=>typeof sosPerfRun==='function'?sosPerfRun(name,fn):fn();
  for(let d=0;d<days;d++){
    state.world.day++;
-   decayScoutingDaily();
-   worldIntegrationStartDayTick();
-   noteSharedCompanionDay();checkRelationshipQuests();maybeRoadLifeScene();maybeCompanionExplorationLead();
-   if(state.world.day%2===0)moveWorldCompanions();
-   moveWorldParties();
-   factionSecurityResponseDailyTick();
-   simulateRegionalConflict();
-   updateSettlementControl();
-   simulateSettlementLife();
-   townLifeDailyTick();populationMovementDailyTick();relationshipContractDailyTick();socialLifeDailyTick();socialChainDailyTick();companionNpcSocialDailyTick();redstoneCivicDailyTick();redstoneAuthorityDailyTick();sengiaEconomyDailyTick();sengiaSecurityDailyTick();sengiaRegionalConsequenceDailyTick();consolidateWorldSystems();
-   simulateRegionalNetworkDay();crossRegionSupplyPressure();
-   simulateFactionPresence();
-   factionSocialDailyTick();
-   simulatePoliticalDay();
-   if(state.world.day%4===0)travelerLifeTransitionTick();if(state.world.day%5===0)compactMatureWorldState();
-   for(const loc of WORLD_LOCATIONS.filter(x=>state.world.settlements?.[x.id]))if((state.world.day+loc.id.length)%2===0)maybeCreateFactionIncident(loc.id);
-   maybeCompanionPersonalRequest();
-   homeDailyTick();
-   propertyDailyTick();
-   worldIntegrationEndDayTick();
-   decayLawHeat();
-   failExpiredQuests();
-   for(const k of Object.keys(state.world.marketShock||{})){state.world.marketShock[k]=Math.max(0,state.world.marketShock[k]-.025)}
-   if(state.world.day%3===1)refreshShopStock();
+   perf('Day Tick — Core & Companions',()=>{
+     decayScoutingDaily();
+     worldIntegrationStartDayTick();
+     noteSharedCompanionDay();checkRelationshipQuests();maybeRoadLifeScene();maybeCompanionExplorationLead();
+     if(state.world.day%2===0)moveWorldCompanions();
+   });
+   perf('Day Tick — Moving Parties',()=>moveWorldParties());
+   perf('Day Tick — Conflict & Settlements',()=>{
+     factionSecurityResponseDailyTick();
+     simulateRegionalConflict();
+     updateSettlementControl();
+     simulateSettlementLife();
+   });
+   perf('Day Tick — Social & Regional Life',()=>{
+     perf('Social — Town Life & Population',()=>{townLifeDailyTick();populationMovementDailyTick()});
+     perf('Social — Relationships & NPC Life',()=>{relationshipContractDailyTick();socialLifeDailyTick();socialChainDailyTick();companionNpcSocialDailyTick()});
+     perf('Social — Regional Civic & Economy',()=>{redstoneCivicDailyTick();redstoneAuthorityDailyTick();sengiaEconomyDailyTick();sengiaSecurityDailyTick();sengiaRegionalConsequenceDailyTick();if(typeof spawnEconomyDailyTick==='function')spawnEconomyDailyTick()});
+     perf('Social — Consolidation & Supply',()=>{consolidateWorldSystems();simulateRegionalNetworkDay();crossRegionSupplyPressure()});
+   });
+   perf('Day Tick — Factions & Politics',()=>{
+     perf('Politics — Faction Presence',()=>simulateFactionPresence());
+     perf('Politics — Faction Social',()=>factionSocialDailyTick());
+     perf('Politics — Political Simulation',()=>simulatePoliticalDay());
+     perf('Politics — Periodic Maintenance',()=>{if(state.world.day%4===0)travelerLifeTransitionTick();if(state.world.day%5===0)compactMatureWorldState()});
+   });
+   perf('Day Tick — Incidents & Home',()=>{
+     const settlementLocs=typeof settlementWorldLocations==='function'?settlementWorldLocations():WORLD_LOCATIONS.filter(x=>state.world.settlements?.[x.id]);
+     for(const loc of settlementLocs)if((state.world.day+loc.id.length)%2===0)maybeCreateFactionIncident(loc.id);
+     maybeCompanionPersonalRequest();
+     homeDailyTick();
+     propertyDailyTick();
+   });
+   perf('Day Tick — Cleanup',()=>{
+     worldIntegrationEndDayTick();
+     decayLawHeat();
+     failExpiredQuests();
+     for(const k of Object.keys(state.world.marketShock||{})){state.world.marketShock[k]=Math.max(0,state.world.marketShock[k]-.025)}
+     if(state.world.day%3===1)refreshShopStock();
+   });
  }
- syncOpenWorldProgress();updateCompanionStoryAvailability();
- state.world.travelHistory.push({day:state.world.day,location:state.world.location,reason});
- refreshContracts();refreshRegionalStories();checkRegionalStoryArrival();checkWorldQuestArrival();checkAdventureStoryArrival();checkFactionQuestProgress();checkPersonalRequests();checkCompanionStories();maybeCompanyQuartersBenefit();syncHomeTrophies();save();
+ perf('Day Tick — Post Processing',()=>{
+   syncOpenWorldProgress();updateCompanionStoryAvailability();
+   state.world.travelHistory.push({day:state.world.day,location:state.world.location,reason});
+   refreshContracts();refreshRegionalStories();checkRegionalStoryArrival();checkWorldQuestArrival();checkAdventureStoryArrival();checkFactionQuestProgress();checkPersonalRequests();checkCompanionStories();maybeCompanyQuartersBenefit();syncHomeTrophies();save();
+ });
 }
 
 function captivityActive(){return !!(isOpenWorld()&&state.world?.captivity?.active)}

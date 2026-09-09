@@ -4,7 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Denise's Solitaire Harvest</title>
-<link rel="stylesheet" href="css/game.css?v=42.2">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="css/game.css?v=43.2.2">
 </head>
 <body>
 <div id="app">
@@ -116,6 +133,7 @@
         <div class="seasonTrack"><div id="seasonProgressBar"></div></div>
         <small class="seasonVariant" id="seasonVariant">🌼 Seasonal focus</small>
         <small class="seasonRewardPreview" id="seasonRewardPreview">Basket reward</small>
+        <small class="farmYearProgressLine" id="farmYearProgressLine">Farm Year: 0/4 Baskets</small>
       </section>
       <section class="weatherBulletin" id="weatherBulletin"><div class="bulletinTop"><b>🌦️ FARM BULLETIN</b><span id="weatherRemaining"></span></div><div class="bulletinWeather"><strong id="weatherNow">—</strong><small id="weatherDesc"></small></div><div class="bulletinNext" id="weatherNext">Next: —</div><div class="bulletinEvent" id="farmEventLine"></div></section>
       <div class="mainBalances">
@@ -126,6 +144,7 @@
       <div class="mainMenuButtons">
         <button class="mainChoice primaryChoice" id="playBtn"><span>🃏</span><div><b>Solitaire</b><small>Continue Level <span id="menuLevel">1</span></small></div></button>
         <button class="mainChoice dailyChoice" id="mainDailyBtn"><span>📅</span><div><b>Daily Challenge</b><small id="dailyMenuStatus">Today's board • 3 💎 + farm reward</small></div></button>
+        <button class="mainChoice returnChoice" id="mainReturnBtn"><span>🎁</span><div><b>Return Rewards</b><small id="returnRewardsMenuStatus">Daily • Weekly • Monthly rewards</small></div></button>
         <button class="mainChoice" id="mainFarmBtn"><span>🌻</span><div><b>Farm</b><small id="farmMenuStatus">Plant, harvest, upgrade</small></div></button>
         <button class="mainChoice" id="mainHouseBtn"><span>🏡</span><div><b>Farmhouse</b><small id="farmhouseMenuStatus">Trophies & Rosie’s corner</small></div></button>
         <button class="mainChoice" id="mainShopBtn"><span>✨</span><div><b>Rewards Shop</b><small>Spend gems on match powers</small></div></button>
@@ -138,6 +157,64 @@
     </div>
   </div>
 
+
+  <div class="overlay sectionOverlay" id="returnRewardsOverlay">
+    <div class="panel returnRewardsPanel">
+      <div class="panelHeader"><h2>🎁 Return Rewards</h2><button class="closeBtn backToMain" data-close="returnRewardsOverlay">×</button></div>
+      <div class="panelBody">
+        <div class="returnHero">
+          <div class="returnHeroIcon">🎁</div>
+          <div><b>Come back, collect, and catch up</b><small>Visiting unlocks today’s rewards. Tap the rewards on the board to collect them; tap any previous slot to see exactly what it contained.</small></div>
+        </div>
+        <div class="returnLoyaltyBar" id="returnLoyaltyBar">
+          <div><span>🌟</span><b id="returnLoyaltyRank">Loyalty Rank 1</b><small id="returnLoyaltyDetail">Rewards grow every 7 return days.</small></div>
+          <strong id="returnLoyaltyMultiplier">45× base value</strong>
+        </div>
+        <div class="returnClockWarning" id="returnClockWarning"></div>
+        <div class="returnDailyCard" id="returnDailyCard">
+          <div><span>🔥</span><b id="returnDailyStreak">Day 0</b><small id="returnDailyStatus">Today's return reward is waiting.</small></div>
+          <div class="returnDailyActions"><strong id="returnDailyReward">—</strong><button id="returnDailyClaimBtn">Collect Daily</button></div>
+        </div>
+        <section class="returnRecentDaily">
+          <div class="returnSetHead"><div><b>🔥 Recent Daily Rewards</b><small>Tap a previous day to review its reward and collection status.</small></div></div>
+          <div class="returnRecentDailyGrid" id="returnRecentDailyGrid"></div>
+        </section>
+        <section class="returnSetSection">
+          <div class="returnSetHead"><div><b>📆 Weekly Set</b><small id="returnWeekLabel">This week</small></div><strong id="returnWeekProgress">0/7</strong></div>
+          <div class="returnWeekGrid" id="returnWeekGrid"></div>
+          <div class="returnSetBonus" id="returnWeekBonus"></div>
+        </section>
+        <section class="returnSetSection">
+          <div class="returnSetHead"><div><b>🗓️ Monthly Set</b><small id="returnMonthLabel">This month</small></div><strong id="returnMonthProgress">0/31</strong></div>
+          <div class="returnMonthGrid" id="returnMonthGrid"></div>
+          <div class="returnSetBonus" id="returnMonthBonus"></div>
+        </section>
+        <section class="returnInspector" id="returnRewardInspector" role="dialog" aria-modal="true" aria-live="polite">
+          <button class="returnInspectorClose" id="returnInspectorClose" aria-label="Close reward details">×</button>
+          <div class="returnInspectorIcon" id="returnInspectorIcon">🎁</div>
+          <div class="returnInspectorCopy">
+            <b id="returnInspectorTitle">Reward Details</b>
+            <small id="returnInspectorStatus">Select any Daily, Weekly, or Monthly reward to see what it contained.</small>
+            <strong id="returnInspectorReward">Reward details appear here.</strong>
+          </div>
+          <button id="returnInspectorAction" hidden>Collect Reward</button>
+        </section>
+        <section class="returnPendingSection">
+          <div class="returnSetHead"><div><b>🎁 Uncollected Rewards</b><small>Visited rewards stay here until you collect them, even after their day or week has passed.</small></div><strong id="returnPendingCount">0</strong></div>
+          <div class="returnPendingList" id="returnPendingList"></div>
+        </section>
+        <section class="returnHistorySection">
+          <div class="returnSetHead"><div><b>🧾 Recent Reward History</b><small>Tap any entry to check exactly what the reward was.</small></div></div>
+          <div class="returnHistoryList" id="returnHistoryList"></div>
+        </section>
+        <section class="makeupSection">
+          <div class="returnSetHead"><div><b>🃏 Makeup Boards</b><small>Clear one seeded board to recover every missing Weekly/Monthly slot for that date.</small></div><strong id="makeupCount">0</strong></div>
+          <div class="makeupList" id="makeupList"></div>
+        </section>
+        <p class="returnRules">A visit makes that day’s Daily, Weekly, and Monthly rewards available, but you collect them yourself from this board. Visited rewards stay available in recent history until collected. A day you did not visit becomes eligible for a Makeup Board after it passes. Makeup Boards do not advance the campaign, grow crops, or add Season/Farm Year progress.</p>
+      </div>
+    </div>
+  </div>
 
   <div class="overlay sectionOverlay" id="dailyOverlay">
     <div class="panel dailyPanel">
@@ -214,6 +291,7 @@
           <button class="farmhouseTab" data-house-tab="tiers">🎖️ Achievement Tiers</button>
           <button class="farmhouseTab" data-house-tab="chapters">🖼️ Chapter Wall</button>
           <button class="farmhouseTab" data-house-tab="seasons">🍂 Seasons</button>
+          <button class="farmhouseTab" data-house-tab="mastery">⭐ Mastery Displays</button>
           <button class="farmhouseTab" data-house-tab="rosie">🐾 Rosie's Journal</button>
           <button class="farmhouseTab" data-house-tab="lifetime">📊 Lifetime</button>
         </div>
@@ -230,6 +308,7 @@
           <b id="collectionProgress">0 / 0 discoveries</b>
           <div class="collectionTrack"><div id="collectionProgressBar"></div></div>
           <small>Entries reveal themselves as Denise explores the farm and encounters new mechanics.</small>
+          <small class="masterySummaryLine" id="masterySummaryLine">Mastery: 0 / 0 medals • Overall completion 0%</small>
         </div>
         <div class="collectionTabs">
           <button class="collectionTab active" data-collection-tab="specials">🃏 Cards</button>
@@ -238,6 +317,7 @@
           <button class="collectionTab" data-collection-tab="powers">✨ Powers</button>
           <button class="collectionTab" data-collection-tab="rosie">🐾 Rosie</button>
           <button class="collectionTab" data-collection-tab="milestones">🏆 Milestones</button>
+          <button class="collectionTab" data-collection-tab="mastery">⭐ Mastery</button>
         </div>
         <div class="collectionGrid" id="collectionGrid"></div>
       </div>
@@ -398,6 +478,13 @@
           <div class="statBox">Daily Challenges Completed: <span id="statDailyCompleted">0</span></div>
           <div class="statBox">Daily Perfect Clears: <span id="statDailyPerfect">0</span></div>
           <div class="statBox">Best Daily Win Streak: <span id="statDailyStreak">0</span></div>
+          <div class="statBox">Return Visits / Daily Rewards Claimed: <span id="statReturnDays">0 / 0</span></div>
+          <div class="statBox">Current / Best Return Streak: <span id="statReturnStreak">0 / 0</span></div>
+          <div class="statBox">Weekly / Monthly Slots: <span id="statReturnSlots">0 / 0</span></div>
+          <div class="statBox">Makeup Boards Completed: <span id="statMakeups">0</span></div>
+          <div class="statBox">Weekly / Monthly Completion Rewards: <span id="statReturnCompletions">0 / 0</span></div>
+          <div class="statBox">Return Reward Coins / Gems: <span id="statReturnWallet">0 / 0</span></div>
+          <div class="statBox">Mastery Rewards / Sets: <span id="statMasteryRewards">0 / 0</span></div>
           <div class="statBox">Tier II Upgrades Owned: <span id="statTier2">0</span>/3</div>
           <div class="statBox">Rosie Rescue — Cards Cleared: <span id="statRosieRescueClears">0</span></div>
           <div class="statBox">Rosie Rescue — Nudges: <span id="statRosieRescueNudges">0</span></div>
@@ -414,6 +501,14 @@
           <div class="statBox">Season Baskets Completed: <span id="statSeasonBaskets">0</span></div>
           <div class="statBox">Season Points Earned: <span id="statSeasonPoints">0</span></div>
           <div class="statBox">Season Keepsakes: <span id="statSeasonKeepsakes">0</span>/4</div>
+          <div class="statBox">Farm Years Completed: <span id="statFarmYears">0</span></div>
+          <div class="statBox">Current / Best Farm Year Streak: <span id="statFarmYearStreak">0 / 0</span></div>
+          <div class="statBox">Farm Year Mastery: <span id="statFarmYearMastery">Tier 0</span></div>
+          <div class="statBox">Farm Year Finale Coins: <span id="statFarmYearCoins">0</span></div>
+          <div class="statBox">Farm Year Finale Gems: <span id="statFarmYearGems">0</span></div>
+          <div class="statBox">Mastery Medals: <span id="statMasteryMedals">0 / 0</span></div>
+          <div class="statBox">Gold Masteries: <span id="statGoldMasteries">0</span></div>
+          <div class="statBox">Almanac Completion: <span id="statCompletionPct">0%</span></div>
           <div class="statBox">Rosie Adventures: <span id="statRosieAdventures">0</span></div>
           <div class="statBox">Adventure Coins: <span id="statAdventureCoins">0</span></div>
           <div class="statBox">Adventure Gems: <span id="statAdventureGems">0</span></div>
@@ -597,14 +692,93 @@
   </div>
 </div>
 
-<script src="js/config.js?v=42.2" defer></script>
-<script src="js/seasons.js?v=42.2" defer></script>
-<script src="js/save.js?v=42.2" defer></script>
-<script src="js/audio.js?v=42.2" defer></script>
-<script src="js/levels.js?v=42.2" defer></script>
-<script src="js/farm.js?v=42.2" defer></script>
-<script src="js/weather.js?v=42.2" defer></script>
-<script src="js/diagnostics.js?v=42.2" defer></script>
-<script src="js/game.js?v=42.2" defer></script>
+
+
+
+
+
+
+
+
+
+<!-- v42.3 Seasonal Solitaire Content:
+8 season-exclusive formations; seasonal formation weighting; Farm Year Finale hands
+every 40 levels; stronger seasonal play identity; Finale stock/reward bonus.
+Save schema remains v40. -->
+<!-- v42.4 Farm Year Rewards:
+Four completed seasonal Baskets in one Farm Year award an optional Farm Year Finale.
+Tracks current/best consecutive full-year streaks and a 24-year history.
+Stewardship Mastery unlocks at 3/6/10 completed Farm Years and grants +2% crop and
+Farm Order coins per tier, capped at +6%. Missing a Basket has no currency penalty;
+that year's Finale/streak simply isn't earned. Save schema remains v40. -->
+<!-- v42.5 Seasons Reliability & Balance:
+- Save Doctor now validates/caps Farm Year history, streak, mastery and seasonal history.
+- Claimed baskets are normalized to full progress.
+- Farm Year/Basket farm rewards use one combined popup instead of overwriting each other.
+- Mobile main menu receives a compact-density pass while retaining the v42.2.1 top-anchor/safe-area fix.
+- Full seasonal/Farm Year economy reviewed; reward/mastery caps retained as balanced.
+- No save schema bump: remains v40. -->
+<!-- v43.0 Collections & Mastery
+- Bronze/Silver/Gold Mastery for crops, special cards, powers, and Rosie activities.
+- Harvest Almanac Mastery tab, medal totals, Gold totals, and combined overall completion.
+- Reliable existing statistics grant retroactive Mastery where exact historical counts exist.
+- Adds First Mastery, Crop Master, and Harvest Completionist Farmhouse trophies.
+- Crop planting now always shows a viewport-local confirmation near the player's current
+  screen position in addition to the plot animation and upper Farm status text.
+- Save schema remains v40. -->
+<!-- v43.1 Mastery Rewards & Return Rewards
+- Bronze, Silver, and Gold Mastery medals now award one-time rewards.
+- Four Gold collection sets award larger bonuses when an entire category reaches Gold.
+- Daily Return Rewards auto-claim once per local calendar day and grow with the return streak.
+- Every eligible day has a Weekly and Monthly reward slot.
+- Missed Weekly/Monthly slots remain recoverable with deterministic Makeup Boards.
+- A Makeup Board for one missed date recovers both Weekly and Monthly slots when both are missing.
+- Full Weekly and Monthly sets unlock manually claimable special completion rewards.
+- First partial week/month after upgrading is treated as a starter set and cannot grant a full-set bonus.
+- Recent reward-set history is retained for makeup (8 weekly sets and 4 monthly sets), keeping long-running saves bounded.
+- Makeup Boards do not advance campaign level, crops, Seasons, Farm Years, Mastery, or ordinary gameplay records; an interrupted board carries a recovery snapshot so reloading cannot leak temporary board statistics into the save.
+- Backward device-clock movement pauses new Return Reward claims instead of duplicating rewards.
+- v43.0 viewport-local planting confirmation is retained.
+- Save schema remains v40. -->
+<!-- v43.2 Farmhouse Mastery Displays + Manual Return Reward Board
+- Return visits now unlock rewards; they no longer auto-pay coins/items just for opening the game.
+- Daily reward, Weekly slot, and Monthly slot are collected manually by tap/click from the Return Rewards board.
+- Visited-but-uncollected rewards remain in an Uncollected Rewards list within retained history.
+- Every Daily/Weekly/Monthly history entry is tappable and opens an exact reward inspector.
+- Inspector distinguishes collected, ready, missed, Makeup-recovered, legacy, future, and exempt rewards.
+- Missed Weekly/Monthly visits still use Makeup Boards; Daily streak rewards remain non-makeup.
+- v43.1 saves migrate without duplicating already auto-collected rewards.
+- Farmhouse adds Mastery Displays: four Gold-set keepsakes, Gold Mastery plaques, closest-to-Gold progress, and completion breakdown.
+- v43.0 viewport-local planting confirmation and v42.2.1 mobile safe-area fix remain intact.
+- Save schema remains v40. -->
+<!-- v43.2.1
+Fix: tapping any Daily/Weekly/Monthly reward entry now opens Reward Details as a
+visible floating dialog instead of updating an inspector that may be off-screen.
+Collected rewards show their exact original reward bundle and collection source.
+Save schema remains v40. -->
+<!-- v43.2.2 — Return Reward Economy Rebalance
+- Return Reward coin value begins at approximately 45x the v43.2.1 economy.
+- Reward variety is substantially expanded across coins, gems, Rosie Treats, Windmills,
+  Magic Gates, and Rosie Rescues.
+- Loyalty Rank grows every 7 total return days and permanently increases future rewards.
+- Every 30 total return days adds an additional +25% loyalty boost.
+- Consecutive Daily streak value continues growing far beyond the old 14-day coin plateau.
+- 7-, 14-, and 30-day streak milestones now award large mixed bundles.
+- Weekly and Monthly individual slots now contain richer mixed rewards.
+- Weekly and Monthly completion rewards are dramatically larger and scale with Loyalty Rank.
+- Reward bundles are snapshotted when unlocked so tapping an old collected day shows the
+  exact reward that was actually available/collected at that time.
+- Pre-v43.2.2 collected rewards remain displayed using their original smaller reward formulas,
+  preventing history from falsely claiming that an older payout was larger than it really was.
+- Save schema remains v40. -->
+<script src="js/00.js?v=43.2.2"></script>
+<script src="js/01.js?v=43.2.2"></script>
+<script src="js/02.js?v=43.2.2"></script>
+<script src="js/03.js?v=43.2.2"></script>
+<script src="js/04.js?v=43.2.2"></script>
+<script src="js/05.js?v=43.2.2"></script>
+<script src="js/06.js?v=43.2.2"></script>
+<script src="js/07.js?v=43.2.2"></script>
+<script src="js/08.js?v=43.2.2"></script>
 </body>
 </html>

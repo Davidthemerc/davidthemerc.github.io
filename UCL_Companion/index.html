@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#102a56">
+<title>2026 Unmanaged Chaos League — Live Season Companion</title>
+<link rel="stylesheet" href="css/01-base-draft.css">
+<link rel="stylesheet" href="css/02-report-card.css">
+<link rel="stylesheet" href="css/03-season-core.css">
+<link rel="stylesheet" href="css/04-command-center.css">
+<link rel="stylesheet" href="css/05-teams.css">
+<link rel="stylesheet" href="css/06-season-advanced.css">
+<link rel="stylesheet" href="css/07-trade-and-season-tools.css">
+<link rel="stylesheet" href="css/08-responsive-polish.css">
+<link rel="stylesheet" href="css/09-settings-and-late-fixes.css">
+</head>
+<body>
+<header><div class="header-inner">
+<div class="title-row"><div><h1>2026 Unmanaged Chaos League — Live Season</h1></div>
+<div class="header-actions"></div></div>
+<div class="tabs"><button class="tab-btn" data-tab="news">News</button><button class="tab-btn active" data-tab="home">Command Center</button><button class="tab-btn" data-tab="teams">Teams</button><button class="tab-btn" data-tab="team">My Team</button><button class="tab-btn season-tab-btn" data-tab="season">Season</button><button class="tab-btn season-tab-btn" data-tab="faw">Players</button><button class="tab-btn season-tab-btn" data-tab="trade">Trade Center</button><button class="tab-btn" data-tab="settings">Settings</button><button class="tab-btn" data-tab="analysis" hidden>Team Analysis</button><button class="tab-btn" data-tab="log" hidden>Draft Log</button></div>
+<div class="sleeper-bar">
+  <span class="sleeper-label">Sleeper Team</span>
+  <select id="sleeperUser" class="sleeper-select" aria-label="Select Sleeper team"><option value="">Select your team…</option><option value="dmercado">dmercado</option><option value="ChiefJuannataco">ChiefJuannataco</option><option value="MadRagin">MadRagin</option><option value="karebear">karebear</option><option value="fograw">fograw</option><option value="mgarcia49">mgarcia49</option><option value="brianbrianrbianbrina">brianbrianrbianbrina</option><option value="Ntsuas">Ntsuas</option></select>
+  <button id="syncNowBtn" class="sync-btn" type="button" aria-label="Sync now" title="Sync now">↻</button>
+  <span class="sync-status"><i id="syncDot" class="sync-dot"></i><span id="syncText" class="sync-detail">Select your team to connect Sleeper.</span></span>
+</div>
+<div class="ticker" id="recentTicker"><span class="ticker-label">Recent Picks</span><div class="ticker-track" id="tickerTrack"></div></div>
+<div class="pick-focus" id="pickFocus">
+  <div class="pick-focus-main">
+    <span class="pick-focus-label">Current Pick</span>
+    <b id="currentPickFocus">Pre-draft</b>
+  </div>
+  <div class="pick-focus-main">
+    <span class="pick-focus-label">Your Turn</span>
+    <b id="yourTurnFocus">Select team</b>
+  </div>
+  <div class="pick-focus-main">
+    <span class="pick-focus-label">Next Recommendation</span>
+    <b id="recommendFocus">—</b>
+  </div>
+  <button class="condensed-toggle" id="condensedToggle" type="button" aria-pressed="false">Condensed Mode</button>
+</div>
+<div class="mobile-live-bar" id="mobileLiveBar">
+  <div><span>PICK</span><b id="mobilePick">—</b></div>
+  <div><span>YOU</span><b id="mobileTurn">—</b></div>
+  <div class="mobile-rec"><span>BEST FOR ME</span><b id="mobileRec">—</b></div>
+  <button id="mobileIntelBtn" type="button">Intel</button>
+</div>
+</div></header>
+<main>
+  <section id="newsView" class="tab-view">
+  <section class="season-group news-page" id="newsLeague">
+    <div class="season-group-head">
+      <div><span>AROUND THE LEAGUE</span><h2>News, Results & Movement</h2></div>
+      <button type="button" class="season-group-jump" data-command-tab="teams" title="Open league teams">View Teams ↗</button>
+    </div>
+    <div class="season-group-body">
+  <section class="season-card activity-center">
+    <div class="season-card-head">
+      <h3>League Activity & Transactions</h3>
+      <span id="activityStatus">Recent Sleeper activity</span>
+    </div>
+    <div class="activity-summary" id="activitySummary"></div>
+    <div class="activity-feed" id="activityFeed"></div>
+  </section>
+
+  
+
+  <section class="season-card newsroom-center" id="seasonNewsroomCenter">
+    <div class="season-card-head">
+      <h3>CTESPN Newsroom</h3>
+      <span id="newsroomStatus">Automated league story detection</span>
+    </div>
+    <div class="newsroom-lead" id="newsroomLead"></div>
+    <div class="newsroom-filter-label">NEWS STORY FILTER</div>
+    <div class="newsroom-controls">
+      <button type="button" class="btn ghost active" data-news-filter="all">All</button>
+      <button type="button" class="btn ghost" data-news-filter="my-team">My Team</button>
+      <button type="button" class="btn ghost" data-news-filter="matchup">Games</button>
+      <button type="button" class="btn ghost" data-news-filter="standings">Standings</button>
+      <button type="button" class="btn ghost" data-news-filter="transaction">Moves</button>
+      <button type="button" class="btn ghost" data-news-filter="rivalry">Rivalry</button>
+    </div>
+    <div class="newsroom-grid" id="newsroomGrid"></div>
+    <div class="newsroom-footnote">Headlines from league results, standings, transactions, and rivalry history.</div>
+  </section>
+
+  <section class="season-card weekly-report">
+    <div class="season-card-head">
+      <h3>CTESPN Weekly League Report</h3>
+      <div class="weekly-report-controls">
+        <span id="weeklyReportStatus">Latest finalized week</span>
+        <select id="weeklyReportWeek" aria-label="Weekly report week"></select>
+      </div>
+    </div>
+    <div class="weekly-report-hero" id="weeklyReportHero"></div>
+    <div class="weekly-report-awards" id="weeklyReportAwards"></div>
+    <div class="weekly-report-grid">
+      <section>
+        <div class="weekly-report-subhead">League Desk</div>
+        <div class="weekly-report-copy" id="weeklyReportCopy"></div>
+      </section>
+      <section>
+        <div class="weekly-report-subhead">Standings Movement</div>
+        <div class="weekly-movement-list" id="weeklyMovementList"></div>
+      </section>
+    </div>
+    <div class="weekly-report-trends">
+      <div class="weekly-report-subhead">Emerging Trends</div>
+      <div id="weeklyTrendList"></div>
+    </div>
+  </section>
+
+      </div>
+  </section>
+</section>
+
+<section id="homeView" class="tab-view active">
+  <div class="home-hero">
+    <div>
+      <div class="home-kicker" id="homeKicker">UCL COMPANION</div>
+      <h2 id="homeTitle" class="team-title">League Dashboard</h2>
+      <div class="home-sub" id="homeSub">Select your Sleeper team to activate the companion.</div>
+    </div>
+    <div class="home-hero-actions">
+      <button type="button" class="home-main-action" id="homeMainAction" data-home-nav="draft">Open Draft Board</button>
+      <div class="home-phase" id="homePhase">PRE-DRAFT</div>
+    </div>
+  </div>
+
+  <div class="home-primary-grid">
+    <section class="home-card home-focus-card">
+      <div class="home-card-head"><h3 id="homeFocusTitle">Your Next Move</h3><button type="button" id="homeFocusAction" data-home-nav="draft">Open Draft Board</button></div>
+      <div class="home-focus-value" id="homeFocusValue">—</div>
+      <div class="home-focus-detail" id="homeFocusDetail">Connect Sleeper to see your live draft context.</div>
+      <div class="home-mini-row" id="homeFocusMini"></div>
+    </section>
+
+    <section class="home-card">
+      <div class="home-card-head"><h3 id="homeRecTitle">Best Available for Me</h3><button type="button" id="homeRecAction" data-home-nav="draft">Draft Intelligence</button></div>
+      <div class="home-rec-list" id="homeRecommendations"></div>
+    </section>
+
+    <section class="home-card">
+      <div class="home-card-head"><h3 id="homeGradeTitle">Draft Grade</h3><button type="button" id="homeGradeAction" data-home-nav="team">My Team</button></div>
+      <div class="home-grade-wrap">
+        <div class="home-grade" id="homeGrade">—</div>
+        <div><b id="homeGradeScore">—</b><span id="homeGradeDetail">No picks graded yet.</span></div>
+      </div>
+      <div class="home-mini-row" id="homeRosterStatus"></div>
+    </section>
+  </div>
+
+  <div class="home-secondary-grid">
+    <section class="home-card">
+      <div class="home-card-head"><h3 id="homeRecentTitle">Recent Picks</h3><button type="button" data-home-nav="log">Draft Log</button></div>
+      <div class="home-compact-list" id="homeRecentPicks"></div>
+    </section>
+
+    <section class="home-card">
+      <div class="home-card-head"><h3 id="homeThreatTitle">Threat Watch</h3><button type="button" id="homeThreatAction" data-home-nav="analysis">Team Analysis</button></div>
+      <div class="home-compact-list" id="homeThreats"></div>
+    </section>
+
+    <section class="home-card">
+      <div class="home-card-head"><h3 id="homeLeagueTitle">League Snapshot</h3><button type="button" data-home-nav="analysis">League View</button></div>
+      <div class="home-compact-list" id="homeLeagueSnapshot"></div>
+    </section>
+  </div>
+
+  <section class="home-card home-shortcuts">
+    <div class="home-card-head"><h3>Command Shortcuts</h3><span id="homeLastSync">Waiting for Sleeper</span></div>
+    <div class="home-shortcut-grid">
+      <button type="button" id="homeShortcut1" data-home-nav="draft"><span class="home-shortcut-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span class="home-shortcut-copy"><b>Draft Board</b><span class="home-shortcut-detail">Rankings + intelligence</span></span></button>
+      <button type="button" id="homeShortcut2" data-home-nav="analysis"><span class="home-shortcut-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3.5 19c.4-3.5 2.3-5.3 5.5-5.3s5.1 1.8 5.5 5.3"/><path d="M14.5 15c1-.9 2.2-1.3 3.6-1.3 2.2 0 3.6 1.4 3.9 4.1"/></svg></span><span class="home-shortcut-copy"><b>Team Analysis</b><span class="home-shortcut-detail">Opponent builds + threats</span></span></button>
+      <button type="button" id="homeShortcut3" data-home-nav="teams"><span class="home-shortcut-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3.5 19c.4-3.5 2.3-5.3 5.5-5.3s5.1 1.8 5.5 5.3"/><path d="M14.5 15c1-.9 2.2-1.3 3.6-1.3 2.2 0 3.6 1.4 3.9 4.1"/></svg></span><span class="home-shortcut-copy"><b>Teams</b><span class="home-shortcut-detail">Browse every UCL roster</span></span></button>
+      <button type="button" id="homeShortcut4" data-home-nav="team"><span class="home-shortcut-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.7-2.8 8.1-7 10-4.2-1.9-7-5.3-7-10V6l7-3z"/><path d="M12 7.2l1.25 2.55 2.8.4-2.03 1.98.48 2.8L12 13.6l-2.5 1.33.48-2.8-2.03-1.98 2.8-.4L12 7.2z"/></svg></span><span class="home-shortcut-copy"><b>My Team</b><span class="home-shortcut-detail">Roster + live grade</span></span></button>
+      <button type="button" id="homeShortcut5" data-home-nav="log"><span class="home-shortcut-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M8 9h8M8 13h8M8 17h5"/></svg></span><span class="home-shortcut-copy"><b>Draft Log</b><span class="home-shortcut-detail">Every pick + reach/value</span></span></button>
+      <button type="button" id="homeShortcut6" data-home-nav="season" hidden><span class="home-shortcut-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 9h18"/></svg></span><span class="home-shortcut-copy"><b>Season</b><span class="home-shortcut-detail">Matchup + standings</span></span></button>
+    </div>
+  </section>
+</section>
+
+<section id="draftView" class="tab-view">
+<section id="postDraftReport" class="post-report" hidden>
+  <div class="draft-finished-banner show">
+    <span>Draft complete — live draft mode has ended and your final report card is now active.</span>
+    <button class="btn ghost" id="returnLogFromBanner" type="button">View Full Results</button>
+  </div>
+  <div class="post-transition-strip" id="postTransitionStrip">
+    <span><b id="postTransitionBoard">✓</b> Board archived</span>
+    <span><b id="postTransitionReport">✓</b> Report card active</span>
+    <span><b id="postTransitionSeason">✓</b> Season unlocked</span>
+    <span><b id="postTransitionStrategy">✓</b> Strategy history preserved</span>
+  </div>
+  <div class="report-hero">
+    <div>
+      <div class="report-kicker">UNMANAGED CHAOS LEAGUE • FINAL DRAFT REPORT</div>
+      <h2 id="reportTeamName">Post-Draft Report Card</h2>
+      <div class="report-sub" id="reportSubtitle">Final draft results and season-ready roster analysis.</div>
+    </div>
+    <div class="report-grade" id="reportOverallGrade">—</div>
+  </div>
+
+  <div class="report-score-grid">
+    <div class="report-score"><b id="reportOverallScore">—</b><span>Overall</span></div>
+    <div class="report-score"><b id="reportValueGrade">—</b><span>Draft Value</span></div>
+    <div class="report-score"><b id="reportConstructionGrade">—</b><span>Roster Construction</span></div>
+    <div class="report-score"><b id="reportEfficiency">—</b><span>Capital Efficiency</span></div>
+    <div class="report-score"><b id="reportLeagueRank">—</b><span>League Rank</span></div>
+  </div>
+
+  <div class="report-highlights">
+    <div><span>Best Pick</span><b id="reportBestPick">—</b></div>
+    <div><span>Biggest Steal</span><b id="reportBiggestSteal">—</b></div>
+    <div><span>Biggest Reach</span><b id="reportBiggestReach">—</b></div>
+    <div><span>Worst Pick</span><b id="reportWorstPick">—</b></div>
+  </div>
+
+  <div class="report-grid">
+    <section class="report-card">
+      <h3>Positional Grades</h3>
+      <div class="position-grade-grid" id="reportPositionGrades"></div>
+      <div class="position-commentary" id="reportPositionCommentary"></div>
+    </section>
+    <section class="report-card">
+      <h3>Roster Assessment</h3>
+      <div class="report-assess" id="reportRosterAssessment"></div>
+    </section>
+  </div>
+
+  <section class="report-card report-week1" id="reportWeek1Section">
+    <div class="report-section-head"><h3>Week 1 Projected Strength</h3><span id="reportWeek1Status">Loading Sleeper projections…</span></div>
+    <div class="report-projection-grid">
+      <div class="report-projection-metric"><b id="reportWeek1StarterPts">—</b><span>Starter Projection</span></div>
+      <div class="report-projection-metric"><b id="reportWeek1Grade">—</b><span>Projection Grade</span></div>
+      <div class="report-projection-metric"><b id="reportWeek1Rank">—</b><span>Projected Rank</span></div>
+      <div class="report-projection-metric"><b id="reportWeek1BenchPts">—</b><span>Bench Projection</span></div>
+    </div>
+    <div class="report-projection-copy" id="reportWeek1Copy">Week 1 projections are kept separate from the draft-process grade and scored using the league's Sleeper scoring settings.</div>
+  </section>
+
+  <section class="report-card report-league" id="reportLeagueSection">
+    <div class="report-section-head"><h3>League Draft Rankings</h3><span id="reportLeagueSummary"></span></div>
+    <div class="league-rank-list" id="reportLeagueLeaderboard"></div>
+  </section>
+
+  <section class="report-card report-awards" id="reportAwardsSection">
+    <div class="report-section-head"><h3>League Draft Awards</h3><span>Same custom ranking list • same grading model</span></div>
+    <div class="award-grid" id="reportAwards"></div>
+  </section>
+
+  <section class="report-card report-strategy" id="reportStrategySection">
+    <div class="report-section-head"><h3>Draft Strategy Review</h3><span id="reportStrategySummary">Recommendation history</span></div>
+    <div class="report-strategy-grid">
+      <div><b id="reportStrategyTop1">—</b><span>#1 Recommendation Match</span></div>
+      <div><b id="reportStrategyTop3">—</b><span>Top 3 Recommendation Match</span></div>
+      <div><b id="reportStrategyTracked">0</b><span>Picks Tracked</span></div>
+      <div><b id="reportStrategyGrade">—</b><span>Final Draft Grade</span></div>
+    </div>
+    <div class="report-strategy-copy" id="reportStrategyCopy"></div>
+  </section>
+
+  <section class="report-card report-eval" id="reportEvaluationSection">
+    <h3>Final Evaluation</h3>
+    <p id="reportEvaluation"></p>
+  </section>
+
+  <div class="report-archive-bar">
+    <span class="report-archive-label">Draft Archive</span>
+    <div class="report-archive-actions">
+      <button class="btn primary" id="reportAnalysisBtn" type="button">Team Analysis</button>
+      <button class="btn" id="reportLogBtn" type="button">Draft Log</button>
+      <button class="btn" id="reportBoardBtn" type="button">Archived Board</button>
+    </div>
+  </div>
+</section>
+<div id="liveDraftBoard"><div class="archived-board-banner">Draft complete — you are viewing the archived live draft board.</div>
+<section class="summary"><div class="stat"><div class="n" id="availableCount">300</div><div class="l">Available</div></div><div class="stat"><div class="n" id="mineCount">0</div><div class="l">My Team</div></div><div class="stat"><div class="n" id="otherCount">0</div><div class="l">Taken</div></div><div class="stat"><div class="n" id="targetCount">0</div><div class="l">Targets</div></div><div class="stat"><div class="n" id="sleeperCount">0</div><div class="l">Sleepers</div></div><div class="stat"><div class="n" id="pickCount">0</div><div class="l">Drafted</div></div></section>
+<section class="intel-panel" id="draftIntelPanel">
+  <div class="intel-head" role="button" tabindex="0" aria-expanded="true" title="Collapse Draft Intelligence">
+    <div class="intel-title-wrap">
+      <strong id="intelCollapseLabel" class="intel-collapse-label" role="button" tabindex="0" aria-expanded="true" title="Collapse Draft Intelligence">Draft Intelligence</strong>
+      
+        <div class="audit-list" id="auditList"></div>
+        <div class="audit-diagnostics-link">App-wide checks are in Settings.</div>
+      </span>
+      <span class="intel-sub">Live recommendations based on your board + roster + draft context</span>
+    </div>
+    <span class="intel-context" id="draftContext">Pre-draft</span>
+  </div>
+  <div id="intelBody">
+  <div class="intel-grid">
+    <div class="intel-block intel-best">
+      <div class="intel-label" title="Roster-aware recommendations. The custom ranking list stays the baseline; roster need, availability risk, runs, and tier cliffs can make limited adjustments.">Best Available for Me</div>
+      <div class="best-list" id="bestForMe"></div>
+      <div class="decision-row">
+        <div class="decision-card"><span>Take Now / Wait</span><b id="takeWaitAdvice">—</b><small id="takeWaitReason"></small></div>
+        <div class="decision-card"><span>Best Alternative</span><b id="bestAlternative">—</b><small id="bestAlternativeReason"></small></div>
+        <div class="decision-card"><span>Tier Watch</span><b id="tierWatch">—</b><small id="tierWatchReason"></small></div>
+      </div>
+      <details class="whatif-panel intel-secondary-panel">
+        <summary class="whatif-head"><span>What If I Take…</span><small>Compare scenarios</small></summary>
+        <div class="whatif-grid" id="whatIfGrid"></div>
+      </details>
+      <details class="quick-research-panel intel-secondary-panel">
+        <summary class="quick-research-head">
+          <span>Quick Research</span>
+          <small>Player links</small>
+        </summary>
+        <div class="quick-research-grid" id="quickResearchGrid"></div>
+        <div class="quick-compare-row" id="quickCompareRow"></div>
+      </details>
+      <details class="confidence-panel intel-secondary-panel">
+        <summary class="confidence-head">
+          <span>Recommendation Confidence</span>
+          <b id="confidenceState">—</b>
+        </summary>
+        <div class="confidence-meter"><i id="confidenceFill"></i></div>
+        <div class="confidence-copy" id="confidenceCopy"></div>
+        <div class="sensitivity-grid" id="sensitivityGrid"></div>
+      </details>
+    </div>
+    <div class="intel-block">
+      <div class="intel-label">Position Runs</div>
+      <div class="intel-chips" id="positionRuns"><span class="intel-muted">No meaningful run detected.</span></div>
+    </div>
+    <div class="intel-block">
+      <div class="intel-label">Roster Watch</div>
+      <div class="intel-chips" id="rosterWatch"><span class="intel-muted">No major roster vulnerability yet.</span></div>
+    </div>
+  </div>
+  </div>
+</section>
+<section class="panel search-panel" id="searchPanel">
+  <div class="search-panel-head" id="searchToggle" role="button" tabindex="0" aria-expanded="true" title="Collapse Search">
+    <strong>Search</strong>
+    <div class="search-head-actions"><span class="search-summary" id="searchSummary">All players • overall rank</span><button class="search-clear" id="clearFiltersBtn" type="button" hidden>Clear</button></div>
+  </div>
+  <div id="searchBody">
+    <div class="controls"><div class="field search"><input id="search" aria-label="Search players" placeholder="Player, team, rank…" autocomplete="off"></div><div class="field"><label>Position</label><select id="posFilter"><option value="">All positions</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></div><div class="field"><label>Status</label><select id="statusFilter"><option value="">All statuses</option><option value="available">Available</option><option value="mine">MINE</option><option value="other">TAKEN</option><option value="target">Targets</option><option value="sleeper">Sleepers</option><option value="avoid">Avoid</option></select></div><div class="field"><label>Bye week</label><select id="byeFilter"><option value="">All byes</option></select></div><div class="field"><label>Sort</label><select id="sortBy"><option value="rank">Overall rank</option><option value="proj">Projected points</option><option value="posrank">Position rank</option><option value="name">Player name</option></select></div></div>
+    <div class="chips"><button class="chip active" data-quick="all">All</button><button class="chip" data-quick="available">Available only</button><button class="chip" data-quick="target">⭐ Targets</button><button class="chip" data-quick="sleeper">💎 Sleepers</button><button class="chip" data-quick="mine">MINE only</button><button class="chip" id="topAvailable">Best available</button><div class="legend"><span><i class="dot mine"></i>MINE</span><span><i class="dot other"></i>TAKEN</span><span><i class="dot target"></i>Target</span><span><i class="dot sleeper"></i>Sleeper</span><span><i class="dot avoid"></i>Avoid</span></div></div>
+  </div>
+</section>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>TM</th><th>Pos</th><th>Bye</th><th>Proj</th><th>Draft / Tags</th><th>Note</th></tr></thead><tbody id="tbody"></tbody></table></div>
+<div class="mobile-list" id="mobileList"></div>
+<div class="footer-tools"><div class="small" id="shownCount"></div><div><button class="btn" id="undoBtn">↶ Undo last change</button> <button class="btn danger" id="resetDraftBtn">Reset draft</button> <button class="btn danger" id="resetAllBtn">Reset everything</button></div></div>
+</div>
+</section>
+
+<section id="analysisView" class="tab-view">
+  <div class="analysis-head">
+    <div>
+      <h2 class="team-title">Team Analysis</h2>
+      <div class="team-sub">How every UCL manager is building their roster compared with the custom draft list.</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end">
+      <div class="analysis-summary" id="analysisSummary"></div>
+      <button class="btn archive-return-btn" type="button" data-home-nav="draft">← Report Card</button>
+    </div>
+  </div>
+
+  <div class="analysis-league-strip" id="analysisLeagueStrip"></div>
+
+  <section class="threat-radar">
+    <div class="threat-head">
+      <div>
+        <span>LIVE THREAT RADAR</span>
+        <b>Who could affect your next pick?</b>
+      </div>
+      <small id="threatWindow">Draft order pending</small>
+    </div>
+    <div class="threat-grid" id="threatGrid"></div>
+  </section>
+
+  <div class="analysis-grid" id="teamAnalysisGrid"></div>
+</section>
+
+
+<section id="teamsView" class="tab-view">
+  <div class="teams-head">
+    <div>
+      <h2 class="team-title">League Teams</h2>
+      <div class="team-sub">Browse the Draft Report Card, every UCL roster profile, results, and recent roster activity.</div>
+    </div>
+    <div class="teams-head-actions">
+      <button class="teams-report-card-btn" type="button" data-home-nav="draft" title="Open the 2026 Draft Report Card">
+        <span class="teams-report-card-kicker">2026 DRAFT</span>
+        <strong>Report Card</strong>
+        <span>Open full draft grades &amp; analysis →</span>
+      </button>
+      <div class="teams-picker" id="teamsPicker"></div>
+    </div>
+  </div>
+
+  <section class="team-page" id="teamPage">
+    <div class="team-page-hero">
+      <div class="team-page-title">
+        <div class="team-page-kicker">UCL TEAM PAGE</div>
+        <h2 id="teamPageName">Select a team</h2>
+        <div id="teamPageMeta">Choose a team above to view its live roster.</div>
+      </div>
+    </div>
+
+    <div class="team-page-metrics">
+      <div><b id="teamPagePlayers">0</b><span>Players</span></div>
+      <div><b id="teamPageStarters">0</b><span>Starters</span></div>
+      <div><b id="teamPageBench">0</b><span>Bench</span></div>
+      <div><b id="teamPageRecord">—</b><span>Record</span></div>
+      <div><b id="teamPagePointsFor">—</b><span>Points For</span></div>
+      <div><b id="teamPagePointsAgainst">—</b><span>Points Against</span></div>
+    </div>
+
+    <section class="team-page-card">
+      <div class="team-page-card-head"><h3>Current Roster</h3><span id="teamPageRosterCount">0 players</span></div>
+      <div class="team-page-roster" id="teamPageRoster"></div>
+    </section>
+
+    <div class="team-page-grid season-team-grid">
+      <section class="team-page-card">
+        <div class="team-page-card-head"><h3>Season Snapshot</h3><span id="teamPageSeasonStatus">Sleeper season data</span></div>
+        <div class="team-season-snapshot" id="teamPageSeasonSnapshot"></div>
+      </section>
+      <section class="team-page-card">
+        <div class="team-page-card-head"><h3>Positional Strength</h3><span>Roster composition</span></div>
+        <div class="team-strength-grid" id="teamPageStrengthGrid"></div>
+      </section>
+    </div>
+
+    <div class="team-page-grid season-team-grid">
+      <section class="team-page-card">
+        <div class="team-page-card-head"><h3>Weekly Results</h3><span id="teamPageResultsStatus">Completed weeks</span></div>
+        <div class="team-week-list" id="teamPageWeeklyResults"></div>
+      </section>
+      <section class="team-page-card">
+        <div class="team-page-card-head"><h3>Recent Roster Activity</h3><span id="teamPageActivityStatus">Adds, drops, trades</span></div>
+        <div class="team-activity-list" id="teamPageActivity"></div>
+      </section>
+    </div>
+
+    <section class="team-page-card">
+      <div class="team-page-card-head"><h3>Team Trends & Manager Tendencies</h3><span id="teamPageTrendStatus">Season behavior profile</span></div>
+      <div class="team-trend-metrics" id="teamTrendMetrics"></div>
+      <div class="team-trend-profile" id="teamTrendProfile"></div>
+      <div class="team-trend-chips" id="teamTrendChips"></div>
+    </section>
+
+
+  </section>
+</section>
+
+<section id="teamView" class="tab-view">
+  <div class="team-head">
+    <div><h2 class="team-title">My Team</h2><div class="team-sub" id="teamWeekStatus">Your Sleeper roster and lineup by week.</div></div>
+    <div class="team-head-tools">
+      <label class="team-week-select-box" for="teamWeekSelect">
+        <span>Week</span>
+        <select id="teamWeekSelect" class="sleeper-select team-week-select" aria-label="Select My Team week"></select>
+      </label>
+      <div class="team-metrics">
+        <div class="team-metric"><b id="teamPlayers">0</b><span>Players</span></div>
+        <div class="team-metric"><b id="starterPts">0</b><span>Starter Pts.</span></div>
+        <div class="team-metric"><b id="benchPts">0</b><span>Bench Pts.</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="team-note" id="teamWeekNote">Starting lineup follows the UCL setup: 1 QB, 2 RB, 3 WR, 1 W/R/T flex, 1 K, 1 DEF, and 6 bench.</div>
+  <div class="lineup-grid">
+    <div class="lineup-box"><h2>STARTERS</h2><div id="starterLineup"></div></div>
+    <div class="lineup-box"><h2>BENCH</h2><div id="benchLineup"></div></div>
+  </div>
+  <div class="lineup-box extra-box" id="extraBox" style="display:none"><h2>RESERVES / UNSLOTTED PLAYERS</h2><div class="extra-list" id="extraPlayers"></div></div>
+  <section class="team-page-card my-team-roster-pressure">
+    <div class="team-page-card-head"><h3>Roster Pressure</h3><span>Depth + lineup</span></div>
+    <div class="season-pressure-grid" id="teamRosterPressureGrid"></div>
+  </section>
+</section>
+
+<section id="fawView" class="tab-view">
+  <div class="season-head faw-head">
+    <div>
+      <h2 class="team-title">Player Acquisition</h2>
+      <div class="team-sub">Unrostered UCL players ranked by weekly Sleeper projection.</div>
+    </div>
+    <label class="season-week-box season-week-select-box" for="fawWeekSelect">
+      <span>Week</span>
+      <select id="fawWeekSelect" class="season-week-select" aria-label="Select Player Acquisition projection week"></select>
+    </label>
+  </div>
+  <section class="season-card faw-toolbar-card">
+    <div class="faw-toolbar">
+      <div class="faw-position-filters" id="fawPositionFilters" aria-label="Player Acquisition position filters">
+        <button type="button" data-faw-pos="ALL" class="active">ALL</button>
+        <button type="button" data-faw-pos="QB">QB</button>
+        <button type="button" data-faw-pos="RB">RB</button>
+        <button type="button" data-faw-pos="WR">WR</button>
+        <button type="button" data-faw-pos="TE">TE</button>
+        <button type="button" data-faw-pos="K">K</button>
+        <button type="button" data-faw-pos="DEF">DEF</button>
+      </div>
+      <div class="faw-status" id="fawStatus">Waiting for season data.</div>
+    </div>
+    <div class="faw-note">These players were listed as available through Free Agency or Waivers. The UCL Companion does not attempt to determine exact waiver-clear timing. Please refer to the Sleeper app.</div>
+  </section>
+  <div class="faw-groups" id="fawGroups"></div>
+</section>
+
+<section id="tradeView" class="tab-view">
+  <div class="season-head">
+    <div><h2 class="team-title">Trade Center</h2><div class="team-sub">Roster-aware trade evaluation for the UCL.</div></div>
+    <div class="data-health-chip good">Live Sleeper rosters + UCL value reference</div>
+  </div>
+  <div class="season-grid">
+    <section class="season-card">
+      <div class="season-card-head"><h3>Build a Trade</h3><span>Select a partner and players</span></div>
+      <div class="trade-partner-selector"><label class="field-label">Trade partner</label>
+      <select id="tradePartner" class="sleeper-select"></select></div>
+      <div class="trade-builder-grid">
+        <div class="trade-side-panel"><b class="trade-side-title">You Give</b><div id="tradeGiveList" class="trade-player-list"></div></div>
+        <div class="trade-side-panel"><b class="trade-side-title">You Get</b><div id="tradeGetList" class="trade-player-list"></div></div>
+      </div>
+      <button type="button" class="btn" id="evaluateTradeBtn">Evaluate Trade</button>
+    </section>
+    <section class="season-card">
+      <div class="season-card-head"><h3>Trade Evaluation</h3><span>0–100 UCL value + roster fit</span></div>
+      <div id="tradeEvaluation" class="trade-evaluation"><div class="empty">Choose players on both sides to evaluate a trade.</div></div>
+    </section>
+  </div>
+  <section class="season-card" id="tradePartnerIdeasSection">
+    <div class="season-card-head"><h3>Potential Trade Partners</h3><span>Complementary roster needs</span></div>
+    <div id="tradePartnerIdeas" class="trade-partner-ideas"></div>
+  </section>
+  <section class="season-card" id="tradeRetrospectivesSection">
+    <div class="season-card-head"><h3>Completed Trade Retrospectives</h3><span>Recent Sleeper trades</span></div>
+    <div id="tradeRetrospectives" class="activity-feed"></div>
+  </section>
+</section>
+
+<section id="seasonView" class="tab-view">
+  <div class="season-head">
+    <div>
+      <h2 class="team-title">Season Companion</h2>
+      <div class="team-sub" id="seasonStatus">Connect Sleeper to load the current NFL week.</div>
+    </div>
+    <div>
+      <label class="season-week-box season-week-select-box" for="seasonWeekSelect">
+        <span>Week</span>
+        <select id="seasonWeekSelect" class="season-week-select" aria-label="Select season week"></select>
+      </label>
+      <div class="season-freshness" id="seasonFreshness">Season data not synced yet.</div>
+    </div>
+  </div>
+
+  <nav class="season-section-nav" aria-label="Season sections">
+    <button type="button" data-command-tab="season" data-command-section="seasonThisWeek">This Week</button>
+    <button type="button" data-command-tab="season" data-command-section="seasonManagement">Team Management</button>
+    <button type="button" data-command-tab="season" data-command-section="seasonLeague">Around the League</button>
+    <button type="button" data-command-tab="season" data-command-section="seasonPostseason">Postseason</button>
+    <button type="button" data-command-tab="season" data-command-section="seasonRecords">Records</button>
+  </nav>
+
+  <section class="season-group" id="seasonThisWeek">
+    <div class="season-group-head">
+      <div><span>THIS WEEK</span><h2>Matchup & Lineup</h2></div>
+      <button type="button" class="season-group-jump" data-command-tab="season" data-command-section="seasonManagement" title="Jump to Team Management">Team Management ↓</button>
+    </div>
+    <div class="season-group-body">
+
+  <section class="season-intel-hero">
+    <div>
+      <span>SEASON INTELLIGENCE</span>
+      <b>What should I be watching this week?</b>
+    </div>
+    <div class="season-intel-state" id="seasonIntelState">Waiting for Sleeper</div>
+  </section>
+
+  <div class="season-intel-grid season-intel-grid-single">
+    <section class="season-card">
+      <div class="season-card-head"><h3>Weekly Watch</h3><span>Priority items</span></div>
+      <div class="season-watch-list" id="seasonWatchList"></div>
+    </section>
+  </div>
+
+  <div class="season-grid season-grid-single">
+    <section class="season-card season-matchup">
+      <div class="season-card-head"><h3>Current Matchup</h3><span id="matchupState">—</span></div>
+      <div class="matchup-teams">
+        <div class="matchup-team me"><span id="seasonMyTeam">My Team</span><b id="seasonMyPoints">—</b><small id="seasonMyRecord">—</small></div>
+        <div class="matchup-vs">VS</div>
+        <div class="matchup-team"><span id="seasonOppTeam">Opponent</span><b id="seasonOppPoints">—</b><small id="seasonOppRecord">—</small></div>
+      </div>
+      <div class="season-note" id="matchupNote">Matchup data will appear when Sleeper publishes the selected week.</div>
+    </section>
+
+  </div>
+
+  <section class="season-card matchup-center" id="seasonMatchupCenter">
+    <div class="season-card-head">
+      <h3>Weekly Matchup Center</h3>
+      <span id="matchupCenterStatus">Starter-vs-starter scoring</span>
+    </div>
+    <div class="matchup-center-summary">
+      <div><span>Your Starters</span><b id="mcMyStarterPoints">—</b><small id="mcMyStarterCount">—</small></div>
+      <div class="mc-edge" id="mcEdge"><span>Current Edge</span><b>—</b><small id="mcEdgeDetail">Actual Sleeper scoring</small></div>
+      <div><span>Opponent Starters</span><b id="mcOppStarterPoints">—</b><small id="mcOppStarterCount">—</small></div>
+      <div><span>Bench Points</span><b id="mcBenchPoints">—</b><small id="mcBenchDetail">—</small></div>
+    </div>
+    <div class="matchup-position-list" id="matchupPositionList"></div>
+    <div class="matchup-center-footnote" id="matchupCenterFootnote">Before kickoff, this view uses Sleeper's current-week projections. Once scoring begins, it switches to actual Sleeper matchup points.</div>
+  </section>
+
+  <section class="season-card other-league-matchups" id="otherLeagueMatchupsCard">
+    <div class="season-card-head">
+      <h3>Other League Matchups</h3>
+      <span id="otherLeagueMatchupsStatus">Other UCL games this week</span>
+    </div>
+    <div class="other-matchup-list" id="otherLeagueMatchupsList"></div>
+  </section>
+
+  <section class="season-card bench-analysis">
+    <div class="season-card-head">
+      <h3>Bench Analysis</h3>
+      <span id="matchupIntelStatus">Starter threats from your bench</span>
+    </div>
+    <div class="matchup-bench-list" id="matchupBenchList"></div>
+  </section>
+
+  <section class="season-card season-analytics">
+    <div class="season-card-head">
+      <h3>Analytics</h3>
+      <span>Finalized season trends</span>
+    </div>
+    <div class="weekly-report-subhead matchup-pos-head">Season Positional Context</div>
+    <div class="matchup-pos-context" id="matchupPosContext"></div>
+    <div class="matchup-center-footnote">Season Positional Context uses finalized 2026 starter scoring, not live weekly projections.</div>
+  </section>
+
+  <section class="season-card">
+    <div class="season-card-head"><h3>Opponent Read</h3><span id="seasonOpponentLabel">Current matchup</span></div>
+    <div class="season-opponent-grid" id="seasonOpponentGrid"></div>
+  </section>
+
+      </div>
+  </section>
+
+  <section class="season-group" id="seasonManagement">
+    <div class="season-group-head">
+      <div><span>TEAM MANAGEMENT</span><h2>Waivers & Roster Moves</h2></div>
+      <button type="button" class="season-group-jump" data-command-tab="trade" title="Open Trade Center">Open Trade Center ↗</button>
+    </div>
+    <div class="season-group-body">
+  <section class="season-card waiver-center" id="seasonWaiverCenter">
+    <div class="season-card-head">
+      <h3>Waiver / Free-Agent Needs</h3>
+      <span id="waiverCenterStatus">Sleeper availability + roster needs</span>
+    </div>
+    <div class="waiver-subsection waiver-order-section">
+      <div class="season-card-head"><h3>Current Waiver Order</h3><span id="waiverOrderStatus">Sleeper waiver priority</span></div>
+      <div class="waiver-order-list" id="waiverOrderList"></div>
+    </div>
+    <div class="waiver-subsection">
+      <div class="season-card-head"><h3>Roster Needs &amp; Moves</h3><span id="waiverMajorNeedStatus">Health, depth &amp; worthwhile moves</span></div>
+      <div class="waiver-need-strip" id="waiverNeedStrip"></div>
+      <div class="waiver-major-grid" id="waiverMajorGrid"></div>
+    </div>
+    <div class="waiver-footnote">Questionable designations are treated as precautionary availability risks: the Companion can show contingency options without recommending an immediate transaction. Doubtful, Out, IR/reserve-type designations can create an actionable health need and waive the normal projection threshold. Ordinary upgrades require QB +10%; RB/WR/TE/K/DEF +20%; TE over a WR in FLEX +40%. Exact waiver-clear timing is not inferred.</div>
+  </section>
+
+  
+
+      </div>
+  </section>
+
+  <section class="season-group" id="seasonPostseason">
+    <div class="season-group-head">
+      <div><span>POSTSEASON</span><h2>Standings & Playoff Race</h2></div>
+      <span class="season-group-note">Seeds, scenarios, and the bubble</span>
+    </div>
+    <div class="season-group-body">
+  <section class="season-card playoff-machine" id="seasonPlayoffMachine">
+    <div class="season-card-head">
+      <h3>Playoff Machine</h3>
+      <span id="playoffMachineStatus">Scenario modeling</span>
+    </div>
+    <div class="playoff-machine-summary" id="playoffMachineSummary"></div>
+    <div class="playoff-machine-grid">
+      <section>
+        <div class="weekly-report-subhead">Your Remaining Schedule</div>
+        <div id="playoffScheduleList" class="playoff-schedule-list"></div>
+      </section>
+      <section>
+        <div class="weekly-report-subhead">Scenario Result</div>
+        <div id="playoffScenarioResult" class="playoff-scenario-result"></div>
+      </section>
+    </div>
+    <div class="weekly-report-subhead playoff-help-head">Who Should I Root For?</div>
+    <div id="playoffRootingList" class="playoff-rooting-list"></div>
+    <div class="playoff-race-note">Scenario standings apply only the W/L choices you make for your own remaining games. Other teams stay at their current records, so projected seed is illustrative rather than a prediction. Clinch/elimination math remains conservative and does not assume Sleeper tiebreakers.</div>
+  </section>
+
+  <section class="season-card season-standings">
+    <div class="season-card-head"><h3>Standings & Playoff Race</h3><span id="standingsNote">Sleeper roster records</span></div>
+    <div class="playoff-race-summary" id="playoffRaceSummary"></div>
+    <div class="standings-header">
+      <span>RK</span><span>TEAM</span><span>REC</span><span>PF</span><span>GB</span><span>MOVE</span><span>STATUS</span>
+    </div>
+    <div class="standings-list rich" id="standingsList"></div>
+    <div class="playoff-race-note" id="playoffRaceNote"></div>
+  </section>
+
+  
+
+      </div>
+  </section>
+
+  <section class="season-group" id="seasonRecords">
+    <div class="season-group-head">
+      <div><span>RECORDS</span><h2>Rivalries & Season Archive</h2></div>
+      <span class="season-group-note">History and 2026 records</span>
+    </div>
+    <div class="season-group-body">
+  <section class="season-card achievements-center" hidden aria-hidden="true">
+    <div class="season-card-head">
+      <h3>Achievements & Records</h3>
+      <span id="achievementStatus">First-to-unlock UCL achievements</span>
+    </div>
+    <div class="achievement-summary" id="achievementSummary"></div>
+    <div class="achievement-controls">
+      <button type="button" class="btn ghost active" data-ach-filter="all">All</button>
+      <button type="button" class="btn ghost" data-ach-filter="unlocked">Unlocked</button>
+      <button type="button" class="btn ghost" data-ach-filter="available">Available</button>
+      <button type="button" class="btn ghost" data-ach-filter="manual">Manual Review</button>
+    </div>
+    <div class="achievement-grid" id="achievementGrid"></div>
+    <div class="achievement-manual-panel">
+      <div class="weekly-report-subhead">Manual Verification</div>
+      <div class="achievement-manual-copy">Achievements that Sleeper cannot establish reliably can be verified here without pretending the API knows more than it does. Manual decisions are saved on this device.</div>
+      <div id="achievementManualList" class="achievement-manual-list"></div>
+    </div>
+  </section>
+
+  <section class="season-card rivalry-center">
+    <div class="season-card-head">
+      <h3>Rivalry & Historical Context</h3>
+      <div class="rivalry-head-actions">
+        <span id="rivalryStatus">Rivalry history</span>
+        <button type="button" class="btn ghost" id="historyImportBtn">Load League History</button>
+        <input type="file" id="historyImportFile" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <div class="rivalry-hero" id="rivalryHero"></div>
+    <div class="rivalry-metrics" id="rivalryMetrics"></div>
+    <div class="rivalry-grid">
+      <section>
+        <div class="weekly-report-subhead">Recent Meetings</div>
+        <div class="rivalry-games" id="rivalryRecentGames"></div>
+      </section>
+      <section>
+        <div class="weekly-report-subhead">Series Notes</div>
+        <div class="rivalry-notes" id="rivalryNotes"></div>
+      </section>
+    </div>
+    <div class="rivalry-source-note" id="rivalrySourceNote">Rivalry history loads when this section is opened.</div>
+  </section>
+    </div>
+  </section>
+
+</section>
+
+<section id="logView" class="tab-view">
+  <div class="log-head"><div><h2 class="team-title">Draft Log</h2><div class="team-sub">Complete pick history from Sleeper.</div></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="btn archive-return-btn" type="button" data-home-nav="draft">← Report Card</button><button class="btn" id="logSyncBtn" type="button">↻ Sync now</button></div></div>
+  <div class="log-summary-strip" id="logSummaryStrip"></div>
+  <div class="log-wrap">
+    <table class="log-table"><thead><tr><th>Pick</th><th>Rank</th><th>Value</th><th class="log-player-col">Player</th><th>Pos</th><th>NFL Team</th><th>Drafted By</th><th>Roster</th></tr></thead><tbody id="draftLogBody"><tr><td colspan="8" class="empty">Connect Sleeper to load the draft log.</td></tr></tbody></table>
+  </div>
+</section>
+
+
+<section id="settingsView" class="tab-view">
+  <div class="settings-head">
+    <div>
+      <h2>Settings</h2>
+      <p>Personalize the Companion, review season behavior, and manage Sleeper and saved data.</p>
+    </div>
+    <span class="settings-status" id="settingsVersion">v1.9.46 RC</span>
+  </div>
+
+  <div class="settings-section-label">Appearance</div>
+  <section class="settings-card settings-wide-card settings-theme-card">
+    <h3>Color Theme</h3>
+    <div class="settings-desc">Choose the Companion Color scheme. No, we are NOT adding mental health green. Don't ask.</div>
+    <div class="settings-theme-grid" id="settingsThemeGrid" role="radiogroup" aria-label="Color theme">
+      <button type="button" class="settings-theme-option" data-theme-choice="blue" role="radio" aria-checked="true">
+        <span class="settings-theme-preview theme-preview-blue"><i></i><i></i><i></i></span><b>UCL Blue</b><small>Default</small>
+      </button>
+      <button type="button" class="settings-theme-option" data-theme-choice="forest" role="radio" aria-checked="false">
+        <span class="settings-theme-preview theme-preview-forest"><i></i><i></i><i></i></span><b>Forest</b><small>Green</small>
+      </button>
+      <button type="button" class="settings-theme-option" data-theme-choice="purple" role="radio" aria-checked="false">
+        <span class="settings-theme-preview theme-preview-purple"><i></i><i></i><i></i></span><b>Purple</b><small>Violet</small>
+      </button>
+      <button type="button" class="settings-theme-option" data-theme-choice="crimson" role="radio" aria-checked="false">
+        <span class="settings-theme-preview theme-preview-crimson"><i></i><i></i><i></i></span><b>Crimson</b><small>Burgundy</small>
+      </button>
+      <button type="button" class="settings-theme-option" data-theme-choice="orange" role="radio" aria-checked="false">
+        <span class="settings-theme-preview theme-preview-orange"><i></i><i></i><i></i></span><b>Orange</b><small>Warm</small>
+      </button>
+      <button type="button" class="settings-theme-option" data-theme-choice="slate" role="radio" aria-checked="false">
+        <span class="settings-theme-preview theme-preview-slate"><i></i><i></i><i></i></span><b>Slate</b><small>Neutral</small>
+      </button>
+      <button type="button" class="settings-theme-option" data-theme-choice="gold" role="radio" aria-checked="false">
+        <span class="settings-theme-preview theme-preview-gold"><i></i><i></i><i></i></span><b>Gold</b><small>Gold</small>
+      </button>
+      <button type="button" class="settings-theme-option" data-theme-choice="iceblue" role="radio" aria-checked="false">
+        <span class="settings-theme-preview theme-preview-iceblue"><i></i><i></i><i></i></span><b>Ice Blue</b><small>Cool</small>
+      </button>
+    </div>
+  </section>
+
+  <div class="settings-section-label">General</div>
+  <section class="settings-card settings-wide-card">
+    <h3>Companion</h3>
+    <div class="settings-desc">Current application and league workspace.</div>
+    <div class="settings-info-grid settings-info-grid-three">
+      <div><span>Mode</span><b>Live Season</b></div>
+      <div><span>League</span><b id="settingsLeagueName">Unmanaged Chaos League</b></div>
+      <div><span>Version</span><b id="settingsVersionInline">v1.9.46 RC</b></div>
+    </div>
+  </section>
+
+  <div class="settings-section-label">Draft &amp; Report Card</div>
+  <details class="settings-secondary-shell">
+    <summary>
+      <span><b>Archived Draft Preferences</b><small>Controls for the archived Draft Board and draft-era analysis.</small></span>
+      <span class="settings-secondary-status">Optional</span>
+    </summary>
+    <div class="settings-grid settings-secondary-grid">
+      <section class="settings-card">
+        <h3>Draft Board Display</h3>
+        <div class="settings-desc">These options affect the archived Draft Board, not the Live Season screens.</div>
+        <div class="settings-row">
+          <div class="settings-row-copy">
+            <b>Condensed Draft Board</b>
+            <span>Use the tighter archived Draft Board layout.</span>
+          </div>
+          <input class="settings-toggle" id="settingsCondensedToggle" type="checkbox" aria-label="Condensed Draft Board">
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-copy">
+            <b>Player Card Density</b>
+            <span>Choose how compact mobile Draft Board player cards should be.</span>
+          </div>
+          <select class="sleeper-select settings-select" id="settingsBoardDensity" aria-label="Player card density">
+            <option value="compact">Compact</option>
+            <option value="comfortable">Comfortable</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="settings-card">
+        <h3>Draft Intelligence</h3>
+        <div class="settings-desc">Recommendation detail and default panel behavior for archived draft tools.</div>
+        <div class="settings-row">
+          <div class="settings-row-copy">
+            <b>Recommendation Detail</b>
+            <span>Control how much reasoning appears in Best Available for Me.</span>
+          </div>
+          <select class="sleeper-select settings-select" id="settingsRecDetail" aria-label="Recommendation detail">
+            <option value="full">Full</option>
+            <option value="concise">Concise</option>
+            <option value="minimal">Minimal</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-copy">
+            <b>Draft Intelligence Starts Expanded</b>
+            <span>Default state when opening the archived Draft Board.</span>
+          </div>
+          <input class="settings-toggle" id="settingsIntelDefaultToggle" type="checkbox" aria-label="Draft Intelligence starts expanded">
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-copy">
+            <b>Search Starts Expanded</b>
+            <span>Default search-panel state for the archived Draft Board.</span>
+          </div>
+          <input class="settings-toggle" id="settingsSearchDefaultToggle" type="checkbox" aria-label="Search starts expanded">
+        </div>
+      </section>
+
+      <section class="settings-card settings-wide-card">
+        <h3>Draft Board Cleanup</h3>
+        <div class="settings-desc">Clean up archived Draft Board state without affecting Live Season data.</div>
+        <div class="settings-row">
+          <div class="settings-row-copy">
+            <b>Clear Draft Board Filters</b>
+            <span>Return Search and Draft Board filters to their defaults.</span>
+          </div>
+          <button type="button" class="btn" id="settingsClearFiltersBtn">Clear Filters</button>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-copy">
+            <b>Reset Draft Marks</b>
+            <span>Clear manual MINE/TAKEN marks only. Sleeper-synced picks, targets, notes, connection data, and Settings stay.</span>
+          </div>
+          <button type="button" class="btn danger" id="settingsResetDraftBtn">Reset Draft</button>
+        </div>
+      </section>
+    </div>
+  </details>
+
+  <div class="settings-section-label">Sleeper &amp; Data</div>
+  <div class="settings-grid">
+    <section class="settings-card">
+      <h3>Sleeper Connection</h3>
+      <div class="settings-desc">Current league connection and explicit refresh control.</div>
+      <div class="settings-row">
+        <div class="settings-row-copy">
+          <b id="settingsTeamName">No team selected</b>
+          <span id="settingsConnectionDetail">Select a Sleeper team above to connect.</span>
+        </div>
+        <div class="settings-actions">
+          <span class="settings-status" id="settingsDataMode">—</span>
+          <button type="button" class="btn" id="settingsSyncBtn">Sync Now</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings-card">
+      <h3>Local Data &amp; Backup</h3>
+      <div class="settings-desc">The Companion keeps a local season snapshot for fast startup.</div>
+      <div class="settings-row">
+        <div class="settings-row-copy">
+          <b>Portable JSON Backup</b>
+          <span>Export or restore your UCL Companion local data.</span>
+        </div>
+        <div class="settings-actions">
+          <button type="button" class="btn" id="settingsExportLocalBtn">Download Backup</button>
+          <button type="button" class="btn" id="settingsImportLocalBtn">Import Backup</button>
+          <input type="file" id="settingsImportLocalFile" accept=".json,application/json" hidden>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="settings-section-label">Reset &amp; Maintenance</div>
+  <section class="settings-card settings-danger-card settings-wide-card">
+    <h3>Local Data</h3>
+    <div class="settings-desc">Use these controls only when you intentionally want to remove locally saved UCL data.</div>
+    <div class="settings-row">
+      <div class="settings-row-copy">
+        <b>Clear Saved Season Snapshot</b>
+        <span>Remove the locally restored league/season snapshot and cached weekly projections. Preferences remain.</span>
+      </div>
+      <button type="button" class="btn" id="settingsClearRuntimeCacheBtn">Clear Season Snapshot</button>
+    </div>
+    <div class="settings-row settings-danger-row">
+      <div class="settings-row-copy">
+        <b>Reset All UCL Data</b>
+        <span>Clear draft state, selected team, Sleeper cache, imported history, and other UCL data while keeping Settings.</span>
+      </div>
+      <button type="button" class="btn danger settings-danger-action" id="settingsResetAllBtn">Reset Everything</button>
+    </div>
+  </section>
+</section>
+
+</main>
+
+<dialog id="newsRivalryDialog" class="news-rivalry-dialog">
+  <div class="dialog-inner news-rivalry-inner">
+    <div class="other-matchup-dialog-head">
+      <div><div class="why-kicker">CTESPN RIVALRY FILE</div><h2 id="newsRivalryTitle">Rivalry Detail</h2><div id="newsRivalryStatus" class="why-sub">Historical series</div></div>
+      <button class="why-close" id="newsRivalryClose" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="rivalry-hero" id="newsRivalryHero"></div>
+    <div class="rivalry-metrics" id="newsRivalryMetrics"></div>
+    <div class="rivalry-grid">
+      <section><div class="weekly-report-subhead">Recent Meetings</div><div class="rivalry-games" id="newsRivalryRecentGames"></div></section>
+      <section><div class="weekly-report-subhead">Series Notes</div><div class="rivalry-notes" id="newsRivalryNotes"></div></section>
+    </div>
+    <div class="rivalry-source-note" id="newsRivalrySourceNote"></div>
+  </div>
+</dialog>
+<dialog id="otherMatchupDialog" class="other-matchup-dialog">
+  <div class="dialog-inner other-matchup-inner">
+    <div class="other-matchup-dialog-head">
+      <div><div class="why-kicker">OTHER LEAGUE MATCHUP</div><h2 id="otherMatchupTitle">Matchup Detail</h2><div id="otherMatchupSub" class="why-sub"></div></div>
+      <button class="why-close" id="otherMatchupClose" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="matchup-center-summary other-matchup-summary">
+      <div><span id="otherTeam1StarterLabel">Team 1 Starters</span><b id="otherTeam1StarterPoints">—</b><small id="otherTeam1StarterCount">—</small></div>
+      <div class="mc-edge" id="otherMatchupEdge"><span>Current Edge</span><b>—</b><small id="otherMatchupEdgeTeam">—</small></div>
+      <div><span id="otherTeam2StarterLabel">Team 2 Starters</span><b id="otherTeam2StarterPoints">—</b><small id="otherTeam2StarterCount">—</small></div>
+      <div><span>Bench Points</span><b id="otherMatchupBenchPoints">—</b><small id="otherMatchupBenchDetail">—</small></div>
+    </div>
+    <div class="matchup-position-list" id="otherMatchupPositionList"></div>
+    <div class="matchup-center-footnote" id="otherMatchupFootnote"></div>
+  </div>
+</dialog>
+<dialog id="noteDialog"><div class="dialog-inner"><h2 id="noteTitle">Player note</h2><textarea class="note" id="noteText" placeholder="Round target, backup plan, concerns, stacking idea…"></textarea><div class="dialog-actions"><button class="btn" id="noteCancel">Cancel</button><button class="btn primary" id="noteSave">Save note</button></div></div></dialog>
+<dialog id="whyDialog" class="why-dialog">
+  <div class="dialog-inner why-inner">
+    <div class="why-head">
+      <div>
+        <div class="why-kicker">BEST AVAILABLE FOR ME</div>
+        <h2 id="whyTitle">Why This Player?</h2>
+        <div class="why-sub" id="whySub"></div>
+      </div>
+      <button class="why-close" id="whyClose" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="why-score-row">
+      <div><span>Recommendation Score</span><b id="whyScore">—</b></div>
+      <div><span>List Rank</span><b id="whyRank">—</b></div>
+      <div><span>Position Need</span><b id="whyNeed">—</b></div>
+    </div>
+    <div class="why-section">
+      <h3>Score Breakdown</h3>
+      <div id="whyBreakdown" class="why-breakdown"></div>
+    </div>
+    <div class="why-section">
+      <h3>What the App Is Seeing</h3>
+      <div id="whySummary" class="why-summary"></div>
+    </div>
+    <div class="why-section">
+      <h3>External Research</h3>
+      <div class="research-links" id="whyResearchLinks"></div>
+      <div class="why-footnote">External research only. Recommendation scores remain based on the league board and roster context.</div>
+    </div>
+  </div>
+</dialog>
+<dialog id="whatIfDialog" class="whatif-dialog"><div class="dialog-inner"><div class="whatif-preview-head"><div><div class="whatif-preview-kicker">WHAT IF I TAKE…</div><h2 id="whatIfTitle">Scenario Preview</h2></div><button class="whatif-preview-close" id="whatIfClose" type="button" aria-label="Close">×</button></div><div class="whatif-preview-summary"><div><span>Improves</span><b id="whatIfSolved">—</b></div><div><span>Next Weakness</span><b id="whatIfWeakness">—</b></div><div><span>Tier Impact</span><b id="whatIfTier">—</b></div></div><div class="why-section"><h3>Next Best Options</h3><div id="whatIfNext" class="whatif-next-list"></div></div><div class="whatif-preview-note">Preview only. This does not draft the player, change MINE/TAKEN status, or modify saved data.</div></div></dialog>
+<button id="backTopBtn" class="back-top" type="button" aria-label="Back to top" title="Back to top">↑</button>
+<div class="toast" id="toast"></div>
+<script src="js/data/rankings.js"></script>
+<script src="js/core/state.js"></script>
+<script src="js/ui/command-center.js"></script>
+<script src="js/ui/settings.js"></script>
+<script src="js/core/navigation.js"></script>
+<script src="js/ui/teams.js"></script>
+<script src="js/draft/report-card.js"></script>
+<script src="js/ui/my-team.js"></script>
+<script src="js/data/sleeper-api.js"></script>
+<script src="js/draft/intelligence.js"></script>
+<script src="js/data/player-metadata.js"></script>
+<script src="js/season/core.js"></script>
+<script src="js/season/waivers.js"></script>
+<script src="js/season/free-agency.js"></script>
+<script src="js/season/history-news.js"></script>
+<script src="js/season/playoffs-achievements.js"></script>
+<script src="js/season/trade-center.js"></script>
+<script src="js/ui/season.js"></script>
+<script src="js/core/sync.js"></script>
+<script src="js/core/bootstrap.js"></script></body></html>

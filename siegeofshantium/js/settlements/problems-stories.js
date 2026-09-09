@@ -39,10 +39,10 @@ function settlementBackgroundRecoveryDaily(){
 }
 function settlementProblemHTML(locId){const p=settlementProblem(locId);if(!p)return'';return SOSText("settlements_problems_stories.settlementProblemHTML.001",esc(p.title),esc(p.desc),Math.min(3,p.progress||0))}
 function helpSettlementProblem(locId){
- const p=settlementProblem(locId);if(!p)return showSettlementSpecial(locId);const ss=settlementState(locId);let text='';
+ const p=settlementProblem(locId);if(!p)return showTownLife(locId);const ss=settlementState(locId);let text='';
  if(['shortage','trade_slump','refugee_load','grain_road','warehouse_backlog','dry_supply','requisition_pressure'].includes(p.type)){const cost=Math.min(state.gold,18);state.gold-=cost;ss.prosperity=Math.min(100,ss.prosperity+1);text=SOSText("settlements_problems_stories.helpSettlementProblem.001",cost)}
- else{advanceWorldDays(1,SOSText("settlements_problems_stories.helpSettlementProblem.002",p.title));ss.security=Math.min(100,ss.security+2);text=SOSText("settlements_problems_stories.helpSettlementProblem.003")}
- progressSettlementProblem(locId,1,SOSText("settlements_problems_stories.helpSettlementProblem.004"));save();actionResult(p.title,text,'good',()=>showSettlementSpecial(locId))
+ else{ss.security=Math.min(100,ss.security+2);text=SOSText("settlements_problems_stories.helpSettlementProblem.003")}
+ progressSettlementProblem(locId,1,SOSText("settlements_problems_stories.helpSettlementProblem.004"));save();actionResult(p.title,text,'good',()=>showTownLife(locId))
 }
 function reputationMilestoneState(locId){if(!state.world.reputationMilestones[locId])state.world.reputationMilestones[locId]={known:false,trusted:false,hero:false};return state.world.reputationMilestones[locId]}
 function checkReputationMilestones(locId){
@@ -437,11 +437,21 @@ function simulateSettlementLife(){
  }
  tickSettlementProblems();settlementBackgroundRecoveryDaily();maybeMoveSettlementNPCs();if(chance(.22))generateLivingWorldEvent();for(const id of Object.keys(state.world.settlements))if(!settlementEvent(id))createSettlementEvent(id,false)
 }
+function livingWorldKnowledgeMode(locId){
+ if(typeof playerPhysicalContext!=='function')return 'reported';const C=playerPhysicalContext();
+ return C?.type==='settlement'&&C.settlementId===locId?'witnessed':'reported'
+}
+function recordLivingWorldEventKnowledge(locId,text,tone='info',category='world'){
+ const mode=livingWorldKnowledgeMode(locId),loc=worldLocation(locId),prefix=mode==='witnessed'?'':`Reports from ${loc?.name||locId}: `;
+ recordWorldNews(prefix+text,tone);
+ recordWorldHistory(`${mode==='witnessed'?'Witnessed':'Reported'}: ${text}`,tone,category);
+ if(typeof createWorldIntel==='function')createWorldIntel('settlement_report',{key:`living-event:${locId}:${state.world.day}:${text.slice(0,36)}`,location:locId,subject:mode==='witnessed'?'Observed local development':'Settlement report',summary:text,source:mode==='witnessed'?'Personal observation':`${loc?.name||'Settlement'} reports`,reliability:mode==='witnessed'?98:76,precision:mode==='witnessed'?'exact':'local',decayPerDay:mode==='witnessed'?1.5:2.5,meta:{observation:mode,livingWorldEvent:true}});
+}
 function generateLivingWorldEvent(){
  const loc=pick(WORLD_LOCATIONS.filter(x=>state.world.settlements[x.id])),ss=settlementState(loc.id),roll=rnd(1,5);
- if(roll===1&&ss.security<65){ss.security=Math.min(100,ss.security+3);recordWorldNews(SOSText("settlements_problems_stories.generateLivingWorldEvent.001",loc.name),'info');recordWorldHistory(SOSText("settlements_problems_stories.generateLivingWorldEvent.002",loc.name),'info','settlement')}
- else if(roll===2&&ss.prosperity>35){ss.prosperity=Math.min(100,ss.prosperity+2);recordWorldNews(SOSText("settlements_problems_stories.generateLivingWorldEvent.003",loc.name),'good');recordWorldHistory(SOSText("settlements_problems_stories.generateLivingWorldEvent.004",loc.name),'good','economy')}
- else if(roll===3){ss.prosperity=Math.max(0,ss.prosperity-2);state.world.marketShock[loc.id]=(state.world.marketShock[loc.id]||0)+.06;recordWorldNews(SOSText("settlements_problems_stories.generateLivingWorldEvent.005",loc.name),'bad');recordWorldHistory(SOSText("settlements_problems_stories.generateLivingWorldEvent.006",loc.name),'bad','economy')}
- else if(roll===4&&loc.id!=='redoubt'){ss.security=Math.min(100,ss.security+1);ss.prosperity=Math.min(100,ss.prosperity+1);recordWorldHistory(SOSText("settlements_problems_stories.generateLivingWorldEvent.007",loc.name),'good','settlement')}
- else{recordWorldHistory(SOSText("settlements_problems_stories.generateLivingWorldEvent.008",loc.name),'info','world')}
+ if(roll===1&&ss.security<65){ss.security=Math.min(100,ss.security+3);recordLivingWorldEventKnowledge(loc.id,SOSText("settlements_problems_stories.generateLivingWorldEvent.001",loc.name),'info','settlement')}
+ else if(roll===2&&ss.prosperity>35){ss.prosperity=Math.min(100,ss.prosperity+2);recordLivingWorldEventKnowledge(loc.id,SOSText("settlements_problems_stories.generateLivingWorldEvent.003",loc.name),'good','economy')}
+ else if(roll===3){ss.prosperity=Math.max(0,ss.prosperity-2);state.world.marketShock[loc.id]=(state.world.marketShock[loc.id]||0)+.06;recordLivingWorldEventKnowledge(loc.id,SOSText("settlements_problems_stories.generateLivingWorldEvent.005",loc.name),'bad','economy')}
+ else if(roll===4&&loc.id!=='redoubt'){ss.security=Math.min(100,ss.security+1);ss.prosperity=Math.min(100,ss.prosperity+1);recordLivingWorldEventKnowledge(loc.id,SOSText("settlements_problems_stories.generateLivingWorldEvent.007",loc.name),'good','settlement')}
+ else{recordLivingWorldEventKnowledge(loc.id,SOSText("settlements_problems_stories.generateLivingWorldEvent.008",loc.name),'info','world')}
 }

@@ -3,8 +3,17 @@ function unlock(id){if(meta.achievements[id])return;const a=ACHIEVEMENTS.find(x=
 function checkAchievements(){if(!state)return;if(state.gold>=750)unlock('rich');if(state.flags.battlesThisCampaign>=15)unlock('hunter');if(state.town.upgrades.length>=8)unlock('builder');if(state.town.militia>=50)unlock('militia');if(state.flags.purchases>=12)unlock('merchant');if(state.scouting>=3)unlock('ranger');if(state.town.upgrades.includes('palisade')&&state.town.upgrades.includes('stonework'))unlock('stone');if(state.flags.compassion>=3)unlock('mercy')}
 
 function showSettings(returnTo='menu'){modalRouteEnter(SOSText("core_settings_help_audio.showSettings.001"),Array.from(arguments));
- const ow=!!state&&isOpenWorld(),auto=ow?state.world.settings.silentIntegrityOnLoad!==false:true;overlay(SOSText("core_settings_help_audio.showSettings.002",soundOn?'On':'Off',ow?`<button id="settingsIntegrityAuto">Automatic Save Repair: ${auto?'On':'Off'}</button><button id="settingsIntegrity">Check Open World Save <small>Review and repair campaign data</small></button>`:'',ow?'<p class="muted compact">Automatic Save Repair checks older or incomplete Open World save data when the campaign is opened.</p>':''),true);
- $('#settingsSound').onclick=()=>{toggleSound();showSettings(returnTo)};if($('#settingsIntegrityAuto'))$('#settingsIntegrityAuto').onclick=()=>{state.world.settings.silentIntegrityOnLoad=!auto;save();showSettings(returnTo)};if($('#settingsIntegrity'))$('#settingsIntegrity').onclick=showOpenWorldPreflight;$('#settingsBack').onclick=()=>{closeOverlay();returnTo==='game'?gameMenu():renderMenu()}
+ const ow=!!state&&isOpenWorld(),auto=ow?state.world.settings.silentIntegrityOnLoad!==false:true,mv=Math.round((typeof musicVolume==='number'?musicVolume:.32)*100),sv=Math.round((typeof sfxVolume==='number'?sfxVolume:.75)*100),me=typeof musicEnabled==='boolean'?musicEnabled:true,track=typeof currentMusicTrack==='function'?currentMusicTrack():'—',playStatus=typeof musicPlaybackStatus==='function'?musicPlaybackStatus():'Stopped',engine=typeof currentMusicEngine==='function'?currentMusicEngine():'Native';
+ overlay(`<h2>Settings</h2><div class="card"><h3>Sound & Music</h3><div class="stat-row"><span>Sound Effects</span><b>${soundOn?'On':'Off'}</b></div><button id="settingsSound">Sound Effects: ${soundOn?'On':'Off'}</button><label class="settings-slider"><span>Sound Effects Volume <b id="sfxVolumeValue">${sv}%</b></span><input id="settingsSfxVolume" type="range" min="0" max="100" step="5" value="${sv}"></label><div class="stat-row"><span>Music</span><b>${me?'On':'Off'}</b></div><button id="settingsMusic">Music: ${me?'On':'Off'}</button><label class="settings-slider"><span>Music Volume <b id="musicVolumeValue">${mv}%</b></span><input id="settingsMusicVolume" type="range" min="0" max="100" step="5" value="${mv}"></label><div class="notice compact"><b>Now playing:</b> ${esc(track)}<br><b>Status:</b> ${esc(playStatus)} • <b>Engine:</b> ${esc(engine)}<br><small>Six original MIDI tracks play continuously as a looping playlist. Tone.js is used when available; the native engine remains a fallback.</small></div><div class="dialog-toolbar"><button id="settingsPlayMusic">▶ Play</button><button id="settingsStopMusic">■ Stop</button><button id="settingsNextTrack">Next Music Track</button></div></div>${ow?`<div class="card"><h3>Open World Save</h3><button id="settingsIntegrityAuto">Automatic Save Repair: ${auto?'On':'Off'}</button><button id="settingsIntegrity">Check Open World Save <small>Review and repair campaign data</small></button><p class="muted compact">Automatic Save Repair checks older or incomplete Open World save data when the campaign is opened.</p></div>`:''}<div class="dialog-footer"><button id="settingsBack">Back</button></div>`,true);
+ $('#settingsSound').onclick=()=>{toggleSound();if(typeof saveAudioPrefs==='function')saveAudioPrefs();showSettings(returnTo)};
+ $('#settingsSfxVolume').oninput=e=>{if(typeof setSfxVolume==='function')setSfxVolume(Number(e.target.value)/100);$('#sfxVolumeValue').textContent=e.target.value+'%'};
+ $('#settingsMusic').onclick=()=>{if(typeof setMusicEnabled==='function')setMusicEnabled(!musicEnabled);showSettings(returnTo)};
+ $('#settingsMusicVolume').oninput=e=>{if(typeof setMusicVolume==='function')setMusicVolume(Number(e.target.value)/100);$('#musicVolumeValue').textContent=e.target.value+'%'};
+ $('#settingsPlayMusic').onclick=async()=>{if(typeof playMusic==='function')await playMusic();showSettings(returnTo)};
+ $('#settingsStopMusic').onclick=async()=>{if(typeof stopMusic==='function')await stopMusic();showSettings(returnTo)};
+ $('#settingsNextTrack').onclick=()=>{if(typeof nextMusicTrack==='function')nextMusicTrack();showSettings(returnTo)};
+ if($('#settingsIntegrityAuto'))$('#settingsIntegrityAuto').onclick=()=>{state.world.settings.silentIntegrityOnLoad=!auto;save();showSettings(returnTo)};if($('#settingsIntegrity'))$('#settingsIntegrity').onclick=showOpenWorldPreflight;
+ $('#settingsBack').onclick=()=>{closeOverlay();returnTo==='game'?gameMenu():renderMenu()}
 }
 function gameMenu(){overlay(SOSText("core_settings_help_audio.gameMenu.001"));$('#resume').onclick=closeAndRender;$('#saveNow').onclick=()=>{save();log(SOSText("core_settings_help_audio.gameMenu.002"),'good');closeAndRender()};if($('#optimizeSave'))$('#optimizeSave').onclick=showSaveOptimizationResult;$('#export').onclick=exportSave;$('#import').onclick=importSave;$('#help').onclick=showHelp;$('#settings').onclick=()=>showSettings('game');$('#quit').onclick=()=>{save();closeOverlay();state=null;renderMenu()};$('#reset').onclick=()=>{if(confirm(SOSText("core_settings_help_audio.gameMenu.003",isOpenWorld()?'Open World':(typeof isSiegeModeII==='function'&&isSiegeModeII()?'Siege Mode II':'Legacy Siege Mode')))){clearSave();state=null;closeOverlay();renderMenu()}}}
 function exportSave(){if(!state)return;save();const blob=new Blob([JSON.stringify({type:SOSText("core_settings_help_audio.exportSave.001"),version:VERSION,state,meta},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`siege-of-shantium-${state.name.replace(/\W+/g,'-').toLowerCase()}-${isOpenWorld()?`day-${state.world.day}`:(typeof isSiegeModeII==='function'&&isSiegeModeII()?'siege-ii':'legacy-siege-round-'+state.round)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);closeOverlay()}
@@ -19,14 +28,14 @@ function showOpenWorldHelp(){modalRouteEnter(SOSText("core_settings_help_audio.s
 function showSiegeHelp(){modalRouteEnter(SOSText("core_settings_help_audio.showSiegeHelp.001"),Array.from(arguments));overlay(SOSText("core_settings_help_audio.showSiegeHelp.002",PARTY_UNLOCK_ROUND),true);$('#siegeHelpStats').onclick=()=>showClassGuide('help');$('#siegeHelpOpen').onclick=showOpenWorldHelp;$('#siegeHelpBack').onclick=()=>SOSServices.navigation.back(showHelp)}
 
 let audioCtx=null;let soundOn=true;
-function toggleSound(){soundOn=!soundOn}
-function ensureAudio(){if(!soundOn)return null;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}catch(e){return null}}
+function toggleSound(){soundOn=!soundOn;if(typeof saveAudioPrefs==='function')saveAudioPrefs()}
+function ensureAudio(){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}catch(e){return null}}
 function audioTone(freq,dur=.08,type='sine',gain=.04,when=0,endFreq=null){
- const ctx=ensureAudio();if(!ctx)return;const t=ctx.currentTime+when,o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),t+dur);g.gain.setValueAtTime(Math.max(.0001,gain),t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+dur+.01)
+ const ctx=ensureAudio();if(!ctx)return;const t=ctx.currentTime+when,o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),t+dur);g.gain.setValueAtTime(Math.max(.0001,gain*(typeof sfxVolume==='number'?sfxVolume:1)),t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+dur+.01)
 }
 function audioNoise(dur=.07,gain=.035,when=0,filterFreq=1200,filterType='lowpass'){
  const ctx=ensureAudio();if(!ctx)return;const sr=ctx.sampleRate,len=Math.max(1,Math.floor(sr*dur)),buf=ctx.createBuffer(1,len,sr),data=buf.getChannelData(0);for(let i=0;i<len;i++)data[i]=(Math.random()*2-1)*(1-i/len);
- const src=ctx.createBufferSource(),g=ctx.createGain(),f=ctx.createBiquadFilter(),t=ctx.currentTime+when;src.buffer=buf;f.type=filterType;f.frequency.value=filterFreq;g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);src.connect(f);f.connect(g);g.connect(ctx.destination);src.start(t)
+ const src=ctx.createBufferSource(),g=ctx.createGain(),f=ctx.createBiquadFilter(),t=ctx.currentTime+when;src.buffer=buf;f.type=filterType;f.frequency.value=filterFreq;g.gain.setValueAtTime(gain*(typeof sfxVolume==='number'?sfxVolume:1),t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);src.connect(f);f.connect(g);g.connect(ctx.destination);src.start(t)
 }
 function combatSoundProfile(cls,w){
  const fam=weaponFamily(w||{});if([SOSText("core_settings_help_audio.combatSoundProfile.001"),SOSText("core_settings_help_audio.combatSoundProfile.002")].includes(cls)||[SOSText("core_settings_help_audio.combatSoundProfile.003"),SOSText("core_settings_help_audio.combatSoundProfile.004")].includes(fam))return'magic';
@@ -62,3 +71,37 @@ function sfxAttackForAlly(m,hit=true,target=null,heavy=false){
  const cls=m.className||allyDef(m.id)?.className,w=allyWeapon(m),armored=!!target&&['armored','stone','shield'].includes(target.trait);sfxCombatAttack(combatSoundProfile(cls,w),hit,armored,heavy)
 }
 function sfx(type){if(!soundOn)return;const cfg={strike:[150,.06,'square'],miss:[90,.04,'sine'],coin:[780,.08,'square'],potion:[440,.12,'sine'],level:[880,.2,'square'],horn:[110,.3,'sawtooth'],repair:[260,.08,'square'],victory:[660,.28,'triangle'],defeat:[80,.4,'sawtooth']}[type]||[220,.06,'square'];audioTone(cfg[0],cfg[1],cfg[2],.06)}
+
+function sfxWorld(kind){
+ if(!soundOn)return;
+ switch(kind){
+  case 'uiBlocked':audioTone(120,.055,'square',.018);break;
+  case 'coinsSmall':audioTone(820,.055,'square',.035);audioTone(1080,.04,'triangle',.022,.035);break;
+  case 'coinsLarge':audioTone(650,.07,'square',.04);audioTone(900,.07,'triangle',.032,.04);audioTone(1220,.09,'sine',.02,.075);break;
+  case 'cargo':audioNoise(.09,.035,0,520,'lowpass');audioTone(110,.08,'triangle',.022,.035,75);break;
+  case 'equip':audioTone(720,.055,'triangle',.025);audioNoise(.05,.018,.02,2800,'bandpass');break;
+  case 'parchment':audioNoise(.10,.025,0,1800,'highpass');audioNoise(.06,.012,.04,900,'bandpass');break;
+  case 'construction':audioNoise(.06,.045,0,900,'bandpass');audioTone(180,.09,'square',.03,.01,115);audioNoise(.045,.03,.12,1300,'bandpass');break;
+  case 'craftComplete':audioTone(330,.08,'triangle',.025);audioTone(495,.10,'triangle',.03,.07);audioTone(660,.14,'sine',.025,.15);break;
+  case 'depart':audioTone(145,.08,'triangle',.022);audioNoise(.16,.022,.025,700,'lowpass');audioTone(115,.10,'triangle',.12);break;
+  case 'arrive':audioTone(262,.08,'triangle',.025);audioTone(392,.13,'triangle',.03,.075);break;
+  case 'camp':audioNoise(.16,.024,0,550,'lowpass');audioTone(95,.11,'sine',.018,.04,70);break;
+  case 'meal':audioTone(520,.045,'triangle',.018);audioTone(690,.05,'triangle',.018,.055);audioNoise(.05,.01,.02,2400,'highpass');break;
+  case 'healSoft':audioTone(392,.12,'sine',.022);audioTone(523,.16,'sine',.018,.08);break;
+  case 'recruit':audioTone(330,.08,'triangle',.025);audioTone(440,.08,'triangle',.03,.08);audioTone(660,.14,'triangle',.025,.16);break;
+  case 'relationshipUp':audioTone(440,.07,'sine',.018);audioTone(554,.11,'sine',.02,.065);break;
+  case 'relationshipDown':audioTone(330,.08,'sine',.018);audioTone(247,.13,'sine',.02,.07);break;
+  case 'discovery':audioTone(392,.08,'sine',.02);audioTone(587,.12,'triangle',.025,.07);audioTone(784,.18,'sine',.02,.16);break;
+  case 'questAccept':audioNoise(.06,.018,0,1700,'highpass');audioTone(294,.08,'triangle',.018,.05);audioTone(440,.12,'triangle',.022,.11);break;
+  case 'questComplete':audioTone(392,.08,'triangle',.024);audioTone(523,.10,'triangle',.028,.075);audioTone(784,.18,'sine',.025,.165);break;
+  case 'questFail':audioTone(294,.10,'triangle',.022);audioTone(220,.18,'sawtooth',.018,.09);break;
+  case 'custody':audioNoise(.055,.035,0,2500,'bandpass');audioTone(115,.11,'square',.018,.03,80);break;
+  case 'release':audioTone(220,.07,'triangle',.02);audioTone(330,.11,'triangle',.024,.065);break;
+  case 'escape':audioNoise(.08,.028,0,2600,'highpass');audioTone(180,.06,'triangle',.016,.02,290);audioTone(360,.10,'triangle',.018,.07,540);break;
+  case 'politics':audioNoise(.07,.012,0,1600,'highpass');audioTone(262,.07,'triangle',.018,.05);audioTone(330,.09,'triangle',.018,.11);break;
+  case 'warning':audioTone(180,.09,'square',.022);audioTone(150,.14,'square',.02,.10);break;
+  case 'door':audioNoise(.10,.025,0,450,'lowpass');audioTone(85,.10,'triangle',.016,.03,60);break;
+  default:sfx('strike');
+ }
+}
+

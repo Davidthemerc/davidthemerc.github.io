@@ -1,0 +1,25 @@
+{
+  "version": "0.5.03",
+  "runtime": "concatenated-classic-script",
+  "css": [
+    "css/app.css"
+  ],
+  "js": [
+    "js/00_bootstrap_session.js",
+    "js/10_testing_area.js",
+    "js/15_ctespn_audio.js",
+    "js/20_data_persistence_ui.js",
+    "js/30_matchup_simulation.js",
+    "js/40_event_reconciliation.js",
+    "js/50_ctespn_alerts.js",
+    "js/60_gameview_event_model.js",
+    "js/70_gameview_animation_core.js",
+    "js/80_gameview_animation_plays.js",
+    "js/90_gameview_playback_runtime.js",
+    "js/99_app_startup.js"
+  ],
+  "assets": {
+    "images": "assets/images/",
+    "audio": "assets/audio/"
+  }
+}

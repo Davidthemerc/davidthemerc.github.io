@@ -6,13 +6,16 @@ const WORLD_REGIONS={
  shantium:{id:'shantium',name:SOSText("items_equipment.valuableRemove.071"),mapTitle:SOSText("items_equipment.valuableRemove.072"),subtitle:SOSText("items_equipment.valuableRemove.073"),terrain:'mixed'},
  bluestone:{id:'bluestone',name:SOSText("items_equipment.valuableRemove.074"),mapTitle:SOSText("items_equipment.valuableRemove.075"),subtitle:SOSText("items_equipment.valuableRemove.076"),terrain:'mountain'},
  redstone:{id:'redstone',name:SOSText("items_equipment.valuableRemove.077"),mapTitle:SOSText("items_equipment.valuableRemove.078"),subtitle:SOSText("items_equipment.valuableRemove.079"),terrain:'eastern'},
- farnorth:{id:'farnorth',name:'Far Northern Region',mapTitle:'FAR NORTHERN REGION',subtitle:'Frozen roads • Independent frontier • travel takes roughly twice as long',terrain:'frozen'}
+ farnorth:{id:'farnorth',name:'Far Northern Region',mapTitle:'FAR NORTHERN REGION',subtitle:'Frozen roads • Independent frontier • travel takes roughly twice as long',terrain:'frozen'},
+ spawn:{id:'spawn',name:'The Spawn',mapTitle:'THE SPAWN',subtitle:'A metropolis large enough to be a region • monumental avenues • dense urban districts',terrain:'urban'}
 };
 const REGION_CONNECTIONS=[
  {id:'northwest_highroad',a:'northgate',b:'lowcreek',days:3,name:SOSText("items_equipment.valuableRemove.080"),desc:SOSText("items_equipment.valuableRemove.081")},
  {id:'eastern_redstone_road',a:'redoubt',b:'lockwood',days:3,name:SOSText("items_equipment.valuableRemove.082"),desc:SOSText("items_equipment.valuableRemove.083")},
  {id:'grayhaven_exium',a:'grayhaven',b:'exium',days:4,name:'Frozen North Road',desc:'The northern road leaves Grayhaven and climbs through increasingly severe snow toward Exium.'},
- {id:'crownpass_exium',a:'crownpass',b:'exium',days:4,name:'High Crown–Exium Ice Road',desc:'A brutal high route links Bluestone’s High Crown Pass with the Far Northern gateway at Exium.'}
+ {id:'crownpass_exium',a:'crownpass',b:'exium',days:4,name:'High Crown–Exium Ice Road',desc:'A brutal high route links Bluestone’s High Crown Pass with the Far Northern gateway at Exium.'},
+ {id:'southroad_spawn',a:'southroad',b:'spawn_northcentral',days:3,name:'Southroad–Spawn High Road',desc:'The great southern road from Southroad Camp reaches the north-central gate of the Spawn.'},
+ {id:'tyrdon_spawn',a:'tyrdon',b:'spawn_market',days:3,name:'Tyrdon–Spawn Trade Road',desc:'The eastern trade road from Tyrdon enters the Spawn directly through the Market District.'}
 ];
 const WORLD_LOCATIONS=[
  {id:'shantium',name:SOSText("items_equipment.valuableRemove.084"),x:48,y:49,type:'town',faction:SOSText("items_equipment.valuableRemove.085"),desc:SOSText("items_equipment.valuableRemove.086")},
@@ -78,7 +81,25 @@ const WORLD_LOCATIONS=[
  {id:'velmora',name:'Velmora',x:75,y:63,type:'settlement',faction:'Independent',region:'farnorth',terrain:'snow-village',desc:'An isolated southeastern village built around shelter, livestock, hunting, and endurance.'},
  {id:'roguehold',name:'Roguehold Castle',x:59,y:72,type:'ruins',faction:'Independent',region:'farnorth',terrain:'frozen-castle',desc:'An abandoned frozen castle southwest of Velmora. It is unsettled, but armed outlaws are known to use its halls and towers.'},
  {id:'skallvik',name:'Skallvik',x:34,y:66,type:'settlement',faction:'Independent',region:'farnorth',terrain:'frontier-town',desc:'A rough snowbound frontier village of hunters, trappers, mercenaries, fugitives, and traders who do not ask many questions.'},
- {id:'exium',name:'Exium',x:46,y:88,type:'settlement',faction:'Independent',region:'farnorth',terrain:'gateway-town',desc:'The southern gateway of the Far North and the practical limit of routine foreign faction travel and trade.'}
+ {id:'exium',name:'Exium',x:46,y:88,type:'settlement',faction:'Independent',region:'farnorth',terrain:'gateway-town',desc:'The southern gateway of the Far North and the practical limit of routine foreign faction travel and trade.'},
+ // v1.6.45 — Spawn Foundations I. The metropolis itself is the region.
+ {id:'spawn_northwest',name:'Northwest Ward',x:12,y:13,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-residential',desc:'A broad residential quarter laid out in long blocks along the northwestern walls.'},
+ {id:'spawn_northgate',name:'North Gate Quarter',x:34,y:13,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-gate',desc:'A monumental northern quarter of gatehouses, inns, civic squares, and traffic entering the metropolis.'},
+ {id:'spawn_northcentral',name:'Highroad Ward',x:57,y:13,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-gate',desc:'The formal north-central approach to the Spawn. The Southroad high road from Shantium enters here beneath immense walls and straight ceremonial avenues.'},
+ {id:'spawn_market',name:'Market District',x:84,y:15,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-market',desc:'An enormous northeastern open-air commercial district. Countless independent stalls and shops compete along geometric market streets; the Tyrdon road enters here.'},
+ {id:'spawn_west',name:'West Ward',x:12,y:38,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-residential',desc:'Dense western neighborhoods arranged around long avenues and neighborhood squares.'},
+ {id:'spawn_works',name:'Works District',x:35,y:38,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-industrial',desc:'A major manufacturing quarter of workshops, kilns, textile houses, fine crafts, and practical industry.'},
+ {id:'spawn_civic',name:'Civic Center',x:58,y:39,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-civic',desc:'The monumental administrative heart of the Spawn: vast rectangular plazas, government halls, archives, courts, and offices aligned along formal avenues.'},
+ {id:'spawn_merchant',name:'Merchant Quarter',x:84,y:39,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-commercial',desc:'Merchant houses, brokers, factors, company offices, and high-value commercial institutions serve trade on a metropolitan scale.'},
+ {id:'spawn_working',name:'Foundry Ward',x:12,y:64,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-working',desc:'A crowded working district of laborers, small workshops, tenements, neighborhood shops, and busy streets.'},
+ {id:'spawn_oldcity',name:'Old Spawn',x:35,y:64,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-old',desc:'One of the oldest surviving parts of the metropolis. Its blocks are smaller and streets less perfectly regular than the later planned city.'},
+ {id:'spawn_centralres',name:'Central Ward',x:58,y:64,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-residential',desc:'A vast mixed residential quarter between the civic core and the southern city.'},
+ {id:'spawn_warehouses',name:'East Warehouses',x:84,y:64,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-warehouse',desc:'Long warehouse blocks and freight yards receive goods moving between the Market District, southern trade quarters, and the rest of the city.'},
+ {id:'spawn_southwest',name:'Southwest Ward',x:12,y:88,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-residential',desc:'A sprawling southern residential quarter inside the great rectangular city walls.'},
+ {id:'spawn_spirits',name:'Brewers Ward',x:35,y:88,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-industrial',desc:'Breweries, distilleries, bottlers, warehouses, and taverns make this the center of the Spawn’s large spirits industry.'},
+ {id:'spawn_stockyards',name:'Stockyards',x:58,y:88,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-stockyard',desc:'Vast stockyards and livestock exchanges handle cattle driven in by desert herders and ranchers seeking the nearest great market.'},
+ {id:'spawn_bazaar',name:'Grand Bazaar Quarter',x:84,y:88,type:'district',faction:'Spawn',region:'spawn',terrain:'urban-bazaar',desc:'The southeastern quarter where desert influence is strongest. The Grand Bazaar, caravan yards, stables, and desert-facing trade crowd the avenue leading to the Endless Desert gate.'},
+ {id:'endless_desert_gate',name:'Gate of the Endless Road',x:95,y:96,type:'landmark',faction:'Spawn',region:'spawn',terrain:'urban-gate',desc:'The southeastern gate opens toward the Endless Desert. The road beyond exists, but travel into the desert is not yet accessible.',lockedTravel:true}
 ];
 
 function worldLocation(id){return WORLD_LOCATIONS.find(x=>x.id===id)||WORLD_LOCATIONS[0]}
@@ -106,14 +127,14 @@ const TRADE_GOODS=[
  {id:'iron',name:SOSText("world_regions_security.regionNameForLocation.005"),base:42,sources:['stonebridge','redoubt','winterstone','sengia','karsen'],demand:['shantium','northgate','southroad','zion','lowcreek','lockwood','glenbrook','tyrdon','pyreglade','azerdon','decius','velmora','skallvik','exium']},
  {id:'tools',name:SOSText("world_regions_security.regionNameForLocation.006"),base:38,sources:['stonebridge','redoubt','zion','winterstone','sengia','lockwood','karsen','azerdon'],demand:['river','northgate','southroad','lowcreek','norwegian','ebonheart','briarlake','glenbrook','tyrdon','pyreglade','decius','velmora','skallvik','exium']},
  // Luxury Goods remain deliberately thin outside the eventual Spawn region: capitals are the main current producers.
- {id:'luxury',name:SOSText("world_regions_security.regionNameForLocation.007"),base:55,sources:['shantium','zion','sengia','azerdon'],demand:['river','northgate','redoubt','norwegian','ebonheart','lockwood','briarlake','glenbrook','tyrdon','pyreglade','karsen','decius','velmora','skallvik','exium']},
+ {id:'luxury',name:SOSText("world_regions_security.regionNameForLocation.007"),base:55,sources:['shantium','zion','sengia','azerdon','spawn_works'],demand:['spawn_civic','spawn_market','spawn_merchant','river','northgate','redoubt','norwegian','ebonheart','lockwood','briarlake','glenbrook','tyrdon','pyreglade','karsen','decius','velmora','skallvik','exium']},
  {id:'hides',name:'Hides & Furs',base:40,sources:['northgate','ebonheart','norwegian','lockwood','pyreglade','decius','velmora','skallvik'],demand:['shantium','stonebridge','zion','sengia','azerdon','karsen','exium']},
  {id:'stone',name:'Stone',base:26,sources:['quarry','stonebridge','winterstone','crownpass','tyrdon','karsen','standingstones'],demand:['shantium','redoubt','zion','sengia','lockwood','azerdon','velmora','skallvik','exium']},
  // Livestock is present in every established region but intentionally sparse before the future Spawn expansion.
- {id:'livestock',name:'Livestock',base:34,sources:['northgate','lowcreek','briarlake','velmora'],demand:['shantium','stonebridge','zion','sengia','grayhaven','azerdon','karsen','skallvik','exium']},
+ {id:'livestock',name:'Livestock',base:34,sources:['northgate','lowcreek','briarlake','velmora','spawn_stockyards'],demand:['spawn_market','spawn_merchant','spawn_bazaar','shantium','stonebridge','zion','sengia','grayhaven','azerdon','karsen','skallvik','exium']},
  {id:'salt',name:'Salt',base:31,sources:['marsh','lowcreek','tyrdon'],demand:['shantium','river','northgate','zion','norwegian','sengia','briarlake','azerdon','karsen','decius','velmora','skallvik','exium']},
  // Spirits are deliberately limited in the current world so Spawn can later become a major source.
- {id:'spirits',name:'Spirits',base:46,sources:['shantium','norwegian','sengia','skallvik'],demand:['river','stonebridge','northgate','redoubt','zion','ebonheart','lockwood','grayhaven','briarlake','glenbrook','tyrdon','azerdon','karsen','decius','velmora','exium']},
+ {id:'spirits',name:'Spirits',base:46,sources:['shantium','norwegian','sengia','skallvik','spawn_spirits'],demand:['spawn_market','spawn_merchant','spawn_bazaar','spawn_civic','river','stonebridge','northgate','redoubt','zion','ebonheart','lockwood','grayhaven','briarlake','glenbrook','tyrdon','azerdon','karsen','decius','velmora','exium']},
  // Dye is a high-value, unevenly produced commodity (and a deliberate Mount & Blade nod).
  {id:'dye',name:'Dye',base:50,sources:['river','ebonheart','pyreglade'],demand:['shantium','stonebridge','zion','sengia','azerdon','karsen','decius','velmora','skallvik','exium']}
 ];

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interstate Drive</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="game"></div>
+
+  <div id="hud">
+    <div id="speedHud"><span id="speedValue">0</span> MPH</div>
+    <div id="tripHud"><span id="tripValue">0.0</span> mi</div>
+  </div>
+  <div id="fpsHud" aria-live="off">FPS: <span id="fpsValue">0</span></div>
+
+  <div id="startup" class="panel visible">
+    <h1>INTERSTATE DRIVE</h1>
+    <p>Interstate 9 · California-ish nowhere</p>
+      <button id="startButton">DRIVE</button>
+    <button data-open-map>MAP</button>
+    <button data-open-settings>SETTINGS</button>
+    <p class="small">WASD / Arrows · Space brake · R reset · Esc pause · F3 FPS</p>
+  </div>
+
+  <div id="pauseMenu" class="panel">
+    <h2>PAUSED</h2>
+    <button id="resumeButton">RESUME</button>
+    <button data-open-map>MAP</button>
+    <button data-open-settings>SETTINGS</button>
+    <button id="resetButton">RESET TRUCK</button>
+  </div>
+
+
+  <div id="mapMenu" class="panel mapPanel">
+    <div class="mapHeader">
+      <div>
+        <h2>REGIONAL MAP</h2>
+        <p id="mapLocationText" class="small mapLocationText">Current position</p>
+      </div>
+      <div class="mapScaleBlock">
+        <span id="mapScaleText">1.0 mi across</span>
+      </div>
+    </div>
+
+    <div class="mapCanvasWrap">
+      <canvas id="worldMap" width="900" height="620" aria-label="Procedural road map centered on the truck"></canvas>
+      <div class="mapNorth">N ↑</div>
+    </div>
+
+    <div class="mapLegend">
+      <span><i class="legendLine interstate"></i> Interstate 9</span>
+      <span><i class="legendLine county"></i> County road</span>
+      <span><i class="legendLine dirt"></i> Dirt road</span>
+      <span><i class="legendExit"></i> I-9 interchange</span>
+      <span><i class="legendSite gas"></i> Gas</span>
+      <span><i class="legendSite store"></i> Store</span>
+      <span><i class="legendSite farm"></i> Farm</span>
+      <span><i class="legendTruck"></i> You</span>
+    </div>
+
+    <p class="small mapHint">Mouse wheel zooms. Drag to pan. Click to choose an exact fast-travel destination. Roadside destinations are marked when zoomed in.</p>
+    <div id="mapTargetInfo" class="mapTargetInfo">No destination selected.</div>
+    <div class="mapTravelControls">
+      <button id="mapGoHere" type="button" disabled>GO HERE</button>
+      <button id="mapClearTarget" type="button" disabled>CLEAR TARGET</button>
+    </div>
+    <div class="mapControls">
+      <button id="mapZoomIn" type="button">ZOOM IN</button>
+      <button id="mapCenter" type="button">CENTER ON TRUCK</button>
+      <button id="mapZoomOut" type="button">ZOOM OUT</button>
+    </div>
+    <button id="closeMap" type="button">BACK</button>
+  </div>
+
+  <div id="settingsMenu" class="panel wide">
+    <h2>SETTINGS</h2>
+    <label>Traffic Density
+      <select id="trafficDensity">
+        <option value="0">None</option>
+        <option value="0.25">Very Light</option>
+        <option value="0.55" selected>Light</option>
+        <option value="1">Moderate</option>
+        <option value="1.65">Heavy</option>
+      </select>
+    </label>
+    <label>Draw Distance
+      <select id="drawDistance">
+        <option value="8">Low</option>
+        <option value="12" selected>Medium</option>
+        <option value="16">High</option>
+      </select>
+    </label>
+    <label>Scenery Density
+      <select id="sceneryDensity">
+        <option value="0.55">Sparse</option>
+        <option value="1" selected>Normal</option>
+        <option value="1.55">More</option>
+      </select>
+    </label>
+    <label class="check"><input id="showFps" type="checkbox" /> Show FPS</label>
+    <label class="check"><input id="cameraBob" type="checkbox" checked /> Camera Bob</label>
+    <div class="settingsSection">
+      <h3>CAMERA TUNING</h3>
+
+      <label>Field of View <output id="fovValue">85°</output>
+        <input id="fov" type="range" min="55" max="100" step="1" value="85" />
+      </label>
+
+      <div class="cameraGrid">
+        <label>Position X <output id="camXValue">0.00</output>
+          <input id="camX" type="range" min="-1.00" max="1.00" step="0.01" value="-0.09" />
+        </label>
+        <label>Position Y <output id="camYValue">0.00</output>
+          <input id="camY" type="range" min="-0.75" max="0.75" step="0.01" value="0.3" />
+        </label>
+        <label>Position Z <output id="camZValue">0.00</output>
+          <input id="camZ" type="range" min="-1.50" max="1.50" step="0.01" value="-0.1" />
+        </label>
+
+        <label>Pitch X <output id="camPitchValue">0.0°</output>
+          <input id="camPitch" type="range" min="-20" max="20" step="0.5" value="-4.5" />
+        </label>
+        <label>Yaw Y <output id="camYawValue">0.0°</output>
+          <input id="camYaw" type="range" min="-20" max="20" step="0.5" value="0" />
+        </label>
+        <label>Roll Z <output id="camRollValue">0.0°</output>
+          <input id="camRoll" type="range" min="-15" max="15" step="0.5" value="0" />
+        </label>
+      </div>
+
+      <p class="small cameraHint">Position values are offsets from the normal driver's-eye position. Angles are in degrees.</p>
+      <button id="resetCamera" type="button">RESET CAMERA</button>
+    </div>
+
+
+    <div class="settingsSection exteriorPreviewSection">
+      <h3>TRUCK EXTERIOR / THIRD-PERSON CAMERA</h3>
+      <div class="exteriorPreviewControls">
+        <button id="toggleExteriorView" type="button">ENTER EXTERIOR VIEW</button>
+        <button id="cycleExteriorView" type="button">CYCLE EXTERIOR CAMERA</button>
+      </div>
+      <p class="small cameraHint">V toggles driver/exterior view. C cycles chase and inspection angles while outside.</p>
+
+      <div class="exteriorCameraEditor">
+        <label>Camera Preset
+          <select id="exteriorCameraPreset">
+            <option value="0">Chase</option>
+            <option value="1">Left Rear</option>
+            <option value="2">Right Rear</option>
+            <option value="3">Front Quarter</option>
+          </select>
+        </label>
+
+        <div class="cameraGrid exteriorCameraGrid">
+          <label>Position X <output id="extCamXValue">0.00</output>
+            <input id="extCamX" type="range" min="-12" max="12" step="0.05" value="0" />
+          </label>
+          <label>Position Y <output id="extCamYValue">3.15</output>
+            <input id="extCamY" type="range" min="0.5" max="10" step="0.05" value="3.15" />
+          </label>
+          <label>Position Z <output id="extCamZValue">7.80</output>
+            <input id="extCamZ" type="range" min="-12" max="14" step="0.05" value="7.8" />
+          </label>
+
+          <label>Target X <output id="extTargetXValue">0.00</output>
+            <input id="extTargetX" type="range" min="-4" max="4" step="0.05" value="0" />
+          </label>
+          <label>Target Y <output id="extTargetYValue">0.95</output>
+            <input id="extTargetY" type="range" min="0" max="4" step="0.05" value="0.95" />
+          </label>
+          <label>Target Z <output id="extTargetZValue">0.00</output>
+            <input id="extTargetZ" type="range" min="-4" max="4" step="0.05" value="0" />
+          </label>
+
+          <label>Exterior FOV <output id="extFovValue">72°</output>
+            <input id="extFov" type="range" min="40" max="110" step="1" value="72" />
+          </label>
+        </div>
+
+        <div class="exteriorCameraActions">
+          <button id="resetExteriorCamera" type="button">RESET THIS CAMERA</button>
+          <button id="resetAllExteriorCameras" type="button">RESET ALL EXTERIOR CAMERAS</button>
+        </div>
+        <p class="small cameraHint">Positions are relative to the truck. Target values control what point on/around the truck the camera looks toward.</p>
+      </div>
+    </div>
+
+    <div class="settingsSection interiorEditorSection">
+      <h3>INTERIOR EDITOR</h3>
+      <p class="small editorIntro">Select a primitive group and adjust it live. These are layout offsets layered over the built-in cab geometry.</p>
+
+      <div class="editorTopRow editorTopRowWide">
+        <label>Editor Mode
+          <select id="interiorEditorMode">
+            <option value="primitive">Individual Primitives</option>
+            <option value="group">Groups</option>
+          </select>
+        </label>
+        <label>Interior Part
+          <select id="interiorPart"></select>
+        </label>
+        <div class="editorActions">
+          <button id="resetInteriorPart" type="button">RESET PART</button>
+          <button id="resetInteriorAll" type="button">RESET ALL</button>
+        </div>
+      </div>
+
+      <div class="editorTransformGrid">
+        <label>X Position <output id="intXValue">0.00</output>
+          <input id="intX" type="range" min="-2.00" max="2.00" step="0.01" value="0" />
+        </label>
+        <label>Y Position <output id="intYValue">0.00</output>
+          <input id="intY" type="range" min="-1.50" max="1.50" step="0.01" value="0" />
+        </label>
+        <label>Z Position <output id="intZValue">0.00</output>
+          <input id="intZ" type="range" min="-2.00" max="2.00" step="0.01" value="0" />
+        </label>
+
+        <label>X Rotation <output id="intRXValue">0.0°</output>
+          <input id="intRX" type="range" min="-45" max="45" step="0.5" value="0" />
+        </label>
+        <label>Y Rotation <output id="intRYValue">0.0°</output>
+          <input id="intRY" type="range" min="-45" max="45" step="0.5" value="0" />
+        </label>
+        <label>Z Rotation <output id="intRZValue">0.0°</output>
+          <input id="intRZ" type="range" min="-45" max="45" step="0.5" value="0" />
+        </label>
+
+        <label>X Scale <output id="intSXValue">1.00</output>
+          <input id="intSX" type="range" min="0.25" max="3.00" step="0.01" value="1" />
+        </label>
+        <label>Y Scale <output id="intSYValue">1.00</output>
+          <input id="intSY" type="range" min="0.25" max="3.00" step="0.01" value="1" />
+        </label>
+        <label>Z Scale <output id="intSZValue">1.00</output>
+          <input id="intSZ" type="range" min="0.25" max="3.00" step="0.01" value="1" />
+        </label>
+      </div>
+
+      <div class="editorJson">
+        <label>Interior Layout JSON
+          <textarea id="interiorJson" spellcheck="false" placeholder="Exported layout JSON will appear here. You can also paste a layout here and click APPLY JSON."></textarea>
+        </label>
+        <div class="editorJsonButtons">
+          <button id="exportInteriorJson" type="button">EXPORT JSON</button>
+          <button id="downloadInteriorJson" type="button">DOWNLOAD JSON</button>
+          <button id="applyInteriorJson" type="button">APPLY JSON</button>
+          <label class="fileButton">LOAD JSON FILE
+            <input id="loadInteriorJsonFile" type="file" accept=".json,application/json" />
+          </label>
+        </div>
+        <p id="interiorEditorStatus" class="small editorStatus" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div class="settingsSection performanceDebugSection">
+      <h3>PERFORMANCE DEBUG REPORT</h3>
+      <p class="small cameraHint">A copyable snapshot of FPS, streaming, traffic, road, junction, and frame-spike diagnostics. Open this section after driving for a while, then copy the report and send it back for profiling.</p>
+      <textarea id="performanceDebugReport" class="performanceDebugReport" readonly spellcheck="false" placeholder="Debug data will appear here when Settings opens or when you press REFRESH REPORT."></textarea>
+      <div class="performanceDebugActions">
+        <button id="refreshDebugReport" type="button">REFRESH REPORT</button>
+        <button id="copyDebugReport" type="button">COPY DEBUG REPORT</button>
+      </div>
+      <p id="performanceDebugStatus" class="small editorStatus" aria-live="polite"></p>
+    </div>
+
+    <button id="closeSettings">BACK</button>
+  </div>
+
+  <div id="debugPanel">
+    <strong>INTERSTATE 9 DEBUG</strong>
+    <pre id="debugText"></pre>
+    <div class="debugButtons">
+      <button id="dbgTraffic">Traffic</button>
+      <button id="dbgSpawn">Spawn</button>
+      <button id="dbgBoost">+ Speed</button>
+      <button id="dbgReset">Reset</button>
+      <button id="dbgScenery">Scenery</button>
+      <button id="dbgFog">Fog</button>
+    </div>
+  </div>
+
+  <!-- Prefer a local three.min.js beside this file. If it is absent, use the CDN. -->
+  <script src="three.min.js"></script>
+  <script>
+    if (!window.THREE) {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');
+    }
+  </script>
+  <script src="game.js"></script>
+</body>
+</html>

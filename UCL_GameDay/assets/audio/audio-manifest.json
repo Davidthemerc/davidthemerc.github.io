@@ -1,0 +1,84 @@
+{
+  "version": "0.5.02",
+  "note": "No audio clips are bundled yet. Simplified 31-slot announcer library; Trick Play has no dedicated sound and the old combination-call recordings were removed.",
+  "rules": {
+    "long_rush_yards": 25,
+    "long_reception_yards": 30,
+    "anti_repeat_variants": true,
+    "one_primary_call_per_event": true,
+    "only_allowed_second_announcer_call": "late_lead_change",
+    "followup_gap_ms": 700,
+    "gameview_primary_milestone": "outcome",
+    "duration_aware_timing_metadata": true,
+    "trick_play_dedicated_call": false,
+    "combination_call_library": false
+  },
+  "announcer": {
+    "touchdown": [
+      "touchdown-01.mp3",
+      "touchdown-02.mp3",
+      "touchdown-03.mp3"
+    ],
+    "pick_six": [
+      "pick-six-01.mp3",
+      "pick-six-02.mp3",
+      "pick-six-03.mp3"
+    ],
+    "kick_six": [
+      "kick-six-01.mp3"
+    ],
+    "scoop_score": [
+      "scoop-and-score-01.mp3"
+    ],
+    "sack": [
+      "sack-01.mp3",
+      "sack-02.mp3",
+      "sack-03.mp3"
+    ],
+    "qb_intercepted": [
+      "qb-intercepted-01.mp3",
+      "qb-intercepted-02.mp3",
+      "qb-intercepted-03.mp3"
+    ],
+    "your_player_fumbled": [
+      "your-player-fumbled-01.mp3",
+      "your-player-fumbled-02.mp3",
+      "your-player-fumbled-03.mp3"
+    ],
+    "defensive_interception": [
+      "defensive-interception-01.mp3",
+      "defensive-interception-02.mp3",
+      "defensive-interception-03.mp3"
+    ],
+    "fumble_recovery": [
+      "fumble-recovery-01.mp3",
+      "fumble-recovery-02.mp3",
+      "fumble-recovery-03.mp3"
+    ],
+    "long_rush": [
+      "long-rush-01.mp3",
+      "long-rush-02.mp3",
+      "long-rush-03.mp3"
+    ],
+    "long_reception": [
+      "long-reception-01.mp3",
+      "long-reception-02.mp3",
+      "long-reception-03.mp3"
+    ],
+    "late_lead_change": [
+      "late-lead-change-01.mp3",
+      "late-lead-change-02.mp3"
+    ]
+  },
+  "stadium": [
+    "touchdown-roar-01.mp3",
+    "turnover-roar-01.mp3",
+    "cheer-01.mp3",
+    "hit-01.mp3"
+  ],
+  "stingers": [
+    "touchdown-01.mp3",
+    "turnover-01.mp3",
+    "lead-change-01.mp3"
+  ]
+}

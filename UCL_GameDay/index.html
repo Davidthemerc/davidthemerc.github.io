@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#102a56">
+<title>UCL GameDay v0.5.03</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header><div class="header-inner">
+  <div class="topline">
+    <div class="brand"><div class="eyebrow">CTESPN • UNMANAGED CHAOS LEAGUE</div><div class="brand-main"><h1>UCL GAMEDAY <span>v0.5.03</span></h1><span class="header-week" id="weekLabel">Week —</span></div></div>
+    <div class="header-actions"><a id="companionLink" href="./Unmanaged_Chaos_League_Companion_2026_v1.10.0.html">← Companion</a><button class="refresh" id="refreshBtn"><span class="refresh-dot" id="liveDot"></span><span class="refresh-label">Refresh Live</span></button></div>
+  </div>
+</div>
+<nav class="primary-nav" aria-label="UCL GameDay navigation">
+  <button type="button" class="active" data-view="gameday">GameDay</button>
+  <button type="button" data-view="gameview">UCL GameView</button>
+      <button type="button" data-view="testing">Testing Area</button>
+  <select id="teamSelect" hidden aria-hidden="true"></select>
+  <button type="button" data-view="settings">Settings</button>
+</nav>
+</header>
+
+<div class="ctespn-alert-layer" id="ctespnAlertLayer" aria-live="polite" aria-atomic="true">
+  <div class="ctespn-compact-slot" id="ctespnCompactSlot"></div>
+  <div class="ctespn-major-backdrop" id="ctespnMajorBackdrop" role="status" aria-live="assertive">
+    <div class="ctespn-major-card" id="ctespnMajorCard">
+      <div class="ctespn-major-top"><img id="ctespnMajorLogo" alt="CTESPN"></div>
+      <div class="ctespn-major-body" id="ctespnMajorBody"></div>
+      <div class="ctespn-major-stripe"></div>
+    </div>
+  </div>
+</div>
+<div class="wrap">
+<div id="gameContentView" class="app-view">
+  <div class="error" id="errorBox"></div><div class="sim-banner" id="simBanner"><strong>GAMEDAY SIMULATION</strong><span id="simBannerDetail">Simulation active.</span><span class="sim-clock" id="simClock">00:00</span></div>
+  <section class="watch-bar" id="watchBar" aria-label="GameDay watch controls">
+    <div class="watch-brand"><span class="watch-live-dot"></span><b>CTESPN LIVE</b><small id="watchState">Sunday Watch</small></div>
+    <div class="watch-matchup">
+      <button type="button" class="watch-swap" id="prevMatchupBtn" aria-label="Previous matchup">‹</button>
+      <div class="watch-matchup-copy"><small>FEATURED</small><b id="watchMatchupLabel">Matchup</b></div>
+      <button type="button" class="watch-swap" id="nextMatchupBtn" aria-label="Next matchup">›</button>
+    </div>
+    <div class="watch-activity">
+      <div><small>RECENT</small><b id="watchRecent">No scoring yet</b></div>
+      <div><small>GAMEVIEW QUEUE</small><b id="watchQueue">0 plays</b></div>
+    </div>
+  </section>
+  <section class="score-ribbon" id="scoreRibbon"></section>
+  <section class="hero" id="hero"></section>
+  <section class="main-grid">
+    <div class="card"><div class="card-head"><h3>Live Lineups</h3><small id="lineupStatus">Sleeper scoring</small></div><div class="lineups" id="lineups"></div></div>
+    <div class="side-stack">
+      <div class="card"><div class="card-head"><h3>GameDay Feed</h3><small>Scoring updates</small></div><div class="events" id="events"></div></div>
+      <div class="card"><div class="card-head"><h3>Game Flow</h3><small>Scoring share</small></div><div class="flow" id="flow"></div></div>
+    </div>
+  </section>
+  <section class="card" style="margin-top:10px"><div class="card-head"><h3>Game Momentum</h3><small>Momentum</small></div><div class="momentum-wrap" id="momentum"></div></section>
+  <section class="card" style="margin-top:10px"><div class="card-head"><h3>Matchup Score History</h3><small>Half-hour scores</small></div><div class="score-history" id="scoreHistory"></div></section>
+
+</div>
+
+</div>
+<div id="gameView" class="app-view" hidden>
+  <section class="gameview-shell">
+    <div class="gameview-scorebar">
+      <div class="gameview-team left"><span id="gvLeftName">Team</span><b id="gvLeftScore">0.00</b></div>
+      <div class="gameview-center"><span>UCL GAMEVIEW</span><small id="gvStatus">Waiting for scoring</small></div>
+      <div class="gameview-team right"><span id="gvRightName">Opponent</span><b id="gvRightScore">0.00</b></div>
+    </div>
+    <div class="gameview-endgame" id="gvEndgameBar" aria-label="Estimated remaining fantasy opportunity">
+      <div class="gv-endgame-side left"><div class="gv-endgame-top"><span id="gvLeftOppLabel">EST. OPPORTUNITY</span><span id="gvLeftOppPct">—</span></div><div class="gv-endgame-main" id="gvLeftOppMain">Waiting for projection data</div><div class="gv-endgame-sub" id="gvLeftOppSub">Estimated, not an NFL game clock</div><div class="gv-endgame-meter"><i id="gvLeftOppMeter"></i></div></div>
+      <div class="gv-endgame-side right"><div class="gv-endgame-top"><span id="gvRightOppLabel">EST. OPPORTUNITY</span><span id="gvRightOppPct">—</span></div><div class="gv-endgame-main" id="gvRightOppMain">Waiting for projection data</div><div class="gv-endgame-sub" id="gvRightOppSub">Estimated, not an NFL game clock</div><div class="gv-endgame-meter"><i id="gvRightOppMeter"></i></div></div>
+    </div>
+    <div class="gameview-layout">
+      <div id="gameViewFieldHome"><div class="gameview-field-wrap">
+        <div class="gameview-field" id="gameViewField" aria-label="UCL GameView field">
+          <div class="gv-endzone gv-endzone-home"><span id="gvHomeEndLabel">HOME</span></div>
+          <div class="gv-yardlines" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="gv-midline"></div>
+          <div class="gv-los" id="gvLos" hidden><span>LOS</span></div>
+          <div class="gv-snap-flash" id="gvSnapFlash"></div><div class="gv-play-reset" id="gvPlayReset">RESET</div>
+          <div class="gv-players-layer" id="gvPlayersLayer" aria-hidden="true"></div>
+          <div class="gv-points-pop" id="gvPointsPop" hidden><strong id="gvPlayerIdentity"></strong><span id="gvPointsValue"></span><small id="gvPointsImpactBreakdown" class="gv-points-impact-breakdown"></small><small id="gvPlayDetail"></small><small id="gvMatchupContext" class="gv-matchup-context"></small></div>
+          <div class="gv-banner" id="gvBanner" hidden></div>
+          <div class="gv-confetti" id="gvConfetti" aria-hidden="true"></div>
+          <div class="gv-endzone gv-endzone-away"><span id="gvAwayEndLabel">AWAY</span></div>
+        </div>
+      </div></div>
+      <aside class="gameview-feed-card">
+        <div class="gameview-feed-head"><h3>GameView Feed</h3><small>Tap to replay</small></div>
+        <div class="gameview-feed" id="gameViewFeed"></div>
+      </aside>
+    </div>
+  </section>
+</div>
+<div class="first-run-backdrop" id="firstRunBackdrop" hidden>
+<section class="first-run-card" role="dialog" aria-modal="true" aria-labelledby="firstRunTitle">
+<div class="first-run-kicker">WELCOME TO UCL GAMEDAY</div>
+<h2 id="firstRunTitle">Choose your team and theme</h2>
+<p>Set the team GameDay should follow and the color theme you want to use.</p>
+<div class="first-run-fields">
+<label><span>My Team</span><select id="firstRunTeamSelect" aria-label="My UCL team"></select></label>
+<label><span>Theme</span><select id="firstRunThemeSelect" aria-label="GameDay theme"><option value="UCL Blue">UCL Blue</option><option value="Forest">Forest</option><option value="Purple">Purple</option><option value="Crimson">Crimson</option><option value="Orange">Orange</option><option value="Slate">Slate</option><option value="Gold">Gold</option><option value="Ice Blue">Ice Blue</option></select></label>
+</div>
+<div class="first-run-note">You can change both of these later in <b>Settings</b>.</div>
+<div class="first-run-actions"><button class="primary" type="button" id="firstRunContinueBtn">Continue to GameDay</button></div>
+<div class="setting-note" id="firstRunStatus" aria-live="polite"></div>
+</section>
+</div><dialog class="settings-dialog" id="settingsDialog"><div class="settings-shell"><div class="settings-head"><div><h2>GameDay Settings</h2></div><button id="settingsClose">Close</button></div><div class="settings-body"><section class="settings-section"><h3>My Team</h3>
+<div class="setting-row"><div><b>Default Team</b><small>GameDay centers this team and its current matchup.</small></div>
+<select id="settingsTeamSelect" aria-label="Default UCL team"></select></div>
+<div class="setting-note">You can change your team here at any time.</div>
+</section><section class="settings-section"><h3>Color Theme</h3><div class="theme-grid" id="themeGrid" role="radiogroup" aria-label="Color theme"><button type="button" class="theme-option" data-theme-choice="UCL Blue" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>UCL Blue</b></button><button type="button" class="theme-option" data-theme-choice="Forest" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Forest</b></button><button type="button" class="theme-option" data-theme-choice="Purple" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Purple</b></button><button type="button" class="theme-option" data-theme-choice="Crimson" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Crimson</b></button><button type="button" class="theme-option" data-theme-choice="Orange" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Orange</b></button><button type="button" class="theme-option" data-theme-choice="Slate" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Slate</b></button><button type="button" class="theme-option" data-theme-choice="Gold" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Gold</b></button><button type="button" class="theme-option" data-theme-choice="Ice Blue" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Ice Blue</b></button></div></section><section class="settings-section"><h3>Live Updates</h3><p>Control live Sleeper updates. API loading is disabled by default and must be turned on manually.</p><div class="setting-row"><div><b>Live Sleeper Updates</b><small>Off by default. When off, GameDay uses the latest saved data and makes no Sleeper API requests.</small></div><input class="settings-toggle" id="liveLoadingToggle" type="checkbox" aria-label="Enable live Sleeper loading"></div><div class="live-off-note" id="liveOffNote">Live updates are off. Turn them on manually to contact Sleeper.</div></section><section class="settings-section" id="ctespnScoreAlertSettingsSection">
+<h3>CTESPN Score Alerts</h3>
+<p>Choose which saved Week matchups may generate CTESPN score alerts. GameView for the selected matchup is unaffected.</p>
+<div class="ctespn-matchup-alerts" id="ctespnMatchupAlertSettings"><div class="ctespn-matchup-alert-empty">Load saved matchup data to choose games.</div></div>
+</section><section class="settings-section" id="audioSettingsSection">
+<h3>CTESPN Audio</h3>
+<p>Optional announcer, stadium, stinger, and effect layers. Audio starts only after you interact with the page.</p>
+<div class="setting-row"><div><b>Enable CTESPN Audio</b><small>Off by default until sound files are installed.</small></div><input class="settings-toggle" id="ctespnAudioEnabled" type="checkbox" aria-label="Enable CTESPN audio"></div>
+<div class="audio-controls">
+  <div class="audio-volume-grid">
+    <label>Master <input id="ctespnAudioMaster" type="range" min="0" max="100" value="80"></label>
+    <label>Announcer <input id="ctespnAudioAnnouncer" type="range" min="0" max="100" value="100"></label>
+    <label>Stadium & Effects <input id="ctespnAudioStadium" type="range" min="0" max="100" value="85"></label>
+    <label>Stingers <input id="ctespnAudioStingers" type="range" min="0" max="100" value="90"></label>
+  </div>
+  <div class="audio-actions"><button type="button" id="ctespnAudioMute">Mute</button><span class="audio-status" id="ctespnAudioStatus">Audio disabled.</span></div>
+</div>
+</section><section class="settings-section">
+
+    <div class="settings-section">
+      <h3>Player Data</h3>
+      <div class="setting-row">
+        <div>
+          <b>Stored Player Metadata</b>
+          <small id="playerDataSummary">Checking saved player data…</small>
+        </div>
+        <button type="button" id="resolveMissingPlayersBtn">Resolve Missing</button>
+      </div>
+      <div class="setting-note" id="playerDataStatus">Player names, positions, and NFL teams are stored only for players GameDay has encountered.</div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Save Data</h3>
+      <div class="setting-row">
+        <div>
+          <b>Export Save Data</b>
+          <small>Download a portable backup of GameDay settings, cached league data, score history, and discovered player metadata.</small>
+        </div>
+        <button type="button" id="exportSaveDataBtn">Export</button><button class="danger" id="clearLocalDataBtn" type="button">Clear Local Data</button>
+      </div>
+      <div class="setting-row">
+        <div>
+          <b>Import Save Data</b>
+          <small>Restore a UCL GameDay backup on this device.</small>
+        </div>
+        <button type="button" id="importSaveDataBtn">Import</button>
+        <input type="file" id="importSaveDataFile" accept=".json,application/json" hidden>
+      </div>
+      <div class="setting-note" id="saveDataStatus">Save data stays on this device unless you export it.</div>
+    </div>
+
+<h3>Simulation</h3><p>Run an accelerated GameDay simulation.</p><div class="setting-row"><div><b>Simulation Speed</b><small>Scoring follows typical NFL game windows.</small></div><select id="simSpeed"><option value="1">1× — Normal</option><option value="10">10× — about 24 minutes</option><option value="20" selected>20× — about 12 minutes</option><option value="50">50× — about 5 minutes</option><option value="100">100× — about 2.5 minutes</option><option value="200">200× — about 1.2 minutes</option></select></div><div class="setting-row"><div><b>Simulation Scenario</b><small>Choose the scoring schedule.</small></div><select id="simScenario"><option value="full" selected>Full Fantasy Week — Thu through Mon</option><option value="sunday">Sunday GameDay</option><option value="night">Night Football</option><option value="quick">10-Second GameView Test</option><option value="burst30">30-Second GameView Burst</option><option value="burst60">60-Second GameView Burst</option></select></div><div class="setting-row"><div><b>Scoring Style</b><small>Controls how concentrated the fake scoring tends to be.</small></div><select id="simStyle"><option value="balanced">Balanced</option><option value="high">High Scoring</option><option value="chaos" selected>UCL Chaos</option><option value="defensive">Low scoring</option></select></div><div class="setting-row"><div><b>Open UCL GameView on Start</b><small>Jump directly to GameView when a simulation begins.</small></div><label class="switch"><input type="checkbox" id="simOpenGameView"><span></span></label></div><div class="sim-actions"><button class="primary" id="simStart">Start Simulation</button><button id="simPause" disabled>Pause</button><button class="danger" id="simStop" disabled>Stop & Return to Sleeper</button></div><div class="sim-status" id="simStatus">Simulation off.</div></section></div></div></dialog>
+<script src="js/loader.js" defer></script>
+
+<section class="view" id="testingView" hidden>
+  <div class="testing-area">
+    <div class="testing-head">
+      <div>
+        <h2>Testing Area</h2>
+        <p>Live Sleeper stat changes for players currently rostered in the selected matchup.</p>
+      </div>
+      <button type="button" id="clearTestingLogBtn">Clear</button>
+    </div>
+    <div class="testing-filterbar">
+      <div class="testing-filter-group" id="testingTeamFilters">
+        <button type="button" data-testing-team="all" class="active">All</button>
+        <button type="button" data-testing-team="mine">My Team</button>
+        <button type="button" data-testing-team="opp">Opponent</button>
+      </div>
+      <div class="testing-filter-group" id="testingPosFilters">
+        <button type="button" data-testing-pos="all" class="active">All Pos</button>
+        <button type="button" data-testing-pos="QB">QB</button>
+        <button type="button" data-testing-pos="RB">RB</button>
+        <button type="button" data-testing-pos="WR">WR</button>
+        <button type="button" data-testing-pos="TE">TE</button>
+        <button type="button" data-testing-pos="K">K</button>
+        <button type="button" data-testing-pos="DEF">DEF</button>
+      </div>
+      <label class="testing-raw-toggle"><input type="checkbox" id="testingRawToggle"> Raw Sleeper Data</label>
+    </div>
+    <div class="testing-status" id="testingStatus">Waiting for Sleeper data…</div><details class="testing-group audio-soundboard testing-delta-collapsible" id="ctespnAudioSoundboard">
+  <summary class="testing-delta-summary audio-soundboard-summary">
+    <div><b>CTESPN Audio Soundboard</b><small>Test the simplified 31-slot announcer library and one-event resolver.</small></div>
+    <div class="testing-delta-summary-meta"><span class="audio-count-badge">31 announcer clips</span><span class="testing-delta-chevron" aria-hidden="true">▾</span></div>
+  </summary>
+  <div class="testing-delta-body audio-soundboard-body">
+  <div class="testing-audio-note">No clips are bundled yet. The resolver now uses outcome-specific calls only; Trick Play has no dedicated sound. Qualifying late lead changes use one generic follow-up.</div>
+  <div class="testing-sound-family"><b>Touchdown</b><div class="testing-sound-buttons"><button type="button" data-audio-test="touchdown" data-audio-variant="0">TD 1</button><button type="button" data-audio-test="touchdown" data-audio-variant="1">TD 2</button><button type="button" data-audio-test="touchdown" data-audio-variant="2">TD 3</button></div></div>
+  <div class="testing-sound-family"><b>Pick Six</b><div class="testing-sound-buttons"><button type="button" data-audio-test="pick_six" data-audio-variant="0">Pick Six 1</button><button type="button" data-audio-test="pick_six" data-audio-variant="1">Pick Six 2</button><button type="button" data-audio-test="pick_six" data-audio-variant="2">Pick Six 3</button></div></div>
+  <div class="testing-sound-family"><b>Rare TD Returns</b><div class="testing-sound-buttons"><button type="button" data-audio-test="kick_six" data-audio-variant="0">Kick Six</button><button type="button" data-audio-test="scoop_score" data-audio-variant="0">Scoop &amp; Score</button></div></div>
+  <div class="testing-sound-family"><b>Sack</b><div class="testing-sound-buttons"><button type="button" data-audio-test="sack" data-audio-variant="0">Sack 1</button><button type="button" data-audio-test="sack" data-audio-variant="1">Sack 2</button><button type="button" data-audio-test="sack" data-audio-variant="2">Sack 3</button></div></div>
+  <div class="testing-sound-family"><b>QB Intercepted</b><div class="testing-sound-buttons"><button type="button" data-audio-test="qb_intercepted" data-audio-variant="0">QB INT 1</button><button type="button" data-audio-test="qb_intercepted" data-audio-variant="1">QB INT 2</button><button type="button" data-audio-test="qb_intercepted" data-audio-variant="2">QB INT 3</button></div></div>
+  <div class="testing-sound-family"><b>Your Player Fumbled</b><div class="testing-sound-buttons"><button type="button" data-audio-test="your_player_fumbled" data-audio-variant="0">Fumble 1</button><button type="button" data-audio-test="your_player_fumbled" data-audio-variant="1">Fumble 2</button><button type="button" data-audio-test="your_player_fumbled" data-audio-variant="2">Fumble 3</button></div></div>
+  <div class="testing-sound-family"><b>Defensive Interception</b><div class="testing-sound-buttons"><button type="button" data-audio-test="defensive_interception" data-audio-variant="0">DEF INT 1</button><button type="button" data-audio-test="defensive_interception" data-audio-variant="1">DEF INT 2</button><button type="button" data-audio-test="defensive_interception" data-audio-variant="2">DEF INT 3</button></div></div>
+  <div class="testing-sound-family"><b>Fumble Recovery</b><div class="testing-sound-buttons"><button type="button" data-audio-test="fumble_recovery" data-audio-variant="0">Recovery 1</button><button type="button" data-audio-test="fumble_recovery" data-audio-variant="1">Recovery 2</button><button type="button" data-audio-test="fumble_recovery" data-audio-variant="2">Recovery 3</button></div></div>
+  <div class="testing-sound-family"><b>Explosive Plays</b><div class="testing-sound-buttons"><button type="button" data-audio-test="long_rush" data-audio-variant="0">Long Rush 1</button><button type="button" data-audio-test="long_rush" data-audio-variant="1">Long Rush 2</button><button type="button" data-audio-test="long_rush" data-audio-variant="2">Long Rush 3</button><button type="button" data-audio-test="long_reception" data-audio-variant="0">Long Rec 1</button><button type="button" data-audio-test="long_reception" data-audio-variant="1">Long Rec 2</button><button type="button" data-audio-test="long_reception" data-audio-variant="2">Long Rec 3</button></div></div>
+  <div class="testing-sound-family"><b>Generic Qualifying Lead Change</b><div class="testing-sound-buttons"><button type="button" data-audio-test="late_lead_change" data-audio-variant="0">Lead Change 1</button><button type="button" data-audio-test="late_lead_change" data-audio-variant="1">Lead Change 2</button></div></div>
+  <div class="testing-sound-family testing-audio-resolver-tests"><b>Resolver Tests</b><div class="testing-audio-note">Primary outcome call first. If the existing CTESPN maturity rules qualify a late lead change, the only allowed second announcer call is the generic lead-change follow-up.</div><div class="testing-sound-buttons"><button type="button" data-audio-resolve-test="touchdown_lead_change">TD → Lead</button><button type="button" data-audio-resolve-test="pick_six_lead_change">Pick Six → Lead</button><button type="button" data-audio-resolve-test="defensive_int_lead_change">DEF INT → Lead</button><button type="button" data-audio-resolve-test="offensive_int_lost_lead">QB INT → Lead</button><button type="button" data-audio-resolve-test="offensive_fumble">Your Player Fumbled</button><button type="button" data-audio-resolve-test="defensive_fumble">Fumble Recovery</button><button type="button" data-audio-resolve-test="sack_lead_change">Sack → Lead</button><button type="button" data-audio-resolve-test="long_rush_lead_change">Long Rush → Lead</button></div><div class="audio-resolver-status" id="ctespnAudioResolverStatus">Resolver idle.</div></div>
+  <div class="audio-status" id="ctespnAudioTestStatus">No sound files are bundled yet. Add the named clips under assets/audio/announcer/ when ready.</div>
+  </div>
+</details>
+    <details class="testing-delta-sim testing-delta-collapsible" id="testingDeltaSimulator">
+      <summary class="testing-delta-head testing-delta-summary">
+        <div>
+          <b>API Delta Simulator</b>
+          <small>Build synthetic 15-second Sleeper stat changes and run them through the same correlation, pending-TD, and GameView reconciliation path used live.</small>
+        </div>
+        <div class="testing-delta-summary-meta">
+          <span class="testing-delta-badge">SESSION ONLY</span>
+          <span class="testing-delta-chevron" aria-hidden="true">▾</span>
+        </div>
+      </summary>
+      <div class="testing-delta-body">
+      <section class="testing-simple-builder testing-delta-quick" aria-label="Easy Delta Simulator">
+        <div class="testing-simple-builder-head"><div><small>API SIMULATION</small><b>Delta Simulator</b></div><span>Build football plays like the Play Simulator, then queue them as delayed Sleeper API arrivals.</span></div>
+        <div class="testing-simple-row testing-simple-row-2">
+          <label><span>Team</span><select id="testingDeltaTeamSelect"><option value="mine">My Team</option><option value="opp">Opponent</option></select></label>
+          <label><span>Position</span><select id="testingDeltaPositionSelect">
+            <option value="QB">QB</option><option value="RB">RB</option><option value="WR">WR</option><option value="TE">TE</option><option value="K">K</option><option value="DEF">DEF / ST</option><option value="TANDEM">Tandem</option>
+          </select></label>
+        </div>
+        <label class="testing-simple-play-select"><span>Play</span><select id="testingDeltaPlaySelect"></select></label>
+        <div class="testing-simple-row testing-simple-row-2 testing-conditional-row" id="testingDeltaTandemPair" hidden>
+          <label><span>Passer</span><select id="testingDeltaTandemPasser"></select></label>
+          <label><span>Receiver</span><select id="testingDeltaTandemReceiver"></select></label>
+        </div>
+        <label class="testing-simple-play-select testing-conditional-row" id="testingDeltaValueWrap"><span id="testingDeltaValueLabel">Yards</span><select id="testingDeltaValueSelect"></select></label>
+        <div class="testing-simple-summary" id="testingDeltaQuickSummary">Choose a play to build a synthetic Sleeper delta.</div>
+        <button type="button" class="testing-simple-run" id="testingDeltaQuickRun">Run Delta</button>
+        <div class="testing-api-queue" id="testingDeltaQueueStatus">API queue empty. Run Delta to schedule a synthetic poll arrival.</div>
+      </section>
+
+      <details class="testing-advanced-tools" id="testingDeltaAdvanced">
+        <summary><b>Advanced / Custom Delta Controls</b><small>Manual poll timing, stat components, presets, correlation overrides, and sequence tests</small><span aria-hidden="true">▾</span></summary>
+        <div class="testing-advanced-tools-body">
+
+      <section class="testing-sim-section testing-sim-poll">
+        <div class="testing-sim-section-head">
+          <div><small>STEP 1</small><b>Poll Controls</b></div>
+          <div class="testing-sequence-strip" id="testingSequenceStrip">
+            <span><b>Sequence:</b> Poll 1 • T+0s</span>
+          </div>
+        </div>
+        <div class="testing-delta-actions">
+          <button type="button" class="testing-action-primary" id="testingDeltaSend">Send Poll</button>
+          <button type="button" id="testingDeltaNextPoll">+15s Next Poll</button>
+          <button type="button" id="testingDeltaReset">Reset Inputs</button>
+          <button type="button" class="testing-action-danger" id="testingDeltaClearSequence">Clear Sequence</button>
+        </div>
+      </section>
+
+      <section class="testing-sim-section testing-preset-section">
+        <div class="testing-sim-section-head">
+          <div><small>QUICK SETUP</small><b>Common Presets</b></div>
+          <span>Pre-fills the controls below; nothing is sent until Send Poll</span>
+        </div>
+        <div class="testing-preset-grid">
+          <button type="button" data-delta-preset="qb-rec-td"><b>QB → Receiver TD</b><small>24-yard passing/receiving TD</small></button>
+          <button type="button" data-delta-preset="rb-rush-td"><b>RB Rush TD</b><small>12-yard rushing touchdown</small></button>
+          <button type="button" data-delta-preset="interception"><b>Interception</b><small>QB throws an INT</small></button>
+          <button type="button" data-delta-preset="fumble"><b>Fumble Lost</b><small>Ball carrier loses a fumble</small></button>
+          <button type="button" data-delta-preset="burst"><b>15s Multi-Play Burst</b><small>Rush + pass/reception in one poll</small></button>
+          <button type="button" data-delta-preset="trick-pass-td"><b>Trick Pass TD</b><small>RB/WR/TE/K passer → RB/WR/TE/QB</small></button>
+        </div>
+      </section>
+
+      <section class="testing-sim-section testing-sequence-preset-section">
+        <div class="testing-sim-section-head">
+          <div><small>MULTI-POLL</small><b>Sequence Presets</b></div>
+          <span>Runs staged polls through the same lifecycle logic</span>
+        </div>
+        <div class="testing-sequence-preset-grid">
+          <button type="button" data-sequence-preset="td-delay">
+            <b>QB TD → Receiver +15s</b>
+            <small>Tests pending TD hold, adjacent-poll match, and merged correlation.</small>
+          </button>
+          <button type="button" data-sequence-preset="turnover-delay">
+            <b>Fumble → DEF +15s</b>
+            <small>Tests offensive turnover first, then defensive recovery evidence.</small>
+          </button>
+          <button type="button" data-sequence-preset="ambiguous-resolve">
+            <b>Ambiguous Burst → Resolve</b>
+            <small>Tests a noisy first poll followed by clearer evidence in the next poll.</small>
+          </button>
+        </div>
+        <div class="testing-sequence-run-note" id="testingSequencePresetNote">
+          Sequence presets clear the current synthetic sequence before running.
+        </div>
+      </section>
+
+      <section class="testing-sim-section">
+        <div class="testing-sim-section-head">
+          <div><small>STEP 2</small><b>Scoring & Turnovers</b></div>
+          <span>Optional event modifiers</span>
+        </div>
+        <div class="testing-event-options">
+          <div class="testing-td-control">
+            <label class="testing-switch"><input id="testingTdCount" type="checkbox"><span>Touchdown</span></label>
+            <fieldset class="testing-radio-group">
+              <legend>TD belongs to</legend>
+              <label><input type="radio" name="testingTdType" value="rush" checked> Rush</label>
+              <label><input type="radio" name="testingTdType" value="rec"> Reception</label>
+              <label><input type="radio" name="testingTdType" value="pass"> Pass</label>
+            </fieldset>
+          </div>
+          <div class="testing-turnover-options">
+            <label class="testing-switch"><input id="testingFumble" type="checkbox"><span>Fumble Lost</span></label>
+            <label class="testing-switch"><input id="testingInterception" type="checkbox"><span>Interception</span></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="testing-sim-section">
+        <div class="testing-sim-section-head">
+          <div><small>STEP 3</small><b>Stat Deltas</b></div>
+          <span>Enable only the components that changed in this poll</span>
+        </div>
+        <div class="testing-stat-cards">
+          <div class="testing-stat-card rush">
+            <div class="testing-stat-card-head">
+              <b>Rushing</b>
+              <label class="testing-switch compact"><input id="testingRushEnabled" type="checkbox"><span>Include</span></label>
+            </div>
+            <label class="testing-field-label">Player <span class="testing-select-hint">RB preferred • QB/WR allowed</span><select id="testingRushPlayer" aria-label="Rush Player"></select></label>
+            <label class="testing-field-label">Rush Yards<input type="number" id="testingRushYds" value="0" step="1" min="-99"></label>
+          </div>
+
+          <div class="testing-stat-card rec">
+            <div class="testing-stat-card-head">
+              <b>Receiving</b>
+              <label class="testing-switch compact"><input id="testingRecEnabled" type="checkbox"><span>Include</span></label>
+            </div>
+            <label class="testing-field-label">Player <span class="testing-select-hint">WR/TE preferred • RB/QB allowed</span><select id="testingRecPlayer" aria-label="Rec Player"></select></label>
+            <label class="testing-field-label">Receiving Yards<input type="number" id="testingRecYds" value="0" step="1" min="-99"></label>
+          </div>
+
+          <div class="testing-stat-card pass">
+            <div class="testing-stat-card-head">
+              <b>Passing</b>
+              <label class="testing-switch compact"><input id="testingPassEnabled" type="checkbox"><span>Include</span></label>
+            </div>
+            <label class="testing-field-label">Player <span class="testing-select-hint">QB preferred • RB/WR/TE/K trick passer allowed</span><select id="testingPassPlayer" aria-label="Pass Player"></select></label>
+            <label class="testing-field-label">Passing Yards<input type="number" id="testingPassYds" value="0" step="1" min="-99"></label>
+          </div>
+        </div>
+        <datalist id="testingRosteredPlayers"></datalist>
+      </section>
+
+      <section class="testing-sim-section testing-correlation-section">
+        <div class="testing-sim-section-head">
+          <div><small>STEP 4</small><b>Passing Correlation</b></div>
+          <span>Diagnostic override only</span>
+        </div>
+        <div class="testing-correlation-row">
+          <div>
+            <b>Tandem Override</b>
+            <small>Controls whether the selected passer and receiver are treated as teammates when testing QB → receiver correlation.</small>
+          </div>
+          <select id="testingTandemOverride" aria-label="Tandem correlation override">
+            <option value="auto" selected>Auto — use actual NFL teams</option>
+            <option value="same">Force Same Team</option>
+            <option value="different">Force Different Teams</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="testing-sim-preview">
+        <div class="testing-sim-section-head">
+          <div><small>PREVIEW</small><b>Poll Preview</b></div>
+          <span>Updates instantly as you configure the poll</span>
+        </div>
+        <div class="testing-preview-grid" id="testingDeltaPreview">
+          <div class="testing-preview-empty">Enable a stat component or event modifier to preview this poll.</div>
+        </div>
+      </section>
+
+      <section class="testing-sim-output">
+        <div class="testing-sim-section-head">
+          <div><small>RESULT</small><b>Reconciliation Output</b></div>
+        </div>
+        <div class="testing-delta-result" id="testingDeltaResult">
+          Configure a synthetic poll, then select <b>Send Poll</b>.
+        </div>
+        <div class="testing-sequence-history" id="testingSequenceHistory"></div>
+      </section>
+        </div>
+      </details>
+      </div>
+    </details>
+
+    <section class="testing-simple-builder testing-play-simulator" aria-label="GameView Play Simulator">
+      <div class="testing-simple-builder-head"><div><small>GAMEVIEW</small><b>Play Simulator</b></div><span>Animation-first testing. Pick a team, position, and only the plays that make sense for it.</span></div>
+      <div class="testing-simple-row testing-simple-row-2">
+        <label><span>Team</span><select id="testingPlayTeamSelect"><option value="mine">My Team</option><option value="opp">Opponent</option></select></label>
+        <label><span>Position</span><select id="testingPlayPositionSelect">
+          <option value="QB">QB</option><option value="RB">RB</option><option value="WR">WR</option><option value="TE">TE</option><option value="K">K</option><option value="DEF">DEF / ST</option><option value="TANDEM">Tandem</option>
+        </select></label>
+      </div>
+      <label class="testing-simple-play-select"><span>Play</span><select id="testingPlaySelect"></select></label>
+      <div class="testing-simple-row testing-simple-row-2 testing-conditional-row" id="testingPlayTandemPair" hidden>
+        <label><span>Passer</span><select id="testingPlayTandemPasser"></select></label>
+        <label><span>Receiver</span><select id="testingPlayTandemReceiver"></select></label>
+      </div>
+      <div class="testing-simple-summary" id="testingPlaySummary">Choose a play to test on the GameView field.</div>
+      <button type="button" class="testing-simple-run" id="testingPlayRun">Run Play</button>
+    </section>
+    <div class="testing-field-card">
+      <div class="gameview-scorebar testing-scorebar">
+        <div class="gameview-team left"><span id="testLeftName">My Team</span><b id="testLeftScore">—</b></div>
+        <div class="gameview-center"><span>GAMEVIEW TEST FIELD</span><small id="testFieldStatus">Use a test button above</small></div>
+        <div class="gameview-team right"><span id="testRightName">Opponent</span><b id="testRightScore">—</b></div>
+      </div>
+      <div class="testing-score-controls" aria-label="Testing score controls">
+        <div class="testing-score-control-side left"><b id="testScoreControlLeftName">My Team</b><button type="button" data-test-score-side="left" data-test-score-delta="-5">−5</button><button type="button" data-test-score-side="left" data-test-score-delta="-1">−1</button><button type="button" data-test-score-side="left" data-test-score-delta="1">+1</button><button type="button" data-test-score-side="left" data-test-score-delta="5">+5</button></div>
+        <button type="button" class="testing-score-reset" id="testingScoreReset">New Close Score</button>
+        <div class="testing-score-control-side right"><b id="testScoreControlRightName">Opponent</b><button type="button" data-test-score-side="right" data-test-score-delta="-5">−5</button><button type="button" data-test-score-side="right" data-test-score-delta="-1">−1</button><button type="button" data-test-score-side="right" data-test-score-delta="1">+1</button><button type="button" data-test-score-side="right" data-test-score-delta="5">+5</button></div>
+      </div>
+      <div id="testingGameViewMount" class="testing-gameview-mount"></div>
+    </div>
+    <div class="testing-diagnostics" id="testingDiagnostics">
+      <div class="testing-diagnostics-head"><b>Last Test Diagnostics</b><span id="testingDiagStatus">No test run yet</span></div>
+      <div class="testing-diagnostics-grid">
+        <div><small>Roster</small><strong id="diagRoster">—</strong></div>
+        <div><small>Player</small><strong id="diagPlayer">—</strong></div>
+        <div><small>Play Type</small><strong id="diagPlayType">—</strong></div>
+        <div><small>Field Side</small><strong id="diagFieldSide">—</strong></div>
+        <div><small>Direction</small><strong id="diagDirection">—</strong></div>
+        <div><small>LOS</small><strong id="diagLos">—</strong></div>
+        <div><small>Start Check</small><strong id="diagStartCheck">—</strong></div>
+        <div><small>Formation Check</small><strong id="diagFormationCheck">—</strong></div>
+      </div>
+    </div>
+    <div class="testing-stream" id="testingStream">
+      <div class="empty">No rostered-player stat changes received yet.</div>
+    </div>
+  </div>
+</section>
+
+<section class="js-error-log" id="jsErrorLog" hidden>
+  <h3>JavaScript Errors</h3>
+  <pre id="jsErrorText"></pre>
+</section>
+
+</body></html>

@@ -16,6 +16,78 @@ function saveKeyForMode(mode){return mode==='openworld'?SAVE_OPEN_WORLD_KEY:mode
 function backupKeyForMode(mode){return mode==='openworld'?SAVE_OPEN_WORLD_BACKUP_KEY:mode==='siege2'?SAVE_SIEGE_II_BACKUP_KEY:SAVE_LEGACY_SIEGE_BACKUP_KEY}
 function campaignModeOf(s){return s?.mode==='openworld'?'openworld':s?.mode==='siege2'?'siege2':'legacy_siege'}
 const STORAGE_CODEC_PREFIX='SOSLZW1:';
+const SOSStorageRuntime={validKeys:new Set()};
+
+// v1.6.55.1 — IndexedDB is the canonical runtime campaign store.
+// Legacy localStorage campaign strings remain readable for transparent migration and recovery.
+const SOS_IDB_NAME='siegeOfShantium.campaigns';
+const SOS_IDB_VERSION=1;
+const SOS_IDB_STORE='campaignSlots';
+const SOS_IDB_MIGRATION_KEY='siegeOfShantium.indexedDbMigrated.v16551';
+const SOSIndexedDBRuntime={db:null,ready:false,failed:false,promise:null,cache:new Map(),writeChain:Promise.resolve(),stats:{reads:0,writes:0,migrations:0,failures:0}};
+function sosPerfRecordDuration(name,ms){
+ if(typeof SOSRenderPerf==='undefined'||!SOSRenderPerf.enabled)return ms;
+ const n=name||'operation',st=SOSRenderPerf.screenStats[n]||(SOSRenderPerf.screenStats[n]={count:0,total:0,max:0,last:0});
+ ms=Math.max(0,Number(ms)||0);st.count++;st.total+=ms;st.max=Math.max(st.max,ms);st.last=ms;st.avg=st.total/st.count;
+ if(ms>=40){SOSRenderPerf.lastSlow.unshift({name:n,ms:Math.round(ms),day:state?.world?.day||0,at:Date.now()});SOSRenderPerf.lastSlow=SOSRenderPerf.lastSlow.slice(0,12)}
+ return ms
+}
+function sosIDBOpen(){
+ if(SOSIndexedDBRuntime.promise)return SOSIndexedDBRuntime.promise;
+ SOSIndexedDBRuntime.promise=new Promise(resolve=>{
+  if(typeof indexedDB==='undefined'){SOSIndexedDBRuntime.failed=true;resolve(null);return}
+  let req;try{req=indexedDB.open(SOS_IDB_NAME,SOS_IDB_VERSION)}catch(e){console.warn('IndexedDB unavailable; using legacy save storage.',e);SOSIndexedDBRuntime.failed=true;resolve(null);return}
+  req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(SOS_IDB_STORE))db.createObjectStore(SOS_IDB_STORE,{keyPath:'key'})};
+  req.onsuccess=()=>{SOSIndexedDBRuntime.db=req.result;SOSIndexedDBRuntime.db.onversionchange=()=>{try{SOSIndexedDBRuntime.db.close()}catch(e){}SOSIndexedDBRuntime.db=null;SOSIndexedDBRuntime.ready=false};resolve(req.result)};
+  req.onerror=()=>{console.warn('IndexedDB open failed; using legacy save storage.',req.error);SOSIndexedDBRuntime.failed=true;SOSIndexedDBRuntime.stats.failures++;resolve(null)}
+ });return SOSIndexedDBRuntime.promise
+}
+function sosIDBRequest(mode,fn){
+ return sosIDBOpen().then(db=>new Promise(resolve=>{
+  if(!db){resolve(null);return}let tx;try{tx=db.transaction(SOS_IDB_STORE,mode);const store=tx.objectStore(SOS_IDB_STORE);fn(store,tx,resolve)}catch(e){console.warn('IndexedDB transaction failed.',e);SOSIndexedDBRuntime.stats.failures++;resolve(null)}
+ }))
+}
+function sosIDBGet(key){
+ const t=typeof sosPerfNow==='function'?sosPerfNow():Date.now();
+ return sosIDBRequest('readonly',(store,tx,resolve)=>{const r=store.get(key);r.onsuccess=()=>{SOSIndexedDBRuntime.stats.reads++;const row=r.result||null;if(row?.raw)SOSIndexedDBRuntime.cache.set(key,row.raw);sosPerfRecordDuration('IndexedDB — Read',(typeof sosPerfNow==='function'?sosPerfNow():Date.now())-t);resolve(row)};r.onerror=()=>{SOSIndexedDBRuntime.stats.failures++;resolve(null)}})
+}
+function sosIDBPut(key,raw){
+ const t=typeof sosPerfNow==='function'?sosPerfNow():Date.now();
+ return sosIDBRequest('readwrite',(store,tx,resolve)=>{let done=false;const finish=ok=>{if(done)return;done=true;sosPerfRecordDuration('IndexedDB — Write',(typeof sosPerfNow==='function'?sosPerfNow():Date.now())-t);resolve(ok)};store.put({key,raw,updatedAt:Date.now()});tx.oncomplete=()=>{SOSIndexedDBRuntime.stats.writes++;SOSIndexedDBRuntime.cache.set(key,raw);finish(true)};tx.onerror=()=>{SOSIndexedDBRuntime.stats.failures++;finish(false)};tx.onabort=()=>finish(false)})
+}
+function sosIDBDelete(key){SOSIndexedDBRuntime.cache.delete(key);return sosIDBRequest('readwrite',(store,tx,resolve)=>{store.delete(key);tx.oncomplete=()=>{SOSIndexedDBRuntime.cache.delete(key);resolve(true)};tx.onerror=()=>resolve(false);tx.onabort=()=>resolve(false)})}
+function sosLegacyRawForKey(key){try{return localStorage.getItem(key)}catch(e){return null}}
+async function sosMigrateLegacyCampaignKey(key){
+ if(SOSIndexedDBRuntime.cache.has(key))return false;
+ const legacy=sosLegacyRawForKey(key);if(!legacy)return false;
+ const parsed=parseStoredCampaignRaw(legacy);if(!parsed)return false;
+ // IndexedDB stores ordinary JSON, not the expensive legacy LZW wrapper.
+ const raw=JSON.stringify(parsed);if(await sosIDBPut(key,raw)){SOSIndexedDBRuntime.stats.migrations++;return true}return false
+}
+async function sosStorageReady(){
+ const db=await sosIDBOpen();if(!db)return false;
+ const keys=[SAVE_OPEN_WORLD_KEY,SAVE_OPEN_WORLD_BACKUP_KEY,SAVE_LEGACY_SIEGE_KEY,SAVE_LEGACY_SIEGE_BACKUP_KEY,SAVE_SIEGE_II_KEY,SAVE_SIEGE_II_BACKUP_KEY];
+ for(const key of keys){const row=await sosIDBGet(key);if(row?.raw)SOSIndexedDBRuntime.cache.set(key,row.raw)}
+ // Transparently seed missing IndexedDB slots from valid legacy localStorage saves.
+ for(const key of keys)if(!SOSIndexedDBRuntime.cache.has(key))await sosMigrateLegacyCampaignKey(key);
+ SOSIndexedDBRuntime.ready=true;try{localStorage.setItem(SOS_IDB_MIGRATION_KEY,'1')}catch(e){}
+ return true
+}
+function sosStorageRaw(key){return SOSIndexedDBRuntime.cache.get(key)||sosLegacyRawForKey(key)||null}
+function writeLegacyCampaignStorage(mode,data){
+ const key=saveKeyForMode(mode),backup=backupKeyForMode(mode),encoded=storageEncodeCampaign(data),previous=localStorage.getItem(key);
+ if(previous&&previous!==encoded&&(SOSStorageRuntime.validKeys.has(key)||parseStoredCampaignRaw(previous))){try{localStorage.setItem(backup,previous);SOSStorageRuntime.validKeys.add(backup)}catch(e){}}
+ try{localStorage.setItem(key,encoded);SOSStorageRuntime.validKeys.add(key);return true}catch(e){console.error('Legacy save fallback failed.',e);return false}
+}
+function sosQueueIndexedDBWrite(mode,raw){
+ const key=saveKeyForMode(mode),backup=backupKeyForMode(mode),previous=SOSIndexedDBRuntime.cache.get(key)||null;
+ SOSIndexedDBRuntime.cache.set(key,raw);if(previous&&previous!==raw)SOSIndexedDBRuntime.cache.set(backup,previous);
+ SOSIndexedDBRuntime.writeChain=SOSIndexedDBRuntime.writeChain.then(async()=>{
+  if(previous&&previous!==raw)await sosIDBPut(backup,previous);
+  const ok=await sosIDBPut(key,raw);if(!ok)throw new Error('IndexedDB campaign write failed.');return true
+ }).catch(e=>{console.error('IndexedDB save failed; using legacy browser storage fallback.',e);SOSIndexedDBRuntime.stats.failures++;SOSIndexedDBRuntime.failed=true;return writeLegacyCampaignStorage(mode,raw)});
+ return true
+}
 function storageCompressText(input){
  const data=unescape(encodeURIComponent(String(input||'')));if(!data)return'';
  const dict=new Map();let next=256,phrase=data[0],out=[];
@@ -46,7 +118,7 @@ function storageDecodeCampaign(raw){
  return storageDecompressText(raw.slice(STORAGE_CODEC_PREFIX.length))
 }
 function parseStoredCampaignRaw(raw){try{const s=JSON.parse(storageDecodeCampaign(raw)||'null');return s&&s.guardian&&s.town?s:null}catch{return null}}
-function parseStoredCampaign(key){return parseStoredCampaignRaw(localStorage.getItem(key))}
+function parseStoredCampaign(key){const row=parseStoredCampaignRaw(localStorage.getItem(key));if(row)SOSStorageRuntime.validKeys.add(key);return row}
 function validGuardianClasses(){return Object.keys(CLASSES||{})}
 function historicalGuardianClass(s){
  const valid=validGuardianClasses(),hits=[];
@@ -101,7 +173,7 @@ function migrateSiegeModeSplit(){
  }
  localStorage.setItem(SAVE_SIEGE_SPLIT_MIGRATION_KEY,'1')
 }
-function savedCampaign(mode){migrateLegacySaveSlots();migrateSiegeModeSplit();let s=parseStoredCampaign(saveKeyForMode(mode));if(!s)s=parseStoredCampaign(backupKeyForMode(mode));if(s){if(s.mode==='siege')s.mode='legacy_siege';guardianClassIntegrity(s,true)}return s}
+function savedCampaign(mode){migrateLegacySaveSlots();migrateSiegeModeSplit();let s=parseStoredCampaignRaw(sosStorageRaw(saveKeyForMode(mode)));if(!s)s=parseStoredCampaignRaw(sosStorageRaw(backupKeyForMode(mode)));if(s){if(s.mode==='siege')s.mode='legacy_siege';guardianClassIntegrity(s,true)}return s}
 function hasModeSave(mode){return !!savedCampaign(mode)}
 function savedCampaignSummary(mode){
  const s=savedCampaign(mode);if(!s)return mode==='openworld'?'No Open World campaign saved':mode==='siege2'?'No Siege Mode II campaign saved':'No Legacy Siege campaign saved';
@@ -112,32 +184,14 @@ function worldLocationSafeName(id){const x=typeof WORLD_LOCATIONS!=='undefined'&
 let lastLoadFailure=null;
 
 function writeCampaignStorage(mode,data){
- const key=saveKeyForMode(mode),backup=backupKeyForMode(mode),previous=localStorage.getItem(key);
- // Preserve the prior canonical save when space permits. The canonical slot always wins
- // if the browser is under storage pressure.
- if(previous&&previous!==data&&parseStoredCampaignRaw(previous)){
-   try{localStorage.setItem(backup,previous)}catch(e){console.warn(SOSText("core_town_save_load.writeCampaignStorage.001"),e)}
- }
- const removeRedundantMirror=()=>{
-   try{
-     const mirrorRaw=localStorage.getItem(SAVE_KEY),mirror=parseStoredCampaignRaw(mirrorRaw);
-     if(mirror&&campaignModeOf(mirror)===mode)localStorage.removeItem(SAVE_KEY)
-   }catch(e){}
- };
- try{
-   localStorage.setItem(key,data);
- }catch(e){
-   console.warn(SOSText("core_town_save_load.writeCampaignStorage.002"),e);
-   // Older releases kept a full second copy in SAVE_KEY. For long Open World campaigns
-   // that duplicate can consume most of localStorage. Remove redundant copies and retry.
-   try{localStorage.removeItem(backup);removeRedundantMirror();localStorage.setItem(key,data)}catch(e2){console.error(SOSText("core_town_save_load.writeCampaignStorage.003"),e2);return false}
- }
- // v1.6.22.2+: explicit mode slots are canonical. Keep reading the legacy mirror for
- // backward compatibility, but stop writing another full campaign copy every autosave.
- removeRedundantMirror();
- try{localStorage.setItem(SAVE_SLOT_MIGRATION_KEY,'1');localStorage.setItem(SAVE_SIEGE_SPLIT_MIGRATION_KEY,'1')}catch(e){}
- return true
+ // v1.6.55.1: data is ordinary serialized JSON. Queue an asynchronous IndexedDB write
+ // and return immediately so gameplay never waits for browser persistence I/O.
+ if(typeof indexedDB!=='undefined'&&!SOSIndexedDBRuntime.failed){sosQueueIndexedDBWrite(mode,data);return true}
+ SOSIndexedDBRuntime.failed=true;
+ // Conservative fallback if IndexedDB is unavailable: retain the legacy compressed localStorage path.
+ return writeLegacyCampaignStorage(mode,data)
 }
+
 function saveOptimizationState(){
  if(!state?.world)return null;
  if(!state.world.saveOptimization||typeof state.world.saveOptimization!=='object')state.world.saveOptimization={lastLightDay:0,lastDeepDay:0,lastManualDay:0,totalRemoved:0,lastReport:null};
@@ -260,20 +314,25 @@ function scheduleOpenWorldMaintenance(){
 }
 function flushCampaignSaveNow(){
   if(!state)return false;
+  if(typeof SOSSavePolicy!=='undefined'&&!SOSSavePolicy.dirty&&SOSPerfRuntime.lastSaveResult!==undefined)return SOSPerfRuntime.lastSaveResult;
   if(SOSPerfRuntime.saveInProgress)return SOSPerfRuntime.lastSaveResult;
   SOSPerfRuntime.saveInProgress=true;
+  const perf=(name,fn)=>typeof sosPerfRun==='function'?sosPerfRun(name,fn):fn();
   try{
-    if(isOpenWorld())sosFastOpenWorldStateReady();else normalize();
-    if(isOpenWorld())optimizeSaveData(false);
+    perf('Save — Normalize',()=>{if(isOpenWorld())sosFastOpenWorldStateReady();else normalize()});
+    if(isOpenWorld())perf('Save — Compact',()=>optimizeSaveData(false));
     state.version=VERSION;state.lastSavedAt=Date.now();
-    const raw=JSON.stringify(state),data=storageEncodeCampaign(raw),mode=campaignModeOf(state);
-    const ok=writeCampaignStorage(mode,data);
+    let raw='',mode='';
+    perf('Save — Serialize',()=>{raw=JSON.stringify(state)});
+    mode=campaignModeOf(state);
+    const ok=perf('Save — Queue IndexedDB',()=>writeCampaignStorage(mode,raw));
     SOSPerfRuntime.lastSaveResult=ok;SOSPerfRuntime.lastFlushAt=Date.now();SOSPerfRuntime.saveQueued=false;
     if(!ok&&state?.log)log(SOSText("core_town_save_load.save.001"),'bad');
     return ok;
   }catch(e){console.error(SOSText("core_town_save_load.save.002"),e);SOSPerfRuntime.lastSaveResult=false;return false}
   finally{SOSPerfRuntime.saveInProgress=false}
 }
+
 function queueCampaignSave(delay=90){
   if(!state)return false;
   SOSPerfRuntime.saveQueued=true;
@@ -293,6 +352,7 @@ function sosFlushSaveOnExit(){
 }
 window.addEventListener('pagehide',sosFlushSaveOnExit,{capture:true});
 window.addEventListener('beforeunload',sosFlushSaveOnExit,{capture:true});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sosFlushSaveOnExit()},{capture:true});
 // Give taps/clicks visible feedback before a potentially expensive handler begins.
 document.addEventListener('pointerdown',e=>{
   const b=e.target?.closest?.('button,[role="button"],.world-location,.world-party');if(!b||b.disabled)return;
@@ -305,9 +365,9 @@ document.addEventListener('pointercancel',sosClearPressed,{capture:true,passive:
 
 // ===== v1.6.22.6 — Save Scheduling & Transaction Boundaries =====
 const SOSSavePolicy={
-  idleDelay:1800,
-  importantDelay:450,
-  criticalDelay:120,
+  idleDelay:3500,
+  importantDelay:900,
+  criticalDelay:150,
   dirty:false,
   dirtyReasons:new Set(),
   lastReason:'',
@@ -396,6 +456,13 @@ function sosPerfEnd(name,start){
   SOSRenderPerf.depth=Math.max(0,SOSRenderPerf.depth-1);if(SOSRenderPerf.depth===0){SOSRenderPerf.cache=null;SOSRenderPerf.current=''}
   return ms
 }
+function sosPerfRun(name,fn){
+  if(!SOSRenderPerf.enabled)return fn();const t=sosPerfBegin(name);try{return fn()}finally{sosPerfEnd(name,t)}
+}
+function settlementWorldLocations(){
+  if(!state?.world?.settlements)return[];
+  return sosPerfMemo('settlementWorldLocations',()=>WORLD_LOCATIONS.filter(x=>state.world.settlements?.[x.id]))
+}
 function sosPerfMemo(key,producer){
   if(!SOSRenderPerf.cache)return producer();
   if(SOSRenderPerf.cache.has(key)){SOSRenderPerf.helperHits++;return SOSRenderPerf.cache.get(key)}
@@ -417,29 +484,53 @@ function sosProfileGlobal(name,label=name){
   wrapped.__sosProfile16227=true;wrapped.__sosOriginal=fn;window[name]=wrapped;return true
 }
 // These helpers are read-only derived queries during screen construction. Cache lifetime is one render only.
-[
+// Installation is deferred until runtime-start because several targets live in modules loaded after this file.
+const SOS_PERF_MEMO_TARGETS=[
  'worldLocation','worldTravelDays','locationsInRegion','locationRegion','nearbyWorldParties','activeLiveRegionalConflicts','settlementConditionText',
  'factionRepresentativesAt','localReputation','settlementControl','jurisdictionRep','wantedTier','localBounty',
  'regionalTravelOptions','regionalTravelSummary','homeHomecomingSummaryHTML','openAttention','bestPartyRecipient',
  'worldPartyDisplayRegion','worldPartyPosition','worldPartyDisposition','worldPartySafeLocationId','regionConnectionAt','roadConditionProfile','politicalMapTag',
- 'settlementPriceModifier','tradeDemandScore','tradeStock'
-].forEach(n=>sosMemoizeGlobal(n));
-// Profile only player-facing screens that were identified as likely hotspots.
-[
+ 'settlementPriceModifier','tradeDemandScore','tradeStock','routeEvidence','spawnDistrictProfile','spawnAvenuesAt','spawnDistrictLocalIndex'
+];
+const SOS_PERF_PROFILE_TARGETS=[
  ['renderOpenWorld','Regional Map'],['showNearbyWorldParties','Nearby Parties'],['showWorldParty','Party Detail'],
  ['showInventory','Inventory'],['showContractsJournal','Contracts'],['showHomeBase','Guardian Hall'],
  ['showSettlementPolitics','Settlement Politics'],['showRegionalPolitics','Regional Politics'],
- ['showFactionOverview','Faction Overview'],['showOpenWorldSettlementTownLife','Town Life']
-].forEach(([n,l])=>sosProfileGlobal(n,l));
+ ['showFactionOverview','Faction Overview'],['showOpenWorldSettlementTownLife','Town Life'],
+ ['advanceWorldDays','Advance World Day'],['openWorldMapHTML','Regional Map Build'],['spawnRoadNetworkHTML','Spawn Road Overlay'],
+ ['flushCampaignSaveNow','Save Flush'],['load','Campaign Load']
+];
+function installSOSPerformanceHooks(){
+ let memo=0,profile=0;
+ for(const n of SOS_PERF_MEMO_TARGETS)if(sosMemoizeGlobal(n))memo++;
+ for(const [n,l] of SOS_PERF_PROFILE_TARGETS)if(sosProfileGlobal(n,l))profile++;
+ SOSRenderPerf.hooksInstalled={memo,profile,at:Date.now()};return SOSRenderPerf.hooksInstalled
+}
 function sosPerfRowsHTML(){
   const rows=Object.entries(SOSRenderPerf.screenStats).map(([name,s])=>({name,...s})).sort((a,b)=>(b.avg||0)-(a.avg||0));
   return rows.map(r=>`<div class="stat-row"><span>${esc(r.name)}</span><b>${(r.avg||0).toFixed(1)} ms avg • ${Math.round(r.last||0)} ms last • ${Math.round(r.max||0)} ms max</b></div>`).join('')||'<p class="muted">No profiled screens have been opened yet.</p>'
 }
+function sosPerformanceDiagnosticsText(){
+  const stats=Object.entries(SOSRenderPerf.screenStats).map(([name,v])=>({name,...v})).sort((a,b)=>(b.avg||0)-(a.avg||0)),saveStats=SOSSavePolicy?.stats||{},hooks=SOSRenderPerf.hooksInstalled||{},cacheTotal=SOSRenderPerf.helperHits+SOSRenderPerf.helperMisses,cacheRate=cacheTotal?Math.round(SOSRenderPerf.helperHits/cacheTotal*100):0,loc=state?.world?.location&&typeof worldLocation==='function'?worldLocation(state.world.location):null,lines=[];
+  if(state?.world)lines.push(`Day ${state.world.day}`);if(state)lines.push(`${fmt(state.gold)} gold`);if(loc?.name)lines.push(loc.name);
+  lines.push('Performance Diagnostics','Session-only profiler','Screen & simulation timings');
+  for(const r of stats)lines.push(`${r.name}\n${(r.avg||0).toFixed(1)} ms avg • ${Math.round(r.last||0)} ms last • ${Math.round(r.max||0)} ms max`);
+  lines.push(`Profiler hooks: ${hooks.profile||0} timed operations • ${hooks.memo||0} memoized helpers`,`Current render memoization: ${SOSRenderPerf.helperHits} cache hits / ${SOSRenderPerf.helperMisses} misses${cacheTotal?` • ${cacheRate}% hit rate`:''}`,'Recent slow operations');
+  if(SOSRenderPerf.lastSlow.length)for(const x of SOSRenderPerf.lastSlow)lines.push(`${x.name} — ${x.ms} ms\nDay ${x.day}`);else lines.push('No 40 ms+ screen builds recorded in this session.');
+  lines.push('Save scheduler','Queued requests',String(saveStats.queued||0),'Important checkpoints',String(saveStats.important||0),'Critical checkpoints',String(saveStats.critical||0),'Actual storage flushes',String(saveStats.flushes||0));
+  lines.push('Campaign storage',SOSIndexedDBRuntime.failed?'Legacy localStorage fallback':'IndexedDB (uncompressed routine saves)',`IndexedDB reads: ${SOSIndexedDBRuntime.stats.reads} • writes: ${SOSIndexedDBRuntime.stats.writes} • migrated slots: ${SOSIndexedDBRuntime.stats.migrations} • failures: ${SOSIndexedDBRuntime.stats.failures}`);
+  if(typeof SOSNavigationLoopGuard!=='undefined'&&SOSNavigationLoopGuard.lastRecovery)lines.push('Last navigation-loop recovery',`Day ${SOSNavigationLoopGuard.lastRecovery.day} • ${SOSNavigationLoopGuard.lastRecovery.a} ↔ ${SOSNavigationLoopGuard.lastRecovery.b}`);
+  return lines.join('\n')
+}
+function sosCopyText(text){
+ const fallback=()=>{const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();return ok};
+ if(navigator.clipboard?.writeText)return navigator.clipboard.writeText(text).then(()=>true).catch(()=>fallback());return Promise.resolve(fallback())
+}
 function showPerformanceDiagnostics(){
   const slow=SOSRenderPerf.lastSlow.map(x=>`<div class="card compact"><b>${esc(x.name)}</b> — ${x.ms} ms<br><small>Day ${x.day}</small></div>`).join('')||'<p class="muted">No 40 ms+ screen builds recorded in this session.</p>';
-  const saveStats=SOSSavePolicy?.stats||{};
-  overlay(`<h2>Performance Diagnostics</h2><div class="notice compact"><b>Session-only profiler</b><br><small>Timings are not written into the campaign save. A screen consistently above ~50 ms is a useful optimization target.</small></div><h3>Screen build timings</h3><div class="card">${sosPerfRowsHTML()}</div><h3>Recent slow builds</h3>${slow}<h3>Save scheduler</h3><div class="card"><div class="stat-row"><span>Queued requests</span><b>${saveStats.queued||0}</b></div><div class="stat-row"><span>Important checkpoints</span><b>${saveStats.important||0}</b></div><div class="stat-row"><span>Critical checkpoints</span><b>${saveStats.critical||0}</b></div><div class="stat-row"><span>Actual storage flushes</span><b>${saveStats.flushes||0}</b></div></div><div class="dialog-footer"><button id="perfDiagReset">Reset Session Timings</button><button id="perfDiagBack">Back</button></div>`,true);
-  $('#perfDiagReset').onclick=()=>{SOSRenderPerf.screenStats={};SOSRenderPerf.lastSlow=[];showPerformanceDiagnostics()};$('#perfDiagBack').onclick=gameMenu
+  const saveStats=SOSSavePolicy?.stats||{},cacheTotal=SOSRenderPerf.helperHits+SOSRenderPerf.helperMisses,cacheRate=cacheTotal?Math.round(SOSRenderPerf.helperHits/cacheTotal*100):0,hooks=SOSRenderPerf.hooksInstalled||{};
+  overlay(`<h2>Performance Diagnostics</h2><div class="notice compact"><b>Session-only profiler</b><br><small>Timings are not written into the campaign save. A screen or day-tick phase consistently above ~50 ms is a useful optimization target.</small></div><h3>Screen & simulation timings</h3><div class="card">${sosPerfRowsHTML()}</div><div class="card compact"><b>Profiler hooks:</b> ${hooks.profile||0} timed operations • ${hooks.memo||0} memoized helpers<br><b>Current render memoization:</b> ${SOSRenderPerf.helperHits} cache hits / ${SOSRenderPerf.helperMisses} misses${cacheTotal?` • ${cacheRate}% hit rate`:''}</div><h3>Recent slow operations</h3>${slow}<h3>Save scheduler</h3><div class="card"><div class="stat-row"><span>Queued requests</span><b>${saveStats.queued||0}</b></div><div class="stat-row"><span>Important checkpoints</span><b>${saveStats.important||0}</b></div><div class="stat-row"><span>Critical checkpoints</span><b>${saveStats.critical||0}</b></div><div class="stat-row"><span>Actual storage flushes</span><b>${saveStats.flushes||0}</b></div></div><div class="dialog-footer"><button id="perfDiagCopy">Quick Copy</button><button id="perfDiagReset">Reset Session Timings</button><button id="perfDiagBack">Back</button></div>`,true);
+  $('#perfDiagCopy').onclick=async()=>{const b=$('#perfDiagCopy'),ok=await sosCopyText(sosPerformanceDiagnosticsText());if(b){b.textContent=ok?'Copied!':'Copy Failed';setTimeout(()=>{if(b.isConnected)b.textContent='Quick Copy'},1200)}};$('#perfDiagReset').onclick=()=>{SOSRenderPerf.screenStats={};SOSRenderPerf.lastSlow=[];showPerformanceDiagnostics()};$('#perfDiagBack').onclick=gameMenu
 }
 // Add diagnostics without changing ordinary screen layout or generating save activity.
 const _sosGameMenu16227=window.gameMenu;
@@ -544,8 +635,8 @@ function campaignLoadCandidates(mode=null){
    out.push({source,state:s})
  };
  if(wanted){
-   add('primary',localStorage.getItem(saveKeyForMode(wanted)));
-   add(SOSText("core_town_save_load.campaignLoadCandidates.001"),localStorage.getItem(backupKeyForMode(wanted)));
+   add('primary',sosStorageRaw(saveKeyForMode(wanted)));
+   add(SOSText("core_town_save_load.campaignLoadCandidates.001"),sosStorageRaw(backupKeyForMode(wanted)));
    add(SOSText("core_town_save_load.campaignLoadCandidates.002"),localStorage.getItem(SAVE_KEY));
  }else{
    add(SOSText("core_town_save_load.campaignLoadCandidates.003"),localStorage.getItem(SAVE_KEY))
@@ -575,8 +666,8 @@ function load(mode=null){
 }
 function clearSave(mode=state?.mode||null){
  const target=mode==='openworld'?'openworld':mode==='siege2'?'siege2':(['legacy_siege','siege'].includes(mode)?'legacy_siege':null);
- if(target){localStorage.removeItem(saveKeyForMode(target));localStorage.removeItem(backupKeyForMode(target))}
- else{for(const k of [SAVE_OPEN_WORLD_KEY,SAVE_OPEN_WORLD_BACKUP_KEY,SAVE_LEGACY_SIEGE_KEY,SAVE_LEGACY_SIEGE_BACKUP_KEY,SAVE_SIEGE_II_KEY,SAVE_SIEGE_II_BACKUP_KEY])localStorage.removeItem(k)}
+ if(target){localStorage.removeItem(saveKeyForMode(target));localStorage.removeItem(backupKeyForMode(target));sosIDBDelete(saveKeyForMode(target));sosIDBDelete(backupKeyForMode(target))}
+ else{for(const k of [SAVE_OPEN_WORLD_KEY,SAVE_OPEN_WORLD_BACKUP_KEY,SAVE_LEGACY_SIEGE_KEY,SAVE_LEGACY_SIEGE_BACKUP_KEY,SAVE_SIEGE_II_KEY,SAVE_SIEGE_II_BACKUP_KEY]){localStorage.removeItem(k);sosIDBDelete(k)}}
  const mirror=parseStoredCampaign(SAVE_KEY);if(!target||!mirror||campaignModeOf(mirror)===target)localStorage.removeItem(SAVE_KEY);
  localStorage.setItem(SAVE_SLOT_MIGRATION_KEY,'1');localStorage.setItem(SAVE_SIEGE_SPLIT_MIGRATION_KEY,'1')
 }

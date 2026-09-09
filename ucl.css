@@ -1,0 +1,79 @@
+/* UCL Directory */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 40px 20px;
+
+    background: #f4f6f8;
+    color: #222;
+
+    font-family: Arial, Helvetica, sans-serif;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+
+a {
+    display: block;
+
+    width: 100%;
+    max-width: 500px;
+
+    padding: 18px 22px;
+
+    background: #ffffff;
+    color: #1d4f91;
+
+    border: 1px solid #d5dbe2;
+    border-radius: 8px;
+
+    font-size: 1.15rem;
+    font-weight: 600;
+    text-decoration: none;
+
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+a:hover {
+    background: #f8fbff;
+    border-color: #1d4f91;
+
+    transform: translateY(-2px);
+
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+a:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 3px;
+}
+
+a:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 24px 16px;
+    }
+
+    a {
+        padding: 16px 18px;
+        font-size: 1.05rem;
+    }
+}

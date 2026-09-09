@@ -48,7 +48,7 @@ function showAdventureSite(siteId){modalRouteEnter(SOSText("exploration_adventur
 }
 function advanceAdventureSite(siteId){
  const site=ADVENTURE_SITES[siteId],s=adventureState(siteId);if(!site||s.completed)return showAdventureSite(siteId);
- advanceWorldDays(1,SOSText("exploration_adventures_dungeons_factionquests.advanceAdventureSite.001",site.name));
+ 
  if(siteId==='quarry'){
   if(s.stage===0){if(adventureSkillCheck('dex',14)||adventureSkillCheck('wis',14)){s.stage++;log(SOSText("exploration_adventures_dungeons_factionquests.advanceAdventureSite.002"),'good')}else{state.guardian.hp=Math.max(1,state.guardian.hp-rnd(5,12));log(SOSText("exploration_adventures_dungeons_factionquests.advanceAdventureSite.003"),'bad');s.stage++}}
   else if(s.stage===1)return startAdventureCombat(siteId,SOSText("exploration_adventures_dungeons_factionquests.advanceAdventureSite.004"),rnd(2,4));
@@ -233,21 +233,21 @@ function interactDungeonRoom(siteId,roomId){
  if(r.type==='entry')return actionResult(r.name,r.desc,'info',()=>showDungeonMap(siteId));
  if(r.type==='secret'){
   if(d.secrets.includes(roomId))return actionResult(r.name,SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.001"),'info',()=>showDungeonMap(siteId));
-  advanceWorldDays(1,SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.002",ADVENTURE_SITES[siteId].name));
+  
   const ok=adventureSkillCheck(r.attr||'dex',r.dc||14)||state.scouting>=4;
   if(ok){d.secrets.push(roomId);valuableAdd(chance(.45)?'val_gem':'val_silver',1);if(chance(.3))grantTreasureMap(siteId);save();return actionResult(SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.003"),SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.004",r.desc),'good',()=>showDungeonMap(siteId))}
   return actionResult(SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.005"),SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.006",r.desc),'info',()=>showDungeonMap(siteId))
  }
  if(r.type==='lock'){
   if(d.visited.includes(roomId)&&r.stage<=s.stage)return actionResult(r.name,SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.007"),'info',()=>showDungeonMap(siteId));
-  advanceWorldDays(1,SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.008",ADVENTURE_SITES[siteId].name));
+  
   const ok=adventureSkillCheck(r.attr||'dex',r.dc||14);
   if(ok){d.visited.push(roomId);gainScouting(1);save();return actionResult(SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.009"),SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.010",r.name),'good',()=>showDungeonMap(siteId))}
   state.guardian.stamina=Math.max(0,state.guardian.stamina-8);save();return actionResult(SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.011"),SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.012"),'bad',()=>showDungeonMap(siteId))
  }
  if(r.type==='trap'){
   if(d.disabledTraps.includes(roomId))return actionResult(r.name,SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.013"),'info',()=>showDungeonMap(siteId));
-  advanceWorldDays(1,SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.014",ADVENTURE_SITES[siteId].name));
+  
   const ok=adventureSkillCheck(r.attr||'dex',r.dc||14);
   if(ok){d.disabledTraps.push(roomId);gainScouting(1);save();return actionResult(SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.015"),SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.016",r.name),'good',()=>showDungeonMap(siteId))}
   state.guardian.hp=Math.max(1,state.guardian.hp-rnd(5,12));save();return actionResult(SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.017"),SOSText("exploration_adventures_dungeons_factionquests.interactDungeonRoom.018"),'bad',()=>showDungeonMap(siteId))
@@ -319,7 +319,7 @@ function completeFactionQuestline(id,branch){
   else{gainGold(120);state.world.factionStanding.Independent+=4;state.world.factionStanding.Redstone+=1;state.reputation+=2}
  }
  if(id===SOSText("exploration_adventures_dungeons_factionquests.completeFactionQuestline.003")){gainGold(160);state.world.factionStanding.Independent+=6;state.world.settlements.stonebridge.prosperity=Math.min(100,state.world.settlements.stonebridge.prosperity+7);state.world.settlements.river.prosperity=Math.min(100,state.world.settlements.river.prosperity+5)}
- state.reputation++;recordWorldNews(SOSText("exploration_adventures_dungeons_factionquests.completeFactionQuestline.004",Object.values(FACTION_QUESTLINES).find(x=>x.id===id).name),'good');save();actionResult(SOSText("exploration_adventures_dungeons_factionquests.completeFactionQuestline.005"),SOSText("exploration_adventures_dungeons_factionquests.completeFactionQuestline.006"),'good',renderOpenWorld)
+ state.reputation++;recordWorldNews(SOSText("exploration_adventures_dungeons_factionquests.completeFactionQuestline.004",Object.values(FACTION_QUESTLINES).find(x=>x.id===id).name),'good');sfxWorld('questComplete');save();actionResult(SOSText("exploration_adventures_dungeons_factionquests.completeFactionQuestline.005"),SOSText("exploration_adventures_dungeons_factionquests.completeFactionQuestline.006"),'good',renderOpenWorld)
 }
 
 function defaultWorldState(){

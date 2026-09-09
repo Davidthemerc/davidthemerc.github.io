@@ -8,8 +8,41 @@ function companionRouteReaction(from,to){
  if(r.status==='watched')return SOSText("world_road_travel.companionRouteReaction.006",m.name);
  return SOSText("world_road_travel.companionRouteReaction.007",m.name)
 }
+// v1.6.55 — Spawn urban travel: official avenue tolls versus cheaper, riskier street movement.
+function spawnUrbanTravelDistance(from,to,avenues=false){
+ const a=worldLocation(from),b=worldLocation(to);if(!a||!b)return 0;
+ const dx=Math.abs((a.x||0)-(b.x||0)),dy=Math.abs((a.y||0)-(b.y||0));
+ // Main avenues follow the rectangular arterial grid; ordinary streets can cut more directly.
+ return avenues?dx+dy:Math.hypot(dx,dy)
+}
+function spawnAvenueToll(from,to){
+ const distance=spawnUrbanTravelDistance(from,to,true);
+ return Math.max(10,Math.round(8+distance*.35))
+}
+function spawnStreetPartySize(){
+ const companions=typeof partyMembers==='function'?partyMembers(true).filter(m=>m.hp>0).length:0;
+ return 1+companions
+}
+function spawnStreetRisk(from,to){
+ const route=roadConditionProfile(from,to),size=spawnStreetPartySize(),base=route.status==='dangerous'?.28:route.status==='risky'?.18:route.status==='watched'?.11:.08;
+ const sizeMult=size<=2?1.28:size<=4?1.12:size===5?.9:size===6?.72:size===7?.55:.35;
+ const chanceValue=clamp(base*sizeMult,.025,.38);
+ const label=chanceValue>=.24?'HIGH':chanceValue>=.14?'ELEVATED':chanceValue>=.08?'SLIGHT':'LOW';
+ return {chance:chanceValue,label,status:route.status,size}
+}
+function spawnCriminalToll(from,to){
+ const official=spawnAvenueToll(from,to),low=Math.max(4,Math.round(official*.30)),high=Math.max(low,Math.round(official*.52));
+ return Math.min(Math.max(1,official-2),rnd(low,high))
+}
 function routeTravelOptions(from,to){
  const p=roadConditionProfile(from,to),days=worldTravelDays(from,to);
+ if(locationRegion(from)==='spawn'&&locationRegion(to)==='spawn'){
+   const toll=spawnAvenueToll(from,to),risk=spawnStreetRisk(from,to);
+   return {
+    direct:{days:0,label:'Cross the City Streets',cost:0,risk:risk.label,desc:`No official toll • ${risk.label.toLowerCase()} personal street risk. Criminal crews may demand a cheaper unofficial toll, which you can pay or refuse and fight. Does not consume a campaign day.`},
+    safer:{days:0,label:`Take the Main Avenues — ${toll}g toll`,cost:toll,risk:'LOW',desc:`Broad, heavily traveled and patrolled arterial route. Official toll: ${toll} gold, scaled to distance. Does not consume a campaign day.`}
+   }
+ }
  return {direct:{days,label:SOSText("world_road_travel.routeTravelOptions.001"),desc:SOSText("world_road_travel.routeTravelOptions.002",days,days===1?'':'s',p.status)},safer:{days:days+1,label:SOSText("world_road_travel.routeTravelOptions.003"),desc:SOSText("world_road_travel.routeTravelOptions.004",days+1)}}
 }
 function roadEventRecord(ev,choice,result){
@@ -72,6 +105,39 @@ function startRoadAmbushCombat(ev,ctx,after,tactical={}){
 }
 function roadAmbushResumeJourney(){const fn=pendingRoadAmbushAfter;pendingRoadAmbushAfter=null;if(typeof fn==='function')return fn();renderOpenWorld()}
 function roadAmbushClearResume(){pendingRoadAmbushAfter=null}
+
+const SPAWN_STREET_CREW_NAMES=['Corner Crew','Ward Collectors','Street Wardens','Avenue Cutters','Block Men','Protection Crew'];
+function spawnStreetGang(from,dest){
+ const p=spawnWorldParty('bandits','spawn');
+ p.name=pick(SPAWN_STREET_CREW_NAMES);p.faction='Independent';p.attitude='hostile';p.status='engaged';p.roadAmbush=true;p.spawnStreetGang=true;p.lastRoadAmbushDay=state.world.day;
+ const loc=from||state.world.location;p.location=loc;p.destination=loc;p.travelLeft=0;p.travelTotal=1;p.region='spawn';
+ // Street rackets prey on small parties, not caravans; keep crews human-scale.
+ p.memberCount=clamp(rnd(2,5),2,5);ensureWorldPartyComposition(p);ensureWorldPartyDoctrine(p);syncTravelerRecord(p);playerPartyMoveBesideWorldParty(p);return p
+}
+function startSpawnStreetFight(from,dest,toll,after){
+ const p=spawnStreetGang(from,dest);pendingRoadAmbushAfter=typeof after==='function'?after:null;roadEventStat('hostile');
+ const ev={id:'spawn_street_extortion',title:'Street Extortion'};roadEventRecord(ev,'combat',`${p.name} demanded ${toll} gold and the Player Party refused.`);
+ recordWorldHistory(`${p.name} tried to collect an unofficial street toll between ${worldLocation(from).name} and ${worldLocation(dest).name}. The Player Party refused and fought.`,'bad','encounter');save();
+ const gr=makeWorldCombatGroup(p);gr.name=p.name;gr.worldPartyId=p.id;gr.roadAmbush=true;gr.roadAmbushVariant='street extortion';gr.spawnStreetGang=true;gr.tactical={terrain:encounterTerrain(),stance:'street confrontation',acc:0,def:0,enemyAcc:0,retreat:2,openingDamage:0,enemyFirst:false};SOSServices.combat.launch(gr)
+}
+function showSpawnStreetExtortion(from,dest,profile,after){
+ const toll=spawnCriminalToll(from,dest),official=spawnAvenueToll(from,dest),crew=pick(SPAWN_STREET_CREW_NAMES),loc=worldLocation(dest),risk=spawnStreetRisk(from,dest);
+ overlay(`<h2>Unofficial Street Toll</h2><p>A few local toughs step into the route toward <b>${esc(loc.name)}</b>. They are not wilderness bandits; this is a neighborhood protection racket, and they want <b>${toll} gold</b> to let the Player Party pass without trouble.</p><div class="notice compact"><b>${esc(risk.status.toUpperCase())} TRADE ROUTE ≠ GUARANTEED PERSONAL SAFETY</b><br>Commercial traffic can move reliably while a small party still looks vulnerable on side streets.<br><br><b>Criminal demand:</b> ${toll}g • <b>Main Avenue toll for this trip:</b> ${official}g</div><div class="choice-list compact"><button id="spawnStreetPay" ${state.gold<toll?'disabled':''}><b>Pay ${toll} gold</b><small>Cheaper than the official avenue toll. Continue to ${esc(loc.name)}.</small></button><button id="spawnStreetFight"><b>Refuse and Fight</b><small>No toll. Settle the matter the old-fashioned way.</small></button><button id="spawnStreetTurnBack"><b>Turn Back</b><small>Return to ${esc(worldLocation(from).name)} without paying.</small></button></div>`,true,true);
+ $('#spawnStreetPay').onclick=()=>{if(state.gold<toll)return;state.gold-=toll;recordWorldHistory(`Paid ${toll} gold to a Spawn street protection racket while traveling toward ${loc.name}.`,'info','travel');save();closeOverlay();after()};
+ $('#spawnStreetFight').onclick=()=>{closeOverlay();startSpawnStreetFight(from,dest,toll,after)};
+ $('#spawnStreetTurnBack').onclick=()=>{closeOverlay();state.world.travelPlan={mode:'direct',from:null,to:null,startedDay:null};save();renderOpenWorld()}
+}
+function commitSpawnUrbanTravel(from,dest,mode,profile){
+ if(mode==='safer'){
+   const toll=spawnAvenueToll(from,dest);
+   if(state.gold<toll)return actionResult('Not Enough Gold',`The Main Avenue toll for this trip is ${toll} gold. You can take the city streets instead.`,'bad',()=>attemptWorldTravel(dest));
+   state.gold-=toll;recordWorldHistory(`Paid ${toll} gold in official Spawn avenue tolls traveling from ${worldLocation(from).name} to ${worldLocation(dest).name}.`,'info','travel');save();
+   return commitWorldTravelChoice(from,dest,mode,0,profile)
+ }
+ const risk=spawnStreetRisk(from,dest),finish=()=>commitWorldTravelChoice(from,dest,mode,0,profile);
+ if(chance(risk.chance))return showSpawnStreetExtortion(from,dest,profile,finish);
+ return finish()
+}
 function roadEventPresentationHTML(ev,ctx,buttons){
  const risk=roadEventRisk(ctx,ev),category=roadEventCategory(ev),route=roadEventContextLine(ctx),from=worldLocation(ctx.from).name,to=worldLocation(ctx.to).name;
  return `<h2>${esc(ev.title)}</h2><div class="road-encounter-scene risk-${risk.cls}"><div class="road-encounter-meta"><span>${esc(category)}</span><b>${esc(risk.label)}</b></div><p>${esc(ev.text)}</p><div class="road-encounter-route"><b>${esc(from)} → ${esc(to)}</b><small>${esc(route)}${ctx.escort?' • ESCORT JOURNEY':''}</small></div></div><div class="road-encounter-actions">${buttons.map(([id,label])=>`<button data-roadchoice="${id}">${esc(label)}</button>`).join('')}</div>`
@@ -305,6 +371,8 @@ function regionTravelFlavor(c){
  if(c.id==='northwest_highroad')return {summary:SOSText("world_road_travel.regionTravelFlavor.001"),events:[SOSText("world_road_travel.regionTravelFlavor.002"),SOSText("world_road_travel.regionTravelFlavor.003"),SOSText("world_road_travel.regionTravelFlavor.004"),SOSText("world_road_travel.regionTravelFlavor.005")]};
  if(c.id==='eastern_redstone_road')return {summary:SOSText("world_road_travel.regionTravelFlavor.006"),events:[SOSText("world_road_travel.regionTravelFlavor.007"),SOSText("world_road_travel.regionTravelFlavor.008"),SOSText("world_road_travel.regionTravelFlavor.009"),SOSText("world_road_travel.regionTravelFlavor.010")]};
  if(c.id==='grayhaven_exium')return {summary:'The Frozen North Road climbs beyond the last comfortable Sengian waystations into exposed snow country.',events:['Wind drives loose snow across the Grayhaven road until the old wheel ruts vanish beneath white drifts.','The party passes a frozen road marker half buried in snow, proof that Exium is still several hard miles ahead.']};
+ if(c.id==='southroad_spawn')return {summary:'The Southroad high road runs toward the immense north-central walls of the Spawn.',events:['Traffic thickens as the road approaches the metropolis: carts, merchants, messengers, and travelers all converging on the same distant walls.','The straight road broadens near the Spawn, where monumental gateworks dominate the horizon.']};
+ if(c.id==='tyrdon_spawn')return {summary:'The Tyrdon trade road runs directly into the northeastern Market District of the Spawn.',events:['Merchant traffic grows steadily denser as the road approaches the Spawn’s northeastern walls.','Open-air stalls and freight traffic are visible almost immediately beyond the Market District gate.']};
  if(c.id==='crownpass_exium')return {summary:'The High Crown–Exium Ice Road crosses a severe mountain approach where snow, ice, and wind make every mile expensive.',events:['Ice coats the high road beyond Crown Pass, forcing the party to pick a slow line between exposed stone and deep snow.','A hard northern wind tears across the pass while the party follows Bluestone cairns toward Exium.']};
  return {summary:SOSText("world_road_travel.regionTravelFlavor.011"),events:[SOSText("world_road_travel.regionTravelFlavor.012")]}
 }
@@ -328,12 +396,32 @@ function attemptPlayerPartySettlementReentry(dest=state.world.location){
  finish()
 }
 function attemptWorldTravel(dest){
- ensureWorldState();if(captivityActive())return showCaptivity();const eq=activeEscortQuest();if(eq)return showEscortStatus(eq.id);if(dest===state.world.location){if(playerPartyInField()&&state.world.settlements?.[dest])return attemptPlayerPartySettlementReentry(dest);return showWorldArea();}if(locationRegion(dest)!==currentWorldRegion()){const c=regionConnectionsAt().find(x=>regionConnectionOther(x,state.world.location)===dest);if(c)return showRegionTravel();return actionResult(SOSText("world_road_travel.attemptWorldTravel.001"),SOSText("world_road_travel.attemptWorldTravel.002",worldLocation(dest).name),'info',renderOpenWorld)}
+ ensureWorldState();if(worldLocation(dest)?.lockedTravel)return actionResult('Road Not Yet Open','The Gate of the Endless Road is open to the southeastern approaches, but travel into the Endless Desert is not accessible yet.','info',renderOpenWorld);if(captivityActive())return showCaptivity();const eq=activeEscortQuest();if(eq)return showEscortStatus(eq.id);if(dest===state.world.location){if(playerPartyInField()&&state.world.settlements?.[dest])return attemptPlayerPartySettlementReentry(dest);return showWorldArea();}if(locationRegion(dest)!==currentWorldRegion()){const c=regionConnectionsAt().find(x=>regionConnectionOther(x,state.world.location)===dest);if(c)return showRegionTravel();return actionResult(SOSText("world_road_travel.attemptWorldTravel.001"),SOSText("world_road_travel.attemptWorldTravel.002",worldLocation(dest).name),'info',renderOpenWorld)}
  const from=state.world.location,to=worldLocation(dest),profile=roadConditionProfile(from,dest),opts=routeTravelOptions(from,dest),reaction=companionRouteReaction(from,dest);
  overlay(SOSText("world_road_travel.attemptWorldTravel.003",esc(to.name),esc(to.desc),profile.status,esc(profile.status.toUpperCase()),profile.pressure,esc(profile.traffic),esc(roadTrafficDescription({from,to:dest,route:profile})),reaction?`<div class="companion-reaction">${esc(reaction)}</div>`:'',opts.direct.label,esc(opts.direct.desc),opts.safer.label,esc(opts.safer.desc)));
- const go=(mode,days)=>{playerPartyBeginFieldTravel();if(typeof clearLawEntryState==='function')clearLawEntryState(from);if(from==='shantium'&&dest!=='shantium')homeMarkDeparture();state.world.travelPlan={mode,from,to:dest,startedDay:state.world.day};state.world.routeTravelHistory.push({day:state.world.day,from,to:dest,mode,status:profile.status,pressure:profile.pressure});state.world.routeTravelHistory=state.world.routeTravelHistory.slice(-40);closeOverlay();beginWorldJourney(from,dest,days)};
+ const spawnTrip=locationRegion(from)==='spawn'&&locationRegion(dest)==='spawn';
+ const go=(mode,days)=>spawnTrip?commitSpawnUrbanTravel(from,dest,mode,profile):commitWorldTravelChoice(from,dest,mode,days,profile);
  $('#travelDirect').onclick=()=>go('direct',scoutingTravelDays(opts.direct.days));$('#travelSafer').onclick=()=>go('safer',scoutingTravelDays(opts.safer.days));$('#travelStay').onclick=()=>{if(worldLifePendingTravel())clearWorldLifePendingTravel();save();closeOverlay();renderOpenWorld()};
 }
+
+function commitWorldTravelChoice(from,dest,mode,days,profile=null){
+ // v1.6.54.1 — Travel must not be blocked by optional departure bookkeeping.
+ // The journey state is the transaction; Hall/law/field/audio hooks are best-effort side effects.
+ ensureWorldState();
+ const safe=(label,fn)=>{try{return fn()}catch(err){console.error(`[Travel] ${label} failed`,err);return null}};
+ safe('field departure',()=>playerPartyBeginFieldTravel());
+ safe('law departure state',()=>{if(typeof clearLawEntryState==='function')clearLawEntryState(from)});
+ // playerPartyBeginFieldTravel already records a Shantium Hall departure through
+ // playerPartyMarkFieldPosition; do not invoke homeMarkDeparture a second time here.
+ state.world.travelPlan={mode,from,to:dest,startedDay:state.world.day};
+ if(!Array.isArray(state.world.routeTravelHistory))state.world.routeTravelHistory=[];
+ state.world.routeTravelHistory.push({day:state.world.day,from,to:dest,mode,status:profile?.status||'open',pressure:Number(profile?.pressure)||0});
+ state.world.routeTravelHistory=state.world.routeTravelHistory.slice(-40);
+ safe('departure sound',()=>{if(typeof sfxWorld==='function')sfxWorld('depart')});
+ safe('close travel dialog',()=>closeOverlay());
+ return beginWorldJourney(from,dest,Math.max(0,Number(days)||0))
+}
+
 function beginWorldJourney(from,dest,remaining){
  ensureWorldState();if(remaining<=0){ensureMapView().lastLocation=null;state.world.location=dest;state.world.region=locationRegion(dest);{const dl=worldLocation(dest),F=playerPartyFieldState();if(!state.world.settlements[dest]){F.active=true;F.region=locationRegion(dest);F.x=dl.x;F.y=dl.y;F.anchorLocation=dest;F.targetPartyId=null}else{F.x=dl.x;F.y=dl.y;F.region=locationRegion(dest)}}if(dest==='shantium'&&from!=='shantium')homePrepareHomecomingBriefing();state.world.travelPlan={mode:'direct',from:null,to:null,startedDay:null};state.world.settlementVisits[dest]=(state.world.settlementVisits[dest]||0)+1;if(worldLocation(dest).hidden){const XS=explorationSiteState(dest);XS.visits++;XS.lastVisit=state.world.day}if(state.world.settlements[dest])createSettlementEvent(dest,false);log(SOSText("world_road_travel.beginWorldJourney.001",state.world.day,worldLocation(dest).name),'info');if(state.world.settlements[dest])SOSServices.companions.noteSharedEvent('settlement',SOSText("world_road_travel.beginWorldJourney.002",worldLocation(dest).name));checkWorldQuestArrival();checkAdventureStoryArrival();checkFactionQuestProgress();checkPersonalRequests();save();const finishArrival=()=>{if(state.world.settlements[dest])playerPartyClearFieldPosition();if(worldLifePendingTravel()){if(continueWorldLifeTravel())return}if(checkCompanionStories()){save();return}renderOpenWorld();return handleFactionArrival(dest,renderOpenWorld)};if(state.world.settlements[dest]&&typeof showSettlementLawArrival==='function'&&lawArrivalNeedsDecision(dest)){showSettlementLawArrival(dest,finishArrival);return}return finishArrival()}
  advanceWorldDays(1,SOSText("world_road_travel.beginWorldJourney.003",worldLocation(from).name,worldLocation(dest).name));if(typeof recoveryTravelStrainTick==='function')recoveryTravelStrainTick(`${worldLocation(from).name} → ${worldLocation(dest).name}`);

@@ -1383,33 +1383,42 @@ body.modal-open .mobile-map-pan-toggle{display:none!important}
 /* v1.5.24.15 — live road-condition colors on regional map SVGs */
 .shantium-road-network g.route-open .road-line,
 .blue-road-network g.route-open .road-line,
-.red-road-network g.route-open .road-line{stroke:#657b51}
+.red-road-network g.route-open .road-line,
+.spawn-road-network g.route-open .road-line{stroke:#657b51}
 .shantium-road-network g.route-risky .road-line,
 .blue-road-network g.route-risky .road-line,
-.red-road-network g.route-risky .road-line{stroke:#a07a38}
+.red-road-network g.route-risky .road-line,
+.spawn-road-network g.route-risky .road-line{stroke:#a07a38}
 .shantium-road-network g.route-dangerous .road-line,
 .blue-road-network g.route-dangerous .road-line,
-.red-road-network g.route-dangerous .road-line{stroke:#914b42}
+.red-road-network g.route-dangerous .road-line,
+.spawn-road-network g.route-dangerous .road-line{stroke:#914b42}
 
 .shantium-road-network g.route-open .road-highlight,
 .blue-road-network g.route-open .road-highlight,
-.red-road-network g.route-open .road-highlight{stroke:rgba(220,235,196,.62)}
+.red-road-network g.route-open .road-highlight,
+.spawn-road-network g.route-open .road-highlight{stroke:rgba(220,235,196,.62)}
 .shantium-road-network g.route-risky .road-highlight,
 .blue-road-network g.route-risky .road-highlight,
-.red-road-network g.route-risky .road-highlight{stroke:rgba(244,220,164,.58)}
+.red-road-network g.route-risky .road-highlight,
+.spawn-road-network g.route-risky .road-highlight{stroke:rgba(244,220,164,.58)}
 .shantium-road-network g.route-dangerous .road-highlight,
 .blue-road-network g.route-dangerous .road-highlight,
-.red-road-network g.route-dangerous .road-highlight{stroke:rgba(245,188,176,.54)}
+.red-road-network g.route-dangerous .road-highlight,
+.spawn-road-network g.route-dangerous .road-highlight{stroke:rgba(245,188,176,.54)}
 
 .shantium-road-network g.route-open .road-shadow,
 .blue-road-network g.route-open .road-shadow,
-.red-road-network g.route-open .road-shadow{stroke:rgba(55,72,44,.42)}
+.red-road-network g.route-open .road-shadow,
+.spawn-road-network g.route-open .road-shadow{stroke:rgba(55,72,44,.42)}
 .shantium-road-network g.route-risky .road-shadow,
 .blue-road-network g.route-risky .road-shadow,
-.red-road-network g.route-risky .road-shadow{stroke:rgba(95,67,31,.46)}
+.red-road-network g.route-risky .road-shadow,
+.spawn-road-network g.route-risky .road-shadow{stroke:rgba(95,67,31,.46)}
 .shantium-road-network g.route-dangerous .road-shadow,
 .blue-road-network g.route-dangerous .road-shadow,
-.red-road-network g.route-dangerous .road-shadow{stroke:rgba(102,42,37,.50)}
+.red-road-network g.route-dangerous .road-shadow,
+.spawn-road-network g.route-dangerous .road-shadow{stroke:rgba(102,42,37,.50)}
 
 #politicalCompanionNotice{transition:background .15s ease,border-color .15s ease,color .15s ease}
 
@@ -2566,3 +2575,63 @@ button.sos-pressed:not(.world-location):not(.world-party), [role="button"].sos-p
 
 /* v1.6.30 — Masterworks & Hall Prestige */
 .prestige-card{text-align:center}.prestige-score{font:700 30px Georgia,serif;margin:7px 0}.masterwork-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+
+/* v1.6.35 audio mixer */
+.settings-slider{display:flex;flex-direction:column;gap:6px;margin:10px 0 14px;font-size:.95rem}
+.settings-slider>span{display:flex;justify-content:space-between;gap:12px}
+.settings-slider input[type=range]{width:100%;min-height:30px;accent-color:currentColor}
+
+/* v1.6.41 — Guardian Hall administration dashboard */
+.hall-admin-overview{margin:10px 0 14px;padding:10px;border:1px solid #8b7a55;background:rgba(245,239,221,.72)}
+.hall-admin-overview .ui-group-heading{margin-bottom:8px}
+.hall-admin-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.hall-admin-stat{display:flex;flex-direction:column;gap:2px;padding:8px;border:1px solid #aaa08a;background:rgba(255,255,255,.58);min-width:0}
+.hall-admin-stat small{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#655}
+.hall-admin-stat b{font-size:14px;line-height:1.2}
+.hall-admin-stat span{font-size:10px;color:#555;line-height:1.25}
+.hall-attention-summary{margin:8px 0 0}
+.hall-admin-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.hall-admin-actions>button{min-width:0;margin:0!important;text-align:left}
+.hall-admin-actions>button small{display:block;margin-top:2px;font-size:10px;line-height:1.2;opacity:.78}
+.hall-admin-quick-actions{margin-top:7px}
+@media(max-width:620px){.hall-admin-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:430px){.hall-admin-stat-grid,.hall-admin-actions{grid-template-columns:1fr}}
+
+/* v1.6.44 — living-world intelligence provenance */
+.intel-origin-tag{display:inline-block;margin-left:5px;padding:1px 5px;border:1px solid currentColor;border-radius:999px;font-size:9px;letter-spacing:.05em;vertical-align:1px}
+.intel-origin-tag.witnessed{font-weight:700}
+.intel-origin-tag.reported{opacity:.8}
+
+/* v1.6.44.1 — collapsible Hall administration */
+.hall-admin-overview>summary{list-style:none;cursor:pointer}
+.hall-admin-overview>summary::-webkit-details-marker{display:none}
+.hall-admin-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 0 8px}
+.hall-admin-summary span:first-child{display:flex;flex-direction:column;gap:2px}
+.hall-admin-summary small{font-size:10px;opacity:.75}
+.hall-admin-chevron{transition:transform .15s ease}
+.hall-admin-overview[open] .hall-admin-chevron{transform:rotate(180deg)}
+.hall-admin-body{padding-top:2px}
+
+/* v1.6.45 — Spawn metropolis map foundation */
+.region-map-spawn .world-map-canvas{background:linear-gradient(90deg,rgba(230,226,210,.96),rgba(218,213,194,.96));}
+.spawn-city-grid{position:absolute;inset:5% 5%;border:4px double #655b4d;background-image:linear-gradient(to right,transparent 24.5%,rgba(82,74,63,.28) 24.5%,rgba(82,74,63,.28) 25.5%,transparent 25.5%,transparent 49.5%,rgba(82,74,63,.28) 49.5%,rgba(82,74,63,.28) 50.5%,transparent 50.5%,transparent 74.5%,rgba(82,74,63,.28) 74.5%,rgba(82,74,63,.28) 75.5%,transparent 75.5%),linear-gradient(to bottom,transparent 24.5%,rgba(82,74,63,.28) 24.5%,rgba(82,74,63,.28) 25.5%,transparent 25.5%,transparent 49.5%,rgba(82,74,63,.28) 49.5%,rgba(82,74,63,.28) 50.5%,transparent 50.5%,transparent 74.5%,rgba(82,74,63,.28) 74.5%,rgba(82,74,63,.28) 75.5%,transparent 75.5%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.45)}
+.spawn-desert-edge{position:absolute;right:1.5%;bottom:.5%;font:700 10px Georgia,serif;letter-spacing:.08em;transform:rotate(-4deg);opacity:.72}
+.region-map-spawn .world-location{max-width:112px}
+.region-map-spawn .terrain-urban-civic{font-weight:700}
+.region-map-spawn .terrain-urban-market,.region-map-spawn .terrain-urban-bazaar{outline:1px solid rgba(100,70,30,.45)}
+
+/* v1.6.46 — Spawn district navigation */
+.region-map-spawn .world-location.world-type-district{min-width:86px}
+.region-map-spawn .spawn-city-grid{background-size:11.5% 12.5%;opacity:.32}
+.region-map-spawn .terrain-urban-civic{font-weight:700}
+.region-map-spawn .terrain-urban-bazaar,.region-map-spawn .terrain-urban-market{border-width:2px}
+
+/* v1.6.54.6 — Spawn district road network */
+.spawn-road-network{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible}
+.spawn-road-network .road-shadow{fill:none;stroke:rgba(62,53,43,.42);stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}
+.spawn-road-network .road-line{fill:none;stroke:#887456;stroke-width:.72;stroke-linecap:round;stroke-linejoin:round}
+.spawn-road-network .road-highlight{fill:none;stroke:rgba(244,236,205,.64);stroke-width:.17;stroke-linecap:round;stroke-linejoin:round}
+.spawn-road-network .minor .road-shadow{stroke-width:.88;opacity:.72}
+.spawn-road-network .minor .road-line{stroke-width:.48;opacity:.86}
+.spawn-road-network .minor .road-highlight{stroke-width:.10;opacity:.58}
+.spawn-road-network .diagonal .road-line{stroke-dasharray:1.1 .55}

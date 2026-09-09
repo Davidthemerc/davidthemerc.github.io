@@ -109,14 +109,26 @@ function showSettlementPolitics(locId=state.world.location){modalRouteEnter(SOST
  wireClose()
 }
 function simulatePoliticalDay(){
- if(!isOpenWorld())return;ensurePoliticalState();expireTreaties();decayFactionPowerEvidence();
- for(const loc of regionalSettlements()){const P=politicalProtectionState(loc.id),oldControl=P.lastControl,currentControl=settlementControl(loc.id);if(oldControl&&oldControl!==currentControl)reopenProtectedPoliticalCases(loc.id,oldControl,currentControl);P.lastControl=currentControl;
-  const ps=politicalSettlement(loc.id),presence=factionPresenceAt(loc.id),control=settlementControl(loc.id);decayLocalPoliticalCivic(loc.id);simulateLocalPoliticalCampaignDay(loc.id);simulateInternalFactionPoliticsDay(loc.id);politicalLongCampaignMaintenance(loc.id);
-  for(const [f,v] of Object.entries(presence)){if(!OPEN_WORLD_FACTIONS[f])continue;const fit=factionAgendaFit(f,loc.id);if(v>=5&&chance(.24)){recordFactionPower(loc.id,f,'personnel',v>=8?1:.5,SOSText("politics_control_incidents.simulatePoliticalDay.001",factionPresenceTier(v),currentFactionPriority(f).label.toLowerCase()),5);ps.lean[f]=clamp((ps.lean[f]||0)+(f===control?.08:.04)+fit*.03,-6,12)}if(v>=7&&f!==control&&chance(.18))addPoliticalPressure(loc.id,f,.5,SOSText("politics_control_incidents.simulatePoliticalDay.002"));if(v<=2&&(ps.pressure[f]||0)>0&&chance(.18))ps.pressure[f]=Math.max(0,ps.pressure[f]-1)}
-  const incident=activeFactionIncident(loc.id);if(incident)for(const f of incident.factions)if(f!==control)ps.pressure[f]=Math.min(12,(ps.pressure[f]||0)+.25);
-  evaluatePoliticalShift(loc.id);
-  if(ps.pending&&state.world.day>ps.pending.expiresDay){const q=ps.pending,challenger=q.challenger,ss=settlementState(loc.id);if(politicalPressure(loc.id,challenger)>=11&&settlementLeanScore(loc.id,challenger)>=8&&ss.security<55){ss.control=challenger;ps.alignmentHistory.push({day:state.world.day,from:q.current,to:challenger,reason:SOSText("politics_control_incidents.simulatePoliticalDay.003")});ps.alignment=challenger;ps.autonomy=Math.max(1,ps.autonomy-2);roadRights(loc.id).controller=challenger;stabilizePoliticalTransfer(loc.id,q.current,challenger);const reopened=reopenProtectedPoliticalCases(loc.id,q.current,challenger);politicalHistory(SOSText("politics_control_incidents.simulatePoliticalDay.004",loc.name,majorFaction(challenger).short,reopened.length?` ${reopened.length} protected case${reopened.length===1?' is':'s are'} reopened.`:''),'bad');recordWorldNews(SOSText("politics_control_incidents.simulatePoliticalDay.005",loc.name,majorFaction(challenger).short,reopened.length?` The new administration immediately reopens politically sensitive cases.`:''),'bad')}ps.pending=null;ps.lastShiftDay=state.world.day}
- }
+ if(!isOpenWorld())return;
+ ensurePoliticalState();expireTreaties();decayFactionPowerEvidence();
+ const perf=(name,fn)=>typeof sosPerfRun==='function'?sosPerfRun(name,fn):fn(),locs=regionalSettlements();
+ if(typeof beginFactionPresenceReadCache==='function')beginFactionPresenceReadCache();
+ try{
+  perf('Politics Simulation — Local Maintenance',()=>{
+   for(const loc of locs){const P=politicalProtectionState(loc.id),oldControl=P.lastControl,currentControl=settlementControl(loc.id);if(oldControl&&oldControl!==currentControl)reopenProtectedPoliticalCases(loc.id,oldControl,currentControl);P.lastControl=currentControl;decayLocalPoliticalCivic(loc.id);simulateLocalPoliticalCampaignDay(loc.id);simulateInternalFactionPoliticsDay(loc.id);politicalLongCampaignMaintenance(loc.id)}
+  });
+  perf('Politics Simulation — Presence & Pressure',()=>{
+   for(const loc of locs){const ps=politicalSettlement(loc.id),presence=factionPresenceAt(loc.id),control=settlementControl(loc.id);
+    for(const [f,v] of Object.entries(presence)){if(!OPEN_WORLD_FACTIONS[f])continue;const fit=factionAgendaFit(f,loc.id);if(v>=5&&chance(.24)){recordFactionPower(loc.id,f,'personnel',v>=8?1:.5,SOSText("politics_control_incidents.simulatePoliticalDay.001",factionPresenceTier(v),currentFactionPriority(f).label.toLowerCase()),5);ps.lean[f]=clamp((ps.lean[f]||0)+(f===control?.08:.04)+fit*.03,-6,12)}if(v>=7&&f!==control&&chance(.18))addPoliticalPressure(loc.id,f,.5,SOSText("politics_control_incidents.simulatePoliticalDay.002"));if(v<=2&&(ps.pressure[f]||0)>0&&chance(.18))ps.pressure[f]=Math.max(0,ps.pressure[f]-1)}
+    const incident=activeFactionIncident(loc.id);if(incident)for(const f of incident.factions)if(f!==control)ps.pressure[f]=Math.min(12,(ps.pressure[f]||0)+.25)
+   }
+  });
+  perf('Politics Simulation — Control Shifts',()=>{
+   for(const loc of locs){const ps=politicalSettlement(loc.id);evaluatePoliticalShift(loc.id);
+    if(ps.pending&&state.world.day>ps.pending.expiresDay){const q=ps.pending,challenger=q.challenger,ss=settlementState(loc.id);if(politicalPressure(loc.id,challenger)>=11&&settlementLeanScore(loc.id,challenger)>=8&&ss.security<55){ss.control=challenger;ps.alignmentHistory.push({day:state.world.day,from:q.current,to:challenger,reason:SOSText("politics_control_incidents.simulatePoliticalDay.003")});ps.alignment=challenger;ps.autonomy=Math.max(1,ps.autonomy-2);roadRights(loc.id).controller=challenger;stabilizePoliticalTransfer(loc.id,q.current,challenger);const reopened=reopenProtectedPoliticalCases(loc.id,q.current,challenger);politicalHistory(SOSText("politics_control_incidents.simulatePoliticalDay.004",loc.name,majorFaction(challenger).short,reopened.length?` ${reopened.length} protected case${reopened.length===1?' is':'s are'} reopened.`:''),'bad');recordWorldNews(SOSText("politics_control_incidents.simulatePoliticalDay.005",loc.name,majorFaction(challenger).short,reopened.length?` The new administration immediately reopens politically sensitive cases.`:''),'bad')}ps.pending=null;ps.lastShiftDay=state.world.day}
+   }
+  });
+ }finally{if(typeof endFactionPresenceReadCache==='function')endFactionPresenceReadCache()}
 }
 
 function politicalLongCampaignMaintenance(locId){
@@ -211,7 +223,7 @@ const FACTION_POST_NAMES={
 function majorFaction(id){return OPEN_WORLD_FACTIONS[id]||{name:id,short:id,desc:SOSText("politics_control_incidents.majorFaction.001"),agenda:SOSText("politics_control_incidents.majorFaction.002")}}
 function ensureFactionPresence(){
  if(!state?.world)return;state.world.factionPresence=state.world.factionPresence||{};
- for(const loc of WORLD_LOCATIONS.filter(x=>['town','settlement','camp','fort'].includes(x.type))){
+ for(const loc of WORLD_LOCATIONS.filter(x=>['town','settlement','camp','fort','district'].includes(x.type))){
   if(!state.world.settlements?.[loc.id])continue;
   if(!state.world.factionPresence[loc.id]){
    const base={};base[loc.faction||SOSText("politics_control_incidents.ensureFactionPresence.001")]=5;

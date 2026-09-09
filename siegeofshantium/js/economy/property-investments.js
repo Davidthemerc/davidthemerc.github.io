@@ -9,12 +9,12 @@ function propertyIncomeEstimate(locId){
 function buyProperty(locId){
  const d=PROPERTY_DEFS[locId],e=economyState();if(!d||e.properties[locId])return showSettlementEconomy(locId);if(state.gold<d.cost)return actionResult(SOSText("economy_property_investments.buyProperty.001"),SOSText("economy_property_investments.buyProperty.002",d.name,d.cost),'bad',()=>showSettlementEconomy(locId));
  SOSServices.accounts.debit('guardian',d.cost,{category:'Property',text:`${d.name} established in ${worldLocation(locId).name}`,toAccount:`property:${locId}`});e.properties[locId]={id:locId,name:d.name,type:d.type,boughtDay:state.world.day,totalIncome:0,lastIncomeDay:state.world.day,upgrades:{storage:false,manager:false}};
- changeLocalReputation(locId,1,SOSText("economy_property_investments.buyProperty.003",d.name));settlementState(locId).prosperity=Math.min(100,settlementState(locId).prosperity+1);economyLedger(SOSText("economy_property_investments.buyProperty.004",d.name,worldLocation(locId).name),-d.cost,'property');save();actionResult(SOSText("economy_property_investments.buyProperty.005"),SOSText("economy_property_investments.buyProperty.006",d.name),'good',()=>showSettlementEconomy(locId))
+ changeLocalReputation(locId,1,SOSText("economy_property_investments.buyProperty.003",d.name));settlementState(locId).prosperity=Math.min(100,settlementState(locId).prosperity+1);economyLedger(SOSText("economy_property_investments.buyProperty.004",d.name,worldLocation(locId).name),-d.cost,'property');sfxWorld('coinsLarge');save();actionResult(SOSText("economy_property_investments.buyProperty.005"),SOSText("economy_property_investments.buyProperty.006",d.name),'good',()=>showSettlementEconomy(locId))
 }
 function propertyUpgradeCost(locId,id){return id==='storage'?110:id==='manager'?160:999}
 function buyPropertyUpgrade(locId,id){
  const p=ownedProperty(locId);if(!p||p.upgrades[id])return showSettlementEconomy(locId);const cost=propertyUpgradeCost(locId,id);if(state.gold<cost)return showSettlementEconomy(locId);SOSServices.accounts.debit('guardian',cost,{category:'Property improvement',text:`${p.name}: ${id}`,toAccount:`property:${locId}`});p.upgrades[id]=true;
- economyLedger(`${p.name}: ${id==='storage'?'expanded storage':'hired local manager'}`,-cost,'property');save();showSettlementEconomy(locId)
+ economyLedger(`${p.name}: ${id==='storage'?'expanded storage':'hired local manager'}`,-cost,'property');sfxWorld(id==='storage'?'construction':'recruit');save();showSettlementEconomy(locId)
 }
 function propertyCapacity(locId){const p=ownedProperty(locId);return p?(p.upgrades.storage?30:12):0}
 function storedCargoCount(locId){return Object.values(propertyStorage(locId)).reduce((a,b)=>a+(b||0),0)}

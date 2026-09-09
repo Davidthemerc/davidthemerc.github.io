@@ -164,6 +164,62 @@ function showJavascriptErrorJournal(){modalRouteEnter(SOSText("events_field_runt
 }
 let townNavStack=[];
 let townNavCurrent=null;
+
+// v1.6.55.1 — session-only emergency recovery for behaviorally identical A ↔ B menu cycles.
+// Five full cycles are required, and differing button/action use resets the pattern.
+const SOSNavigationLoopGuard={history:[],nestedHistory:[],recovering:false,lastRecovery:null,pendingInteractions:[],nestedPendingInteractions:[],lastInteractionAt:0};
+function navigationLoopReset(){SOSNavigationLoopGuard.history=[];SOSNavigationLoopGuard.nestedHistory=[];SOSNavigationLoopGuard.pendingInteractions=[];SOSNavigationLoopGuard.nestedPendingInteractions=[];SOSNavigationLoopGuard.recovering=false}
+function navigationLoopInteractionKey(el){
+ if(!el)return'';const bits=[el.id||'',el.dataset?.action||'',el.dataset?.mailaction||'',el.dataset?.politicalAction||'',el.dataset?.route||'',el.dataset?.faction||'',el.getAttribute?.('name')||''];
+ const label=String(el.textContent||'').replace(/\s+/g,' ').trim().slice(0,64);if(label)bits.push(label);return bits.filter(Boolean).join('|')
+}
+function navigationLoopNoteInteraction(el){
+ if(!isOpenWorld()||SOSNavigationLoopGuard.recovering)return;const key=navigationLoopInteractionKey(el);if(!key)return;
+ const p=SOSNavigationLoopGuard.pendingInteractions;if(p[p.length-1]!==key)p.push(key);if(p.length>8)p.splice(0,p.length-8);
+ const n=SOSNavigationLoopGuard.nestedPendingInteractions;if(n[n.length-1]!==key)n.push(key);if(n.length>8)n.splice(0,n.length-8);SOSNavigationLoopGuard.lastInteractionAt=Date.now()
+}
+document.addEventListener('click',e=>{const el=e.target?.closest?.('button,[role="button"],a');if(el)navigationLoopNoteInteraction(el)},{capture:true});
+function navigationLoopObserve(key){
+ if(!isOpenWorld()||SOSNavigationLoopGuard.recovering||!key)return false;
+ const activity=SOSNavigationLoopGuard.pendingInteractions.join(' > ')||'automatic';SOSNavigationLoopGuard.pendingInteractions=[];
+ const h=SOSNavigationLoopGuard.history;
+ if(h.length&&h[h.length-1].key===key){
+   // Same-screen actions/refreshes are meaningful use, not navigation loops.
+   if(activity!=='automatic')h.length=0;return false
+ }
+ h.push({key,activity});if(h.length>14)h.splice(0,h.length-14);
+ if(h.length<10)return false;
+ const x=h.slice(-10),a=x[0].key,b=x[1].key;
+ let loop=a!==b;for(let i=0;i<10&&loop;i++)if(x[i].key!==(i%2?a:b))loop=false;
+ if(!loop)return false;
+ // A true failsafe loop must also repeat the same behavior between those screens.
+ // Choosing Rally, Petition, Endorse, another target, etc. changes the interaction signature
+ // and therefore proves the player is actively using the screens rather than being trapped.
+ const aActs=x.filter((_,i)=>i%2===0).map(v=>v.activity),bActs=x.filter((_,i)=>i%2===1).map(v=>v.activity);
+ const sameA=aActs.every(v=>v===aActs[0]),sameB=bActs.every(v=>v===bActs[0]);
+ if(!sameA||!sameB){h.splice(0,Math.max(0,h.length-2));return false}
+ SOSNavigationLoopGuard.recovering=true;SOSNavigationLoopGuard.lastRecovery={day:state?.world?.day||0,a,b,at:Date.now(),cycles:5,activityA:aActs[0],activityB:bActs[0]};console.warn(`[Navigation] Repeating identical menu cycle recovered after 5 cycles: ${a} ↔ ${b}`);return true
+}
+function navigationLoopObserveNestedModal(key){
+ if(!isOpenWorld()||SOSNavigationLoopGuard.recovering||!key)return false;
+ const activity=SOSNavigationLoopGuard.nestedPendingInteractions.join(' > ')||'automatic';SOSNavigationLoopGuard.nestedPendingInteractions=[];
+ const h=SOSNavigationLoopGuard.nestedHistory;
+ if(h.length&&h[h.length-1].key===key){if(activity!=='automatic')h.length=0;return false}
+ h.push({key,activity});if(h.length>14)h.splice(0,h.length-14);if(h.length<10)return false;
+ const x=h.slice(-10),a=x[0].key,b=x[1].key;let loop=a!==b;for(let i=0;i<10&&loop;i++)if(x[i].key!==(i%2?a:b))loop=false;if(!loop)return false;
+ const aActs=x.filter((_,i)=>i%2===0).map(v=>v.activity),bActs=x.filter((_,i)=>i%2===1).map(v=>v.activity),sameA=aActs.every(v=>v===aActs[0]),sameB=bActs.every(v=>v===bActs[0]);
+ if(!sameA||!sameB){h.splice(0,Math.max(0,h.length-2));return false}
+ SOSNavigationLoopGuard.recovering=true;SOSNavigationLoopGuard.lastRecovery={day:state?.world?.day||0,a,b,at:Date.now(),cycles:5,activityA:aActs[0],activityB:bActs[0],scope:'nested-modal'};console.warn(`[Navigation] Repeating identical nested-menu cycle recovered after 5 cycles: ${a} ↔ ${b}`);return true
+}
+function navigationLoopRecover(){
+ const last=SOSNavigationLoopGuard.lastRecovery;
+ townNavStack=[];townNavCurrent=null;townNavRestoring=false;
+ if(typeof guardianHallRouteReset==='function')guardianHallRouteReset();if(typeof resetModalNavigation==='function')resetModalNavigation();
+ closeOverlay();SOSNavigationLoopGuard.history=[];SOSNavigationLoopGuard.nestedHistory=[];SOSNavigationLoopGuard.pendingInteractions=[];SOSNavigationLoopGuard.nestedPendingInteractions=[];SOSNavigationLoopGuard.recovering=false;
+ if(last)console.info(`[Navigation] Returned to main interface after ${last.cycles||5} identical loops on Day ${last.day}.`);
+ return typeof renderOpenWorld==='function'?renderOpenWorld():renderGame()
+}
+
 let townNavRestoring=false;
 let modalNavStack=[];
 let modalNavCurrent=null;
@@ -222,7 +278,7 @@ function navigationPruneDuplicateTarget(stack,next){
 }
 function guardianHallRouteEnter(name,args=[]){
  if(!isOpenWorld())return;
- const next={name,args:Array.from(args||[])};
+ const next={name,args:Array.from(args||[])};if(navigationLoopObserve(`hall:${modalNavEntryKey(next)}`))return navigationLoopRecover();
  if(!guardianHallNavCurrent){guardianHallNavCurrent={name:'showHomeBase',args:[]}}
  if(guardianHallNavCurrent.name===next.name&&JSON.stringify(guardianHallNavCurrent.args||[])===JSON.stringify(next.args||[]))return;
  const leavingTransient=navigationRouteIsTransient(guardianHallNavCurrent.name);
@@ -231,13 +287,13 @@ function guardianHallRouteEnter(name,args=[]){
  guardianHallNavCurrent=next
 }
 function guardianHallRouteBack(fallback=showHomeBase){
- const prev=guardianHallNavStack.pop();
- if(prev){
-  guardianHallNavCurrent=prev;
-  const fn=navigationRouteFunction(prev.name);
-  if(typeof fn==='function')return fn(...(prev.args||[]))
+ const currentKey=modalNavEntryKey(guardianHallNavCurrent);let guard=0;
+ while(guardianHallNavStack.length&&guard++<64){
+  const prev=guardianHallNavStack.pop();if(!prev||modalNavEntryKey(prev)===currentKey)continue;
+  const fn=navigationRouteFunction(prev.name);if(typeof fn!=='function')continue;
+  guardianHallNavCurrent=prev;return fn(...(prev.args||[]))
  }
- guardianHallNavCurrent={name:'showHomeBase',args:[]};
+ guardianHallNavStack=[];guardianHallNavCurrent={name:'showHomeBase',args:[]};
  return typeof fallback==='function'?fallback():showHomeBase()
 }
 function guardianHallRouteReset(){
@@ -246,7 +302,9 @@ function guardianHallRouteReset(){
 }
 function modalRouteEnter(name,args=[]){
  const next={name,args:Array.from(args||[])};modalRouteHint=next;
- if(!isOpenWorld()||townNavCurrent)return;
+ if(!isOpenWorld())return;
+ if(townNavCurrent){if(navigationLoopObserveNestedModal(`nested:${modalNavEntryKey(next)}`))return navigationLoopRecover();return}
+ if(navigationLoopObserve(`modal:${modalNavEntryKey(next)}`))return navigationLoopRecover();
  if(modalNavReplacing){
    modalNavCurrent=next;
    navigationPruneDuplicateTarget(modalNavStack,next);
@@ -263,6 +321,7 @@ function resetModalNavigation(){modalNavStack=[];modalNavCurrent=null;modalNavRe
 function navigationRouteFunction(name){
  switch(name){
   case 'modalRouteEnter':return modalRouteEnter;
+  case 'inspectHomeStoredItem':return inspectHomeStoredItem;
   case 'showAdventureSite':return showAdventureSite;
   case 'showApothecary':return showApothecary;
   case 'showArtifactCollection':return showArtifactCollection;
@@ -405,6 +464,7 @@ function navigationRouteFunction(name){
   case 'showOpenWorldSettlementTownLife':return showOpenWorldSettlementTownLife;
   case 'showOpenWorldTravelMenu':return showOpenWorldTravelMenu;
   case 'showOpenWorldWorldLifeMenu':return showOpenWorldWorldLifeMenu;
+  case 'showWorldPolitics':return showWorldPolitics;
   case 'showOutfitter':return showOutfitter;
   case 'showPairRelationship':return showPairRelationship;
   case 'showParty':return showParty;
@@ -461,6 +521,20 @@ function navigationRouteFunction(name){
   case 'showSettlementPeople':return showSettlementPeople;
   case 'showSettlementPolitics':return showSettlementPolitics;
   case 'showSettlementServices':return showSettlementServices;
+  case 'showSpawnDistrictGuide':return showSpawnDistrictGuide;
+  case 'showSpawnMarketDistrict':return showSpawnMarketDistrict;
+  case 'showSpawnMarketVendor':return showSpawnMarketVendor;
+  case 'showSpawnMarketCompare':return showSpawnMarketCompare;
+  case 'showSpawnEconomy':return showSpawnEconomy;
+  case 'showSpawnLocalPlace':return showSpawnLocalPlace;
+  case 'showSpawnResident':return showSpawnResident;
+  case 'showSpawnStreetEncounter':return showSpawnStreetEncounter;
+  case 'showSpawnUrbanOpportunity':return showSpawnUrbanOpportunity;
+  case 'showSpawnCrimeIncident':return showSpawnCrimeIncident;
+  case 'showSpawnSocialCircle':return showSpawnSocialCircle;
+  case 'showSpawnSocialResident':return showSpawnSocialResident;
+  case 'showSpawnSocialTension':return showSpawnSocialTension;
+  case 'showSpawnMetropolitanContracts':return showSpawnMetropolitanContracts;
   case 'showSettlementSpecial':return showSettlementSpecial;
   case 'showShantiumCommunity':return showShantiumCommunity;
   case 'showShop':return showShop;
@@ -494,6 +568,7 @@ function navigationRouteFunction(name){
   case 'showHomeArtisan':return showHomeArtisan;
   case 'showHomeCommercialDelegation':return showHomeCommercialDelegation;
   case 'showHomeCommercialOpportunities':return showHomeCommercialOpportunities;
+  case 'showMasterArtisanCandidates':return showMasterArtisanCandidates;
   case 'showHomeMasterworks':return showHomeMasterworks;
   case 'showRegionalIntelligence':return showRegionalIntelligence;
   case 'showRegionalPartyActions':return showRegionalPartyActions;

@@ -1,0 +1,233 @@
+/* v1.3.11 Post-Draft Report Card */
+.post-report{display:block}
+.post-report[hidden]{display:none!important}
+.report-hero{display:flex;align-items:center;justify-content:space-between;gap:14px;background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:10px}
+.report-kicker{font-size:9px;font-weight:900;letter-spacing:.08em;opacity:.78}
+.report-hero h2{margin:2px 0 1px;font-size:25px}.report-sub{font-size:11px;opacity:.82}
+.report-grade{font-size:54px;line-height:1;font-weight:950;min-width:90px;text-align:center}
+.report-score-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}
+.report-score{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 11px;box-shadow:var(--shadow)}
+.report-score b{display:block;font-size:21px;color:var(--navy)}.report-score span{font-size:8px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.report-highlights{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}
+.report-highlights>div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.report-highlights span{display:block;font-size:8px;text-transform:uppercase;font-weight:900;color:var(--muted);letter-spacing:.04em;margin-bottom:2px}
+.report-highlights b{display:block;font-size:11px;color:var(--ink);line-height:1.25}
+.report-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.report-card{background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 11px;box-shadow:var(--shadow)}
+.report-card h3{margin:0 0 7px;font-size:12px;color:var(--navy);text-transform:uppercase;letter-spacing:.04em}
+.position-grade-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.position-grade{border:1px solid var(--line);border-radius:8px;padding:6px 7px;background:#fafbfd}
+.position-grade span{display:block;font-size:8px;font-weight:900;color:var(--muted)}.position-grade b{font-size:16px;color:var(--navy)}.position-grade small{display:block;font-size:8px;color:var(--muted)}
+.report-assess{display:flex;flex-wrap:wrap;gap:5px}
+.report-tag{font-size:9px;font-weight:800;border:1px solid var(--line);border-radius:999px;padding:5px 7px;background:#f8fafc}
+.report-tag.good{background:#e7f7ec;border-color:#a9d9b7;color:#17613a}.report-tag.warn{background:#fff4cf;border-color:#e2c76d;color:#735700}.report-tag.bad{background:#ffe3e3;border-color:#e49a9a;color:#8f2424}
+.report-eval p{margin:0;font-size:11px;line-height:1.55;color:#435169}
+.report-actions{display:flex;gap:7px;justify-content:flex-end;margin-top:9px}
+.archived-board-banner{display:none;background:#fff4cf;border:1px solid #e2c76d;color:#735700;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:750;margin-bottom:7px}
+body.archived-board .archived-board-banner{display:block}
+@media(max-width:720px){
+  .report-hero{padding:9px 10px;border-radius:9px;margin-bottom:5px}
+  .report-kicker{font-size:6.5px}.report-hero h2{font-size:16px}.report-sub{font-size:8px}.report-grade{font-size:34px;min-width:54px}
+  .report-score-grid,.report-highlights{gap:3px;margin-bottom:5px}
+  .report-score{padding:5px;border-radius:7px;box-shadow:none}.report-score b{font-size:13px}.report-score span{font-size:6px}
+  .report-highlights>div{padding:5px 6px;border-radius:7px}.report-highlights span{font-size:6px}.report-highlights b{font-size:8px}
+  .report-grid{display:block;margin-bottom:5px}.report-card{padding:6px 7px;border-radius:8px;box-shadow:none;margin-bottom:5px}.report-card h3{font-size:8px;margin-bottom:4px}
+  .position-grade-grid{gap:3px}.position-grade{padding:4px 5px;border-radius:6px}.position-grade span,.position-grade small{font-size:6.5px}.position-grade b{font-size:11px}
+  .report-assess{gap:3px}.report-tag{font-size:7px;padding:3px 5px}.report-eval p{font-size:8px;line-height:1.45}
+  .report-actions{gap:4px;margin-top:5px}.report-actions .btn{font-size:8px;padding:5px 6px}
+}
+
+
+/* v1.7.68 Week 1 projection report */
+.report-projection-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.report-projection-metric{border:1px solid var(--line);border-radius:8px;padding:7px 8px;background:#fafbfd}
+.report-projection-metric b{display:block;font-size:16px;color:var(--navy)}
+.report-projection-metric span{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:850;margin-top:2px}
+.report-projection-copy{font-size:10px;color:#526176;line-height:1.45;margin-top:7px}
+@media(max-width:720px){.report-projection-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}.report-projection-metric{padding:4px 5px;border-radius:6px}.report-projection-metric b{font-size:11px}.report-projection-metric span{font-size:6px}.report-projection-copy{font-size:7px;margin-top:4px}}
+
+/* v1.3.12 league comparison + richer post-draft commentary */
+.report-score-grid{grid-template-columns:repeat(5,1fr)}
+.position-commentary{margin-top:7px;padding-top:7px;border-top:1px solid var(--line);font-size:9px;line-height:1.45;color:#526176}
+.position-commentary p{margin:0 0 4px}.position-commentary p:last-child{margin-bottom:0}
+.report-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+.report-section-head h3{margin:0}.report-section-head span{font-size:9px;color:var(--muted);font-weight:700}
+.report-league{margin-bottom:8px}
+.league-rank-list{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.league-rank-item{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:6px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:6px 7px;background:#fafbfd}
+.league-rank-item.me{background:var(--mine);border-color:#9fd7b0}
+.league-rank-num{font-size:13px;font-weight:950;color:var(--navy);text-align:center}
+.league-rank-team{min-width:0}.league-rank-team b{display:block;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.league-rank-team small{display:block;font-size:7px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.league-rank-grade{font-size:14px;font-weight:950;color:var(--navy);text-align:right}.league-rank-grade small{display:block;font-size:7px;color:var(--muted);font-weight:700}
+@media(max-width:900px){.league-rank-list{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){
+  .report-score-grid{grid-template-columns:repeat(5,1fr)}
+  .position-commentary{font-size:7px;margin-top:4px;padding-top:4px}
+  .report-section-head{margin-bottom:4px}.report-section-head span{font-size:7px}
+  .league-rank-list{grid-template-columns:1fr 1fr;gap:3px}
+  .league-rank-item{grid-template-columns:22px minmax(0,1fr) auto;gap:4px;padding:4px 5px;border-radius:6px}
+  .league-rank-num{font-size:10px}.league-rank-team b{font-size:7.5px}.league-rank-team small{font-size:6px}.league-rank-grade{font-size:11px}.league-rank-grade small{font-size:6px}
+}
+@media(max-width:420px){
+  .report-score-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .report-score{padding:4px 3px}.report-score b{font-size:11px}.report-score span{font-size:5.5px}
+}
+
+
+/* v1.3.13 League Draft Awards */
+.report-awards{margin-bottom:8px}
+.award-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.award-card{border:1px solid var(--line);border-radius:9px;padding:7px 8px;background:#fafbfd;min-width:0}
+.award-card.major{background:linear-gradient(180deg,#f8fbff,#eef4fb);border-color:#b7c8e0}
+.award-card.bad-award{background:#fff2f2;border-color:#e4aaaa}
+.award-title{font-size:7.5px;text-transform:uppercase;letter-spacing:.055em;font-weight:950;color:var(--muted);margin-bottom:3px}
+.award-winner{font-size:10px;font-weight:900;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.award-detail{font-size:8px;color:#526176;line-height:1.35;margin-top:2px}
+.award-detail b{color:var(--ink)}
+@media(max-width:900px){.award-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){
+  .award-grid{grid-template-columns:1fr 1fr;gap:3px}
+  .award-card{padding:5px 6px;border-radius:7px}
+  .award-title{font-size:6px}.award-winner{font-size:8px}.award-detail{font-size:6.5px}
+}
+
+
+/* v1.3.14 Sleeper-resolved off-list players */
+.nr-badge{display:inline-block;margin-left:4px;padding:1px 4px;border-radius:999px;background:#ffe8cf;color:#7a4b00;font-size:7px;font-weight:950;vertical-align:1px}
+.slot-player small .nr-badge{margin-left:3px}
+
+
+/* v1.3.15 grade visual system */
+.grade-badge{
+  --grade:#64748b;
+  --grade-bg:#eef2f6;
+  --grade-ring:#c8d1dc;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:34px;
+  height:34px;
+  padding:0 7px;
+  border-radius:999px;
+  border:2px solid var(--grade-ring);
+  background:var(--grade-bg);
+  color:var(--grade);
+  font-weight:950;
+  line-height:1;
+  letter-spacing:-.03em;
+  text-decoration:underline;
+  text-decoration-thickness:2px;
+  text-underline-offset:3px;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.55),0 2px 5px rgba(0,0,0,.09);
+}
+.grade-a{--grade:#116530;--grade-bg:#dff7e7;--grade-ring:#75c590}
+.grade-b{--grade:#174e8c;--grade-bg:#e2eefc;--grade-ring:#8cb4e5}
+.grade-c{--grade:#805700;--grade-bg:#fff0b8;--grade-ring:#e1bb45}
+.grade-d{--grade:#9a3c0b;--grade-bg:#ffe0c4;--grade-ring:#e18a50}
+.grade-f{
+  --grade:#fff4f4;
+  --grade-bg:#780000;
+  --grade-ring:#2d0000;
+  position:relative;
+  border-width:3px;
+  box-shadow:inset 0 0 0 2px #b31515,0 0 0 2px #350000,0 3px 8px rgba(73,0,0,.35);
+  text-decoration-color:#ffb4b4;
+  transform:rotate(-2deg);
+  text-shadow:0 1px 0 #250000;
+}
+.grade-f::after{
+  content:"DISASTER";
+  position:absolute;
+  left:50%;
+  top:100%;
+  transform:translate(-50%,2px) rotate(2deg);
+  padding:1px 3px;
+  border-radius:3px;
+  background:#2d0000;
+  color:#ffd6d6;
+  font-size:5px;
+  line-height:1.1;
+  letter-spacing:.07em;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.grade-na{--grade:#677487;--grade-bg:#edf1f5;--grade-ring:#c9d0d9;text-decoration:none}
+.draft-grade-letter.grade-badge{min-width:58px;height:58px;font-size:28px}
+.report-grade.grade-badge{min-width:78px;height:78px;font-size:42px}
+.position-grade b.grade-badge{display:inline-flex;font-size:14px;min-width:32px;height:32px;margin:2px 0 3px}
+.league-rank-grade .grade-badge{min-width:30px;height:30px;font-size:13px;padding:0 5px}
+.report-score b .grade-badge{vertical-align:middle;margin-right:2px}
+.grade-scoreline{
+  text-decoration:underline;
+  text-decoration-thickness:2px;
+  text-underline-offset:2px;
+  text-decoration-color:color-mix(in srgb,var(--grade,#64748b) 55%,transparent);
+}
+@media(max-width:720px){
+  .grade-badge{min-width:27px;height:27px;padding:0 5px;border-width:2px}
+  .draft-grade-letter.grade-badge{min-width:43px;height:43px;font-size:21px}
+  .report-grade.grade-badge{min-width:52px;height:52px;font-size:29px}
+  .position-grade b.grade-badge{min-width:26px;height:26px;font-size:11px}
+  .league-rank-grade .grade-badge{min-width:24px;height:24px;font-size:10px}
+  .grade-f::after{font-size:4.5px;top:98%}
+}
+
+
+/* v1.3.16 smarter Best Available for Me positional-need model */
+.need-state{display:inline-block;padding:1px 4px;border-radius:999px;font-size:7px;font-weight:900;margin-left:3px;vertical-align:1px;text-transform:uppercase}
+.need-state.desperate{background:#ffe1e1;color:#922b2b;border:1px solid #e59090}
+.need-state.weak{background:#fff0cc;color:#805700;border:1px solid #e1bf67}
+.need-state.depth{background:#e5eefb;color:#174e8c;border:1px solid #9bbce4}
+.need-state.strong{background:#e5f7eb;color:#17613a;border:1px solid #9fd7b0}
+
+
+.decision-row{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px}
+.decision-card{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 7px;min-width:0}
+.decision-card>span{display:block;font-size:7.5px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.decision-card>b{display:block;font-size:10px;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.decision-card>small{display:block;font-size:7.5px;line-height:1.3;color:#58677a;margin-top:2px}
+.tier-cliff{color:#8f2424!important}.tier-warning{color:#805700!important}.take-now{color:#922b2b!important}.wait-ok{color:#17613a!important}
+@media(max-width:720px){
+  .decision-row{gap:3px;margin-top:4px}.decision-card{padding:4px 5px;border-radius:6px}
+  .decision-card>span{font-size:6px}.decision-card>b{font-size:8px}.decision-card>small{font-size:6.5px}
+}
+
+
+/* v1.3.18 live draft room polish */
+.pick-focus{display:flex;align-items:stretch;gap:5px;margin-top:5px}
+.pick-focus-main{flex:1;min-width:0;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:5px 7px;color:#fff}
+.pick-focus-label{display:block;font-size:7px;font-weight:900;letter-spacing:.055em;text-transform:uppercase;opacity:.72}
+.pick-focus-main b{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.pick-focus.on-clock{background:rgba(110,0,0,.28);border-color:rgba(255,180,180,.5)}
+.pick-focus.on-clock .pick-focus-main:first-child,.pick-focus.on-clock .pick-focus-main:nth-child(2){background:#7d0000;border-color:#c63d3d;box-shadow:0 0 0 1px rgba(255,255,255,.08) inset}
+.pick-focus.on-clock #yourTurnFocus{font-size:12px;font-weight:950;text-decoration:underline;text-underline-offset:2px}
+.pick-focus.soon .pick-focus-main:nth-child(2){background:rgba(255,194,72,.16);border-color:rgba(255,215,130,.4)}
+.condensed-toggle{flex:0 0 auto;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.10);color:#fff;border-radius:8px;padding:5px 8px;font-size:8px;font-weight:900;white-space:nowrap}
+.condensed-toggle.active{background:#fff;color:var(--navy)}
+.recommended-now{outline:2px solid #a31313!important;box-shadow:0 0 0 2px #ffd7d7 inset!important}
+.recommended-soon{outline:2px solid #d1a333!important}
+.condensed-mode .summary{display:none}
+.condensed-mode #draftIntelPanel{margin-bottom:4px}
+.condensed-mode #draftIntelPanel .intel-block:not(.intel-best){display:none}
+.condensed-mode #draftIntelPanel .intel-sub{display:none}
+.condensed-mode #draftIntelPanel .decision-row{margin-top:4px}
+.condensed-mode .panel .controls{display:none}
+.condensed-mode .panel .chips{margin-top:0}
+.condensed-mode .legend{display:none!important}
+.condensed-mode .card:not(.mine):not(.other){padding:5px;margin-bottom:3px}
+.condensed-mode .card:not(.mine):not(.other) .card-info{display:none}
+.condensed-mode .card:not(.mine):not(.other) .card-actions{grid-template-columns:repeat(3,1fr)}
+.condensed-mode .card:not(.mine):not(.other) .action.sleeper,
+.condensed-mode .card:not(.mine):not(.other) .action.avoid,
+.condensed-mode .card:not(.mine):not(.other) [data-note]{display:none}
+.condensed-mode .footer-tools{display:none}
+.draft-finished-banner{display:none;background:linear-gradient(135deg,#102a56,#204f91);color:#fff;border-radius:10px;padding:8px 10px;margin-bottom:7px;font-size:10px;font-weight:850}
+.draft-finished-banner.show{display:flex;align-items:center;justify-content:space-between;gap:8px}
+@media(max-width:720px){
+  .pick-focus{gap:3px;margin-top:3px}
+  .pick-focus-main{padding:3px 4px;border-radius:6px}
+  .pick-focus-label{font-size:5.5px}
+  .pick-focus-main b{font-size:7.5px}
+  .pick-focus.on-clock #yourTurnFocus{font-size:9px}
+  .condensed-toggle{padding:4px 5px;font-size:6.5px;border-radius:6px}
+}

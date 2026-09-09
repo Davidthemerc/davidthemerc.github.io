@@ -152,6 +152,25 @@ function simulateRegionalNetworkDay(){
  for(const [k,v] of Object.entries(state.world.regionalSimulation.routePressure)){if(v>0&&chance(.22)){state.world.regionalSimulation.routePressure[k]=Math.max(0,v-1);const [a,b]=k.split('|');updateRouteEvidence(a,b,SOSText("world_regional_simulation.simulateRegionalNetworkDay.001"))}}
  regionalThreadCleanup();syncRegionalOpportunities()
 }
+
+function partyArrivalObservationMode(locId){
+ if(typeof playerPhysicalContext!=='function')return 'reported';
+ const C=playerPhysicalContext();
+ return C?.type==='settlement'&&C.settlementId===locId?'witnessed':'reported'
+}
+function recordPartyArrivalIntelligence(p,locId){
+ if(!p||!locId||typeof createWorldIntel!=='function')return null;
+ const mode=partyArrivalObservationMode(locId),loc=worldLocation(locId),behavior=typeof worldPartyBehavior==='function'?worldPartyBehavior(p):{label:partyPurpose(p.kind),detail:p.purpose||partyPurpose(p.kind)};
+ const security=state.world.settlements?.[locId]?.security||50,reliability=mode==='witnessed'?97:clamp(62+Math.round(security*.22),62,86);
+ const source=mode==='witnessed'?'Personal observation':`${loc?.name||'Local'} road reports`;
+ const summary=mode==='witnessed'
+   ?`${p.name} arrived at ${loc?.name||locId}. ${behavior.detail}`
+   :`Reports place ${p.name} at ${loc?.name||locId}. ${behavior.detail}`;
+ const intel=createWorldIntel('road_activity',{key:`party-arrival:${p.id}:${locId}`,location:locId,subject:behavior.label,summary,source,sourceRef:p.actorRef||`world_party:${p.id}`,reliability,precision:mode==='witnessed'?'exact':'local',decayPerDay:mode==='witnessed'?1.5:3,meta:{observation:mode,partyId:p.id,kind:p.kind,faction:p.faction||null}});
+ const ss=state.world.settlements?.[locId];if(ss){ss.recentPartyActivity=Array.isArray(ss.recentPartyActivity)?ss.recentPartyActivity:[];ss.recentPartyActivity.push({day:state.world.day,partyId:p.id,name:p.name,kind:p.kind,behavior:behavior.label,mode});ss.recentPartyActivity=ss.recentPartyActivity.slice(-12)}
+ return intel
+}
+
 function regionalArrivalConsequences(p,locId){
  const loc=worldLocation(locId),origin=p.origin&&state.world.settlements[p.origin]?p.origin:null,problem=settlementProblem(locId);
  if(p.kind==='merchant'){
@@ -166,6 +185,7 @@ function regionalArrivalConsequences(p,locId){
    regionalFlow('security',origin||p.location,locId,SOSText("world_regional_simulation.regionalArrivalConsequences.006",p.name,loc.name),p.id);patrolArrivalEffect(p,locId,origin);if(OPEN_WORLD_FACTIONS[p.faction])addPoliticalPressure(locId,p.faction,.5,SOSText("world_regional_simulation.regionalArrivalConsequences.007"));if(problem&&['raider_pressure','watch_shortage'].includes(problem.type)){progressSettlementProblem(locId,1,SOSText("world_regional_simulation.regionalArrivalConsequences.008",p.name));settlementState(locId).security=Math.min(100,settlementState(locId).security+2);regionalThreadAdvance('security',locId,SOSText("world_regional_simulation.regionalArrivalConsequences.009",p.name),!settlementProblem(locId),origin)}
  }
  if(p.kind==='mercenary'&&problem?.type==='watch_shortage'&&settlementState(locId).prosperity>=45){progressSettlementProblem(locId,1,SOSText("world_regional_simulation.regionalArrivalConsequences.010",p.name));settlementState(locId).prosperity=Math.max(0,settlementState(locId).prosperity-1);settlementState(locId).security=Math.min(100,settlementState(locId).security+2)}
+ recordPartyArrivalIntelligence(p,locId)
 }
 
 const REGIONAL_OPPORTUNITY_LIFETIME=6;
