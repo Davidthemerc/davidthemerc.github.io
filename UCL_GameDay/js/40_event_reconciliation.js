@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.03 — build fragment: 40_event_reconciliation.js
+/* UCL GameDay v0.5.50 — build fragment: 40_event_reconciliation.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function gvTdCandidateKey(e){
@@ -307,6 +307,7 @@ function gvCorrelateAdjacentTurnovers(events,nowOverride=null){
     const os=offense.intervalAnalysis?.stats||{},ds=best.intervalAnalysis?.stats||{};
     const isInt=(os.pass_int||0)>0&&(ds.int||0)>0;
     const defTd=(ds.def_td||0)>0;
+    const stripSack=!isInt&&Number(ds.sack||0)>0&&((os.fum_lost||os.fum_lost_total||0)>0||(ds.fum_rec||0)>0);
     const impacts=gvTurnoverFantasyImpacts(offense,best);
     const sameFantasyRoster=String(offense.rosterId||'')===String(best.rosterId||'');
     const anchorRosterId=String(best.rosterId||offense.rosterId||'');
@@ -317,11 +318,13 @@ function gvCorrelateAdjacentTurnovers(events,nowOverride=null){
       time:Math.max(Number(offense.time||0),Number(best.time||0)),
       type:'play',
       intervalClass:'SINGLE_PLAY',
-      playType:isInt?'def_int':'def_fumble',
+      playType:isInt?(defTd?'def_int_td':'def_int'):(defTd?'def_fum_td':'def_fumble'),
       detail:isInt
         ?`${best.name||best.nflTeam} interception${defTd?' returned for a touchdown':''}`
-        :`${best.name||best.nflTeam} fumble recovery${defTd?' returned for a touchdown':''}`,
+        :stripSack?`Strip sack • ${best.name||best.nflTeam} fumble recovery${defTd?' returned for a touchdown':''}`:`${best.name||best.nflTeam} fumble recovery${defTd?' returned for a touchdown':''}`,
       correlated:true,
+      stripSack,
+      revisedExistingEvent:bestDt>0,
       turnoverCorrelatedAcrossPolls:bestDt>0,
       correlationLagMs:bestDt,
       turnoverKind:isInt?'interception':'fumble',
@@ -486,6 +489,7 @@ function gvCorrelateAdjacentTd(events){
     used.add(qb.id);used.add(best.id);
 
     const base=gvBuildCorrelatedPassEvent(qb,{event:best,receptions:1,yards:Math.round(best.intervalAnalysis?.stats?.rec_yd||0),tds:1},0);
+    if(!base)continue;
     const impacts=gvCorrelatedFantasyImpacts(qb,best);
     const sameFantasyRoster=String(qb.rosterId||'')===String(best.rosterId||'');
     const merged=gvNormalizeEventSource({
@@ -497,6 +501,7 @@ function gvCorrelateAdjacentTd(events){
       detail:best.detail||qb.detail||'Touchdown pass',
       correlated:true,
       tdCorrelatedAcrossPolls:bestCompat.dt>0,
+      revisedExistingEvent:bestCompat.dt>0,
       correlationLagMs:bestCompat.dt,
       correlationScore:bestCompat.score,
       correlationReasons:bestCompat.reasons,
@@ -526,9 +531,33 @@ function gvCorrelateIntervalPassing(events){
 
   for(const qb of qbs){
     const groups=gvSameTeamReceiverGroups(qb,targets.filter(t=>remaining.has(t)));
+    const lateralTails=events.filter(e=>remaining.has(e)&&gvSameNflTeam(qb,e)&&['QB','RB','WR','TE'].includes(String(e.pos||'').toUpperCase())&&e.intervalAnalysis?.family==='lateral_receive');
     if(!groups.length)continue;
 
     const q=qb.intervalAnalysis?.stats||{};
+    // Detect the statistically distinctive completed-pass lateral: one player
+    // owns the reception, another same-team player gains receiving yards with
+    // no reception, and together their receiving yards equal the passer's yards.
+    if(Math.max(0,Math.round(q.pass_cmp||0))===1&&groups.length===1&&groups[0].receptions===1&&lateralTails.length){
+      const primary=groups[0].event,primaryY=Math.round(groups[0].yards||0);
+      const ranked=lateralTails.map(t=>({t,tailY:Math.round(t.intervalAnalysis?.stats?.rec_yd||0),td:Math.max(0,Math.round(t.intervalAnalysis?.stats?.rec_td||0))}))
+        .filter(x=>Math.abs(Math.round(q.pass_yd||0)-(primaryY+x.tailY))<=1)
+        .sort((a,b)=>Math.abs(Number(a.t.time||0)-Number(qb.time||0))-Math.abs(Number(b.t.time||0)-Number(qb.time||0)));
+      if(ranked.length===1){
+        const tail=ranked[0].t,base=gvBuildCorrelatedPassEvent(qb,groups[0],0);
+        if(base){
+          const impacts=[...gvCorrelatedFantasyImpacts(qb,primary),{rosterId:String(tail.rosterId||''),playerId:String(tail.playerId||''),name:tail.name||'Lateral runner',pos:tail.pos||'',role:'lateral-recipient',delta:Number(tail.delta||0)}];
+          const rosterIds=new Set(impacts.map(x=>x.rosterId));
+          combined.push({...base,id:`lateral-${qb.id}-${primary.id}-${tail.id}`,type:'play',intervalClass:'SINGLE_PLAY',lateralChain:true,
+            primaryReceiverPlayerId:primary.playerId,primaryReceiverName:primary.name,primaryReceiverPos:primary.pos,
+            lateralRecipientPlayerId:tail.playerId,lateralRecipientName:tail.name,lateralRecipientPos:String(tail.pos||'WR').toUpperCase(),
+            lateralYards:ranked[0].tailY,lateralTouchdown:ranked[0].td>0,detail:`Completed pass → lateral to ${tail.name||'teammate'}${ranked[0].td?' for a touchdown':''}`,
+            fantasyImpacts:impacts,delta:rosterIds.size===1?Number(impacts.reduce((sum,x)=>sum+Number(x.delta||0),0).toFixed(2)):Number(primary.delta||0),played:false});
+          remaining.delete(qb);remaining.delete(primary);remaining.delete(tail);
+          continue;
+        }
+      }
+    }
     const qbCmp=Math.max(0,Math.round(q.pass_cmp||0));
     const qbYds=Math.round(q.pass_yd||0);
     const qbTd=Math.max(0,Math.round(q.pass_td||0));
@@ -536,6 +565,17 @@ function gvCorrelateIntervalPassing(events){
     const recCount=groups.reduce((sum,g)=>sum+g.receptions,0);
     const recYds=groups.reduce((sum,g)=>sum+g.yards,0);
     const recTd=groups.reduce((sum,g)=>sum+g.tds,0);
+    const pass2=Math.max(0,Math.round(q.pass_2pt||0));
+    const twoPointGroups=groups.filter(g=>Number(g.event?.intervalAnalysis?.stats?.rec_2pt||0)>0);
+    if(pass2===1&&twoPointGroups.length===1){
+      const rec=twoPointGroups[0].event,merged=gvBuildCorrelatedPassEvent(qb,twoPointGroups[0],0);
+      if(merged){
+        const impacts=gvCorrelatedFantasyImpacts(qb,rec),sameFantasyRoster=String(qb.rosterId||'')===String(rec.rosterId||'');
+        combined.push({...merged,type:'play',intervalClass:'SINGLE_PLAY',twoPointConversion:true,detail:'Successful two-point pass',fantasyImpacts:impacts,
+          delta:sameFantasyRoster?Number(impacts.reduce((sum,x)=>sum+Number(x.delta||0),0).toFixed(2)):Number(rec.delta||0),played:false});
+        remaining.delete(qb);remaining.delete(rec);continue;
+      }
+    }
 
     // Same-poll correlation is strict: the receiving group must fully account for
     // the quarterback's completion, yardage, and touchdown deltas.
@@ -553,6 +593,7 @@ function gvCorrelateIntervalPassing(events){
       const impacts=gvCorrelatedFantasyImpacts(qb,rec);
       const sameFantasyRoster=String(qb.rosterId||'')===String(rec.rosterId||'');
       const merged=gvBuildCorrelatedPassEvent(qb,groups[0],0);
+      if(!merged)continue;
 
       combined.push({
         ...merged,
@@ -706,8 +747,9 @@ function gvCorrectionEvidence(evt){
 function gvIsLikelyStatCorrection(evt){return gvCorrectionEvidence(evt).correction}
 function gvIsLegitimateNegativeEvent(evt){const e=gvCorrectionEvidence(evt);return !e.correction&&e.negativePlay}
 function gvReconciliationQualifier(evt){
-  if(gvIsLikelyStatCorrection(evt))return 'STAT CORRECTION / REVISION';
-  if(evt?.revisedExistingEvent)return 'REVISED EVENT';
+  if(evt?.overturnedLabel)return evt.overturnedLabel;
+  if(gvIsLikelyStatCorrection(evt))return 'STAT CORRECTION';
+  if(evt?.revisedExistingEvent)return 'PREVIOUS PLAY UPDATED';
   if(gvIsLegitimateNegativeEvent(evt))return 'NEGATIVE SCORING EVENT';
   return '';
 }
@@ -731,48 +773,347 @@ function gvSuppressOrReviseDuplicateEvent(feed,evt){
   return {feed:next,duplicate,revised};
 }
 
+function gvSuppressMinorDefensiveEvent(base){
+  const pos=String(base?.pos||'').toUpperCase();
+  if(!['DEF','DST'].includes(pos))return false;
+  const delta=Math.abs(Number(base?.delta||0));
+  const st=base?.intervalAnalysis?.stats||{};
+  const qbHit=Number(st.qb_hit||0)>0||/quarterback hit|qb hit/i.test(String(base?.detail||''));
+  if(qbHit)return false;
+  return delta>0&&delta<1;
+}
+
+
+function gvRosterStarterSet(snapshot,rid){
+  return new Set((snapshot?.byRoster?.[String(rid)]?.starters||[]).filter(Boolean).map(String));
+}
+function gvCountBenchPointDeltas(prevSnap,nextSnap,rid){
+  const starters=gvRosterStarterSet(nextSnap,rid),prevAll=prevSnap?.byRoster?.[rid]?.fullPlayersPoints||{},nextAll=nextSnap?.byRoster?.[rid]?.fullPlayersPoints||{};
+  let count=0;
+  for(const pid of new Set([...Object.keys(prevAll),...Object.keys(nextAll)])){
+    if(starters.has(String(pid)))continue;
+    const d=Number(((Number(nextAll[pid])||0)-(Number(prevAll[pid])||0)).toFixed(2));
+    if(Math.abs(d)>=0.01)count++;
+  }
+  return count;
+}
+function gvStarterPointDeltaCount(prevSnap,nextSnap,rid){
+  const starters=gvRosterStarterSet(nextSnap,rid),prevPts=prevSnap?.byRoster?.[rid]?.playersPoints||{},nextPts=nextSnap?.byRoster?.[rid]?.playersPoints||{};
+  let count=0;
+  for(const pid of starters){
+    const d=Number(((Number(nextPts[pid])||0)-(Number(prevPts[pid])||0)).toFixed(2));
+    if(Math.abs(d)>=0.01)count++;
+  }
+  return count;
+}
+function gvDetectUnresolvedTeamScoreChanges(prevSnap,nextSnap){
+  const relevant=gvRelevantRosterPair(),unresolved=[];
+  gvLiveCaptureDiagnostics.lastAt=Number(nextSnap?.capturedAt||Date.now());
+  gvLiveCaptureDiagnostics.teamScoreChanges=0;
+  gvLiveCaptureDiagnostics.starterDeltas=0;
+  gvLiveCaptureDiagnostics.benchDeltasIgnored=0;
+  gvLiveCaptureDiagnostics.unresolvedTeamChanges=0;
+  for(const rid of relevant){
+    const before=Number(prevSnap?.byRoster?.[rid]?.points||0),after=Number(nextSnap?.byRoster?.[rid]?.points||0),teamDelta=Number((after-before).toFixed(2));
+    const starterDeltaCount=gvStarterPointDeltaCount(prevSnap,nextSnap,rid);
+    const benchDeltaCount=gvCountBenchPointDeltas(prevSnap,nextSnap,rid);
+    if(Math.abs(teamDelta)>=0.01)gvLiveCaptureDiagnostics.teamScoreChanges++;
+    gvLiveCaptureDiagnostics.starterDeltas+=starterDeltaCount;
+    gvLiveCaptureDiagnostics.benchDeltasIgnored+=benchDeltaCount;
+    const statFirstPending=[...gvStatFirstReconciliation.entries()].some(([key,state])=>key.startsWith(`${String(rid)}:`)&&Math.abs(Number(state?.pendingExpected||0))>=.01);
+    if(Math.abs(teamDelta)>=0.01&&starterDeltaCount===0&&!statFirstPending){
+      unresolved.push({rosterId:String(rid),delta:teamDelta,before,after,time:Number(nextSnap?.capturedAt||Date.now())});
+      gvLiveCaptureDiagnostics.unresolvedTeamChanges++;
+    }
+  }
+  gvLiveCaptureDiagnostics.lastMessage=`Team changes ${gvLiveCaptureDiagnostics.teamScoreChanges} • Starter deltas ${gvLiveCaptureDiagnostics.starterDeltas} • Bench deltas ignored ${gvLiveCaptureDiagnostics.benchDeltasIgnored} • Unresolved ${gvLiveCaptureDiagnostics.unresolvedTeamChanges}`;
+  return unresolved;
+}
+function gvUnresolvedTeamSummary(entry,nextSnap){
+  const rid=String(entry?.rosterId||''),score=gvSessionScoreLine(nextSnap);
+  return gvNormalizeEventSource({
+    id:`unresolved-${Number(entry?.time||Date.now())}-${rid}`,
+    type:'summary',source:'summary',time:Number(entry?.time||Date.now()),
+    rosterId:rid,name:teamName(rosterFor(rid)),delta:Number(entry?.delta||0),total:Number(entry?.after||0),
+    leftScore:score.leftScore,rightScore:score.rightScore,
+    detail:'Sleeper team score changed before a started-player scoring breakdown was available',
+    intervalClass:'UNRESOLVED_TEAM_SCORE',unresolvedTeamScore:true,played:true
+  },'summary');
+}
+function gvIsStartedPlayerForEvent(evt){
+  if(!evt?.rosterId||!evt?.playerId)return true;
+  const src=gvNormalizeSourceValue(evt?.source,evt||{});
+  if(src==='testing'||src==='simulation')return true;
+  const pair=chosenPair?.(),row=pair?.rows?.find(r=>String(r.roster_id)===String(evt.rosterId));
+  if(!row)return false;
+  return new Set((row.starters||[]).filter(Boolean).map(String)).has(String(evt.playerId));
+}
+
+
+
+function gvStatFirstKey(rid,pid){return `${String(rid)}:${String(pid)}`}
+function gvScoringStatDelta(statDelta={},pos=''){
+  const out={};
+  for(const [key,value] of Object.entries(statDelta||{})){
+    const num=Number(value||0);if(!Number.isFinite(num)||Math.abs(num)<.0001)continue;
+    const direct=(leagueInfo?.scoring_settings&&Object.prototype.hasOwnProperty.call(leagueInfo.scoring_settings,key))||
+      Object.prototype.hasOwnProperty.call(UCL_2026_SCORING_FALLBACK,key);
+    const alias=UCL_SCORING_ALIASES[key];
+    const scoreKey=direct?key:(alias||key);
+    const weight=uclScoringWeight(scoreKey,0);
+    if(Math.abs(weight)>.0000001)out[key]=num;
+  }
+  // Reception bonuses can be position-specific even when Sleeper does not emit
+  // a separate bonus stat key. Keep rec so uclScoreStats can apply that bonus.
+  const p=String(pos||'').toUpperCase()==='DST'?'DEF':String(pos||'').toUpperCase();
+  if(Number(statDelta?.rec||0)){
+    const bonusKey=p==='TE'?'bonus_rec_te':p==='RB'?'bonus_rec_rb':p==='WR'?'bonus_rec_wr':'';
+    if(bonusKey&&Math.abs(uclScoringWeight(bonusKey,0))>.0000001)out.rec=Number(statDelta.rec);
+  }
+  return out;
+}
+function gvExpectedStatFantasyDelta(statDelta={},pos=''){
+  return Number(uclScoreStats(gvScoringStatDelta(statDelta,pos),pos).toFixed(2));
+}
+function gvReconciliationState(rid,pid){
+  const state=gvPendingStatCandidates.get(`${rid}:${pid}`);
+  return {
+    pendingExpected:Number(state?.expectedDelta||0),
+    updatedAt:Number(state?.lastSeenAt||0),
+    firstSeenAt:Number(state?.firstSeenAt||0)
+  };
+}
+function gvBuildStatFirstEvent(rid,pid,nextSnap,pointBefore,pointAfter,statDelta,expectedDelta){
+  const p=playerInfo(pid),colors=nflTeamColors(p.team),scores=gvSessionScoreLine(nextSnap);
+  const analysis=gvIntervalPlayAnalysis(pid,p.pos,statDelta,expectedDelta);
+  const total=Math.abs(Number(pointAfter-pointBefore))>=.01?Number(pointAfter):Number((pointBefore+expectedDelta).toFixed(2));
+  const base={
+    id:`stat-${nextSnap.capturedAt}-${rid}-${pid}`,
+    time:nextSnap.capturedAt,rosterId:rid,playerId:String(pid),name:p.name,pos:p.pos,nflTeam:p.team,
+    opponentNflTeam:gameViewOpponentByPlayer?.[String(pid)]||gvOpponentFromWeeklyMap(p.team)||'',
+    opponentSource:gameViewOpponentByPlayer?.[String(pid)]?'stats':(gvOpponentFromWeeklyMap(p.team)?'schedule':''),
+    teamPrimary:colors[0],teamSecondary:colors[1],delta:Number(expectedDelta.toFixed(2)),total,
+    authoritativeTotal:Number(pointAfter),leftScore:scores.leftScore,rightScore:scores.rightScore,
+    detail:analysis.detail,intervalAnalysis:analysis,statFirst:true,likelyCorrection:false,played:false
+  };
+  const evidence=gvCorrectionEvidence(base);
+  base.likelyCorrection=evidence.correction||expectedDelta<0;
+  base.negativeScoringEvent=evidence.negativePlay||expectedDelta<0;
+  base.correctionReason=evidence.reason||'';
+  if(!base.likelyCorrection&&gvSuppressMinorDefensiveEvent(base))return null;
+  if(analysis.confidence==='single'){
+    const inferred=gameViewEventFromDelta({...base,detail:analysis.detail});
+    return {...base,...(inferred||{}),id:base.id,type:'play',source:'live',detail:analysis.detail,intervalClass:'SINGLE_PLAY'};
+  }
+  if(analysis.confidence==='burst')return {...base,type:'burst',source:'live',intervalClass:'MULTI_PLAY_BURST',played:true};
+  return {...base,type:'summary',source:'live',intervalClass:'AMBIGUOUS_SUMMARY',played:true};
+}
+
+function gvPendingStatKey(rid,pid){return `${rid}:${pid}`}
+function gvPendingStatState(rid,pid){
+  const key=gvPendingStatKey(rid,pid);
+  let state=gvPendingStatCandidates.get(key);
+  if(!state){
+    state={statDelta:{},expectedDelta:0,firstSeenAt:0,lastSeenAt:0,pointBefore:0,lastPointSeen:0};
+    gvPendingStatCandidates.set(key,state);
+  }
+  return state;
+}
+function gvMergeStatDeltas(base={},delta={}){
+  const out={...base};
+  for(const [k,v] of Object.entries(delta||{})){
+    const num=Number(v||0);if(!Number.isFinite(num)||Math.abs(num)<.0001)continue;
+    out[k]=Number((Number(out[k]||0)+num).toFixed(4));
+    if(Math.abs(out[k])<.0001)delete out[k];
+  }
+  return out;
+}
+function gvIsDiscreteMajorStatPackage(statDelta={},pos=''){
+  const s=gvScoringStatDelta(statDelta,pos);
+  const majorKeys=['pass_td','rush_td','rec_td','int','fum_lost','fum_rec_td','def_td','def_st_td','st_td','safe','def_2pt','pass_2pt','rush_2pt','rec_2pt','blk_kick'];
+  return majorKeys.some(k=>Math.abs(Number(s[k]||0))>=1);
+}
+function gvDiscardExpiredPendingStats(now=Date.now()){
+  for(const [key,state] of gvPendingStatCandidates){
+    if(now-Number(state.lastSeenAt||0)>GV_FPTS_CONFIRM_WINDOW_MS)gvPendingStatCandidates.delete(key);
+  }
+}
+function gvAccumulatePendingStatCandidate(rid,pid,statDelta,pointBefore,pointAfter,now){
+  const state=gvPendingStatState(rid,pid);
+  if(!state.firstSeenAt){
+    state.firstSeenAt=now;
+    state.pointBefore=Number(pointBefore||0);
+  }
+  state.statDelta=gvMergeStatDeltas(state.statDelta,statDelta);
+  state.expectedDelta=gvExpectedStatFantasyDelta(state.statDelta,playerInfo(pid).pos);
+  state.lastSeenAt=now;
+  state.lastPointSeen=Number(pointAfter||0);
+  return state;
+}
+function gvConfirmedCandidateEvent(rid,pid,nextSnap,state,authoritativeDelta,pointAfter){
+  const expected=Number(state.expectedDelta||0),auth=Number(authoritativeDelta||0);
+  const sameSign=Math.abs(expected)<.01||Math.sign(expected)===Math.sign(auth);
+  if(Math.abs(auth)<.01||!sameSign)return null;
+  return gvBuildStatFirstEvent(
+    rid,pid,nextSnap,
+    Number((pointAfter-auth).toFixed(2)),
+    Number(pointAfter),
+    state.statDelta,
+    Number(auth.toFixed(2))
+  );
+}
+function gvBuildReconciliationCorrection(rid,pid,nextSnap,pointAfter,extra){
+  if(Math.abs(extra)<.01)return null;
+  const p=playerInfo(pid),colors=nflTeamColors(p.team),scores=gvSessionScoreLine(nextSnap);
+  return {
+    id:`reconcile-${nextSnap.capturedAt}-${rid}-${pid}`,
+    time:nextSnap.capturedAt,rosterId:rid,playerId:String(pid),name:p.name,pos:p.pos,nflTeam:p.team,
+    teamPrimary:colors[0],teamSecondary:colors[1],delta:Number(extra.toFixed(2)),total:Number(pointAfter),
+    leftScore:scores.leftScore,rightScore:scores.rightScore,type:'summary',source:'live',
+    detail:'Sleeper fantasy-point reconciliation',intervalClass:'FPTS_RECONCILIATION',
+    statFirstReconciliation:true,likelyCorrection:true,played:true
+  };
+}
+
+function gvStatActionEvidence(statDelta={}){
+  const d=statDelta||{};
+  return {
+    rush:Number(d.rush_att||0)>0,
+    reception:Number(d.rec||0)>0,
+    passAttempt:Number(d.pass_att||0)>0,
+    passCompletion:Number(d.pass_cmp||0)>0,
+    kickReturn:Number(d.kick_ret||d.kr||0)>0,
+    puntReturn:Number(d.punt_ret||d.pr||0)>0
+  };
+}
+function gvYardageStatRules(){
+  return [
+    {key:'rush_yd',action:['rush']},
+    {key:'rec_yd',action:['reception']},
+    {key:'pass_yd',action:['passAttempt','passCompletion']},
+    {key:'kick_ret_yd',action:['kickReturn']},
+    {key:'punt_ret_yd',action:['puntReturn']}
+  ];
+}
+function gvPrimaryYardageDecision(rid,pid,statDelta,now=Date.now()){
+  const action=gvStatActionEvidence(statDelta);
+  const decisions=[];
+  for(const rule of gvYardageStatRules()){
+    const yards=Number(statDelta?.[rule.key]||0);
+    if(!Number.isFinite(yards)||Math.abs(yards)<.0001)continue;
+    const hasAction=rule.action.some(k=>action[k]);
+    const recentKey=`${rid}:${pid}:${rule.key}`;
+    const recent=gvRecentAcceptedStatPlays.get(recentKey);
+    const withinWindow=!!recent&&now-Number(recent.time||0)<=GV_STAT_REJECTION_WINDOW_MS;
+
+    if(hasAction){
+      decisions.push({key:rule.key,yards,accept:true,reason:'new play-count stat advanced',withinWindow});
+      continue;
+    }
+    if(withinWindow){
+      decisions.push({key:rule.key,yards,accept:false,reason:`yardage-only delta inside ${Math.round(GV_STAT_REJECTION_WINDOW_MS/1000)}s of accepted same-stat play`,withinWindow});
+      continue;
+    }
+    if(yards<0){
+      decisions.push({key:rule.key,yards,accept:false,reason:'yardage decreased without a new play-count stat',withinWindow});
+      continue;
+    }
+    if(Math.abs(yards)<=GV_SMALL_YARDAGE_CORRECTION_MAX){
+      decisions.push({key:rule.key,yards,accept:false,reason:`small yardage-only delta (≤${GV_SMALL_YARDAGE_CORRECTION_MAX})`,withinWindow});
+      continue;
+    }
+    decisions.push({key:rule.key,yards,accept:true,reason:withinWindow?'large yardage delta accepted despite recent same-stat play':'large yardage-only delta accepted',withinWindow});
+  }
+  return decisions;
+}
+function gvStatRenderDecision(rid,pid,statDelta,now=Date.now()){
+  const yardage=gvPrimaryYardageDecision(rid,pid,statDelta,now);
+  const action=gvStatActionEvidence(statDelta);
+  const major=gvIsDiscreteMajorStatPackage(statDelta,playerInfo(pid)?.pos||'');
+  const hasAction=Object.values(action).some(Boolean);
+
+  // If the interval contains only yardage evidence, every yardage component must
+  // survive the correction filter before we manufacture a play from it.
+  if(yardage.length&&!hasAction&&!major){
+    const accepted=yardage.filter(x=>x.accept);
+    if(!accepted.length){
+      return {accept:false,reason:yardage.map(x=>`${x.key}: ${x.reason}`).join('; '),yardage,action,major};
+    }
+  }
+  return {accept:true,reason:hasAction?'play-count evidence':major?'major discrete football stat':'yardage threshold passed',yardage,action,major};
+}
+function gvRememberAcceptedStatPlay(rid,pid,statDelta,evt,now=Date.now()){
+  for(const item of gvPrimaryYardageDecision(rid,pid,statDelta,now)){
+    if(!item.accept)continue;
+    gvRecentAcceptedStatPlays.set(`${rid}:${pid}:${item.key}`,{
+      time:now,yards:item.yards,eventId:evt?.id||'',family:evt?.intervalAnalysis?.family||''
+    });
+  }
+  for(const [key,state] of gvRecentAcceptedStatPlays){
+    if(now-Number(state?.time||0)>120000)gvRecentAcceptedStatPlays.delete(key);
+  }
+}
 function gvDeltaEvents(prevSnap,nextSnap,options={}){
   if(!prevSnap||!nextSnap)return [];
-  const relevant=gvRelevantRosterPair(),out=[];
+  const relevant=gvRelevantRosterPair(),out=[],now=Number(nextSnap.capturedAt||Date.now());
+
+  // Away/recovery processing remains conservative because one snapshot interval
+  // may contain several real NFL plays that cannot be separated reliably.
+  if(options&&options.recovery){
+    gvDiscardExpiredPendingStats(now);
+  }
+
   for(const rid of relevant){
     const prev=prevSnap.byRoster?.[rid],next=nextSnap.byRoster?.[rid];
     if(!next)continue;
-    const ids=new Set([...Object.keys(prev?.playersPoints||{}),...Object.keys(next.playersPoints||{})]);
+    const starterIds=new Set((next.starters||[]).filter(Boolean).map(String));
+    const ids=new Set([
+      ...Object.keys(prev?.playersPoints||{}),...Object.keys(next.playersPoints||{}),
+      ...Object.keys(prevSnap?.statsByPlayer||{}),...Object.keys(nextSnap?.statsByPlayer||{})
+    ].filter(pid=>starterIds.has(String(pid))));
+
     for(const pid of ids){
-      const before=Number(prev?.playersPoints?.[pid]||0),after=Number(next.playersPoints?.[pid]||0),delta=Number((after-before).toFixed(2));
+      const before=Number(prev?.playersPoints?.[pid]||0),after=Number(next.playersPoints?.[pid]||0);
+      const pointDelta=Number((after-before).toFixed(2));
       const statDelta=gvSnapshotStatDelta(prevSnap,nextSnap,pid);
-      // Sleeper fantasy points are authoritative for whether a GameView event exists.
-      // Raw stats only explain/classify/correlate an actual fantasy-point change.
-      if(Math.abs(delta)<0.01)continue;
-      const p=playerInfo(pid),colors=nflTeamColors(p.team),scores=gvSessionScoreLine(nextSnap),analysis=gvIntervalPlayAnalysis(pid,p.pos,statDelta,delta);
-      const base={
-        id:`interval-${nextSnap.capturedAt}-${rid}-${pid}`,
-        time:nextSnap.capturedAt,rosterId:rid,playerId:String(pid),name:p.name,pos:p.pos,nflTeam:p.team,opponentNflTeam:gameViewOpponentByPlayer?.[String(pid)]||gvOpponentFromWeeklyMap(p.team)||'',
-        opponentSource:gameViewOpponentByPlayer?.[String(pid)]?'stats':(gvOpponentFromWeeklyMap(p.team)?'schedule':''),
-        teamPrimary:colors[0],teamSecondary:colors[1],delta,total:after,leftScore:scores.leftScore,rightScore:scores.rightScore,
-        detail:analysis.detail,intervalAnalysis:analysis,
-        likelyCorrection:false,
-        played:false
-      };
-      const evidence=gvCorrectionEvidence(base);
-      base.likelyCorrection=evidence.correction;
-      base.negativeScoringEvent=evidence.negativePlay;
-      base.correctionReason=evidence.reason||'';
-      if(analysis.confidence==='single'){
-        const inferred=gameViewEventFromDelta({...base,detail:analysis.detail});
-        out.push({...base,...(inferred||{}),id:base.id,type:'play',source:'live',detail:analysis.detail,intervalClass:'SINGLE_PLAY'});
-      }else if(analysis.confidence==='burst'){
-        out.push({...base,type:'burst',source:'live',detail:analysis.detail,intervalClass:'MULTI_PLAY_BURST',played:true});
-      }else{
-        out.push({...base,type:'summary',source:'live',detail:analysis.detail,intervalClass:'AMBIGUOUS_SUMMARY',played:true});
+      const p=playerInfo(pid);
+      const expectedDelta=gvExpectedStatFantasyDelta(statDelta,p.pos);
+
+      if(options&&options.recovery){
+        const key=gvPendingStatKey(rid,pid);
+        if(Math.abs(expectedDelta)>=.01)gvAccumulatePendingStatCandidate(rid,pid,statDelta,before,after,now);
+        const pending=gvPendingStatCandidates.get(key);
+        if(Math.abs(pointDelta)>=.01&&pending){
+          const evt=gvConfirmedCandidateEvent(rid,pid,nextSnap,pending,pointDelta,after);
+          gvPendingStatCandidates.delete(key);
+          if(evt)out.push(evt);
+        }else if(pending&&gvIsDiscreteMajorStatPackage(pending.statDelta,p.pos)){
+          const evt=gvBuildStatFirstEvent(rid,pid,nextSnap,before,after,pending.statDelta,pending.expectedDelta);
+          gvPendingStatCandidates.delete(key);
+          if(evt)out.push(evt);
+        }
+        continue;
       }
+
+      // Live v0.5.50 path: stats construct the play immediately. players_points is
+      // supporting score data only and never creates a second/ghost GameView play.
+      if(Math.abs(expectedDelta)<.01&&!gvIsDiscreteMajorStatPackage(statDelta,p.pos))continue;
+
+      const decision=gvStatRenderDecision(rid,pid,statDelta,now);
+      if(!decision.accept)continue;
+
+      const evt=gvBuildStatFirstEvent(rid,pid,nextSnap,before,after,statDelta,expectedDelta);
+      if(!evt)continue;
+
+      evt.statRenderDecision=decision.reason;
+      evt.fptsConfirmationRequired=false;
+      evt.authoritativeTotal=Number(after);
+      gvRememberAcceptedStatPlay(rid,pid,statDelta,evt,now);
+      out.push(evt);
     }
   }
+
   const intervalCorrelated=gvCorrelateIntervalPassing(out);
-  // Live 15-second polling may hold one half of a roster tandem TD briefly.
-  // Recovery snapshots span too much time for that delay to be meaningful:
-  // preserve the scoring event immediately, then correlate only when evidence
-  // inside the recovered snapshot actually supports it.
   const tandemReady=options && options.recovery
     ?intervalCorrelated
     :gvHoldOrReleaseTandemTdEvents(intervalCorrelated,gvLivePendingTdState);
@@ -936,11 +1277,26 @@ function gvProcessLiveSnapshot(){
     events=[...recovered.reconstructed];
     if(recovered.summary)events.push(recovered.summary);
   }else{
+    const unresolved=gvDetectUnresolvedTeamScoreChanges(prev,snap);
     events=gvDeltaEvents(prev,snap);
-    if(events.length){
+    if(events.length||unresolved.length){
       gvOpenActivityWindow(snap.capturedAt);
       for(const evt of events)gvFeedAdd(evt,evt.type==='play'||evt.type==='burst');
+      for(const item of unresolved){
+        const summary=gvUnresolvedTeamSummary(item,snap);
+        gvFeedAdd(summary,false);
+        events.push(summary);
+      }
     }
+  }
+  if(!simulation.active&&events.length){
+    const pressureEvents=events.filter(e=>
+      Math.abs(Number(e?.delta||0))>0 &&
+      !e?.likelyCorrection &&
+      !e?.statFirstReconciliation &&
+      !e?.unresolvedTeamScore
+    );
+    if(pressureEvents.length)updateMomentum(pressureEvents,snap.capturedAt);
   }
   s.lastSnapshot=snap;
   if(events.length)s.lastActivityAt=snap.capturedAt;

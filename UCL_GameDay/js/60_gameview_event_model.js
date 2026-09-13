@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.03 — build fragment: 60_gameview_event_model.js
+/* UCL GameDay v0.5.50 — build fragment: 60_gameview_event_model.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function gvScheduleWeekOfGame(g){
@@ -41,7 +41,7 @@ async function gvRefreshNflOpponentMap(force=false){
     if(!r.ok)return;
     const data=await r.json();
     const games=Array.isArray(data)?data:Array.isArray(data?.games)?data.games:Array.isArray(data?.schedule)?data.schedule:[];
-    gameViewWeeklyScheduleGames=games.filter(g=>gvScheduleWeekOfGame(g)===Number(week));
+    gameViewWeeklyScheduleGames=games;
     const map=gvBuildWeeklyOpponentMap(data,week);
     if(Object.keys(map).length){
       gameViewNflOpponentMap=map;
@@ -99,12 +99,8 @@ function ctespnRosterProjection(row){
   return count?total:0;
 }
 function ctespnScheduleStartMs(g){
-  const raw=g?.date??g?.start_time??g?.startTime??g?.kickoff??g?.kickoff_time??g?.metadata?.date??g?.metadata?.start_time;
-  if(raw==null)return NaN;
-  if(typeof raw==='number'){const v=Number(raw);return v<1e12?v*1000:v}
-  const text=String(raw).trim();if(!text)return NaN;
-  if(/^\d{10,13}$/.test(text)){const v=Number(text);return text.length<=10?v*1000:v}
-  const parsed=Date.parse(text);return Number.isFinite(parsed)?parsed:NaN;
+  const v=nflScheduleKickoffMs(g);
+  return v||NaN;
 }
 function ctespnScheduleStatusRaw(g){
   return g?.status ?? g?.game_status ?? g?.gameStatus ?? g?.state ?? g?.game_state ??
@@ -259,6 +255,24 @@ async function refreshGameViewStats(force=false){
     }else if(data&&typeof data==='object'){
       for(const [id,row] of Object.entries(data))ingest(id,row);
     }
+    const priorStats=gameViewStats||{};
+    const hadPrior=Object.keys(priorStats).length>0;
+    if(hadPrior){
+      const ids=new Set([...Object.keys(priorStats),...Object.keys(next)]);
+      for(const id of ids){
+        const a=priorStats[id]||{},b=next[id]||{},keys=new Set([...Object.keys(a),...Object.keys(b)]);
+        let changed=false;
+        for(const key of keys){
+          const av=Number(a[key]),bv=Number(b[key]);
+          if(Number.isFinite(av)&&Number.isFinite(bv)&&Math.abs(bv-av)>.0001){changed=true;break}
+          if(!Number.isFinite(av)&&Number.isFinite(bv)&&bv!==0){changed=true;break}
+        }
+        if(changed){
+          const team=normalizeNflTeamCode(playerInfo(id)?.team);
+          if(team)nflLiveStatHeartbeat.set(team,now);
+        }
+      }
+    }
     lastGameViewStats=gameViewStats;
     gameViewStats=next;
     gameViewOpponentByPlayer=nextOpp;
@@ -280,6 +294,14 @@ function gvPlayLabel(evt){
   if(type==='rb_run'||type==='qb_run')return 'Run';
   if(type==='reception'||type==='qb_pass')return type==='qb_pass'?'Pass':'Reception';
   if(type==='kick')return detail.includes('extra point')?'Extra Point':'Field Goal';
+  if(type==='def_blocked_kick')return 'Blocked Kick';
+  if(type==='qb_kneel')return 'QB Kneel';
+  if(type==='two_point_pass'||type==='two_point_reception')return 'Two-Point Conversion';
+  if(type==='two_point_rush')return 'Two-Point Conversion';
+  if(type==='def_2pt_int')return 'Defensive Two-Point Interception Return';
+  if(type==='def_2pt_fumble')return 'Defensive Two-Point Fumble Return';
+  if(type==='def_safety')return 'Safety';
+  if(type==='off_fum_rec_td')return 'Offensive Fumble Recovery TD';
   if(type==='def_sack')return 'Sack';
   if(type==='def_qb_hit')return 'QB Hit';
   if(type==='def_run_stop')return 'Run Stop';
@@ -298,7 +320,9 @@ function gvPlayType(evtLike){
     evtLike?.intervalAnalysis?.family==='rb_run'||evtLike?.intervalAnalysis?.family==='qb_run';
   const recLike=detail.includes('receiv')||detail.includes('reception')||evtLike?.intervalAnalysis?.family==='reception';
   const offenseStats=evtLike?.intervalAnalysis?.stats||{};
+  const pass2=Number(offenseStats.pass_2pt||0)>0,rec2=Number(offenseStats.rec_2pt||0)>0,rush2=Number(offenseStats.rush_2pt||0)>0;
   const fumLost=Number(offenseStats.fum_lost||offenseStats.fum_lost_total||0)>0;
+  if(Number(offenseStats.fum_rec_td||0)>0&&!['DEF','DST'].includes(pos))return 'off_fum_rec_td';
   if(fumLost&&pos==='RB')return recLike&&!rushLike?'rb_rec_fumble':'rb_rush_fumble';
   if(fumLost&&pos==='WR')return rushLike?'wr_rush_fumble':'wr_rec_fumble';
   if(pos==='K'&&!rushLike)return 'kick';
@@ -310,6 +334,11 @@ function gvPlayType(evtLike){
     const puntRetLike=detail.includes('punt return')||fam==='punt_return'||Number(st.punt_ret_yd||0)!==0;
     const tdLike=detail.includes('touchdown')||Number(st.def_td||0)>0;
     const stTdLike=Number(st.def_st_td||0)>0||fam==='special_teams_return';
+    const def2=Number(st.def_2pt||0)>0||detail.includes('defensive two-point')||detail.includes('defensive 2-point');
+    if(def2&&intLike)return 'def_2pt_int';
+    if(def2&&fumLike)return 'def_2pt_fumble';
+    if(Number(st.safe||0)>0||detail.includes('safety'))return 'def_safety';
+    if(Number(st.blk_kick||0)>0||detail.includes('blocked field goal')||detail.includes('blocked extra point')||detail.includes('blocked kick'))return 'def_blocked_kick';
     if(kickRetLike&&stTdLike)return 'def_kick_ret_td';
     if(puntRetLike&&stTdLike)return 'def_punt_ret_td';
     if(kickRetLike)return 'def_kick_return';
@@ -319,20 +348,26 @@ function gvPlayType(evtLike){
     if(intLike)return 'def_int';
     if(fumLike)return 'def_fumble';
     if(detail.includes('sack'))return 'def_sack';
-    if(detail.includes('quarterback hit')||detail.includes('qb hit'))return 'def_qb_hit';
+    if(detail.includes('quarterback hit')||detail.includes('qb hit')||Number(st.qb_hit||0)>0)return 'def_qb_hit';
     if(detail.includes('run stop')||detail.includes('rush'))return 'def_run_stop';
     const passDefLike=detail.includes('pass breakup')||detail.includes('pass defended')||fam==='def_breakup'||gvPassDefendedDelta(st)>0;
     if(passDefLike)return 'def_breakup';
     return 'def_generic';
   }
   if(pos==='QB'){
-    if(rushLike)return 'qb_run';
     const st=evtLike?.intervalAnalysis?.stats||{};
+    if(pass2)return 'two_point_pass';
+    if(rush2)return 'two_point_rush';
+    const kneelLike=rushLike&&Number(st.rush_att||0)===1&&Number(st.rush_yd||0)<=0&&Number(st.rush_yd||0)>=-3&&Math.abs(Number(evtLike?.delta||0))<=.35;
+    if(detail.includes('kneel')||kneelLike)return 'qb_kneel';
+    if(rushLike)return 'qb_run';
     const incompleteLike=detail.includes('incomplete pass')||
       (evtLike?.intervalAnalysis?.family==='qb_pass'&&Number(st.pass_att||0)>0&&Number(st.pass_cmp||0)===0&&Number(st.pass_int||0)===0);
     if(incompleteLike)return 'incomplete';
     return recLike?'reception':'qb_pass';
   }
+  if(rec2)return 'two_point_reception';
+  if(rush2)return 'two_point_rush';
   if(pos==='RB')return recLike&&!rushLike?'reception':'rb_run';
   if(pos==='WR'||pos==='TE'||pos==='K')return rushLike?'rb_run':'reception';
   return 'generic';
@@ -355,6 +390,8 @@ function gameViewEventFromDelta(item){
   const p=playerInfo(item.playerId),colors=nflTeamColors(p.team),detail=item.detail||playDetailFromStats(item.playerId,p.pos,item.delta);
   const base={id:`${item.time}-${rid}-${item.playerId}-${Math.random().toString(36).slice(2,7)}`,time:item.time,rosterId:rid,playerId:item.playerId,name:item.name,pos:p.pos||'—',nflTeam:p.team||'FA',teamPrimary:colors[0],teamSecondary:colors[1],detail,intervalAnalysis:item.intervalAnalysis||null,delta:Number(item.delta)||0,total:Number(item.total)||0,side:(String($('#teamSelect')?.value||'')===rid?'left':(rid===leftId?'left':'right')),leftScore,rightScore,tier:gameViewTier(item.delta),source:gvNormalizeSourceValue(item.source||(simulation?.active?'simulation':'live'),item),reconstructed:!!item.reconstructed,testingForced:!!item.testingForced};
   base.playType=gvPlayType(base);
+  const rawStats=base.intervalAnalysis?.stats||{};
+  if(['DEF','DST'].includes(String(base.pos||'').toUpperCase())&&Number(rawStats.sack||0)>0&&Number(rawStats.fum_rec||0)>0)base.stripSack=true;
   if(base.testingForced&&typeof gvTestingEnsureRandomScoreContext==='function')gvTestingEnsureRandomScoreContext(base);
   return base;
 }
@@ -513,7 +550,16 @@ function gvFeedEntriesForRender(){
   // Simulation events are intentionally session-volatile and therefore do not pass
   // through gvFeedAdd(). Include only those here; live events are never merged from
   // gameViewEvents because gvProcessLiveSnapshot() is the canonical live feed source.
-  const volatileSimulation=gameViewEvents.filter(e=>gvNormalizeSourceValue(e?.source,e)==='simulation'&&!seen.has(String(e?.id||'')));
+  const selectedRosters=new Set(gvSelectedRosterIds().map(String));
+  const volatileSimulation=gameViewEvents.filter(e=>{
+    if(gvNormalizeSourceValue(e?.source,e)!=='simulation'||seen.has(String(e?.id||'')))return false;
+    const rid=String(e?.rosterId||'');
+    if(rid&&selectedRosters.size&&!selectedRosters.has(rid))return false;
+    if(Array.isArray(e?.fantasyImpacts)&&e.fantasyImpacts.some(x=>x?.rosterId)){
+      return e.fantasyImpacts.some(x=>selectedRosters.has(String(x.rosterId)));
+    }
+    return true;
+  });
   return [...canonical,...volatileSimulation];
 }
 function gvFindReplayEvent(id){
@@ -558,8 +604,15 @@ function gvYouTubeHighlightSearch(e){
   }
   if(!player)return null;
   const query=`${player} ${phrase}`.trim();
-  const url=`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&sp=CAI%253D`;
+  const url=gvYouTubeSearchUrl(query);
   return {query,url};
+}
+function gvYouTubeSearchUrl(query){
+  // YouTube's Upload date → Today filter currently uses the same encoded
+  // search-filter token on desktop web and mobile web/app handoff URLs.
+  // Keep this centralized because YouTube's undocumented `sp` tokens may change.
+  const todayFilter='EgIIAg%253D%253D';
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(String(query||'').trim())}&sp=${todayFilter}`;
 }
 function gvFeedDetailHtml(e,score=''){
   const text=`${gvFeedDetail(e)}${score}`;
@@ -588,23 +641,24 @@ function renderGameViewFeed(){
     const source=gvFeedSource(e),qualifier=gvFeedQualifier(e);
     const who=e.turnoverKind&&e.offensivePlayerName&&e.defensivePlayerName
       ?`${esc(e.offensivePlayerName)} → ${esc(e.defensivePlayerName)} <span>${esc(e.turnoverKind)} • ${esc(e.nflTeam||'')}</span>`
-      :e.multiActor&&e.qbName&&e.receiverName
-      ?`${esc(e.qbName)} → ${esc(e.receiverName)} <span>${esc(e.receiverPos||e.pos||'')} • ${esc(e.nflTeam||e.receiverNflTeam||'')}</span>`
+      :e.multiActor&&(e.passerName||e.qbName)&&e.receiverName
+      ?`${esc(e.passerName||e.qbName)} (${esc(e.passerPos||e.qbPos||'QB')}) → ${esc(e.receiverName)} (${esc(e.receiverPos||e.pos||'REC')}) <span>${esc(e.nflTeam||e.receiverNflTeam||e.passerNflTeam||'')}</span>`
       :`${esc(e.name||'Scoring update')} <span>${esc(e.pos||'')} ${e.nflTeam?`• ${esc(e.nflTeam)}`:''}</span>`;
     const score=(Number.isFinite(Number(e.leftScore))&&Number.isFinite(Number(e.rightScore)))
       ?` • ${Number(e.leftScore||0).toFixed(2)}–${Number(e.rightScore||0).toFixed(2)}`:'';
     rows.push(`<div class="gv-feed-item">
-      <div class="gv-feed-meta"><span class="gv-source-badge ${gvFeedSourceClass(e)}">${source}</span>${qualifier?`<span class="gv-event-kind ${e?.trickPlay?`trick-${esc(e.trickConfidenceLevel||'possible')}`:''}">${esc(qualifier)}</span>`:''}<time>${new Date(e.time||Date.now()).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</time></div>
+      <div class="gv-feed-meta"><span class="gv-source-badge ${gvFeedSourceClass(e)}">${source}</span>${qualifier?`<span class="gv-event-kind ${gvIsLikelyStatCorrection(e)?'stat-correction':e?.trickPlay?`trick-${esc(e.trickConfidenceLevel||'possible')}`:''}">${esc(qualifier)}</span>`:''}<time>${new Date(e.time||Date.now()).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</time></div>
       <b>${who}</b>
       <small>${gvFeedDetailHtml(e,score)}</small>
       ${gvEventHasMultipleFantasyImpacts(e)?`<div class="gv-feed-impact-breakdown">${gvEventImpactBreakdownHtml(e)}</div>`:''}
-      ${(e.played||gvReplayAvailable(e.id))?`<button class="gv-replay" data-gv-replay="${esc(e.id)}">Replay</button>`:''}
+      ${gvReplayAvailable(e.id)?`<button class="gv-replay" data-gv-replay="${esc(e.id)}">Replay</button>`:''}
     </div>`);
   }
   host.innerHTML=rows.join('');
   host.querySelectorAll('[data-gv-replay]').forEach(btn=>btn.onclick=()=>{
     const evt=gvFindReplayEvent(btn.dataset.gvReplay);
-    if(evt&&!gameViewPlaying){if(evt.type==='burst')playGameViewBurst(evt,true);else playGameViewEvent(evt,true);}
+    if(!evt||gameViewPlaying)return;
+    if(evt.type==='burst')playGameViewBurst(evt,true);else playGameViewEvent(evt,true);
   });
 }
 function gvClearActors(){
@@ -651,8 +705,11 @@ function gvEventFieldSide(evt){
 }
 
 function gvFormation(evt){
-  const fieldSide=gvEventFieldSide(evt),own=fieldSide==='left',dir=own?1:-1,los=own?34:66;
+  const fieldSide=gvEventFieldSide(evt),own=fieldSide==='left',dir=own?1:-1;
   const type=evt.playType||gvPlayType(evt),pos=String(evt.pos||'').toUpperCase(),seed=assignmentHash(`${evt.id}|formation|${type}|${pos}`);
+  const twoPoint=['two_point_pass','two_point_reception','two_point_rush','def_2pt_int','def_2pt_fumble'].includes(type);
+  const safety=type==='def_safety';
+  const los=twoPoint?(own?88:12):safety?(own?12:88):(own?34:66);
   const snapX=los-dir*2.2;
 
   const linemen=[
@@ -674,7 +731,7 @@ function gvFormation(evt){
     offense.push({role:'QB',x:los-dir*2.4,y:50});
   };
 
-  if(type==='kick'){
+  if(type==='kick'||type==='def_blocked_kick'){
     label='Field Goal';
     offense=[
       {role:'TE',x:los-dir*.9,y:31},
@@ -698,7 +755,7 @@ function gvFormation(evt){
       {role:'S',x:los+dir*12,y:35},
       {role:'S',x:los+dir*12,y:65}
     ];
-  }else if(type==='rb_run'){
+  }else if(type==='rb_run'||type==='off_fum_rec_td'){
     const heavy=seed%3===0;
     if(heavy){
       label='12 Personnel';
@@ -807,7 +864,13 @@ function gvFormation(evt){
         offense[idx]={...offense[idx],role};
       }
     }
-    label=`Trick Pass • ${passerPos} → ${receiverPos}`;
+    // v0.5.09: preserve the trick passer's normal pre-snap position. The reveal
+    // happens after the snap: the WR/RB/TE moves along the line, receives a
+    // backward/horizontal pass, then becomes the passer while the QB releases.
+    evt.trickFormationAudit={normalPreSnapAlignment:true,passerPos,receiverPos};
+    label=receiverPos==='QB'&&passerPos!=='QB'
+      ?`QB Throwback • ${passerPos} → QB`
+      :`Trick Pass • ${passerPos} → ${receiverPos}`;
   }
 
   // The coordinate formulas above are already direction-aware.

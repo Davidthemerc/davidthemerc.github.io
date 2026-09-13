@@ -1,17 +1,19 @@
-/* UCL GameDay v0.5.03 — build fragment: 70_gameview_animation_core.js
+/* UCL GameDay v0.5.50 — build fragment: 70_gameview_animation_core.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function gvScoringRole(evt){
   const p=String(evt.pos||'').toUpperCase(),type=evt.playType||gvPlayType(evt);
+  if(evt?.lateralChain&&['QB','RB','WR','TE'].includes(String(evt?.lateralRecipientPos||'').toUpperCase()))return String(evt.lateralRecipientPos).toUpperCase();
   // A correlated pass is a two-actor play. The QB remains in the QB slot,
   // while the highlighted/scoring actor is the receiver represented by evt.
   if(evt?.multiActor&&(type==='qb_pass'||type==='reception')){
     const rp=String(evt.receiverPos||p||'WR').toUpperCase();
     return ['QB','WR','TE','RB'].includes(rp)?rp:'WR';
   }
+  if(type==='off_fum_rec_td'&&['QB','RB','WR','TE'].includes(p))return p;
   if(type==='kick'||p==='K')return 'K';
   if(type.startsWith('def_')||p==='DEF'||p==='DST')return 'DEF';
-  if(type==='qb_run'||type==='qb_pass'||p==='QB')return 'QB';
+  if(type==='qb_run'||type==='qb_pass'||type==='two_point_pass'||type==='two_point_rush'||type==='qb_kneel'||p==='QB')return 'QB';
   if(type==='rb_run'){
     if(['RB','WR','TE'].includes(p))return p;
     return 'RB';
@@ -34,7 +36,7 @@ function gvIsSpecialTeamsReturnType(type){
   return ['def_kick_return','def_kick_ret_td','def_punt_return','def_punt_ret_td'].includes(String(type||''));
 }
 function gvIsKickAttemptType(type){
-  return String(type||'')==='kick';
+  return ['kick','def_blocked_kick'].includes(String(type||''));
 }
 function gvPrepareKickFormation(evt,built,type='kick'){
   if(!built?.units?.length||!built?.formation||!gvIsKickAttemptType(type))return built;

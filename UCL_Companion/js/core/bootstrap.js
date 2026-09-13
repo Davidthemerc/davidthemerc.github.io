@@ -109,25 +109,35 @@ async function initializeCompanionRuntime(){
     }
   }
 
-  // IndexedDB, cache bookkeeping, projection hydration and Sleeper refresh are
-  // deliberately outside the critical startup path.
+  // Once the shell (and any synchronous saved snapshot) is visible, immediately
+  // launch a real Sleeper/season refresh for the saved team. This mirrors the
+  // manual refresh path without blocking first paint.
+  if(savedSleeperUser){
+    backgroundTask('startup-api-refresh',async()=>{
+      await connectSleeper(savedSleeperUser);
+    });
+  }
+
+  // IndexedDB/cache bookkeeping stays outside the critical startup path.
+  // If the API refresh has already started, avoid applying an older IndexedDB
+  // snapshot over data that may be arriving from the network.
   backgroundTask('storage-hydration',async()=>{
     await boundedStartup(openApiCacheDb(),1800,null);
     if(savedSleeperUser){
       const newest=await boundedStartup(peekNewestRuntimeCache(savedSleeperUser),1800,null);
       const newestSavedAt=Number(newest?.savedAt||0);
 
-      if(newest&&(!restoredFromMirror||newestSavedAt>mirrorSavedAt+250)){
+      if(!startupConnectAttempted&&newest&&(!restoredFromMirror||newestSavedAt>mirrorSavedAt+250)){
         applyRuntimeCache(newest,savedSleeperUser);
         safeUiCall('indexed-team-options',()=>populateSleeperTeamOptions(leagueUsers));
         renderRestoredRuntimeState();
       }
 
       await boundedStartup(hydrateSavedProjectionMap(currentWeekNumber()),1400,0);
-      renderRestoredRuntimeState();
+      if(!startupConnectAttempted)renderRestoredRuntimeState();
 
       backgroundTask('runtime-repair',()=>readRuntimeCacheAsync(savedSleeperUser));
-      setSyncStatus('ok','Saved data loaded • tap ↻ to refresh Sleeper');
+      if(!startupConnectAttempted)setSyncStatus('busy','Saved data loaded • refreshing Sleeper…');
     }else{
       setSyncStatus('busy','Select your team, then tap ↻ to load Sleeper data.');
     }

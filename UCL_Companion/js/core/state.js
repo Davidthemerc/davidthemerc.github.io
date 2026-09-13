@@ -348,7 +348,7 @@ function updateSeasonTabVisibility(){
   }
 }
 function updateLiveSeasonDraftUtilityVisibility(){
-  const hide=!!FORCE_POST_DRAFT || document.body.classList.contains('live-season-build');
+  const hide=!!LIVE_SEASON_BUILD || document.body.classList.contains('live-season-build');
   for(const tab of ['analysis','log']){
     const b=document.querySelector(`.tab-btn[data-tab="${tab}"]`);
     if(b)b.hidden=hide;

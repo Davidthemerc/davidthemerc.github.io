@@ -37,6 +37,7 @@ function switchTab(name){
     safeUiCall('league-activity',()=>renderLeagueActivity());
     safeUiCall('weekly-report',()=>renderWeeklyLeagueReport());
     safeUiCall('newsroom',()=>renderNewsroom());
+    if(typeof refreshManualNews==='function')void refreshManualNews({rerender:true});
     safeUiCall('news-rivalry-preflight',()=>{if(typeof ensureNewsRivalryData==='function')void ensureNewsRivalryData();});
   }
   if(name==='home'){

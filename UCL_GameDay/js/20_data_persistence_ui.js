@@ -1,6 +1,30 @@
-/* UCL GameDay v0.5.03 — build fragment: 20_data_persistence_ui.js
+/* UCL GameDay v0.5.50 — build fragment: 20_data_persistence_ui.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
+
+function ensureNotificationSettingsControls(){
+  const toggle=document.getElementById('notificationSoundsToggle');
+  const slider=document.getElementById('notificationVolumeControl');
+  const value=document.getElementById('notificationVolumeValue');
+  if(!toggle||!slider||!value)return;
+  const prefs=window.getNotificationSettings?window.getNotificationSettings():{enabled:true,volume:1};
+  toggle.checked=!!prefs.enabled;
+  slider.value=String(Math.round((prefs.volume??1)*100));
+  value.textContent=`${slider.value}%`;
+  slider.disabled=!toggle.checked;
+  if(toggle.dataset.bound==='1')return;
+  toggle.dataset.bound='1';
+  toggle.addEventListener('change',()=>{
+    window.setNotificationSoundsEnabled?.(toggle.checked);
+    slider.disabled=!toggle.checked;
+  });
+  slider.addEventListener('input',()=>{
+    value.textContent=`${slider.value}%`;
+    window.setNotificationVolume?.(Number(slider.value)/100);
+  });
+}
+window.ensureNotificationSettingsControls=ensureNotificationSettingsControls;
+
 function saveDiscoveredPlayers(){
   try{
     return storage.set(DISCOVERED_PLAYERS_KEY,JSON.stringify({
@@ -34,6 +58,312 @@ function learnDiscoveredPlayer(id,raw){
   return true;
 }
 
+
+const NFL_SCHEDULE_CACHE_KEY='ucl-gameday-nfl-schedule-status-v4';
+const NFL_SCHEDULE_REFRESH_MS=60000;
+const NFL_GAME_WINDOW_EARLY_MS=5*60*1000;
+const NFL_GAME_WINDOW_LATE_MS=4.5*60*60*1000;
+
+function normalizeNflTeamCode(team){
+  const raw=String(team||'').trim().toUpperCase();
+  return ({JAC:'JAX',WSH:'WAS',LA:'LAR',OAK:'LV',SD:'LAC'})[raw]||raw;
+}
+function nflScheduleSeasonType(){
+  const raw=String(nflState?.season_type||leagueInfo?.season_type||'regular').toLowerCase();
+  if(raw.startsWith('pre'))return 'pre';
+  if(raw.startsWith('post'))return 'post';
+  return 'regular';
+}
+
+function nflScheduleGameKey(game){
+  const teams=nflScheduleTeams(game),week=nflScheduleWeek(game);
+  if(!teams.away||!teams.home)return '';
+  return `${week||0}:${teams.away}@${teams.home}`;
+}
+const KNOWN_NFL_KICKOFFS_2026=Object.freeze({
+  '1:NE@SEA':'2026-09-10T00:20:00Z',
+  '1:SF@LAR':'2026-09-11T00:35:00Z',
+  '1:ATL@PIT':'2026-09-13T17:00:00Z',
+  '1:BAL@IND':'2026-09-13T17:00:00Z',
+  '1:BUF@HOU':'2026-09-13T17:00:00Z',
+  '1:CHI@CAR':'2026-09-13T17:00:00Z',
+  '1:CLE@JAX':'2026-09-13T17:00:00Z',
+  '1:NO@DET':'2026-09-13T17:00:00Z',
+  '1:NYJ@TEN':'2026-09-13T17:00:00Z',
+  '1:TB@CIN':'2026-09-13T17:00:00Z',
+  '1:ARI@LAC':'2026-09-13T20:25:00Z',
+  '1:GB@MIN':'2026-09-13T20:25:00Z',
+  '1:MIA@LV':'2026-09-13T20:25:00Z',
+  '1:WAS@PHI':'2026-09-13T20:25:00Z',
+  '1:DAL@NYG':'2026-09-14T00:20:00Z',
+  '1:DEN@KC':'2026-09-15T00:15:00Z'
+});
+function nflKnownKickoffMs(game){
+  const season=String(nflState?.season||leagueInfo?.season||new Date().getFullYear());
+  if(season!=='2026')return 0;
+  const raw=KNOWN_NFL_KICKOFFS_2026[nflScheduleGameKey(game)]||'';
+  const ms=raw?Date.parse(raw):0;
+  return Number.isFinite(ms)?ms:0;
+}
+function loadNflKickoffCache(){
+  try{
+    const raw=storage.get(NFL_KICKOFF_CACHE_KEY,'');if(!raw)return false;
+    const c=JSON.parse(raw),rows=c?.games;
+    if(rows&&typeof rows==='object'){
+      nflKickoffByGameKey=new Map(Object.entries(rows).filter(([,v])=>Number.isFinite(Number(v))).map(([k,v])=>[k,Number(v)]));
+    }
+    const statuses=c?.espnStatusByTeam;
+    if(statuses&&typeof statuses==='object'){
+      nflEspnStatusByTeam=new Map(Object.entries(statuses).filter(([,v])=>v&&typeof v==='object'));
+    }
+    nflKickoffFetchedAt=Number(c.fetchedAt)||0;
+    nflEspnStatusFetchedAt=Number(c.statusFetchedAt)||0;
+    return nflKickoffByGameKey.size>0||nflEspnStatusByTeam.size>0;
+  }catch(_){return false}
+}
+function saveNflKickoffCache(){
+  try{
+    storage.set(NFL_KICKOFF_CACHE_KEY,JSON.stringify({
+      fetchedAt:nflKickoffFetchedAt,
+      statusFetchedAt:nflEspnStatusFetchedAt,
+      games:Object.fromEntries(nflKickoffByGameKey),
+      espnStatusByTeam:Object.fromEntries(nflEspnStatusByTeam)
+    }));
+  }catch(_){}
+}
+function espnNflTeamCode(comp){
+  return normalizeNflTeamCode(comp?.team?.abbreviation||comp?.team?.shortDisplayName||comp?.team?.displayName||'');
+}
+function espnNflStatusKind(event,competition){
+  const status=competition?.status||event?.status||{};
+  const type=status?.type||{};
+  if(type?.completed===true||status?.completed===true)return 'final';
+  const raw=type?.state??type?.name??type?.description??status?.state??status?.name??status?.description??'';
+  const value=String(raw||'').trim().toLowerCase().replace(/[\s-]+/g,'_');
+  if(['post','final','complete','completed','closed','finished','postgame'].includes(value)||value.includes('final')||value.includes('complete'))return 'final';
+  if(['in','live','in_progress','playing','halftime','started'].includes(value)||value.includes('in_progress')||value.includes('halftime'))return 'live';
+  if(['pre','scheduled','created','pregame','not_started','pending'].includes(value)||value.includes('scheduled')||value.includes('pregame'))return 'scheduled';
+  return 'unknown';
+}
+function ingestEspnKickoffSchedule(data,week){
+  const events=Array.isArray(data?.events)?data.events:[];
+  let learned=0,statusLearned=0;
+  const now=Date.now();
+  for(const event of events){
+    const competition=event?.competitions?.[0]||{};
+    const competitors=Array.isArray(competition?.competitors)?competition.competitors:[];
+    const home=competitors.find(c=>c?.homeAway==='home'),away=competitors.find(c=>c?.homeAway==='away');
+    const homeCode=espnNflTeamCode(home),awayCode=espnNflTeamCode(away);
+    if(!homeCode||!awayCode)continue;
+    const key=`${Number(week)||0}:${awayCode}@${homeCode}`;
+    const raw=event?.date||competition?.date||'';
+    const ms=Date.parse(raw);
+    if(Number.isFinite(ms)){nflKickoffByGameKey.set(key,ms);learned++}
+
+    const kind=espnNflStatusKind(event,competition);
+    if(kind!=='unknown'){
+      for(const team of [homeCode,awayCode]){
+        const previous=nflEspnStatusByTeam.get(team);
+        // FINAL is sticky for this matchup/week. A stale later payload cannot revive it.
+        const stickyFinal=previous?.kind==='final'&&previous?.key===key;
+        nflEspnStatusByTeam.set(team,stickyFinal?previous:{kind,key,updatedAt:now});
+        statusLearned++;
+      }
+    }
+  }
+  if(learned)nflKickoffFetchedAt=now;
+  if(statusLearned)nflEspnStatusFetchedAt=now;
+  if(learned||statusLearned)saveNflKickoffCache();
+  return learned+statusLearned;
+}
+async function refreshNflKickoffSchedule(force=false){
+  const season=String(nflState?.season||leagueInfo?.season||new Date().getFullYear());
+  const week=n(nflState?.week)||1,now=Date.now();
+  const kickoffFresh=nflKickoffByGameKey.size&&now-nflKickoffFetchedAt<NFL_KICKOFF_REFRESH_MS;
+  const statusFresh=nflEspnStatusByTeam.size&&now-nflEspnStatusFetchedAt<NFL_ESPN_STATUS_REFRESH_MS;
+  if(!force&&kickoffFresh&&statusFresh)return true;
+  try{
+    const data=await get(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&week=${encodeURIComponent(week)}&dates=${encodeURIComponent(season)}`);
+    return ingestEspnKickoffSchedule(data,week)>0;
+  }catch(e){
+    if(e?.isSleeperRequestError)return false;
+    try{console.warn('NFL ESPN schedule/status enrichment unavailable',e)}catch(_){}
+    return false;
+  }
+}
+loadNflKickoffCache();
+loadNflKickoffCache();
+
+function nflScheduleKickoffMs(game){
+  const candidates=[
+    game?.start_time,game?.startTime,game?.startTimeUTC,game?.start_time_utc,game?.kickoff,game?.kickoff_time,game?.kickoffTime,
+    game?.game_time,game?.gameTime,game?.metadata?.start_time,game?.metadata?.kickoff
+  ];
+  for(const raw of candidates){
+    if(raw===null||raw===undefined||raw==='')continue;
+    if(typeof raw==='number'&&Number.isFinite(raw))return raw<1e12?raw*1000:raw;
+    const s=String(raw).trim();
+    if(/^\d{10,13}$/.test(s)){const x=Number(s);return x<1e12?x*1000:x}
+    const parsed=Date.parse(s);if(Number.isFinite(parsed))return parsed;
+  }
+  const date=String(game?.date??game?.metadata?.date??'').trim();
+  const time=String(game?.time??game?.metadata?.time??'').trim();
+  if(date&&time){
+    // Sleeper's split schedule date/time values are UTC. Explicitly append Z so
+    // Android/browser locale parsing cannot shift kickoff several hours late.
+    const normalizedTime=/^\d{1,2}:\d{2}(?::\d{2})?$/.test(time)?time.padStart(5,'0'):time;
+    const iso=/^\d{4}-\d{2}-\d{2}$/.test(date)&&/^\d{2}:\d{2}(?::\d{2})?$/.test(normalizedTime)
+      ?`${date}T${normalizedTime}${normalizedTime.length===5?':00':''}Z`
+      :'';
+    const combined=iso?Date.parse(iso):Date.parse(`${date} ${time} UTC`);
+    if(Number.isFinite(combined))return combined;
+  }
+  const gameKey=nflScheduleGameKey(game);
+  const enriched=Number(nflKickoffByGameKey.get(gameKey)||0);
+  if(Number.isFinite(enriched)&&enriched>0)return enriched;
+  const known=nflKnownKickoffMs(game);
+  if(known)return known;
+  // A date-only value is never a kickoff timestamp unless the matchup/week fallback
+  // supplied an authoritative kickoff above.
+  return 0;
+}
+function nflScheduleKickoffSource(game){
+  const candidates=[
+    game?.start_time,game?.startTime,game?.startTimeUTC,game?.start_time_utc,
+    game?.kickoff,game?.kickoff_time,game?.kickoffTime,game?.game_time,game?.gameTime,
+    game?.metadata?.start_time,game?.metadata?.kickoff
+  ];
+  if(candidates.some(v=>v!==null&&v!==undefined&&v!==''))return 'schedule-field';
+  const key=nflScheduleGameKey(game);
+  if(Number(nflKickoffByGameKey.get(key)||0)>0)return 'espn-kickoff';
+  if(nflKnownKickoffMs(game))return 'known-2026';
+  return 'unavailable';
+}
+
+function nflScheduleStatusKind(game){
+  const raw=
+    game?.status?.type?.name ?? game?.status?.type?.state ?? game?.status?.type?.description ??
+    game?.status?.name ?? game?.status?.state ?? game?.status?.description ??
+    game?.status ?? game?.game_status ?? game?.gameStatus ?? game?.state ?? game?.phase ?? '';
+  const status=String(raw||'').trim().toLowerCase().replace(/[\s-]+/g,'_');
+  if(!status)return 'unknown';
+  if(['in_progress','live','playing','halftime','started','in'].includes(status)||status.includes('in_progress')||status.includes('halftime'))return 'live';
+  if(['complete','completed','final','closed','finished','post','postgame'].includes(status)||status.includes('final')||status.includes('complete')||status.includes('finished'))return 'final';
+  if(['scheduled','pre','pregame','not_started','pending'].includes(status)||status.includes('scheduled')||status.includes('pregame'))return 'scheduled';
+  return 'unknown';
+}
+function nflScheduleTeams(game){
+  return {
+    home:normalizeNflTeamCode(
+      game?.home_team ?? game?.home ?? game?.home_team_abbr ?? game?.home_abbr ??
+      game?.team_home ?? game?.metadata?.home_team ?? game?.metadata?.home
+    ),
+    away:normalizeNflTeamCode(
+      game?.away_team ?? game?.away ?? game?.away_team_abbr ?? game?.away_abbr ??
+      game?.team_away ?? game?.metadata?.away_team ?? game?.metadata?.away
+    )
+  };
+}
+function nflScheduleWeek(game){
+  return Number(game?.week ?? game?.leg ?? game?.week_num ?? game?.week_number ?? 0);
+}
+function nflScheduleGameForTeam(team,week=n(nflState?.week)||1,now=Date.now()){
+  const code=normalizeNflTeamCode(team);if(!code)return null;
+  const games=(nflScheduleGames||[]).filter(g=>{
+    const teams=nflScheduleTeams(g);
+    return teams.home===code||teams.away===code;
+  });
+  if(!games.length)return null;
+
+  const inWindow=games
+    .map(g=>({g,k:nflScheduleKickoffMs(g)}))
+    .filter(x=>x.k&&now>=x.k-NFL_GAME_WINDOW_EARLY_MS&&now<=x.k+NFL_GAME_WINDOW_LATE_MS)
+    .sort((a,b)=>Math.abs(now-a.k)-Math.abs(now-b.k))[0];
+  if(inWindow)return inWindow.g;
+
+  const exact=games.find(g=>nflScheduleWeek(g)===Number(week));
+  if(exact)return exact;
+
+  // If only one game for this team is present in the loaded payload, it is still
+  // usable for diagnostics/fallback even when week metadata is absent.
+  return games.length===1?games[0]:null;
+}
+function nflTeamGameActivity(team,now=Date.now()){
+  const code=normalizeNflTeamCode(team);if(!code)return {active:false,source:'none',game:null,status:'unknown'};
+  const week=n(nflState?.week)||1;
+  const game=nflScheduleGameForTeam(code,week,now);
+  const kickoff=game?nflScheduleKickoffMs(game):0;
+  const sleeperKind=game?nflScheduleStatusKind(game):'unknown';
+
+  // ESPN status is refreshed frequently and is authoritative for current-game lifecycle.
+  const espn=nflEspnStatusByTeam.get(code);
+  const espnCurrent=espn&&String(espn.key||'').startsWith(`${Number(week)||0}:`) ? espn : null;
+  if(espnCurrent?.kind==='final')return {active:false,source:'espn-final',status:'final',game,kickoff};
+  if(espnCurrent?.kind==='live')return {active:true,source:'espn-status',status:'live',game,kickoff};
+  if(espnCurrent?.kind==='scheduled')return {active:false,source:'espn-pre',status:'scheduled',game,kickoff};
+
+  // Sleeper explicit lifecycle is the secondary authoritative source.
+  if(sleeperKind==='final')return {active:false,source:'final',status:'final',game,kickoff};
+  if(sleeperKind==='scheduled')return {active:false,source:'status-pre',status:'scheduled',game,kickoff};
+  if(sleeperKind==='live')return {active:true,source:'status',status:'live',game,kickoff};
+
+  // Only when neither source knows the lifecycle do we use heuristics.
+  if(kickoff&&now>=kickoff-NFL_GAME_WINDOW_EARLY_MS&&now<=kickoff+NFL_GAME_WINDOW_LATE_MS){
+    return {active:true,source:'time-window',status:'unknown',game,kickoff};
+  }
+  const heartbeat=Number(nflLiveStatHeartbeat.get(code)||0);
+  const recentDebug=(typeof testingLiveDebugPlays!=='undefined'&&Array.isArray(testingLiveDebugPlays))
+    ?testingLiveDebugPlays.find(e=>normalizeNflTeamCode(e?.nflTeam)===code&&now-Number(e?.time||0)<=NFL_LIVE_STAT_HEARTBEAT_MS)
+    :null;
+  const recentAt=Math.max(heartbeat,Number(recentDebug?.time||0));
+  if(recentAt&&now-recentAt<=NFL_LIVE_STAT_HEARTBEAT_MS){
+    return {active:true,source:heartbeat?'live-stats':'live-debug',status:'unknown',game,lastStatAt:recentAt,kickoff};
+  }
+  return {active:false,source:kickoff?'schedule':'none',status:'unknown',game,lastStatAt:recentAt||0,kickoff};
+}
+function isNflTeamGameActive(team,now=Date.now()){return nflTeamGameActivity(team,now).active}
+function refreshNflActivityUi(){
+  try{
+    if(typeof render==='function')render();
+    if(typeof renderTestingNflGameActivity==='function')renderTestingNflGameActivity();
+  }catch(e){try{console.warn('NFL activity UI refresh failed',e)}catch(_){}}
+}
+function startNflActivityUiTimer(){
+  if(nflActivityUiTimer)clearInterval(nflActivityUiTimer);
+  nflActivityUiTimer=setInterval(refreshNflActivityUi,NFL_ACTIVITY_UI_REFRESH_MS);
+}
+function loadNflScheduleCache(){
+  try{
+    const raw=storage.get(NFL_SCHEDULE_CACHE_KEY,'');if(!raw)return false;
+    const c=JSON.parse(raw);
+    if(!Array.isArray(c?.games))return false;
+    nflScheduleGames=c.games;nflScheduleFetchedAt=Number(c.fetchedAt)||0;nflScheduleSeason=String(c.season||'');nflScheduleType=String(c.seasonType||'');
+    return true;
+  }catch(_){return false}
+}
+function saveNflScheduleCache(){
+  try{storage.set(NFL_SCHEDULE_CACHE_KEY,JSON.stringify({fetchedAt:nflScheduleFetchedAt,season:nflScheduleSeason,seasonType:nflScheduleType,games:nflScheduleGames}))}catch(_){}
+}
+async function refreshNflScheduleStatus(force=false){
+  const season=String(nflState?.season||leagueInfo?.season||new Date().getFullYear());
+  const seasonType=nflScheduleSeasonType(),week=n(nflState?.week)||1,now=Date.now();
+  const sameSeason=nflScheduleSeason===season&&nflScheduleType===seasonType;
+  if(!force&&sameSeason&&nflScheduleGames.length&&now-nflScheduleFetchedAt<NFL_SCHEDULE_REFRESH_MS)return true;
+  try{
+    const raw=await get(`https://api.sleeper.app/schedule/nfl/${encodeURIComponent(seasonType)}/${encodeURIComponent(season)}`);
+    const all=Array.isArray(raw)?raw:Array.isArray(raw?.games)?raw.games:Array.isArray(raw?.schedule)?raw.schedule:[];
+    if(!all.length)return false;
+    // Preserve the full schedule. Active-game detection must not depend on an exact
+    // week-field match before kickoff-time fallback gets a chance to run.
+    nflScheduleGames=all;nflScheduleFetchedAt=now;nflScheduleSeason=season;nflScheduleType=seasonType;saveNflScheduleCache();
+    return true;
+  }catch(e){
+    if(e?.isSleeperRequestError)return false;
+    throw e;
+  }
+}
+loadNflScheduleCache();
+
 function referencedPlayerIds(){
   const ids=new Set(),add=id=>{if(id!=null&&String(id)!=='')ids.add(String(id))};
   for(const r of rosters||[]){
@@ -60,8 +390,17 @@ function ingestReferencedPlayersFromMap(source){
   return learned;
 }
 
+function playerMetadataHasUsableTeam(raw){
+  if(!raw||typeof raw!=='object')return false;
+  const team=normalizeNflTeamCode(raw.team||raw.metadata?.team||'');
+  return !!team&&team!=='FA';
+}
 function missingReferencedPlayerIds(){
-  return [...referencedPlayerIds()].filter(id=>!discoveredSleeperPlayers[id]&&!playerMetadataFallback(id));
+  return [...referencedPlayerIds()].filter(id=>{
+    const discovered=discoveredSleeperPlayers[id];
+    const fallback=playerMetadataFallback(id);
+    return !playerMetadataHasUsableTeam(discovered)&&!playerMetadataHasUsableTeam(fallback);
+  });
 }
 
 async function resolveMissingReferencedPlayers(){
@@ -151,7 +490,39 @@ function loadSavedGameDayData(){
   return loaded||usedDefaultTeams;
 }
 
-function liveLoadingEnabled(){return storage.get(LIVE_LOADING_KEY,'off')==='on'}
+function liveLoadingEnabled(){return storage.get(LIVE_LOADING_KEY,'on')==='on'}
+const TESTING_AREA_VISIBLE_KEY='ucl-gameday-testing-area-visible-v1';
+const TESTING_FEATURES_AUTH_KEY='ucl-gameday-testing-features-authorized-v1';
+const TESTING_FEATURES_PASSWORD='failspy';
+function testingFeaturesAuthorized(){return storage.get(TESTING_FEATURES_AUTH_KEY,'off')==='on'}
+function testingAreaVisible(){return testingFeaturesAuthorized()&&storage.get(TESTING_AREA_VISIBLE_KEY,'off')==='on'}
+function updateTestingAreaVisibilityUi(){
+  const visible=testingAreaVisible(),nav=$('#testingAreaNavBtn'),toggle=$('#testingAreaVisibleToggle');
+  if(nav)nav.hidden=!visible;
+  if(toggle)toggle.checked=visible;
+  document.querySelectorAll('.testing-feature-settings').forEach(el=>el.hidden=!visible);
+  if(visible&&typeof testingRefreshAllPlayerSelectors==='function')testingRefreshAllPlayerSelectors();
+  if(!visible&&currentView==='testing')setView('gameday');
+}
+function authorizeTestingFeatures(){
+  if(testingFeaturesAuthorized())return true;
+  const entered=window.prompt('Enter the testing features password:');
+  if(entered===TESTING_FEATURES_PASSWORD){
+    storage.set(TESTING_FEATURES_AUTH_KEY,'on');
+    return true;
+  }
+  return false;
+}
+function setTestingAreaVisible(visible){
+  if(visible&&!authorizeTestingFeatures()){
+    storage.set(TESTING_AREA_VISIBLE_KEY,'off');
+    updateTestingAreaVisibilityUi();
+    return false;
+  }
+  storage.set(TESTING_AREA_VISIBLE_KEY,visible?'on':'off');
+  updateTestingAreaVisibilityUi();
+  return true;
+}
 function saveLiveSnapshot(){
   try{storage.set(LIVE_SNAPSHOT_KEY,JSON.stringify({savedAt:Date.now(),nflState,users,rosters,matchups}))}catch(e){}
 }
@@ -209,14 +580,15 @@ function rosterFor(id){return rosters.find(r=>String(r.roster_id)===String(id))}
 function pointMap(m){return m?.players_points||{}}
 function playerInfo(id){
   const key=String(id||'');
-  const raw=discoveredSleeperPlayers[key]||playerMetadataFallback(key)||{};
+  const discovered=discoveredSleeperPlayers[key]||null,fallback=playerMetadataFallback(key)||null;
+  const raw=playerMetadataHasUsableTeam(discovered)?discovered:(playerMetadataHasUsableTeam(fallback)?fallback:(discovered||fallback||{}));
   const full=raw.full_name||[raw.first_name,raw.last_name].filter(Boolean).join(' ');
   const pos=String(raw.position||raw.fantasy_positions?.[0]||'').toUpperCase();
   return {
     id:key,
     name:full||`Player ${key}`,
     pos:pos==='DST'?'DEF':(pos||'—'),
-    team:String(raw.team||'FA').toUpperCase(),
+    team:normalizeNflTeamCode(raw.team||'FA')||'FA',
     status:String(raw.injury_status||raw.status||'')
   };
 }
@@ -247,6 +619,16 @@ function syncThemePreferenceControls(){
   const first=$('#firstRunThemeSelect');
   if(first)first.value=current;
 }
+function syncSelectedTeamToFeaturedMatchup(preferRosterId=''){
+  const sel=$('#teamSelect'),pair=matchupPairs().find(p=>String(p.id)===String(featuredMatchupId));if(!sel||!pair)return String(sel?.value||'');
+  const ids=(pair.rows||[]).map(r=>String(r.roster_id));
+  const preferred=String(preferRosterId||sel.value||'');
+  const next=ids.includes(preferred)?preferred:(ids[0]||'');
+  if(next&&[...sel.options].some(o=>String(o.value)===next)){
+    sel.value=next;storage.set('ucl-gameday-team',next);syncTeamPreferenceControls();
+  }
+  return next;
+}
 function selectPreferredTeam(rosterId){
   const sel=$('#teamSelect');if(!sel||!rosterId)return;
   const valid=[...sel.options].some(o=>String(o.value)===String(rosterId));
@@ -254,9 +636,11 @@ function selectPreferredTeam(rosterId){
   sel.value=String(rosterId);
   storage.set('ucl-gameday-team',sel.value);
   featuredMatchupId=pairForRoster(sel.value)?.id||featuredMatchupId;
+  if(typeof gvSwitchMatchupSession==='function')gvSwitchMatchupSession();
   syncTeamPreferenceControls();
-  testingPopulateDeltaPlayers();
+  if(typeof testingRefreshAllPlayerSelectors==='function')testingRefreshAllPlayerSelectors();
   render();
+  if(currentView==='gameview')renderGameView();
 }
 function firstRunIsComplete(){
   try{return storage.get(FIRST_RUN_SETUP_KEY,'')==='1'}catch(e){return false}
@@ -282,7 +666,7 @@ function completeFirstRunSetup(){
 
 function populateControls(){applyTheme(storage.get('ucl-gameday-theme','UCL Blue'));renderThemeOptions();
  renderCtespnMatchupAlertSettings();
- const sel=$('#teamSelect'),saved=storage.get('ucl-gameday-team','dmercado');sel.innerHTML=rosters.map(r=>{const u=owner(r);const label=u.display_name||u.username||teamName(r);return `<option value="${esc(r.roster_id)}">${esc(label)}</option>`}).join('');const wanted=rosters.find(r=>String(owner(r).username||owner(r).display_name).toLowerCase()===saved.toLowerCase())||rosters.find(r=>String(r.roster_id)===saved)||rosters[0];if(wanted)sel.value=String(wanted.roster_id);sel.onchange=()=>{storage.set('ucl-gameday-team',sel.value);featuredMatchupId=pairForRoster(sel.value)?.id||featuredMatchupId;syncTeamPreferenceControls();render()};syncTeamPreferenceControls();syncThemePreferenceControls();showFirstRunSetupIfNeeded();}
+ const sel=$('#teamSelect'),saved=storage.get('ucl-gameday-team','dmercado');sel.innerHTML=rosters.map(r=>{const u=owner(r);const label=u.display_name||u.username||teamName(r);return `<option value="${esc(r.roster_id)}">${esc(label)}</option>`}).join('');const wanted=rosters.find(r=>String(owner(r).username||owner(r).display_name).toLowerCase()===saved.toLowerCase())||rosters.find(r=>String(r.roster_id)===saved)||rosters[0];if(wanted)sel.value=String(wanted.roster_id);sel.onchange=()=>{storage.set('ucl-gameday-team',sel.value);featuredMatchupId=pairForRoster(sel.value)?.id||featuredMatchupId;if(typeof gvSwitchMatchupSession==='function')gvSwitchMatchupSession();syncTeamPreferenceControls();if(typeof testingRefreshAllPlayerSelectors==='function')testingRefreshAllPlayerSelectors();render();if(currentView==='gameview')renderGameView()};syncTeamPreferenceControls();syncThemePreferenceControls();showFirstRunSetupIfNeeded();}
 function pairForRoster(rosterId){return matchupPairs().find(p=>p.rows.some(m=>String(m.roster_id)===String(rosterId)))}
 
 const CTESPN_SCORE_ALERT_PREFS_KEY='ucl-gameday-ctespn-score-alert-matchups-v1';
@@ -384,6 +768,7 @@ function gameDayBackupKeys(){
     ROSTER_CACHE_V2_KEY,
     LIVE_SNAPSHOT_KEY,
     LIVE_LOADING_KEY,
+    TESTING_AREA_VISIBLE_KEY,
     SIM_OPEN_GAMEVIEW_KEY,
     CTESPN_SCORE_ALERT_PREFS_KEY,
     'ucl-gameday-theme',
@@ -508,34 +893,52 @@ function gvRestoreFieldHome(){
   if(wrap&&home&&wrap.parentElement!==home)home.appendChild(wrap);
 }
 
+function ensureActiveNavVisible(){
+  const nav=document.querySelector('.primary-nav');
+  const active=nav?.querySelector('[data-view].active');
+  if(!nav||!active)return;
+  requestAnimationFrame(()=>{
+    const nr=nav.getBoundingClientRect(),ar=active.getBoundingClientRect();
+    if(ar.left<nr.left+4||ar.right>nr.right-4){
+      active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'nearest'});
+    }
+  });
+}
+
 function setView(view){
   if(view==='settings'){openSettings();return}
-  currentView=['gameday','gameview','testing'].includes(view)?view:'gameday';
+  currentView=['gameday','scores','gameview','testing'].includes(view)?view:'gameday';
 
   if(currentView==='testing')gvMountFieldForTesting();
   else gvRestoreFieldHome();
 
   const gameDayView=$('#gameContentView');
+  const scoresView=$('#scoresView');
   const gameView=$('#gameView');
   const testingView=$('#testingView');
 
   if(gameDayView)gameDayView.hidden=currentView!=='gameday';
+  if(scoresView)scoresView.hidden=currentView!=='scores';
   if(gameView)gameView.hidden=currentView!=='gameview';
   if(testingView)testingView.hidden=currentView!=='testing';
 
   document.querySelectorAll('.primary-nav [data-view]').forEach(
     b=>b.classList.toggle('active',b.dataset.view===currentView)
   );
+  ensureActiveNavVisible();
 
   if(currentView==='gameday')render();
+  if(currentView==='scores')renderScoresView();
   if(currentView==='testing'){
-    renderTestingArea();
+    testingInitTabs();renderTestingArea();renderTestingLiveDebug();
     gvMountFieldForTesting();
     // v0.4.38: do not destroy an in-flight Testing Area animation merely
     // because another test button re-selects the Testing view.
     if(!gameViewPlaying)clearGameViewEffects(true);
   }
   if(currentView==='gameview'){
+    syncSelectedTeamToFeaturedMatchup($('#teamSelect')?.value||'');
+    if(typeof gvSwitchMatchupSession==='function')gvSwitchMatchupSession();
     gvRestoreFieldHome();
     gvRestorePlaybackQueue();
     renderGameView();

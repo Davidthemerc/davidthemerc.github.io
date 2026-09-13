@@ -513,3 +513,14 @@
 .release-health{display:inline-flex;align-items:center;gap:3px}
 .release-health::before{content:"";width:7px;height:7px;border-radius:50%;background:#24934d;box-shadow:0 0 0 2px rgba(36,147,77,.12)}
 @media(max-width:720px){.stable-badge{font-size:6px;padding:1px 4px}}
+
+
+/* v1.10.2 live UCL GameDay banner */
+.season-gameday-live[hidden]{display:none!important}
+.season-gameday-live{display:flex;align-items:center;gap:10px;margin:8px 0 9px;padding:10px 12px;border:1px solid #b71c1c;border-radius:9px;background:#fff2f2;color:#741111;text-decoration:none;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.season-gameday-live-dot{width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#d71920;box-shadow:0 0 0 4px rgba(215,25,32,.13);animation:uclLivePulse 1.4s ease-in-out infinite}
+.season-gameday-live-copy{display:flex;flex-direction:column;min-width:0;flex:1}
+.season-gameday-live-copy b{font-size:12px;line-height:1.15}.season-gameday-live-copy small{font-size:9px;opacity:.8;margin-top:2px}
+.season-gameday-live-action{font-size:10px;font-weight:900;white-space:nowrap}
+@keyframes uclLivePulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.78);opacity:.65}}
+@media(max-width:720px){.season-gameday-live{padding:8px 9px;gap:8px}.season-gameday-live-copy b{font-size:10px}.season-gameday-live-copy small{font-size:8px}.season-gameday-live-action{font-size:8px}}

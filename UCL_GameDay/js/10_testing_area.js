@@ -1,6 +1,142 @@
-/* UCL GameDay v0.5.03 — build fragment: 10_testing_area.js
+/* UCL GameDay v0.5.50 — build fragment: 10_testing_area.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
+
+const testingLiveDebugPlays=[];
+const testingLiveDebugPrevPoints={};
+const TESTING_LIVE_DEBUG_MAX=400;
+let testingLiveDebugLastPollAt=0;
+let testingActiveTab='tools';
+const TESTING_NFL_ACTIVITY_OPEN_KEY='ucl-gameday-testing-nfl-activity-open-v1';
+
+function testingInitTabs(){
+  const area=$('#testingView .testing-area');if(!area||area.dataset.tabsReady==='1')return;
+  area.dataset.tabsReady='1';
+  const existing=[...area.children];
+  const nav=document.createElement('div');nav.className='testing-subtabs';
+  nav.innerHTML='<button type="button" data-testing-tab="tools" class="active">Tools</button><button type="button" data-testing-tab="live">Live Debug</button>';
+  const tools=document.createElement('div');tools.className='testing-tab-pane';tools.id='testingToolsPane';
+  for(const child of existing)tools.appendChild(child);
+  const live=document.createElement('div');live.className='testing-tab-pane';live.id='testingLiveDebugPane';live.hidden=true;
+  live.innerHTML=`
+    <div class="testing-head"><div><h2>Live Debug</h2><p>Raw UCL live scoring intake and GameView interpretation diagnostics.</p></div><button type="button" id="testingLiveDebugClear">Clear Plays</button></div>
+    <div class="testing-live-pollbar" id="testingLivePollBar">Waiting for live poll…</div>
+    <details class="testing-live-debug-card testing-nfl-activity-card" id="testingNflGameActivityDetails"><summary class="testing-live-debug-head"><div><small>NFL SCHEDULE</small><b>NFL Game Activity</b></div><span>Yellow-highlight source</span></summary><div id="testingNflGameActivity" class="testing-nfl-activity"></div></details>
+    <section class="testing-live-debug-card"><div class="testing-live-debug-head"><div><small>REPORTED ACTIVITY</small><b>Every Reported Play / Scoring Change</b></div><span>Newest first</span></div><div id="testingLivePlayStream" class="testing-live-play-stream"></div></section>
+    <section class="testing-live-debug-card"><div class="testing-live-debug-head"><div><small>RAW FANTASY DATA</small><b>Current Sleeper Matchup Payload</b></div><span>All UCL teams</span></div><div id="testingLiveFantasyData" class="testing-live-fantasy-data"></div></section>`;
+  area.append(nav,tools,live);
+  const nflActivityDetails=$('#testingNflGameActivityDetails');
+  if(nflActivityDetails){
+    nflActivityDetails.open=storage.get(TESTING_NFL_ACTIVITY_OPEN_KEY,'closed')==='open';
+    nflActivityDetails.addEventListener('toggle',()=>storage.set(TESTING_NFL_ACTIVITY_OPEN_KEY,nflActivityDetails.open?'open':'closed'));
+  }
+  testingSetTab(testingActiveTab);
+}
+function testingSetTab(name){
+  testingActiveTab=name==='live'?'live':'tools';
+  const tools=$('#testingToolsPane'),live=$('#testingLiveDebugPane');
+  if(tools)tools.hidden=testingActiveTab!=='tools';
+  if(live)live.hidden=testingActiveTab!=='live';
+  document.querySelectorAll('[data-testing-tab]').forEach(b=>b.classList.toggle('active',b.dataset.testingTab===testingActiveTab));
+  if(testingActiveTab==='live')renderTestingLiveDebug();
+}
+function testingCaptureLiveDebugPoll(){
+  if(!liveLoadingEnabled()||!matchups?.length)return;
+  const now=Date.now();testingLiveDebugLastPollAt=now;
+  for(const row of matchups){
+    const rid=String(row.roster_id),starterSet=new Set((row.starters||[]).filter(Boolean).map(String)),points=row.players_points||{};
+    const ids=new Set([...(row.players||[]).map(String),...Object.keys(points)]);
+    for(const pid of ids){
+      const current=Number(points[pid]||0),key=`${rid}:${pid}`,had=Object.prototype.hasOwnProperty.call(testingLiveDebugPrevPoints,key),before=Number(testingLiveDebugPrevPoints[key]||0);
+      const fantasyDelta=had?Number((current-before).toFixed(2)):0;
+      const statChanges=testingStatChangesForPlayer(pid);
+      if(had&&(Math.abs(fantasyDelta)>=0.01||Object.keys(statChanges).length)){
+        const meta=playerInfo(pid),rawDelta=Object.fromEntries(Object.entries(statChanges).map(([k,v])=>[k,Number(v.delta)||0]));
+        const liveTeam=normalizeNflTeamCode(meta.team);
+        if(liveTeam&&Object.keys(statChanges).length){
+          nflLiveStatHeartbeat.set(liveTeam,now);
+          const opp=normalizeNflTeamCode(gameViewOpponentByPlayer?.[String(pid)]||gvOpponentFromWeeklyMap?.(liveTeam)||'');
+          if(opp)nflLiveStatHeartbeat.set(opp,now);
+        }
+        const expectedDelta=typeof gvExpectedStatFantasyDelta==='function'?gvExpectedStatFantasyDelta(rawDelta,meta.pos):0;
+        const analysis=gvIntervalPlayAnalysis(pid,meta.pos,rawDelta,Math.abs(expectedDelta)>=.01?expectedDelta:fantasyDelta);
+        const started=starterSet.has(String(pid));
+        const recState=typeof gvReconciliationState==='function'?gvReconciliationState(rid,pid):null;
+        let disposition='BENCH — BLOCKED';
+        if(started){
+          const statDecision=typeof gvStatRenderDecision==='function'?gvStatRenderDecision(rid,pid,rawDelta,now):null;
+          if(Math.abs(expectedDelta)>=.01||statDecision?.major){
+            disposition=statDecision&&!statDecision.accept?'CORRECTION — SUPPRESSED':'STAT-FIRST GAMEVIEW';
+          }else if(Object.keys(statChanges).length)disposition='DIAGNOSTIC ONLY';
+          else if(Math.abs(fantasyDelta)>=.01)disposition='FPTS SUPPORT ONLY';
+          else disposition='NO SCORING CHANGE';
+        }
+        testingLiveDebugPlays.unshift({
+          time:now,rosterId:rid,playerId:String(pid),player:meta.name,pos:meta.pos,nflTeam:meta.team,
+          started,fantasyDelta,expectedDelta,pendingExpected:Number(recState?.pendingExpected||0),total:current,statChanges,
+          family:analysis.family,confidence:analysis.confidence,
+          disposition
+        });
+      }
+      testingLiveDebugPrevPoints[key]=current;
+    }
+  }
+  if(testingLiveDebugPlays.length>TESTING_LIVE_DEBUG_MAX)testingLiveDebugPlays.length=TESTING_LIVE_DEBUG_MAX;
+  renderTestingLiveDebug();
+}
+function testingLiveDebugJson(obj){return esc(JSON.stringify(obj,null,2))}
+function testingSpecificNflGameActivity(game,now=Date.now()){
+  if(!game)return {active:false,source:'none',game:null};
+  const kind=nflScheduleStatusKind(game),kickoff=nflScheduleKickoffMs(game);
+  if(kind==='final')return {active:false,source:'final',game,kickoff};
+  if(kickoff&&now>=kickoff-NFL_GAME_WINDOW_EARLY_MS&&now<=kickoff+NFL_GAME_WINDOW_LATE_MS){
+    return {active:true,source:'time-window',game,kickoff};
+  }
+  if(kind==='live')return {active:true,source:'status',game,kickoff};
+  return {active:false,source:kickoff?'schedule':'none',game,kickoff};
+}
+function renderTestingNflGameActivity(){
+  const host=$('#testingNflGameActivity');if(!host)return;
+  const seen=new Set(),games=(nflScheduleGames||[]).map(g=>{
+    const teams=nflScheduleTeams(g),kind=nflScheduleStatusKind(g),kickoff=nflScheduleKickoffMs(g);
+    if(teams.home)seen.add(teams.home);if(teams.away)seen.add(teams.away);
+    const activity=testingSpecificNflGameActivity(g);
+    const rawKickoff=String(g?.start_time??g?.startTime??g?.startTimeUTC??g?.start_time_utc??g?.kickoff??g?.kickoff_time??g?.game_time??((g?.date&&g?.time)?`${g.date} ${g.time}`:'')??'');
+    const kickoffSource=nflScheduleKickoffSource(g);
+    return {teams,kind,kickoff,activity,rawKickoff,kickoffSource};
+  });
+  for(const [team,lastStatAt] of nflLiveStatHeartbeat.entries()){
+    if(seen.has(team))continue;
+    const activity=nflTeamGameActivity(team);
+    games.push({teams:{away:'',home:team},kind:'stats-only',kickoff:0,activity,rawKickoff:'',lastStatAt});
+  }
+  host.innerHTML=games.length?games.map(x=>{
+    const when=x.kickoff?new Date(x.kickoff).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}):'kickoff unavailable';
+    const statWhen=x.activity?.lastStatAt?new Date(x.activity.lastStatAt).toLocaleTimeString([], {hour:'numeric',minute:'2-digit',second:'2-digit'}):'—';
+    const matchup=x.teams.away?`${x.teams.away} @ ${x.teams.home}`:`${x.teams.home} • live-stat heartbeat`;
+    return `<div class="testing-nfl-game ${x.activity.active?'active':'inactive'}"><b>${esc(matchup)}</b><span>${esc(String(x.kind||'unknown').toUpperCase())}</span><small>${esc(x.activity.source||'none')} • raw ${esc(x.rawKickoff||'—')} • local ${esc(when)} • last stat ${esc(statWhen)}</small><strong>${x.activity.active?'ACTIVE':'INACTIVE'}</strong></div>`;
+  }).join(''):'<div class="testing-empty">No current-week NFL schedule or live-stat activity detected yet.</div>';
+}
+function renderTestingLiveDebug(){
+  const bar=$('#testingLivePollBar'),stream=$('#testingLivePlayStream'),data=$('#testingLiveFantasyData');
+  if(!bar||!stream||!data)return;
+  renderTestingNflGameActivity();
+  const d=gvLiveCaptureDiagnostics||{};
+  bar.textContent=`Last poll: ${testingLiveDebugLastPollAt?new Date(testingLiveDebugLastPollAt).toLocaleTimeString():'—'} • Team totals changed: ${d.teamScoreChanges||0} • Starter deltas: ${d.starterDeltas||0} • Bench deltas ignored: ${d.benchDeltasIgnored||0} • Unresolved: ${d.unresolvedTeamChanges||0}`;
+  stream.innerHTML=testingLiveDebugPlays.length?testingLiveDebugPlays.map(e=>{
+    const time=new Date(e.time).toLocaleTimeString([], {hour:'numeric',minute:'2-digit',second:'2-digit'});
+    const stats=Object.keys(e.statChanges||{}).length?`<details><summary>Stat deltas</summary><pre>${testingLiveDebugJson(e.statChanges)}</pre></details>`:'';
+    const expected=Math.abs(Number(e.expectedDelta||0))>=.01?`<span>Stat-first: ${Number(e.expectedDelta)>=0?'+':''}${Number(e.expectedDelta).toFixed(2)} expected</span>`:'';
+    return `<div class="testing-live-play ${e.started?'started':'bench'}"><div class="testing-live-play-top"><time>${esc(time)}</time><b>${esc(e.player)}</b><span>${esc(e.pos)} • ${esc(e.nflTeam)}</span><strong>${esc(e.disposition)}</strong></div><div class="testing-live-play-body"><span>Matchup FPTS: ${e.fantasyDelta>=0?'+':''}${Number(e.fantasyDelta).toFixed(2)} → ${Number(e.total).toFixed(2)}</span>${expected}<span>${esc(e.family||'unknown')} • ${esc(e.confidence||'unknown')}</span></div>${stats}</div>`;
+  }).join(''):'<div class="testing-empty">No live scoring/stat changes captured yet.</div>';
+
+  data.innerHTML=matchupPairs().map(pair=>`<details class="testing-live-matchup" open><summary>UCL Game ${esc(pair.id)}</summary>${pair.rows.map(row=>{
+    const rid=String(row.roster_id),starters=new Set((row.starters||[]).filter(Boolean).map(String)),ptsMap=row.players_points||{};
+    const roster=rosterFor(rid);
+    const playerRows=(row.players||[]).map(String).map(pid=>{const meta=playerInfo(pid);return {pid,meta,pts:Number(ptsMap[pid]||0),started:starters.has(pid),stats:gameViewStats[pid]||{}}}).sort((a,b)=>(b.started-a.started)||b.pts-a.pts);
+    return `<div class="testing-live-team"><div class="testing-live-team-head"><b>${esc(teamName(roster))}</b><span>${Number(row.points||0).toFixed(2)} PTS</span></div>${playerRows.map(x=>`<details class="testing-live-player ${x.started?'started':'bench'}"><summary><span>${x.started?'START':'BENCH'}</span><b>${esc(x.meta.name)}</b><small>${esc(x.meta.pos)} • ${esc(x.meta.team)}</small><strong>${x.pts.toFixed(2)}</strong></summary><pre>${testingLiveDebugJson({player_id:x.pid,players_points:x.pts,weekly_stats:x.stats})}</pre></details>`).join('')}</div>`;
+  }).join('')}</details>`).join('')+`<details class="testing-live-raw"><summary>Raw matchups JSON</summary><pre>${testingLiveDebugJson(matchups)}</pre></details>`;
+}
 function testingRosteredPlayerIds(){
   const pair=chosenPair?.();const ids=new Set();
   if(!pair)return ids;
@@ -207,9 +343,7 @@ function gvTestingEnsureRandomScoreContext(evt){
   evt.testingScoreContext=ctx;
   evt.leftScore=ctx.postLeft;evt.rightScore=ctx.postRight;
   // Testing treats an actual synthetic lead flip as qualifying so the specialized
-  // announcer resolver can be exercised without changing the live late-game rules.
-  evt.audioTestLeadChange={qualifying:ctx.leadChanged,direction:ctx.direction,source:'testing-score-controls'};
-  return ctx;
+return ctx;
 }
 function gvTestingRenderScorePhase(evt,phase='post'){
   const ctx=gvTestingEnsureRandomScoreContext(evt);if(!ctx)return;
@@ -270,7 +404,14 @@ function gvTestingPlayValue(play){
   if(play==='def_pressure')return {delta:gvTestingRandomPoints(.5,3)};
   if(play==='incomplete')return {delta:0};
   if(play==='def_sack')return {delta:gvTestingRandomPoints(1,3)};
+  if(play==='lateral_td')return {yards:gvTestingRandomInt(12,45),lateralYards:gvTestingRandomInt(8,35),delta:gvTestingRandomPoints(7,14)};
+  if(play==='off_fum_rec_td')return {yards:gvTestingRandomInt(4,18),delta:Number((gvTestingScoreWeight('fum_rec',2)+gvTestingScoreWeight('fum_rec_td',6)).toFixed(2))};
   if(play==='def_qb_hit')return {delta:gvTestingRandomPoints(.2,1)};
+  if(play==='qb_kneel')return {yards:-1,delta:-.1};
+  if(play==='two_point_pass'||play==='two_point_rush')return {yards:2,delta:2};
+  if(play==='def_2pt_int'||play==='def_2pt_fumble')return {yards:100,delta:2};
+  if(play==='def_blocked_kick')return {yards:0,delta:gvTestingScoreWeight('blk_kick',2)||2};
+  if(play==='def_safety')return {yards:0,delta:gvTestingScoreWeight('safe',2)||2};
   if(play==='def_int'||play==='def_int_td'){
     const yards=gvTestingRandomInt(play==='def_int_td'?25:0,play==='def_int_td'?95:58);
     const td=play==='def_int_td';
@@ -307,6 +448,30 @@ function gvTestEventForRoster(rosterId,opts={}){
     source:'testing',testingForced:true,...extra
   });
   const first=(pos)=>players.find(p=>String(p.pos||'').toUpperCase()===pos);
+
+  if(play==='lateral_td'){
+    const qb=first('QB');
+    let primaries=players.filter(p=>['WR','TE','RB'].includes(String(p.pos||'').toUpperCase()));
+    if(['WR','TE','RB'].includes(requestedPos))primaries=primaries.filter(p=>String(p.pos||'').toUpperCase()===requestedPos);
+    const primary=primaries[assignmentHash(`${rid}|${baseTime}|lat-primary`)%Math.max(1,primaries.length)];
+    const tails=players.filter(p=>['WR','TE','RB'].includes(String(p.pos||'').toUpperCase())&&p!==primary&&(!qb?.team||!p.team||p.team===qb.team));
+    const tail=tails[assignmentHash(`${rid}|${baseTime}|lat-tail`)%Math.max(1,tails.length)];if(!qb||!primary||!tail)return null;
+    const sample=gvTestingPlayValue(play),totalYards=Number(sample.yards||24),tailYards=Math.min(totalYards-2,Number(sample.lateralYards||10)),primaryYards=Math.max(2,totalYards-tailYards);
+    let evt=gameViewEventFromDelta(mk(primary,`Completed pass → lateral to ${tail.name} for touchdown`,sample.delta,'qb_pass'));if(!evt)return null;
+    return {...evt,id:`forced-lateral-td-${rid}-${baseTime}`,playType:'qb_pass',source:'testing',testingForced:true,multiActor:true,correlated:true,lateralChain:true,lateralTouchdown:true,
+      passerPlayerId:qb.id,passerName:qb.name,passerPos:'QB',passerNflTeam:qb.team,qbPlayerId:qb.id,qbName:qb.name,qbPos:'QB',qbNflTeam:qb.team,
+      receiverPlayerId:primary.id,receiverName:primary.name,receiverPos:primary.pos||'WR',receiverNflTeam:primary.team,
+      lateralRecipientPlayerId:tail.id,lateralRecipientName:tail.name,lateralRecipientPos:tail.pos||'WR',lateralYards:tailYards,
+      playerId:tail.id,name:tail.name,pos:tail.pos||'WR',nflTeam:tail.team,visualYards:totalYards,detail:`Completed pass → lateral to ${tail.name} for touchdown`,
+      intervalAnalysis:{count:1,family:'reception',detail:'Lateral touchdown',confidence:'single',stats:{pass_cmp:1,pass_yd:totalYards,rec:1,rec_yd:primaryYards,rec_td:1},pointDelta:sample.delta,scoringRelevant:true}};
+  }
+  if(play==='off_fum_rec_td'){
+    let recovers=players.filter(p=>['WR','TE','RB'].includes(String(p.pos||'').toUpperCase()));if(['WR','TE','RB'].includes(requestedPos))recovers=recovers.filter(p=>String(p.pos||'').toUpperCase()===requestedPos);
+    const p=recovers[assignmentHash(`${rid}|${baseTime}|off-fum-td`)%Math.max(1,recovers.length)];if(!p)return null;const sample=gvTestingPlayValue(play),detail='Offensive teammate fumble recovery touchdown';
+    let item=mk(p,detail,sample.delta,'off_fum_rec_td');item.intervalAnalysis={count:1,family:'off_fum_recovery',detail,confidence:'single',stats:{fum_rec:1,fum_rec_td:1},pointDelta:sample.delta,scoringRelevant:true};
+    let evt=gameViewEventFromDelta(item);return evt?{...evt,id:`forced-off-fum-rec-td-${rid}-${baseTime}`,playType:'off_fum_rec_td',source:'testing',testingForced:true,visualYards:sample.yards,detail,offensiveRecoveryTd:true}:null;
+  }
+
 
   if(['wr_rec_fumble','rb_rec_fumble','wr_rush_fumble','rb_rush_fumble'].includes(play)){
     const receiving=play.includes('_rec_'),carrierPos=play.startsWith('wr_')?'WR':'RB';
@@ -435,6 +600,20 @@ function gvTestEventForRoster(rosterId,opts={}){
     let evt=gameViewEventFromDelta(mk(p,`${sample.yards} rushing yards`,sample.delta,'qb_run'));
     return evt?{...evt,id:`forced-qbrun-${rid}-${baseTime}`,playType:'qb_run',source:'testing',testingForced:true}:null;
   }
+  if(play==='qb_kneel'){
+    const p=first('QB');if(!p)return null;const sample=gvTestingPlayValue(play),detail='QB kneel';
+    let item=mk(p,detail,sample.delta,'qb_kneel');item.intervalAnalysis={count:1,family:'qb_run',detail,confidence:'single',stats:{rush_att:1,rush_yd:-1},pointDelta:sample.delta,scoringRelevant:true};
+    let evt=gameViewEventFromDelta(item);return evt?{...evt,id:`forced-qb-kneel-${rid}-${baseTime}`,playType:'qb_kneel',source:'testing',testingForced:true,visualYards:-1,detail}:null;
+  }
+  if(play==='two_point_pass'||play==='two_point_rush'){
+    const p=first('QB');if(!p)return null;const sample=gvTestingPlayValue(play),passing=play==='two_point_pass';
+    const recs=players.filter(x=>['WR','TE','RB'].includes(String(x.pos||'').toUpperCase()));const rec=recs[assignmentHash(`${rid}|${baseTime}|2pt`)%Math.max(1,recs.length)]||null;
+    const detail=passing?'Successful two-point pass':'Successful two-point rush';const stats=passing?{pass_att:1,pass_cmp:1,pass_2pt:1}:{rush_att:1,rush_2pt:1};
+    let item=mk(p,detail,2,play);item.intervalAnalysis={count:1,family:passing?'qb_pass':'qb_run',detail,confidence:'single',stats,pointDelta:2,scoringRelevant:true};
+    let evt=gameViewEventFromDelta(item);if(!evt)return null;
+    return {...evt,id:`forced-${play}-${rid}-${baseTime}`,playType:play,source:'testing',testingForced:true,twoPointConversion:true,delta:2,detail,
+      ...(passing&&rec?{multiActor:true,passerPlayerId:p.id,passerName:p.name,passerPos:'QB',passerNflTeam:p.team,qbPlayerId:p.id,qbName:p.name,qbPos:'QB',qbNflTeam:p.team,receiverPlayerId:rec.id,receiverName:rec.name,receiverPos:rec.pos||'WR',receiverNflTeam:rec.team,playerId:rec.id,name:rec.name,pos:rec.pos||'WR',nflTeam:rec.team}:{} )};
+  }
   if(play==='kick'||play==='kick_miss'){
     const p=first('K');if(!p)return null;const sample=gvTestingPlayValue(play),missed=play==='kick_miss',detail=`${sample.yards}-yard field goal${missed?' missed':''}`;
     let evt=gameViewEventFromDelta(mk(p,detail,sample.delta,'kick'));
@@ -454,13 +633,13 @@ function gvTestEventForRoster(rosterId,opts={}){
       playerId:qb.id,name:qb.name,pos:'QB',nflTeam:qb.team,detail:'Incomplete pass'};
   }
 
-  if(['def_pressure','def_sack','def_qb_hit','def_int','def_fumble','def_int_td','def_fum_td','def_kick_ret_td','def_punt_ret_td'].includes(play)){
+  if(['def_pressure','def_sack','def_qb_hit','def_safety','def_blocked_kick','def_2pt_int','def_2pt_fumble','def_int','def_fumble','def_int_td','def_fum_td','def_kick_ret_td','def_punt_ret_td'].includes(play)){
     const p=first('DEF')||first('DST');if(!p)return null;
-    const type=play==='def_pressure'?'def_breakup':play==='def_sack'?'def_sack':play==='def_qb_hit'?'def_qb_hit':play==='def_int'?'def_int':play==='def_int_td'?'def_int_td':play==='def_fum_td'?'def_fum_td':play==='def_kick_ret_td'?'def_kick_ret_td':play==='def_punt_ret_td'?'def_punt_ret_td':'def_fumble';
-    const sample=gvTestingPlayValue(play),yards=Number(sample.yards||0),isInt=play==='def_int'||play==='def_int_td',isKickRet=play==='def_kick_ret_td',isPuntRet=play==='def_punt_ret_td',isTd=['def_int_td','def_fum_td','def_kick_ret_td','def_punt_ret_td'].includes(play);
-    const detail=play==='def_pressure'?'Pass breakup':play==='def_sack'?'Quarterback sack':play==='def_qb_hit'?'Quarterback hit':isKickRet?`Kick return touchdown • ${yards} yards`:isPuntRet?`Punt return touchdown • ${yards} yards`:isInt?`Interception returned ${yards} yards${isTd?' for a touchdown':''}`:`Fumble recovery returned ${yards} yards${isTd?' for a touchdown':''}`;
-    const statDelta=isKickRet?{kick_ret_yd:yards,def_st_td:1}:isPuntRet?{punt_ret_yd:yards,def_st_td:1}:isInt?{int:1,def_int_ret_yd:yards,...(isTd?{def_td:1}:{})}:play==='def_pressure'?{pass_def:1}:{...(play==='def_fumble'||play==='def_fum_td'?{fum_rec:1,fum_rec_yd:yards,...(isTd?{def_td:1}:{})}:{})};
-    const family=isKickRet?'kick_return':isPuntRet?'punt_return':isInt?'def_interception':play==='def_pressure'?'def_breakup':(play==='def_fumble'||play==='def_fum_td'?'def_fumble':'defense');
+    const type=play==='def_pressure'?'def_breakup':play==='def_sack'?'def_sack':play==='def_qb_hit'?'def_qb_hit':play==='def_safety'?'def_safety':play==='def_blocked_kick'?'def_blocked_kick':play==='def_2pt_int'?'def_2pt_int':play==='def_2pt_fumble'?'def_2pt_fumble':play==='def_int'?'def_int':play==='def_int_td'?'def_int_td':play==='def_fum_td'?'def_fum_td':play==='def_kick_ret_td'?'def_kick_ret_td':play==='def_punt_ret_td'?'def_punt_ret_td':'def_fumble';
+    const sample=gvTestingPlayValue(play),yards=Number(sample.yards||0),isInt=['def_int','def_int_td','def_2pt_int'].includes(play),isKickRet=play==='def_kick_ret_td',isPuntRet=play==='def_punt_ret_td',isTd=['def_int_td','def_fum_td','def_kick_ret_td','def_punt_ret_td'].includes(play);
+    const detail=play==='def_pressure'?'Pass breakup':play==='def_sack'?'Quarterback sack':play==='def_qb_hit'?'Quarterback hit':play==='def_safety'?'Safety':play==='def_blocked_kick'?'Blocked field goal / extra point':play==='def_2pt_int'?'Interception returned for two points':play==='def_2pt_fumble'?'Fumble returned for two points':isKickRet?`Kick return touchdown • ${yards} yards`:isPuntRet?`Punt return touchdown • ${yards} yards`:isInt?`Interception returned ${yards} yards${isTd?' for a touchdown':''}`:`Fumble recovery returned ${yards} yards${isTd?' for a touchdown':''}`;
+    const statDelta=play==='def_safety'?{safe:1}:play==='def_blocked_kick'?{blk_kick:1}:play==='def_2pt_int'?{int:1,def_2pt:1}:play==='def_2pt_fumble'?{fum_rec:1,def_2pt:1}:isKickRet?{kick_ret_yd:yards,def_st_td:1}:isPuntRet?{punt_ret_yd:yards,def_st_td:1}:isInt?{int:1,def_int_ret_yd:yards,...(isTd?{def_td:1}:{})}:play==='def_pressure'?{pass_def:1}:play==='def_qb_hit'?{qb_hit:1}:play==='def_sack'?{sack:1}:{...(play==='def_fumble'||play==='def_fum_td'?{fum_rec:1,fum_rec_yd:yards,...(isTd?{def_td:1}:{})}:{})};
+    const family=isKickRet?'kick_return':isPuntRet?'punt_return':isInt?'def_interception':play==='def_pressure'?'def_breakup':play==='def_qb_hit'?'def_qb_hit':(play==='def_fumble'||play==='def_fum_td'||play==='def_2pt_fumble'?'def_fumble':'defense');
     let item=mk(p,detail,sample.delta,type);item.intervalAnalysis={count:1,family,detail,confidence:'single',stats:statDelta,pointDelta:sample.delta,scoringRelevant:true};
     let evt=gameViewEventFromDelta(item);
     return evt?{...evt,id:`forced-${play}-${rid}-${baseTime}`,playType:type,source:'testing',testingForced:true,pos:p.pos||'DEF',visualYards:yards,turnoverKind:isInt?'interception':((play==='def_fumble'||play==='def_fum_td')?'fumble':null),specialTeamsReturn:isKickRet?'kickoff':(isPuntRet?'punt':null)}:null;
@@ -485,21 +664,21 @@ function gvTestEventForRoster(rosterId,opts={}){
   return evt?{...evt,id:`forced-random-${rid}-${baseTime}`,source:'testing',testingForced:true,playType}:null;
 }
 const GV_TEST_PLAY_OPTIONS={
-  QB:[['qb_run','QB Run'],['pass','Pass / Reception'],['qb_td','QB Pass TD'],['incomplete','Incomplete Pass']],
-  RB:[['rb_run','RB Run'],['pass','Reception'],['rb_rec_fumble','Catch → Fumble'],['rb_rush_fumble','Rush → Fumble'],['rush_td','Rush TD'],['rec_td','Reception TD']],
-  WR:[['pass','Reception'],['wr_rec_fumble','Catch → Fumble'],['wr_rush_fumble','Rush → Fumble'],['rec_td','Reception TD']],
-  TE:[['pass','Reception'],['rec_td','Reception TD']],
+  QB:[['qb_run','QB Run'],['qb_kneel','QB Kneel'],['pass','Pass / Reception'],['qb_td','QB Pass TD'],['two_point_pass','Two-Point Pass'],['two_point_rush','Two-Point Rush'],['incomplete','Incomplete Pass']],
+  RB:[['rb_run','RB Run'],['pass','Reception'],['lateral_td','Catch → Lateral TD'],['off_fum_rec_td','Offensive Fumble Recovery TD'],['rb_rec_fumble','Catch → Fumble'],['rb_rush_fumble','Rush → Fumble'],['rush_td','Rush TD'],['rec_td','Reception TD']],
+  WR:[['pass','Reception'],['lateral_td','Catch → Lateral TD'],['off_fum_rec_td','Offensive Fumble Recovery TD'],['wr_rec_fumble','Catch → Fumble'],['wr_rush_fumble','Rush → Fumble'],['rec_td','Reception TD']],
+  TE:[['pass','Reception'],['lateral_td','Catch → Lateral TD'],['off_fum_rec_td','Offensive Fumble Recovery TD'],['rec_td','Reception TD']],
   K:[['kick','Made Field Goal'],['kick_miss','Missed Field Goal']],
-  DEF:[['def_pressure','Pass Breakup'],['def_sack','Sack'],['def_qb_hit','QB Hit'],['def_int','Interception Return'],['def_int_td','Pick Six'],['def_fumble','Fumble Recovery Return'],['def_fum_td','Scoop & Score'],['def_kick_ret_td','Kick Return TD'],['def_punt_ret_td','Punt Return TD']],
+  DEF:[['def_pressure','Pass Breakup'],['def_sack','Sack'],['def_qb_hit','QB Hit'],['def_safety','Safety'],['def_blocked_kick','Blocked FG / PAT'],['def_int','Interception Return'],['def_int_td','Pick Six'],['def_fumble','Fumble Recovery Return'],['def_fum_td','Scoop & Score'],['def_2pt_int','Defensive 2PT — INT Return'],['def_2pt_fumble','Defensive 2PT — Fumble Return'],['def_kick_ret_td','Kick Return TD'],['def_punt_ret_td','Punt Return TD']],
   TANDEM:[['tandem','Pass / Reception'],['tandem_td','Passing TD']]
 };
 const TESTING_DELTA_PLAY_OPTIONS={
-  QB:[['qb_run','QB Run'],['qb_pass','Pass'],['qb_pass_td','Pass TD'],['qb_rush_td','Rush TD'],['qb_interception','Interception']],
-  RB:[['rb_run','Rush'],['rb_rush_td','Rush TD'],['rb_reception','Reception'],['rb_rec_td','Reception TD'],['rb_rec_fumble','Catch → Fumble'],['rb_rush_fumble','Rush → Fumble']],
-  WR:[['wr_reception','Reception'],['wr_rec_td','Reception TD'],['wr_rec_fumble','Catch → Fumble'],['wr_rush','Rush'],['wr_rush_td','Rush TD'],['wr_rush_fumble','Rush → Fumble']],
-  TE:[['te_reception','Reception'],['te_rec_td','Reception TD']],
+  QB:[['qb_run','QB Run'],['qb_kneel','QB Kneel'],['qb_pass','Pass'],['qb_pass_td','Pass TD'],['two_point_pass','Two-Point Pass'],['two_point_rush','Two-Point Rush'],['qb_rush_td','Rush TD'],['qb_interception','Interception']],
+  RB:[['rb_run','Rush'],['rb_rush_td','Rush TD'],['rb_reception','Reception'],['rb_rec_td','Reception TD'],['off_fum_rec_td','Offensive Fumble Recovery TD'],['rb_rec_fumble','Catch → Fumble'],['rb_rush_fumble','Rush → Fumble']],
+  WR:[['wr_reception','Reception'],['wr_rec_td','Reception TD'],['off_fum_rec_td','Offensive Fumble Recovery TD'],['wr_rec_fumble','Catch → Fumble'],['wr_rush','Rush'],['wr_rush_td','Rush TD'],['wr_rush_fumble','Rush → Fumble']],
+  TE:[['te_reception','Reception'],['te_rec_td','Reception TD'],['off_fum_rec_td','Offensive Fumble Recovery TD']],
   K:[['field_goal','Made Field Goal'],['field_goal_miss','Missed Field Goal']],
-  DEF:[['def_sack','Sack'],['def_int','Interception Return'],['def_int_td','Pick Six'],['def_fumble','Fumble Recovery Return'],['def_fum_td','Scoop & Score'],['def_kick_ret_td','Kick Return TD'],['def_punt_ret_td','Punt Return TD']],
+  DEF:[['def_sack','Sack'],['def_qb_hit','QB Hit'],['def_safety','Safety'],['def_blocked_kick','Blocked FG / PAT'],['def_int','Interception Return'],['def_int_td','Pick Six'],['def_fumble','Fumble Recovery Return'],['def_fum_td','Scoop & Score'],['def_2pt_int','Defensive 2PT — INT Return'],['def_2pt_fumble','Defensive 2PT — Fumble Return'],['def_kick_ret_td','Kick Return TD'],['def_punt_ret_td','Punt Return TD']],
   TANDEM:[['tandem_pass','Pass / Reception'],['tandem_td','Passing TD']]
 };
 const testingDeltaArrivalQueue=[];
@@ -509,7 +688,8 @@ let testingDeltaNextDelayMs=0;
 
 function testingRosterPlayersForSide(side){
   const ids=gvSelectedAndOpponentRosterIds?.()||{};
-  const rid=String(side==='opp'?(ids.opp||''):(ids.mine||''));
+  const fallbackMine=String($('#teamSelect')?.value||'');
+  const rid=String(side==='opp'?(ids.opp||''):(ids.mine||fallbackMine||''));
   return {rid,players:rid?gvRosterPlayersForTest(rid):[]};
 }
 function testingOffensivePairOptions(side,selectId,otherId=''){
@@ -517,6 +697,11 @@ function testingOffensivePairOptions(side,selectId,otherId=''){
   const {players}=testingRosterPlayersForSide(side);
   const list=players.filter(p=>['QB','RB','WR','TE'].includes(String(p.pos||'').toUpperCase()));
   const prior=String(sel.value||'');
+  if(!list.length){
+    sel.innerHTML='<option value="">Roster data unavailable</option>';
+    sel.value='';sel.disabled=true;return;
+  }
+  sel.disabled=false;
   sel.innerHTML=list.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} (${esc(String(p.pos||'').toUpperCase())})</option>`).join('');
   if(list.some(p=>String(p.id)===prior))sel.value=prior;
   if(otherId&&sel.value===String($('#'+otherId)?.value||'')&&list.length>1){
@@ -600,16 +785,8 @@ function testingPopulateDeltaPlaySelect(){
   testingPopulateDeltaValueSelect(true);
   testingUpdateQuickDeltaSummary();
 }
-function testingQuickScore(stats){
-  const fallbacks={rush_yd:.1,rec_yd:.1,rec:1,pass_yd:.04,rush_td:6,rec_td:6,pass_td:6,pass_int:-2,fum_lost:-2,
-    fgm:3,fgm_0_19:0,fgm_20_29:0,fgm_30_39:0,fgm_40_49:1,fgm_50p:2,fgmiss:-1,
-    sack:1,int:2,fum_rec:2,def_td:6,def_st_td:6,def_int_ret_yd:0,fum_rec_yd:0,kick_ret_yd:0,punt_ret_yd:0};
-  let total=0;
-  for(const [key,val] of Object.entries(stats||{})){
-    if(['rush_att','pass_att','pass_cmp'].includes(key))continue;
-    total+=Number(val||0)*gvTestingScoreWeight(key,fallbacks[key]??0);
-  }
-  return Number(total.toFixed(2));
+function testingQuickScore(stats,pos=''){
+  return uclScoreStats(stats,pos);
 }
 function testingDeltaPlayerForPosition(side,pos){
   const {rid,players}=testingRosterPlayersForSide(side);
@@ -653,9 +830,18 @@ function testingQuickDeltaStats(spec){
   if(p==='field_goal'||p==='field_goal_miss'){
     if(p==='field_goal_miss')return [{role:'K',stats:{fgmiss:1},detail:`${y}-yard field goal missed`}];
     const band=y>=50?'fgm_50p':y>=40?'fgm_40_49':y>=30?'fgm_30_39':y>=20?'fgm_20_29':'fgm_0_19';
-    return [{role:'K',stats:{fgm:1,[band]:1},detail:`${y}-yard field goal`}];
+    return [{role:'K',stats:{fgm:1,[band]:1,fgm_yds_over_30:Math.max(0,y-30)},detail:`${y}-yard field goal`}];
   }
+  if(p==='qb_kneel')return [{role:'QB',stats:{rush_att:1,rush_yd:-1}}];
+  if(p==='two_point_pass')return [{role:'QB',stats:{pass_att:1,pass_cmp:1,pass_2pt:1}}];
+  if(p==='two_point_rush')return [{role:'QB',stats:{rush_att:1,rush_2pt:1}}];
+  if(p==='off_fum_rec_td')return [{role:spec.position||'RB',stats:{fum_rec:1,fum_rec_td:1}}];
   if(p==='def_sack')return [{role:'DEF',stats:{sack:1}}];
+  if(p==='def_qb_hit')return [{role:'DEF',stats:{qb_hit:1}}];
+  if(p==='def_safety')return [{role:'DEF',stats:{safe:1}}];
+  if(p==='def_blocked_kick')return [{role:'DEF',stats:{blk_kick:1}}];
+  if(p==='def_2pt_int')return [{role:'DEF',stats:{int:1,def_2pt:1}}];
+  if(p==='def_2pt_fumble')return [{role:'DEF',stats:{fum_rec:1,def_2pt:1}}];
   if(p==='def_int')return [{role:'DEF',stats:{int:1,def_int_ret_yd:y}}];
   if(p==='def_int_td')return [{role:'DEF',stats:{int:1,def_int_ret_yd:y,def_td:1}}];
   if(p==='def_fumble')return [{role:'DEF',stats:{fum_rec:1,fum_rec_yd:y}}];
@@ -678,7 +864,7 @@ function testingBuildQuickDeltaEvents(spec){
       const pos=String(p.pos||'').toUpperCase();return c.role==='DEF'?['DEF','DST'].includes(pos):pos===c.role;
     });
     if(!player){warnings.push(`No rostered ${c.role} player could be resolved.`);continue}
-    const stats=c.stats||{},delta=testingQuickScore(stats),analysis=gvIntervalPlayAnalysis(player.id,player.pos,stats,delta),colors=nflTeamColors(player.team);
+    const stats=c.stats||{},delta=testingQuickScore(stats,player.pos),analysis=gvIntervalPlayAnalysis(player.id,player.pos,stats,delta),colors=nflTeamColors(player.team);
     const forcedTeam=c.forceTeam?`TEST-${rid}-${spec.id}`:(player.team||'FA');
     if(c.detail)analysis.detail=c.detail;
     events.push({
@@ -695,7 +881,7 @@ function testingBuildQuickDeltaEvents(spec){
 function testingDescribeQuickDelta(spec){
   const play=TESTING_DELTA_PLAY_OPTIONS[spec.position]?.find(([v])=>v===spec.play)?.[1]||spec.play;
   const valueCfg=testingDeltaValueConfig(spec.play),value=valueCfg?`${spec.value} ${valueCfg.label.toLowerCase()}`:'';
-  const comps=testingQuickDeltaStats(spec),points=comps.map(c=>testingQuickScore(c.stats));
+  const comps=testingQuickDeltaStats(spec),points=comps.map(c=>testingQuickScore(c.stats,c.role==='PASSER'?'QB':c.role==='RECEIVER'?playerInfo(c.playerId)?.pos:c.role));
   const total=Number(points.reduce((a,b)=>a+b,0).toFixed(2));
   return `${play}${value?` • ${value}`:''} • ${total>=0?'+':''}${total.toFixed(2)} FPTS${points.length>1?` across ${points.length} correlated players`:''}`;
 }
@@ -855,16 +1041,14 @@ function testingDeltaActiveRosterId(){
   return String(side==='opp'?(ids.opp||''):(ids.mine||$('#teamSelect')?.value||''));
 }
 function testingPopulateDeltaPlayers(){
-  const rosterPlayers=testingDeltaRosterPlayers();
-  const byId=new Map(rosterPlayers.map(p=>[String(p.id),p]));
   const currentRosterId=testingDeltaActiveRosterId();
-  const selectedRoster=rosterFor(currentRosterId);
-  const selectedIds=new Set((selectedRoster?.players||[]).map(String));
-  const teamPlayers=rosterPlayers.filter(p=>selectedIds.has(String(p.id)));
+  const teamPlayers=currentRosterId?gvRosterPlayersForTest(currentRosterId):[];
+  const byId=new Map(teamPlayers.map(p=>[String(p.id),p]));
 
   const optionsFor=(allowed,priority)=>{
     const rank=p=>{const pos=String(p.pos||'').toUpperCase(),i=priority.indexOf(pos);return i<0?99:i};
     const list=teamPlayers.filter(p=>allowed.includes(String(p.pos||'').toUpperCase()));
+    if(!list.length)return '<option value="">Roster data unavailable</option>';
     return `<option value="">Select player…</option>`+list
       .sort((a,b)=>rank(a)-rank(b)||String(a.name).localeCompare(String(b.name)))
       .map(p=>`<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.pos)})${p.team?` • ${esc(p.team)}`:''}</option>`).join('');
@@ -876,21 +1060,27 @@ function testingPopulateDeltaPlayers(){
     const rank=p=>{const pos=String(p.pos||'').toUpperCase(),i=priority.indexOf(pos);return i<0?99:i};
     return teamPlayers.filter(p=>allowed.includes(String(p.pos||'').toUpperCase())).sort((a,b)=>rank(a)-rank(b)||String(a.name).localeCompare(String(b.name)))[0];
   };
-  if(rush){
-    rush.innerHTML=optionsFor(['RB','QB','WR'],['RB','QB','WR']);
-    if(byId.has(prior.rush)&&selectedIds.has(prior.rush))rush.value=prior.rush;
-    else rush.value=String(firstEligible(['RB','QB','WR'],['RB','QB','WR'])?.id||'');
-  }
-  if(rec){
-    rec.innerHTML=optionsFor(['WR','TE','RB','QB'],['WR','TE','RB','QB']);
-    if(byId.has(prior.rec)&&selectedIds.has(prior.rec))rec.value=prior.rec;
-    else rec.value=String(firstEligible(['WR','TE','RB','QB'],['WR','TE','RB','QB'])?.id||'');
-  }
-  if(pass){
-    pass.innerHTML=optionsFor(['QB','RB','WR','TE','K'],['QB','RB','WR','TE','K']);
-    if(byId.has(prior.pass)&&selectedIds.has(prior.pass))pass.value=prior.pass;
-    else pass.value=String(firstEligible(['QB','RB','WR','TE','K'],['QB','RB','WR','TE','K'])?.id||'');
-  }
+  const fill=(el,priorValue,allowed,priority)=>{
+    if(!el)return;
+    const first=firstEligible(allowed,priority),hasPlayers=!!first;
+    el.innerHTML=optionsFor(allowed,priority);
+    el.disabled=!hasPlayers;
+    if(!hasPlayers){el.value='';return}
+    if(byId.has(priorValue)&&allowed.includes(String(byId.get(priorValue)?.pos||'').toUpperCase()))el.value=priorValue;
+    else el.value=String(first.id||'');
+  };
+  fill(rush,prior.rush,['RB','QB','WR'],['RB','QB','WR']);
+  fill(rec,prior.rec,['WR','TE','RB','QB'],['WR','TE','RB','QB']);
+  fill(pass,prior.pass,['QB','RB','WR','TE','K'],['QB','RB','WR','TE','K']);
+}
+function testingRefreshAllPlayerSelectors(){
+  testingSyncSimpleTeamLabels();
+  testingPopulateDeltaPlayers();
+  testingPopulateTandemPair('play');
+  testingPopulateTandemPair('delta');
+  gvTestingUpdateSimplePlaySummary();
+  testingUpdateQuickDeltaSummary();
+  testingUpdateDeltaPreview();
 }
 function testingResolveDeltaPlayer(value,preferredPositions=[]){
   const raw=String(value||'').trim();
@@ -1566,11 +1756,10 @@ async function testingRunSequencePreset(name){
 }
 
 function renderTestingArea(){
-  testingSyncSimpleTeamLabels();
+  renderSleeperConnectionDebug();
+  testingRefreshAllPlayerSelectors();
   renderTestingSequenceHistory();
-  testingUpdateDeltaPreview();
   const status=$('#testingStatus'),stream=$('#testingStream');
-  testingPopulateDeltaPlayers();
   if(!status||!stream)return;
   const eligible=testingRosteredPlayerIds().size;
   status.textContent=liveLoadingEnabled()

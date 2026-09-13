@@ -20,8 +20,460 @@ function nflTeamByeWeek(team){
   return NFL_TEAM_BYE_WEEKS_2026[aliases[t]||t]??null;
 }
 
+
+const UCL_NFL_SCHEDULE_2026=Object.freeze([
+  [1,"2026-09-10T00:20:00Z","SEA","NE","Lumen Field"],
+  [1,"2026-09-11T00:35:00Z","LAR","SF","Melbourne Cricket Ground"],
+  [1,"2026-09-13T17:00:00Z","CAR","CHI","Bank of America Stadium"],
+  [1,"2026-09-13T17:00:00Z","CIN","TB","Paycor Stadium"],
+  [1,"2026-09-13T17:00:00Z","DET","NO","Ford Field"],
+  [1,"2026-09-13T17:00:00Z","HOU","BUF","Reliant Stadium"],
+  [1,"2026-09-13T17:00:00Z","IND","BAL","Lucas Oil Stadium"],
+  [1,"2026-09-13T17:00:00Z","JAX","CLE","EverBank Stadium"],
+  [1,"2026-09-13T17:00:00Z","PIT","ATL","Acrisure Stadium"],
+  [1,"2026-09-13T17:00:00Z","TEN","NYJ","Nissan Stadium"],
+  [1,"2026-09-13T20:25:00Z","LAC","ARI","SoFi Stadium"],
+  [1,"2026-09-13T20:25:00Z","LV","MIA","Allegiant Stadium"],
+  [1,"2026-09-13T20:25:00Z","MIN","GB","U.S. Bank Stadium"],
+  [1,"2026-09-13T20:25:00Z","PHI","WAS","Lincoln Financial Field"],
+  [1,"2026-09-14T00:20:00Z","NYG","DAL","MetLife Stadium"],
+  [1,"2026-09-15T00:15:00Z","KC","DEN","Arrowhead Stadium"],
+  [2,"2026-09-18T00:15:00Z","BUF","DET","Highmark Stadium"],
+  [2,"2026-09-20T17:00:00Z","ATL","CAR","Mercedes-Benz Stadium"],
+  [2,"2026-09-20T17:00:00Z","BAL","NO","M&T Bank Stadium"],
+  [2,"2026-09-20T17:00:00Z","CHI","MIN","Soldier Field"],
+  [2,"2026-09-20T17:00:00Z","HOU","CIN","Reliant Stadium"],
+  [2,"2026-09-20T17:00:00Z","NE","PIT","Gillette Stadium"],
+  [2,"2026-09-20T17:00:00Z","NYJ","GB","MetLife Stadium"],
+  [2,"2026-09-20T17:00:00Z","TB","CLE","Raymond James Stadium"],
+  [2,"2026-09-20T17:00:00Z","TEN","PHI","Nissan Stadium"],
+  [2,"2026-09-20T20:05:00Z","DEN","JAX","Empower Field at Mile High"],
+  [2,"2026-09-20T20:05:00Z","LAC","LV","SoFi Stadium"],
+  [2,"2026-09-20T20:25:00Z","ARI","SEA","State Farm Stadium"],
+  [2,"2026-09-20T20:25:00Z","DAL","WAS","AT&T Stadium"],
+  [2,"2026-09-20T20:25:00Z","SF","MIA","Levi's\u00ae Stadium"],
+  [2,"2026-09-21T00:20:00Z","KC","IND","Arrowhead Stadium"],
+  [2,"2026-09-22T00:15:00Z","LAR","NYG","SoFi Stadium"],
+  [3,"2026-09-25T00:15:00Z","GB","ATL","Lambeau Field"],
+  [3,"2026-09-27T17:00:00Z","BUF","LAC","Highmark Stadium"],
+  [3,"2026-09-27T17:00:00Z","CLE","CAR","Huntington Bank Field"],
+  [3,"2026-09-27T17:00:00Z","DET","NYJ","Ford Field"],
+  [3,"2026-09-27T17:00:00Z","IND","HOU","Lucas Oil Stadium"],
+  [3,"2026-09-27T17:00:00Z","JAX","NE","EverBank Stadium"],
+  [3,"2026-09-27T17:00:00Z","MIA","KC","Hard Rock Stadium"],
+  [3,"2026-09-27T17:00:00Z","NYG","TEN","MetLife Stadium"],
+  [3,"2026-09-27T17:00:00Z","PIT","CIN","Acrisure Stadium"],
+  [3,"2026-09-27T17:00:00Z","WAS","SEA","Northwest Stadium"],
+  [3,"2026-09-27T20:05:00Z","SF","ARI","Levi's\u00ae Stadium"],
+  [3,"2026-09-27T20:05:00Z","TB","MIN","Raymond James Stadium"],
+  [3,"2026-09-27T20:25:00Z","DAL","BAL","Maracana Stadium"],
+  [3,"2026-09-27T20:25:00Z","NO","LV","Caesars Superdome"],
+  [3,"2026-09-28T00:20:00Z","DEN","LAR","Empower Field at Mile High"],
+  [3,"2026-09-29T00:15:00Z","CHI","PHI","Soldier Field"],
+  [4,"2026-10-02T00:15:00Z","CLE","PIT","Huntington Bank Field"],
+  [4,"2026-10-04T13:30:00Z","WAS","IND","Tottenham Hotspur Stadium"],
+  [4,"2026-10-04T17:00:00Z","BAL","TEN","M&T Bank Stadium"],
+  [4,"2026-10-04T17:00:00Z","BUF","NE","Highmark Stadium"],
+  [4,"2026-10-04T17:00:00Z","CHI","NYJ","Soldier Field"],
+  [4,"2026-10-04T17:00:00Z","CIN","JAX","Paycor Stadium"],
+  [4,"2026-10-04T17:00:00Z","HOU","DAL","Reliant Stadium"],
+  [4,"2026-10-04T17:00:00Z","NYG","ARI","MetLife Stadium"],
+  [4,"2026-10-04T17:00:00Z","PHI","LAR","Lincoln Financial Field"],
+  [4,"2026-10-04T17:00:00Z","TB","GB","Raymond James Stadium"],
+  [4,"2026-10-04T20:05:00Z","MIN","MIA","U.S. Bank Stadium"],
+  [4,"2026-10-04T20:25:00Z","LV","KC","Allegiant Stadium"],
+  [4,"2026-10-04T20:25:00Z","SEA","LAC","Lumen Field"],
+  [4,"2026-10-04T20:25:00Z","SF","DEN","Levi's\u00ae Stadium"],
+  [4,"2026-10-05T00:20:00Z","CAR","DET","Bank of America Stadium"],
+  [4,"2026-10-06T00:15:00Z","NO","ATL","Caesars Superdome"],
+  [5,"2026-10-09T00:15:00Z","DAL","TB","AT&T Stadium"],
+  [5,"2026-10-11T13:30:00Z","JAX","PHI","Tottenham Hotspur Stadium"],
+  [5,"2026-10-11T17:00:00Z","MIA","CIN","Hard Rock Stadium"],
+  [5,"2026-10-11T17:00:00Z","NE","LV","Gillette Stadium"],
+  [5,"2026-10-11T17:00:00Z","NO","MIN","Caesars Superdome"],
+  [5,"2026-10-11T17:00:00Z","NYJ","CLE","MetLife Stadium"],
+  [5,"2026-10-11T17:00:00Z","PIT","IND","Acrisure Stadium"],
+  [5,"2026-10-11T17:00:00Z","TEN","HOU","Nissan Stadium"],
+  [5,"2026-10-11T17:00:00Z","WAS","NYG","Northwest Stadium"],
+  [5,"2026-10-11T20:05:00Z","LAC","DEN","SoFi Stadium"],
+  [5,"2026-10-11T20:25:00Z","ARI","DET","State Farm Stadium"],
+  [5,"2026-10-11T20:25:00Z","GB","CHI","Lambeau Field"],
+  [5,"2026-10-11T20:25:00Z","SEA","SF","Lumen Field"],
+  [5,"2026-10-12T00:20:00Z","ATL","BAL","Mercedes-Benz Stadium"],
+  [5,"2026-10-13T00:15:00Z","LAR","BUF","SoFi Stadium"],
+  [6,"2026-10-16T00:15:00Z","DEN","SEA","Empower Field at Mile High"],
+  [6,"2026-10-18T13:30:00Z","JAX","HOU","Wembley Stadium"],
+  [6,"2026-10-18T17:00:00Z","ATL","CHI","Mercedes-Benz Stadium"],
+  [6,"2026-10-18T17:00:00Z","CLE","BAL","Huntington Bank Field"],
+  [6,"2026-10-18T17:00:00Z","IND","TEN","Lucas Oil Stadium"],
+  [6,"2026-10-18T17:00:00Z","NE","NYJ","Gillette Stadium"],
+  [6,"2026-10-18T17:00:00Z","NYG","NO","MetLife Stadium"],
+  [6,"2026-10-18T17:00:00Z","PHI","CAR","Lincoln Financial Field"],
+  [6,"2026-10-18T17:00:00Z","TB","PIT","Raymond James Stadium"],
+  [6,"2026-10-18T20:05:00Z","LAR","ARI","SoFi Stadium"],
+  [6,"2026-10-18T20:25:00Z","KC","LAC","Arrowhead Stadium"],
+  [6,"2026-10-18T20:25:00Z","LV","BUF","Allegiant Stadium"],
+  [6,"2026-10-19T00:20:00Z","GB","DAL","Lambeau Field"],
+  [6,"2026-10-20T00:15:00Z","SF","WAS","Levi's\u00ae Stadium"],
+  [7,"2026-10-23T00:15:00Z","CHI","NE","Soldier Field"],
+  [7,"2026-10-25T13:30:00Z","NO","PIT","Stade de France"],
+  [7,"2026-10-25T17:00:00Z","ATL","SF","Mercedes-Benz Stadium"],
+  [7,"2026-10-25T17:00:00Z","BAL","CIN","M&T Bank Stadium"],
+  [7,"2026-10-25T17:00:00Z","CAR","TB","Bank of America Stadium"],
+  [7,"2026-10-25T17:00:00Z","HOU","NYG","Reliant Stadium"],
+  [7,"2026-10-25T17:00:00Z","MIN","IND","U.S. Bank Stadium"],
+  [7,"2026-10-25T17:00:00Z","NYJ","MIA","MetLife Stadium"],
+  [7,"2026-10-25T17:00:00Z","TEN","CLE","Nissan Stadium"],
+  [7,"2026-10-25T20:05:00Z","ARI","DEN","State Farm Stadium"],
+  [7,"2026-10-25T20:25:00Z","DET","GB","Ford Field"],
+  [7,"2026-10-25T20:25:00Z","LV","LAR","Allegiant Stadium"],
+  [7,"2026-10-26T00:20:00Z","SEA","KC","Lumen Field"],
+  [7,"2026-10-27T00:15:00Z","PHI","DAL","Lincoln Financial Field"],
+  [8,"2026-10-30T00:15:00Z","GB","CAR","Lambeau Field"],
+  [8,"2026-11-01T18:00:00Z","BUF","BAL","Highmark Stadium"],
+  [8,"2026-11-01T18:00:00Z","CIN","TEN","Paycor Stadium"],
+  [8,"2026-11-01T18:00:00Z","DAL","ARI","AT&T Stadium"],
+  [8,"2026-11-01T18:00:00Z","DET","MIN","Ford Field"],
+  [8,"2026-11-01T18:00:00Z","JAX","IND","EverBank Stadium"],
+  [8,"2026-11-01T18:00:00Z","NYJ","LV","MetLife Stadium"],
+  [8,"2026-11-01T18:00:00Z","PIT","CLE","Acrisure Stadium"],
+  [8,"2026-11-01T18:00:00Z","TB","ATL","Raymond James Stadium"],
+  [8,"2026-11-01T21:05:00Z","LAR","LAC","SoFi Stadium"],
+  [8,"2026-11-01T21:25:00Z","DEN","KC","Empower Field at Mile High"],
+  [8,"2026-11-01T21:25:00Z","MIA","NE","Hard Rock Stadium"],
+  [8,"2026-11-02T01:20:00Z","WAS","PHI","Northwest Stadium"],
+  [8,"2026-11-03T01:15:00Z","SEA","CHI","Lumen Field"],
+  [9,"2026-11-06T01:15:00Z","BAL","JAX","M&T Bank Stadium"],
+  [9,"2026-11-08T14:30:00Z","ATL","CIN","Bernabeu"],
+  [9,"2026-11-08T18:00:00Z","CAR","DEN","Bank of America Stadium"],
+  [9,"2026-11-08T18:00:00Z","IND","DAL","Lucas Oil Stadium"],
+  [9,"2026-11-08T18:00:00Z","KC","NYJ","Arrowhead Stadium"],
+  [9,"2026-11-08T18:00:00Z","MIA","DET","Hard Rock Stadium"],
+  [9,"2026-11-08T18:00:00Z","NO","CLE","Caesars Superdome"],
+  [9,"2026-11-08T18:00:00Z","PHI","NYG","Lincoln Financial Field"],
+  [9,"2026-11-08T18:00:00Z","WAS","LAR","Northwest Stadium"],
+  [9,"2026-11-08T21:05:00Z","LAC","HOU","SoFi Stadium"],
+  [9,"2026-11-08T21:05:00Z","SF","LV","Levi's\u00ae Stadium"],
+  [9,"2026-11-08T21:25:00Z","NE","GB","Gillette Stadium"],
+  [9,"2026-11-08T21:25:00Z","SEA","ARI","Lumen Field"],
+  [9,"2026-11-09T01:20:00Z","CHI","TB","Soldier Field"],
+  [9,"2026-11-10T01:15:00Z","MIN","BUF","U.S. Bank Stadium"],
+  [10,"2026-11-13T01:15:00Z","NYG","WAS","MetLife Stadium"],
+  [10,"2026-11-15T14:30:00Z","DET","NE","FC Bayern Munich Stadium"],
+  [10,"2026-11-15T18:00:00Z","ATL","KC","Mercedes-Benz Stadium"],
+  [10,"2026-11-15T18:00:00Z","CLE","HOU","Huntington Bank Field"],
+  [10,"2026-11-15T18:00:00Z","GB","MIN","Lambeau Field"],
+  [10,"2026-11-15T18:00:00Z","IND","MIA","Lucas Oil Stadium"],
+  [10,"2026-11-15T18:00:00Z","NO","CAR","Caesars Superdome"],
+  [10,"2026-11-15T18:00:00Z","NYJ","BUF","MetLife Stadium"],
+  [10,"2026-11-15T18:00:00Z","TEN","JAX","Nissan Stadium"],
+  [10,"2026-11-15T21:05:00Z","ARI","LAR","State Farm Stadium"],
+  [10,"2026-11-15T21:05:00Z","LV","SEA","Allegiant Stadium"],
+  [10,"2026-11-15T21:25:00Z","DAL","SF","AT&T Stadium"],
+  [10,"2026-11-16T01:20:00Z","CIN","PIT","Paycor Stadium"],
+  [10,"2026-11-17T01:15:00Z","BAL","LAC","M&T Bank Stadium"],
+  [11,"2026-11-20T01:15:00Z","HOU","IND","Reliant Stadium"],
+  [11,"2026-11-22T18:00:00Z","BUF","MIA","Highmark Stadium"],
+  [11,"2026-11-22T18:00:00Z","CAR","BAL","Bank of America Stadium"],
+  [11,"2026-11-22T18:00:00Z","CHI","NO","Soldier Field"],
+  [11,"2026-11-22T18:00:00Z","DAL","TEN","AT&T Stadium"],
+  [11,"2026-11-22T18:00:00Z","DET","TB","Ford Field"],
+  [11,"2026-11-22T18:00:00Z","KC","ARI","Arrowhead Stadium"],
+  [11,"2026-11-22T18:00:00Z","NYG","JAX","MetLife Stadium"],
+  [11,"2026-11-22T21:05:00Z","LAC","NYJ","SoFi Stadium"],
+  [11,"2026-11-22T21:25:00Z","DEN","LV","Empower Field at Mile High"],
+  [11,"2026-11-22T21:25:00Z","PHI","PIT","Lincoln Financial Field"],
+  [11,"2026-11-23T01:20:00Z","SF","MIN","Estadio Banorte"],
+  [11,"2026-11-24T01:15:00Z","WAS","CIN","Northwest Stadium"],
+  [12,"2026-11-26T01:00:00Z","LAR","GB","SoFi Stadium"],
+  [12,"2026-11-26T18:00:00Z","DET","CHI","Ford Field"],
+  [12,"2026-11-26T21:30:00Z","DAL","PHI","AT&T Stadium"],
+  [12,"2026-11-27T01:20:00Z","BUF","KC","Highmark Stadium"],
+  [12,"2026-11-27T20:00:00Z","PIT","DEN","Acrisure Stadium"],
+  [12,"2026-11-29T18:00:00Z","CIN","NO","Paycor Stadium"],
+  [12,"2026-11-29T18:00:00Z","CLE","LV","Huntington Bank Field"],
+  [12,"2026-11-29T18:00:00Z","HOU","BAL","Reliant Stadium"],
+  [12,"2026-11-29T18:00:00Z","IND","NYG","Lucas Oil Stadium"],
+  [12,"2026-11-29T18:00:00Z","MIA","NYJ","Hard Rock Stadium"],
+  [12,"2026-11-29T18:00:00Z","MIN","ATL","U.S. Bank Stadium"],
+  [12,"2026-11-29T21:05:00Z","JAX","TEN","EverBank Stadium"],
+  [12,"2026-11-29T21:25:00Z","ARI","WAS","State Farm Stadium"],
+  [12,"2026-11-29T21:25:00Z","SF","SEA","Levi's\u00ae Stadium"],
+  [12,"2026-11-30T01:20:00Z","LAC","NE","SoFi Stadium"],
+  [12,"2026-12-01T01:15:00Z","TB","CAR","Raymond James Stadium"],
+  [13,"2026-12-04T01:15:00Z","LAR","KC","SoFi Stadium"],
+  [13,"2026-12-06T18:00:00Z","ATL","DET","Mercedes-Benz Stadium"],
+  [13,"2026-12-06T18:00:00Z","CHI","JAX","Soldier Field"],
+  [13,"2026-12-06T18:00:00Z","CLE","CIN","Huntington Bank Field"],
+  [13,"2026-12-06T18:00:00Z","NO","GB","Caesars Superdome"],
+  [13,"2026-12-06T18:00:00Z","NYG","SF","MetLife Stadium"],
+  [13,"2026-12-06T18:00:00Z","TB","LAC","Raymond James Stadium"],
+  [13,"2026-12-06T18:00:00Z","TEN","WAS","Nissan Stadium"],
+  [13,"2026-12-06T21:05:00Z","ARI","PHI","State Farm Stadium"],
+  [13,"2026-12-06T21:05:00Z","DEN","MIA","Empower Field at Mile High"],
+  [13,"2026-12-06T21:25:00Z","MIN","CAR","U.S. Bank Stadium"],
+  [13,"2026-12-06T21:25:00Z","NE","BUF","Gillette Stadium"],
+  [13,"2026-12-07T01:20:00Z","PIT","HOU","Acrisure Stadium"],
+  [13,"2026-12-08T01:15:00Z","SEA","DAL","Lumen Field"],
+  [14,"2026-12-11T01:15:00Z","NE","MIN","Gillette Stadium"],
+  [14,"2026-12-13T18:00:00Z","BAL","TB","M&T Bank Stadium"],
+  [14,"2026-12-13T18:00:00Z","CAR","NO","Bank of America Stadium"],
+  [14,"2026-12-13T18:00:00Z","CLE","ATL","Huntington Bank Field"],
+  [14,"2026-12-13T18:00:00Z","DET","TEN","Ford Field"],
+  [14,"2026-12-13T18:00:00Z","MIA","CHI","Hard Rock Stadium"],
+  [14,"2026-12-13T18:00:00Z","NYJ","DEN","MetLife Stadium"],
+  [14,"2026-12-13T18:00:00Z","PHI","IND","Lincoln Financial Field"],
+  [14,"2026-12-13T18:00:00Z","WAS","HOU","Northwest Stadium"],
+  [14,"2026-12-13T21:05:00Z","LV","LAC","Allegiant Stadium"],
+  [14,"2026-12-13T21:25:00Z","CIN","KC","Paycor Stadium"],
+  [14,"2026-12-13T21:25:00Z","SEA","NYG","Lumen Field"],
+  [14,"2026-12-13T21:25:00Z","SF","LAR","Levi's\u00ae Stadium"],
+  [14,"2026-12-14T01:20:00Z","GB","BUF","Lambeau Field"],
+  [14,"2026-12-15T01:15:00Z","JAX","PIT","EverBank Stadium"],
+  [15,"2026-12-18T01:15:00Z","LAC","SF","SoFi Stadium"],
+  [15,"2026-12-19T22:00:00Z","PHI","SEA","Lincoln Financial Field"],
+  [15,"2026-12-20T01:20:00Z","BUF","CHI","Highmark Stadium"],
+  [15,"2026-12-20T18:00:00Z","CAR","CIN","Bank of America Stadium"],
+  [15,"2026-12-20T18:00:00Z","GB","MIA","Lambeau Field"],
+  [15,"2026-12-20T18:00:00Z","HOU","JAX","Reliant Stadium"],
+  [15,"2026-12-20T18:00:00Z","NYG","CLE","MetLife Stadium"],
+  [15,"2026-12-20T18:00:00Z","PIT","BAL","Acrisure Stadium"],
+  [15,"2026-12-20T18:00:00Z","TB","NO","Raymond James Stadium"],
+  [15,"2026-12-20T18:00:00Z","TEN","IND","Nissan Stadium"],
+  [15,"2026-12-20T18:00:00Z","WAS","ATL","Northwest Stadium"],
+  [15,"2026-12-20T21:05:00Z","ARI","NYJ","State Farm Stadium"],
+  [15,"2026-12-20T21:25:00Z","LAR","DAL","SoFi Stadium"],
+  [15,"2026-12-20T21:25:00Z","LV","DEN","Allegiant Stadium"],
+  [15,"2026-12-21T01:20:00Z","MIN","DET","U.S. Bank Stadium"],
+  [15,"2026-12-22T01:15:00Z","KC","NE","Arrowhead Stadium"],
+  [16,"2026-12-25T01:15:00Z","PHI","HOU","Lincoln Financial Field"],
+  [16,"2026-12-25T18:00:00Z","CHI","GB","Soldier Field"],
+  [16,"2026-12-25T21:30:00Z","DEN","BUF","Empower Field at Mile High"],
+  [16,"2026-12-26T01:15:00Z","SEA","LAR","Lumen Field"],
+  [16,"2026-12-27T18:00:00Z","BAL","CLE","M&T Bank Stadium"],
+  [16,"2026-12-27T18:00:00Z","MIA","LAC","Hard Rock Stadium"],
+  [16,"2026-12-27T18:00:00Z","NO","ARI","Caesars Superdome"],
+  [16,"2026-12-27T18:00:00Z","NYJ","NE","MetLife Stadium"],
+  [16,"2026-12-27T21:05:00Z","LV","TEN","Allegiant Stadium"],
+  [16,"2026-12-27T21:25:00Z","KC","SF","Arrowhead Stadium"],
+  [16,"2026-12-28T01:20:00Z","DAL","JAX","AT&T Stadium"],
+  [16,"2026-12-29T00:00:00Z","ATL","TB","Mercedes-Benz Stadium"],
+  [16,"2026-12-29T00:00:00Z","IND","CIN","Lucas Oil Stadium"],
+  [16,"2026-12-29T00:00:00Z","MIN","WAS","U.S. Bank Stadium"],
+  [16,"2026-12-29T00:00:00Z","PIT","CAR","Acrisure Stadium"],
+  [16,"2026-12-29T01:15:00Z","DET","NYG","Ford Field"],
+  [17,"2027-01-01T01:15:00Z","CIN","BAL","Paycor Stadium"],
+  [17,"2027-01-03T18:00:00Z","ATL","NO","Mercedes-Benz Stadium"],
+  [17,"2027-01-03T18:00:00Z","CAR","SEA","Bank of America Stadium"],
+  [17,"2027-01-03T18:00:00Z","CLE","IND","Huntington Bank Field"],
+  [17,"2027-01-03T18:00:00Z","DAL","NYG","AT&T Stadium"],
+  [17,"2027-01-03T18:00:00Z","MIA","BUF","Hard Rock Stadium"],
+  [17,"2027-01-03T18:00:00Z","NYJ","MIN","MetLife Stadium"],
+  [17,"2027-01-03T18:00:00Z","TEN","PIT","Nissan Stadium"],
+  [17,"2027-01-03T21:05:00Z","ARI","LV","State Farm Stadium"],
+  [17,"2027-01-03T21:25:00Z","CHI","DET","Soldier Field"],
+  [17,"2027-01-04T01:20:00Z","SF","PHI","Levi's\u00ae Stadium"],
+  [17,"2027-01-05T00:00:00Z","JAX","WAS","EverBank Stadium"],
+  [17,"2027-01-05T00:00:00Z","LAC","KC","SoFi Stadium"],
+  [17,"2027-01-05T00:00:00Z","NE","DEN","Gillette Stadium"],
+  [17,"2027-01-05T00:00:00Z","TB","LAR","Raymond James Stadium"],
+  [17,"2027-01-05T01:15:00Z","GB","HOU","Lambeau Field"],
+  [18,"2027-01-10T00:00:00Z","ARI","SF","State Farm Stadium"],
+  [18,"2027-01-10T00:00:00Z","BAL","PIT","M&T Bank Stadium"],
+  [18,"2027-01-10T00:00:00Z","BUF","NYJ","Highmark Stadium"],
+  [18,"2027-01-10T00:00:00Z","CAR","ATL","Bank of America Stadium"],
+  [18,"2027-01-10T00:00:00Z","CIN","CLE","Paycor Stadium"],
+  [18,"2027-01-10T00:00:00Z","DEN","LAC","Empower Field at Mile High"],
+  [18,"2027-01-10T00:00:00Z","GB","DET","Lambeau Field"],
+  [18,"2027-01-10T00:00:00Z","HOU","TEN","Reliant Stadium"],
+  [18,"2027-01-10T00:00:00Z","IND","JAX","Lucas Oil Stadium"],
+  [18,"2027-01-10T00:00:00Z","KC","LV","Arrowhead Stadium"],
+  [18,"2027-01-10T00:00:00Z","LAR","SEA","SoFi Stadium"],
+  [18,"2027-01-10T00:00:00Z","MIN","CHI","U.S. Bank Stadium"],
+  [18,"2027-01-10T00:00:00Z","NE","MIA","Gillette Stadium"],
+  [18,"2027-01-10T00:00:00Z","NO","TB","Caesars Superdome"],
+  [18,"2027-01-10T00:00:00Z","NYG","PHI","MetLife Stadium"],
+  [18,"2027-01-10T00:00:00Z","WAS","DAL","Northwest Stadium"]
+]);
+
+function uclReferenceScheduleGames(){
+  return UCL_NFL_SCHEDULE_2026.map(row=>({
+    week:Number(row[0])||0,
+    scheduled:String(row[1]||''),
+    home:String(row[2]||''),
+    away:String(row[3]||''),
+    location:String(row[4]||''),
+    source:'ucl-reference-schedule'
+  }));
+}
+function uclReferenceScheduleKey(game){
+  const week=sleeperScheduleGameWeek(game);
+  const teams=[...sleeperScheduleTeamCodes(game)].sort().join('|');
+  return `${week}:${teams}`;
+}
+function mergeUclReferenceSchedule(liveGames){
+  const refs=uclReferenceScheduleGames();
+  const remaining=new Set(refs);
+  const merged=[];
+  for(const raw of (Array.isArray(liveGames)?liveGames:[])){
+    const rawTeams=[...sleeperScheduleTeamCodes(raw)].sort().join('|');
+    const rawWeek=sleeperScheduleGameWeek(raw);
+    let ref=null;
+    if(rawTeams){
+      const candidates=[...remaining].filter(candidate=>{
+        const teams=[...sleeperScheduleTeamCodes(candidate)].sort().join('|');
+        if(teams!==rawTeams)return false;
+        const cw=sleeperScheduleGameWeek(candidate);
+        return !rawWeek||!cw||rawWeek===cw;
+      });
+      if(candidates.length===1)ref=candidates[0];
+      else if(candidates.length>1){
+        const rawMs=sleeperScheduleKickoffMs(raw);
+        candidates.sort((a,b)=>{
+          if(rawMs==null)return sleeperScheduleGameWeek(a)-sleeperScheduleGameWeek(b);
+          return Math.abs(sleeperScheduleKickoffMs(a)-rawMs)-Math.abs(sleeperScheduleKickoffMs(b)-rawMs);
+        });
+        ref=candidates[0]||null;
+      }
+    }
+    if(ref){
+      merged.push({...ref,...raw,scheduled:ref.scheduled,week:ref.week,home:ref.home,away:ref.away,location:raw?.location||ref.location});
+      remaining.delete(ref);
+    }else{
+      merged.push(raw);
+    }
+  }
+  for(const ref of remaining)merged.push(ref);
+  return merged;
+}
+function pacificKickoffParts(game){
+  const ms=sleeperScheduleKickoffMs(game);
+  if(ms==null)return null;
+  const formatter=new Intl.DateTimeFormat('en-US',{
+    timeZone:'America/Los_Angeles',
+    month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'
+  });
+  const parts=formatter.formatToParts(new Date(ms));
+  const get=type=>parts.find(p=>p.type===type)?.value||'';
+  return {label:formatter.format(new Date(ms)),zone:get('timeZoneName')};
+}
+
+function sleeperScheduleStatus(game){
+  return String(game?.status||game?.game_status||game?.gameStatus||'').trim().toLowerCase().replace(/[\s_-]+/g,'');
+}
+function sleeperScheduleGameWeek(game){
+  return Number(game?.week??game?.game_week??game?.leg??0)||0;
+}
+function sleeperScheduleKickoffMs(game){
+  const parsePrecise=value=>{
+    if(value==null||value==='')return null;
+    const raw=String(value).trim();
+    if(typeof value==='number'||/^\d{10,13}$/.test(raw)){
+      const n=Number(value);
+      if(!Number.isFinite(n))return null;
+      return n<1e12?n*1000:n;
+    }
+    // Sleeper's schedule feed may expose only YYYY-MM-DD. That is a game DATE,
+    // not an exact kickoff. Never parse it as midnight UTC.
+    if(/^\d{4}-\d{2}-\d{2}$/.test(raw))return null;
+    // A time without a date is also not enough to establish an absolute kickoff.
+    if(/^\d{1,2}:\d{2}(?::\d{2})?$/.test(raw))return null;
+    const ms=Date.parse(raw);
+    return Number.isFinite(ms)?ms:null;
+  };
+  for(const value of [
+    game?.scheduled,game?.kickoff,game?.game_time,game?.gameTime,game?.timestamp,
+    game?.start_time,game?.startTime,game?.date
+  ]){
+    const ms=parsePrecise(value);
+    if(ms!=null)return ms;
+  }
+  return null;
+}
+function sleeperScheduleGameInExpectedWindow(game,now=Date.now()){
+  const kickoff=sleeperScheduleKickoffMs(game);
+  if(kickoff==null)return false;
+  const end=kickoff+(4*60*60*1000);
+  return now>=kickoff&&now<end;
+}
+function sleeperScheduleStatusClass(game){
+  const status=sleeperScheduleStatus(game);
+  const finalStatuses=new Set(['complete','completed','finished','final','post','closed']);
+  const liveStatuses=new Set(['inprogress','live','halftime','overtime','ot']);
+  const pregameStatuses=new Set(['pregame','scheduled','notstarted','upcoming','created']);
+  if(finalStatuses.has(status))return 'final';
+  if(liveStatuses.has(status))return 'live';
+  if(pregameStatuses.has(status))return 'pregame';
+  return 'unknown';
+}
+function sleeperScheduleMatchupKey(game){
+  const teams=[...sleeperScheduleTeamCodes(game)].sort();
+  if(teams.length<2)return '';
+  const week=sleeperScheduleGameWeek(game);
+  return `${week||0}:${teams.join('|')}`;
+}
+function sleeperScheduleLooseMatchupKey(game){
+  const teams=[...sleeperScheduleTeamCodes(game)].sort();
+  return teams.length>=2?teams.join('|'):'';
+}
+function sleeperSchedulePreferredRows(games){
+  // The bundled reference schedule can coexist with a richer Sleeper row when
+  // Sleeper omits a field used by the strict merge key. Collapse those duplicates
+  // before evaluating live state. Explicit status always outranks a fallback row.
+  const groups=new Map();
+  for(const game of (Array.isArray(games)?games:[])){
+    const loose=sleeperScheduleLooseMatchupKey(game);
+    const key=loose||`row:${groups.size}`;
+    if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push(game);
+  }
+  const rank=game=>{
+    const cls=sleeperScheduleStatusClass(game);
+    const explicit=cls==='final'||cls==='live'||cls==='pregame';
+    const source=String(game?.source||'');
+    return (explicit?100:0)+(source==='ucl-reference-schedule'?0:10)+(sleeperScheduleGameWeek(game)?2:0)+(sleeperScheduleKickoffMs(game)!=null?1:0);
+  };
+  return [...groups.values()].map(rows=>rows.slice().sort((a,b)=>rank(b)-rank(a))[0]);
+}
+function sleeperScheduleLiveGames(now=Date.now()){
+  const week=currentWeekNumber();
+  return sleeperSchedulePreferredRows(nflScheduleGames||[]).filter(game=>{
+    const gameWeek=sleeperScheduleGameWeek(game);
+    if(gameWeek&&gameWeek!==week)return false;
+    const cls=sleeperScheduleStatusClass(game);
+    if(cls==='final'||cls==='pregame')return false;
+    if(cls==='live')return true;
+    // Heuristic is only allowed when status is genuinely unavailable/unknown.
+    return sleeperScheduleGameInExpectedWindow(game,now);
+  });
+}
+function uclGameDayLiveState(now=Date.now()){
+  const games=sleeperScheduleLiveGames(now);
+  return {live:games.length>0,count:games.length,games};
+}
+async function syncNflScheduleStatus(force=false){
+  if(nflScheduleSyncPromise)return nflScheduleSyncPromise;
+  if(!force&&nflScheduleGames.length&&Date.now()-nflScheduleLastSync<60000)return nflScheduleGames;
+  nflScheduleSyncPromise=(async()=>{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
+    try{
+      const r=await fetch(`https://api.sleeper.app/schedule/nfl/regular/${SLEEPER_SEASON}`,{cache:'no-store',signal:controller.signal});
+      if(!r.ok)throw new Error(`Sleeper schedule ${r.status}`);
+      const raw=await r.json();
+      const list=Array.isArray(raw)?raw:Array.isArray(raw?.games)?raw.games:[];
+      nflScheduleGames=mergeUclReferenceSchedule(list);
+      nflScheduleLastSync=Date.now();
+      return nflScheduleGames;
+    }finally{
+      clearTimeout(timer);nflScheduleSyncPromise=null;
+    }
+  })();
+  return nflScheduleSyncPromise;
+}
+
 let sleeperCtx={username:'',userId:'',leagueId:SLEEPER_LEAGUE_ID,draftId:'',rosterId:null,leagueName:'',teamName:'',lastPickCount:0};
 let sleeperTimer=null,sleeperBusy=false,sleeperActiveSyncs=0,lastDraftPicks=[],leagueUsers=[],leagueRosters=[],verifiedLeague=null,verifiedDraft=null,nflState=null,currentMatchups=[],currentTransactions=[],seasonMatchupsByWeek={},seasonTransactionsByWeek={};
+let nflScheduleGames=uclReferenceScheduleGames(),nflScheduleLastSync=0,nflScheduleSyncPromise=null;
 const seasonFetchCache=new Map();
 let seasonDataMeta={lastSync:0,failures:[],historicalWeeksLoaded:0};
 let seasonSyncPromise=null;
@@ -72,7 +524,7 @@ let discoveredSleeperPlayers=readDiscoveredPlayersBounded();
 let apiCacheDbPromise=null,apiCacheAvailable=null;
 const apiCacheSourceByPath=new Map();
 
-const APP_VERSION='1.10.1';
+const APP_VERSION='1.10.21';
 const RELEASE_CHANNEL='Stable';
 const LIVE_SEASON_BUILD=true;
 const SLEEPER_POLL_MS=30000;

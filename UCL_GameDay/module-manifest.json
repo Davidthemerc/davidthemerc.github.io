@@ -1,5 +1,5 @@
 {
-  "version": "0.5.03",
+  "version": "0.5.50",
   "runtime": "concatenated-classic-script",
   "css": [
     "css/app.css"
@@ -7,7 +7,7 @@
   "js": [
     "js/00_bootstrap_session.js",
     "js/10_testing_area.js",
-    "js/15_ctespn_audio.js",
+    "js/15_basic_sounds.js",
     "js/20_data_persistence_ui.js",
     "js/30_matchup_simulation.js",
     "js/40_event_reconciliation.js",

@@ -3,6 +3,31 @@ function rosterUserName(roster){
   const team=String(u?.metadata?.team_name||'').trim();
   return team||u?.display_name||u?.username||`Roster ${roster?.roster_id??'?'}`;
 }
+function transactionTeamName(rosterId){
+  const roster=(leagueRosters||[]).find(r=>String(r?.roster_id)===String(rosterId));
+  return roster?rosterUserName(roster):`Roster ${rosterId??'?'}`;
+}
+function transactionPlayerName(playerId){
+  const player=sleeperRosterPlayer(playerId);
+  return player?.name||`Player ${playerId??'?'}`;
+}
+function transactionTimestamp(tx){
+  let raw=Number(tx?.created??tx?.timestamp??tx?.status_updated??0);
+  if(!Number.isFinite(raw)||raw<=0)return '';
+  if(raw<1e12)raw*=1000;
+  const d=new Date(raw);
+  if(Number.isNaN(d.getTime()))return '';
+  try{
+    return d.toLocaleString([],{
+      month:'short',
+      day:'numeric',
+      hour:'numeric',
+      minute:'2-digit'
+    });
+  }catch(e){
+    return d.toLocaleString();
+  }
+}
 function rosterRecord(roster){
   const s=roster?.settings||{};
   const w=Number(s.wins||0),l=Number(s.losses||0),t=Number(s.ties||0);
@@ -49,6 +74,7 @@ async function selectSeasonWeek(week){
       if(r.ok)seasonMatchupsByWeek[week]=dedupeMatchupList(r.value);
     }
     try{await syncCurrentWeekProjections(week,false);}catch(e){}
+    try{await syncWeeklyStats(week,false);}catch(e){}
   }finally{
     seasonWeekSelectionBusy=false;populateSeasonWeekSelector();renderSeasonCompanion();
   }
@@ -423,6 +449,38 @@ function benchThreatRequiredMultiplier(benchPos,starter){
   if(pos==='TE'&&slot==='FLEX'&&starterPos==='WR')return 1.40;
   return 1.20;
 }
+
+function nflTeamCode(value){
+  const raw=String(value||'').toUpperCase().trim();
+  const aliases={JAC:'JAX',WSH:'WAS',LA:'LAR'};
+  return aliases[raw]||raw;
+}
+function sleeperScheduleTeamCodes(game){
+  const values=[game?.home,game?.away,game?.home_team,game?.away_team,game?.homeTeam,game?.awayTeam,game?.team_home,game?.team_away];
+  return new Set(values.map(nflTeamCode).filter(Boolean));
+}
+function playerWeekLockState(player,week=seasonDisplayWeek(),now=Date.now()){
+  week=Math.max(1,Number(week)||1);
+  const current=currentWeekNumber();
+  if(week<current)return {locked:true,state:'final'};
+  if(week>current)return {locked:false,state:'pregame'};
+  const team=nflTeamCode(player?.team);if(!team||team==='—')return {locked:false,state:'unknown'};
+  const game=(nflScheduleGames||[]).find(g=>{
+    const gw=sleeperScheduleGameWeek(g);if(gw&&gw!==week)return false;
+    return sleeperScheduleTeamCodes(g).has(team);
+  });
+  if(!game)return {locked:false,state:'unknown'};
+  const status=sleeperScheduleStatus(game);
+  const finalStatuses=new Set(['complete','completed','finished','final','post','closed']);
+  const liveStatuses=new Set(['inprogress','live','halftime']);
+  const pregameStatuses=new Set(['pregame','scheduled','notstarted','upcoming','created']);
+  if(finalStatuses.has(status))return {locked:true,state:'final'};
+  if(liveStatuses.has(status))return {locked:true,state:'live'};
+  if(pregameStatuses.has(status))return {locked:false,state:'pregame'};
+  const kickoff=sleeperScheduleKickoffMs(game);
+  if(kickoff!=null&&now>=kickoff)return {locked:true,state:'started'};
+  return {locked:false,state:'pregame'};
+}
 function benchThreatAnalysis(roster,matchup,week=seasonDisplayWeek(),playerCache=null){
   if(!roster||!matchup)return [];
   const starterSlots=normalizedMatchupSlots(roster,matchup,playerCache);
@@ -439,9 +497,12 @@ function benchThreatAnalysis(roster,matchup,week=seasonDisplayWeek(),playerCache
   const rows=[];
   for(const id of benchIds){
     const player=lookup(id),pos=String(player?.pos||'').toUpperCase();
+    // Once a bench player's NFL game starts, Sleeper locks that player in place;
+    // it is no longer an actionable lineup recommendation.
+    if(playerWeekLockState(player,week).locked)continue;
     const benchPts=currentWeekProjectionForPlayer(id,week);
     if(benchPts==null||!Number.isFinite(Number(benchPts)))continue;
-    const eligible=starterSlots.filter(x=>eligibleFor(pos,x.slot)).map(x=>({
+    const eligible=starterSlots.filter(x=>eligibleFor(pos,x.slot)&&!playerWeekLockState(x.player,week).locked).map(x=>({
       ...x,pts:currentWeekProjectionForPlayer(x.id,week)
     })).filter(x=>x.pts!=null&&Number.isFinite(Number(x.pts)));
     if(!eligible.length)continue;
@@ -482,9 +543,9 @@ function renderOtherLeagueMatchups(){
     const scoring=matchupScoringContext(p.ar,p.br,p.a,p.b,week),show=scoring.projected||scoring.started;
     const state=scoring.projected?'PROJECTED':scoring.started?'LIVE':'PENDING';
     return `<button type="button" class="other-matchup-row" data-other-matchup="${esc(p.matchupId)}">
-      <div><b>${esc(rosterUserName(p.ar))}</b>${uclVenuePill(week,p.ar.roster_id)}<span>${show?scoring.myTotal.toFixed(2):'—'}</span></div>
-      <em>${uclVenueForRoster(week,p.a.roster_id)==='away'?'@':'vs'}<small>${state}</small></em>
-      <div class="right"><b>${esc(rosterUserName(p.br))}</b>${uclVenuePill(week,p.br.roster_id)}<span>${show?scoring.oppTotal.toFixed(2):'—'}</span></div>
+      <div><b>${esc(rosterUserName(p.ar))}</b>${uclVenuePill(week,p.ar.roster_id)}<span>${show?matchupScoreText(scoring,'my'):'—'}</span></div>
+      <em>${uclVenueForRoster(week,p.a.roster_id)==='away'?'@':'vs'} <small>${state}</small></em>
+      <div class="right"><b>${esc(rosterUserName(p.br))}</b>${uclVenuePill(week,p.br.roster_id)}<span>${show?matchupScoreText(scoring,'opp'):'—'}</span></div>
     </button>`;
   }).join('');
 }
@@ -500,23 +561,23 @@ function openOtherLeagueMatchup(matchupId){
   $('#otherMatchupSub').innerHTML=`Week ${week} • ${scoring.projected?'Pregame projections':scoring.started?'Live scoring':'Projections loading'} • ${uclVenuePill(week,p.ar.roster_id)} ${esc(aName)} / ${uclVenuePill(week,p.br.roster_id)} ${esc(bName)}`;
   $('#otherTeam1StarterLabel').textContent=`${aName} Starters`;$('#otherTeam2StarterLabel').textContent=`${bName} Starters`;
   const aSlots=normalizedMatchupSlots(p.ar,p.a),bSlots=normalizedMatchupSlots(p.br,p.b);
-  $('#otherTeam1StarterPoints').textContent=show?scoring.myTotal.toFixed(2):'—';$('#otherTeam2StarterPoints').textContent=show?scoring.oppTotal.toFixed(2):'—';
+  $('#otherTeam1StarterPoints').textContent=show?matchupScoreText(scoring,'my'):'—';$('#otherTeam2StarterPoints').textContent=show?matchupScoreText(scoring,'opp'):'—';
   $('#otherTeam1StarterCount').textContent=`${aSlots.length} starters • ${scoring.projected?'projected':scoring.started?'actual':'pending'}`;
   $('#otherTeam2StarterCount').textContent=`${bSlots.length} starters • ${scoring.projected?'projected':scoring.started?'actual':'pending'}`;
   const edge=$('#otherMatchupEdge'),diff=scoring.diff;edge.className='mc-edge '+(Math.abs(diff)<3?'close':diff>0?'leading':'trailing');
   edge.querySelector('b').textContent=show?(Math.abs(diff)<.005?'TIED':Math.abs(diff).toFixed(2)):'—';
   $('#otherMatchupEdgeTeam').textContent=show?(Math.abs(diff)<.005?'Even matchup':diff>0?aName:bName):'Waiting for projections';
-  $('#otherMatchupBenchPoints').textContent=show?`${scoring.myBench.toFixed(2)} / ${scoring.oppBench.toFixed(2)}`:'—';
+  $('#otherMatchupBenchPoints').textContent=show?`${matchupBenchScoreText(scoring,'my')} / ${matchupBenchScoreText(scoring,'opp')}`:'—';
   $('#otherMatchupBenchDetail').textContent=`${aName} / ${bName}`;
   const ppts=(match,id)=>scoring.projected?Number(currentWeekProjectionForPlayer(id,week)||0):matchupPlayerPoints(match,id);
   const rows=[],max=Math.max(aSlots.length,bSlots.length);
   for(let i=0;i<max;i++){
     const a=aSlots[i]||null,b=bSlots[i]||null,ap=a?ppts(p.a,a.id):0,bp=b?ppts(p.b,b.id):0,rowDiff=ap-bp;
     const cls=Math.abs(rowDiff)<.01?'':rowDiff>0?'my-edge':'opp-edge',slot=a?.slot||b?.slot||`S${i+1}`;
-    rows.push(`<div class="matchup-pos-row ${cls}"><div class="matchup-pos-player"><b>${a?esc(a.player.name):'—'}</b><small>${a?`${esc(a.player.team||'—')} • ${esc(a.player.pos||slot)}`:'Empty'}</small></div><div class="matchup-pos-score">${a&&show?`${ap.toFixed(2)}${scoring.projected?' P':''}`:'—'}</div><div class="matchup-pos-slot">${esc(slot)}</div><div class="matchup-pos-score">${b&&show?`${bp.toFixed(2)}${scoring.projected?' P':''}`:'—'}</div><div class="matchup-pos-player right"><b>${b?esc(b.player.name):'—'}</b><small>${b?`${esc(b.player.team||'—')} • ${esc(b.player.pos||slot)}`:'Empty'}</small></div></div>`);
+    rows.push(`<div class="matchup-pos-row ${cls}"><div class="matchup-pos-player"><b>${a?esc(a.player.name):'—'}</b><small>${a?`${esc(a.player.team||'—')} • ${esc(a.player.pos||slot)}`:'Empty'}</small></div><div class="matchup-pos-score">${a&&show?matchupPlayerScoreText(p.a,a.id,scoring,week):'—'}</div><div class="matchup-pos-slot">${esc(slot)}</div><div class="matchup-pos-score">${b&&show?matchupPlayerScoreText(p.b,b.id,scoring,week):'—'}</div><div class="matchup-pos-player right"><b>${b?esc(b.player.name):'—'}</b><small>${b?`${esc(b.player.team||'—')} • ${esc(b.player.pos||slot)}`:'Empty'}</small></div></div>`);
   }
   $('#otherMatchupPositionList').innerHTML=rows.join('');
-  $('#otherMatchupFootnote').textContent=scoring.projected?`Pregame view: P indicates Sleeper Week ${week} projected points.`:scoring.started?'Live view: actual Sleeper matchup scoring.':`Week ${week} projections are loading.`;
+  $('#otherMatchupFootnote').textContent=scoring.projected?`Pregame view: P indicates Sleeper Week ${week} projected points.`:scoring.started?(scoring.projectionAvailable?'Live view: actual points are shown first; projected final points remain in parentheses.':'Live view: actual Sleeper matchup scoring.'):`Week ${week} projections are loading.`;
   dialog.showModal();
 }
 function renderMatchupIntelligence(roster,oppRoster,mine,opp){
@@ -565,11 +626,11 @@ function renderMatchupCenter(roster,oppRoster,mine,opp,scoringOverride=null){
   const ppts=(match,id)=>scoring.projected?Number(currentWeekProjectionForPlayer(id,week)||0):matchupPlayerPoints(match,id);
   const myTotal=scoring.myTotal,oppTotal=scoring.oppTotal,myBench=scoring.myBench,oppBench=scoring.oppBench,diff=scoring.diff;
   $('#matchupCenterStatus').innerHTML=`Week ${week} • ${scoring.projected?'projected':scoring.started?'actual':'projections loading'} • <span class="matchup-venue-line">${esc(rosterUserName(roster))} ${uclVenuePill(week,roster.roster_id)} ${uclVenueForRoster(week,roster.roster_id)==='away'?'@':'vs'} ${esc(rosterUserName(oppRoster))} ${uclVenuePill(week,oppRoster.roster_id)}</span>`;
-  $('#mcMyStarterPoints').textContent=scoring.projected||scoring.started?myTotal.toFixed(2):'—';
-  $('#mcOppStarterPoints').textContent=scoring.projected||scoring.started?oppTotal.toFixed(2):'—';
+  $('#mcMyStarterPoints').textContent=scoring.projected||scoring.started?matchupScoreText(scoring,'my'):'—';
+  $('#mcOppStarterPoints').textContent=scoring.projected||scoring.started?matchupScoreText(scoring,'opp'):'—';
   $('#mcMyStarterCount').textContent=`${mineSlots.length} starters • ${scoring.projected?'projected':scoring.started?'actual':'pending'}`;
   $('#mcOppStarterCount').textContent=`${oppSlots.length} starters • ${scoring.projected?'projected':scoring.started?'actual':'pending'}`;
-  $('#mcBenchPoints').textContent=scoring.projected||scoring.started?`${myBench.toFixed(2)} / ${oppBench.toFixed(2)}`:'—';
+  $('#mcBenchPoints').textContent=scoring.projected||scoring.started?`${matchupBenchScoreText(scoring,'my')} / ${matchupBenchScoreText(scoring,'opp')}`:'—';
   $('#mcBenchDetail').textContent=`Yours / Opponent • ${scoring.projected?'projected':scoring.started?'actual':'pending'}`;
   const edge=$('#mcEdge');edge.className='mc-edge '+(Math.abs(diff)<3?'close':diff>0?'leading':'trailing');
   edge.querySelector('b').textContent=scoring.projected||scoring.started?(Math.abs(diff)<.005?'TIED':`${diff>0?'+':''}${diff.toFixed(2)}`):'—';
@@ -582,15 +643,15 @@ function renderMatchupCenter(roster,oppRoster,mine,opp,scoringOverride=null){
     const cls=Math.abs(rowDiff)<.01?'':rowDiff>0?'my-edge':'opp-edge',slot=a?.slot||b?.slot||`S${i+1}`;
     const show=scoring.projected||scoring.started;
     rows.push(`<div class="matchup-pos-row ${cls}">
-      <div class="matchup-pos-player"><b>${a?esc(a.player.name):'—'}</b><small>${a?`${esc(a.player.team||'—')} • ${esc(a.player.pos||slot)}`:'Empty'}</small></div>
-      <div class="matchup-pos-score">${a&&show?`${ap.toFixed(2)}${scoring.projected?' P':''}`:'—'}</div>
+      <div class="matchup-pos-player"><b>${a?esc(a.player.name):'—'}</b><small>${a?`${esc(a.player.team||'—')} • ${esc(a.player.pos||slot)}`:'Empty'}</small>${a&&scoring.started&&compactPlayerStatLine(a.id,week,a.player.pos)?`<small class="live-stat-line">${esc(compactPlayerStatLine(a.id,week,a.player.pos))}</small>`:''}</div>
+      <div class="matchup-pos-score">${a&&show?matchupPlayerScoreText(mine,a.id,scoring,week):'—'}</div>
       <div class="matchup-pos-slot">${esc(slot)}</div>
-      <div class="matchup-pos-score">${b&&show?`${bp.toFixed(2)}${scoring.projected?' P':''}`:'—'}</div>
-      <div class="matchup-pos-player right"><b>${b?esc(b.player.name):'—'}</b><small>${b?`${esc(b.player.team||'—')} • ${esc(b.player.pos||slot)}`:'Empty'}</small></div>
+      <div class="matchup-pos-score">${b&&show?matchupPlayerScoreText(opp,b.id,scoring,week):'—'}</div>
+      <div class="matchup-pos-player right"><b>${b?esc(b.player.name):'—'}</b><small>${b?`${esc(b.player.team||'—')} • ${esc(b.player.pos||slot)}`:'Empty'}</small>${b&&scoring.started&&compactPlayerStatLine(b.id,week,b.player.pos)?`<small class="live-stat-line">${esc(compactPlayerStatLine(b.id,week,b.player.pos))}</small>`:''}</div>
     </div>`);
   }
   list.innerHTML=rows.join('');
   if($('#matchupCenterFootnote'))$('#matchupCenterFootnote').textContent=scoring.projected
     ?`Pregame view: P indicates Sleeper Week ${week} projected points. This automatically switches to actual matchup scoring once play begins.`
-    :scoring.started?'Live view: actual Sleeper matchup scoring is shown because this matchup has started.':`Pregame view: Week ${week} projections are loading.`;
+    :scoring.started?(scoring.projectionAvailable?'Live view: actual points are shown first; projected final points remain in parentheses.':'Live view: actual Sleeper matchup scoring is shown because this matchup has started.'):`Pregame view: Week ${week} projections are loading.`;
 }

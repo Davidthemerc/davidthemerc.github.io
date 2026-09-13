@@ -84,7 +84,7 @@
       <button type="button" class="btn ghost" data-news-filter="rivalry">Rivalry</button>
     </div>
     <div class="newsroom-grid" id="newsroomGrid"></div>
-    <div class="newsroom-footnote">Headlines from league results, standings, transactions, and rivalry history.</div>
+    <div class="newsroom-footnote">Headlines from league results, standings, transactions, rivalry history, and the CTESPN desk.</div>
   </section>
 
   <section class="season-card weekly-report">
@@ -152,6 +152,14 @@
       <div class="home-mini-row" id="homeRosterStatus"></div>
     </section>
   </div>
+
+  <section class="home-card home-gameday-card" id="homeGameDayCard">
+    <div class="home-gameday-copy">
+      <span class="home-gameday-kicker">UCL GAMEDAY</span>
+      <div><h3>Follow the league live</h3><p>Open UCL GameDay for the live fantasy game-day experience.</p></div>
+    </div>
+    <a class="home-gameday-action" href="https://ucl-gameday.netlify.app/" target="_blank" rel="noopener noreferrer">Open UCL GameDay →</a>
+  </section>
 
   <div class="home-secondary-grid">
     <section class="home-card">
@@ -552,6 +560,12 @@
       <div class="season-freshness" id="seasonFreshness">Season data not synced yet.</div>
     </div>
   </div>
+
+  <a class="season-gameday-live" id="seasonGameDayLiveBanner" href="https://ucl-gameday.netlify.app/" target="_blank" rel="noopener noreferrer" hidden>
+    <span class="season-gameday-live-dot" aria-hidden="true"></span>
+    <span class="season-gameday-live-copy"><b>UCL GameDay is live</b><small id="seasonGameDayLiveDetail">NFL action is in progress.</small></span>
+    <span class="season-gameday-live-action">Open GameDay →</span>
+  </a>
 
   <nav class="season-section-nav" aria-label="Season sections">
     <button type="button" data-command-tab="season" data-command-section="seasonThisWeek">This Week</button>
@@ -1046,6 +1060,7 @@
 <script src="js/season/core.js"></script>
 <script src="js/season/waivers.js"></script>
 <script src="js/season/free-agency.js"></script>
+<script src="js/season/manual-news.js"></script>
 <script src="js/season/history-news.js"></script>
 <script src="js/season/playoffs-achievements.js"></script>
 <script src="js/season/trade-center.js"></script>

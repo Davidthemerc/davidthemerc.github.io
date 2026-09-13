@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.03 — build fragment: 30_matchup_simulation.js
+/* UCL GameDay v0.5.50 — build fragment: 30_matchup_simulation.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function chosenPair(){const pairs=matchupPairs();return pairs.find(p=>String(p.id)===String(featuredMatchupId))||pairForRoster($('#teamSelect')?.value)||pairs[0]}
@@ -34,15 +34,127 @@ function realSessionInfo(now=Date.now()){
 }
 function currentSessionInfo(now=gameNow()){return simulation.active?simulationSessionAt(simulation.elapsed):realSessionInfo(now)}
 function momentumStore(pair){const key=String(pair.id);let store=momentumGames.get(key);if(!store){store={sessions:{},order:[],selected:null};momentumGames.set(key,store)}return store}
-function ensureMomentumGame(pair,now=gameNow(),session=currentSessionInfo(now)){const p=orientedPair(pair),store=momentumStore(pair),sid=session?.id||'unknown',left=String(p.rows[0].roster_id),right=String(p.rows[1].roster_id);let g=store.sessions[sid];if(!g||g.leftRosterId!==left||g.rightRosterId!==right){g={sessionId:sid,sessionLabel:session?.label||'Scoring Window',leftRosterId:left,rightRosterId:right,left:0,right:0,leftQuiet:0,rightQuiet:0,leftActive:false,rightActive:false,lastTime:now,history:[{t:now,left:0,right:0}]};store.sessions[sid]=g;if(!store.order.includes(sid))store.order.push(sid)}store.selected=store.selected||sid;return g}
+function momentumPreviousGame(store,sid){
+  const idx=store.order.indexOf(sid);
+  const ids=idx>0?store.order.slice(0,idx):store.order;
+  for(let i=ids.length-1;i>=0;i--){const g=store.sessions[ids[i]];if(g&&g.sessionId!=='idle')return g}
+  return null;
+}
+function ensureMomentumGame(pair,now=gameNow(),session=currentSessionInfo(now)){
+  const p=orientedPair(pair),store=momentumStore(pair),sid=session?.id||'unknown',
+    left=String(p.rows[0].roster_id),right=String(p.rows[1].roster_id);
+  let g=store.sessions[sid];
+  if(!g||g.leftRosterId!==left||g.rightRosterId!==right){
+    const prev=momentumPreviousGame(store,sid);
+    const carry=prev&&prev.leftRosterId===left&&prev.rightRosterId===right;
+    const leftStart=carry?Number(prev.left||0):0,rightStart=carry?Number(prev.right||0):0;
+    g={
+      sessionId:sid,sessionLabel:session?.label||'Scoring Window',
+      leftRosterId:left,rightRosterId:right,
+      left:leftStart,right:rightStart,leftQuiet:0,rightQuiet:0,
+      leftActive:false,rightActive:false,lastTime:now,
+      history:[{t:now,left:leftStart,right:rightStart,carryIn:carry}]
+    };
+    store.sessions[sid]=g;
+    if(!store.order.includes(sid))store.order.push(sid);
+  }
+  store.selected=store.selected||sid;
+  return g
+}
 function simulationRosterActive(rosterId,sessionId){if(!simulation.active)return null;for(const m of matchups){if(String(m.roster_id)!==String(rosterId))continue;for(const id of (m.starters||[]).filter(Boolean)){const a=simulation.assignments.get(String(id));if(a&&a.sessionId===sessionId){const s=simulationSessionAt(simulation.elapsed),within=simulation.elapsed-s.start;if(within>=a.gameStart&&within<a.gameEnd)return true}}}return false}
-function closeMomentumSession(sessionId,now=gameNow()){for(const pair of matchupPairs()){const store=momentumStore(pair),g=store.sessions[sessionId];if(!g)continue;g.leftActive=false;g.rightActive=false;g.left=0;g.right=0;g.leftQuiet=99;g.rightQuiet=99;g.lastTime=now;g.history.push({t:now,left:0,right:0});if(g.history.length>900)g.history=g.history.slice(-900)}}
-function updateMomentum(allDeltas,now=gameNow()){const session=currentSessionInfo(now);if(!session||session.id==='idle')return;for(const pair of matchupPairs()){const p=orientedPair(pair),g=ensureMomentumGame(pair,now,session),elapsed=Math.max(.05,(now-g.lastTime)/60000);const by={};for(const d of allDeltas){const rid=String(d.rosterId);if(!p.rows.some(r=>String(r.roster_id)===rid)||d.delta<=0)continue;(by[rid]||(by[rid]=[])).push(d.delta)}for(const side of ['left','right']){const rid=g[side+'RosterId'],ds=by[rid]||[],sum=ds.reduce((a,x)=>a+x,0),count=ds.length;const simActive=simulationRosterActive(rid,session.id);if(simActive!==null)g[side+'Active']=simActive;else if(count)g[side+'Active']=true;let quiet=g[side+'Quiet']+elapsed;let decay=Math.exp(-.18*elapsed);if(quiet>3)decay*=Math.exp(-.11*Math.min(10,quiet-3)*elapsed);if(g[side+'Active']===false)decay*=Math.exp(-1.15*elapsed);g[side]*=decay;if(count){const combo=1+Math.min(.8,.18*Math.max(0,count-1)+.035*Math.max(0,sum-5));const leverage=momentumMatchupLeverage(pair,rid,by),impulse=ds.reduce((a,x)=>a+momentumImpulse(x),0)*combo*leverage;g[side]=Math.min(100,g[side]+impulse);quiet=0}if(g[side]<.15)g[side]=0;g[side+'Quiet']=quiet}g.lastTime=now;g.history.push({t:now,left:g.left,right:g.right});if(g.history.length>900)g.history=g.history.slice(-900)}}
+function closeMomentumSession(sessionId,now=gameNow()){
+  for(const pair of matchupPairs()){
+    const store=momentumStore(pair),g=store.sessions[sessionId];if(!g)continue;
+    g.leftActive=false;g.rightActive=false;
+    // Preserve the final momentum value. Quiet days between NFL scoring windows are a
+    // hold, not a decay/reset; the next scoring window carries this endpoint forward.
+    g.leftQuiet=0;g.rightQuiet=0;g.lastTime=now;
+    const last=g.history[g.history.length-1];
+    if(!last||last.t!==now)g.history.push({t:now,left:g.left,right:g.right,sessionEnd:true});
+    if(g.history.length>900)g.history=g.history.slice(-900)
+  }
+}
+function updateMomentum(allDeltas,now=gameNow()){
+  const session=currentSessionInfo(now);if(!session||session.id==='idle')return;
+  for(const pair of matchupPairs()){
+    const p=orientedPair(pair),g=ensureMomentumGame(pair,now,session),elapsed=Math.max(.05,(now-g.lastTime)/60000),by={};
+    const rosterIds=(p.rows||[]).map(r=>String(r.roster_id));
+    const addImpulse=(rid,value)=>{
+      rid=String(rid||'');value=Number(value||0);
+      if(!rosterIds.includes(rid)||!Number.isFinite(value)||Math.abs(value)<.0001)return;
+      if(value>0)(by[rid]||(by[rid]=[])).push(value);
+      else{
+        // A legitimate negative fantasy event swings momentum to the opponent.
+        // Corrections never reach this function from live capture.
+        const opp=rosterIds.find(x=>x!==rid);
+        if(opp)(by[opp]||(by[opp]=[])).push(Math.abs(value));
+      }
+    };
+    for(const d of allDeltas||[]){
+      if(Array.isArray(d?.fantasyImpacts)&&d.fantasyImpacts.length){
+        for(const impact of d.fantasyImpacts)addImpulse(impact.rosterId,impact.delta);
+      }else addImpulse(d?.rosterId,d?.delta);
+    }
+    for(const side of ['left','right']){
+      const rid=g[side+'RosterId'],ds=by[rid]||[],sum=ds.reduce((a,x)=>a+x,0),count=ds.length;
+      const simActive=simulationRosterActive(rid,session.id);
+      if(simActive!==null)g[side+'Active']=simActive;else if(count)g[side+'Active']=true;
+      let quiet=g[side+'Quiet']+elapsed;
+      let decay=Math.exp(-.18*elapsed);
+      if(quiet>3)decay*=Math.exp(-.11*Math.min(10,quiet-3)*elapsed);
+      if(g[side+'Active']===false)decay*=Math.exp(-1.15*elapsed);
+      g[side]*=decay;
+      if(count){
+        const combo=1+Math.min(.8,.18*Math.max(0,count-1)+.035*Math.max(0,sum-5));
+        const leverage=momentumMatchupLeverage(pair,rid,by);
+        const impulse=ds.reduce((a,x)=>a+momentumImpulse(x),0)*combo*leverage;
+        g[side]=Math.min(100,g[side]+impulse);
+        quiet=0;
+      }
+      if(g[side]<.15)g[side]=0;
+      g[side+'Quiet']=quiet;
+    }
+    g.lastTime=now;g.history.push({t:now,left:g.left,right:g.right});
+    if(g.history.length>900)g.history=g.history.slice(-900);
+  }
+}
 function drawMomentumCanvas(canvas,g){if(!canvas||!g)return;const dpr=Math.max(1,window.devicePixelRatio||1),rect=canvas.getBoundingClientRect(),w=Math.max(320,rect.width),h=Math.max(180,rect.height);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);const pad={l:12,r:12,t:14,b:14},mid=h/2,amp=mid-pad.t-7;c.strokeStyle='#cfd8e5';c.lineWidth=1;c.beginPath();c.moveTo(pad.l,mid);c.lineTo(w-pad.r,mid);c.stroke();const hist=g.history||[];if(hist.length<2)return;const t0=hist[0].t,t1=hist[hist.length-1].t||t0+1;const xFor=t=>pad.l+(w-pad.l-pad.r)*((t-t0)/Math.max(1,t1-t0));function line(side,color,dir,active){if(!active&&!hist.some(p=>Number(p[side])>.15))return;c.strokeStyle=color;c.lineWidth=2.4;c.lineJoin='round';c.lineCap='round';c.beginPath();hist.forEach((p,i)=>{const x=xFor(p.t),y=mid-dir*(Math.min(100,p[side])/100)*amp;i?c.lineTo(x,y):c.moveTo(x,y)});c.stroke()}line('left','#2367d1',1,g.leftActive);line('right','#c73a3a',-1,g.rightActive)}
-function renderMomentum(pair){const p=orientedPair(pair),root=$('#momentum');if(!root||!p)return;const session=currentSessionInfo(),store=momentumStore(pair);ensureMomentumGame(pair,gameNow(),session);const currentId=session?.id||store.order.at(-1),selected=(store.selected&&store.sessions[store.selected])?store.selected:currentId, g=store.sessions[selected]||store.sessions[currentId];if(!g){root.innerHTML='<div class="empty">No momentum session available yet.</div>';return}const lr=rosterFor(p.rows[0].roster_id),rr=rosterFor(p.rows[1].roster_id),leftShown=g.leftActive||g.history.some(x=>x.left>.15),rightShown=g.rightActive||g.history.some(x=>x.right>.15);const opts=store.order.map(id=>`<option value="${esc(id)}" ${id===selected?'selected':''}>${esc(store.sessions[id].sessionLabel)}</option>`).join('');root.innerHTML=`<div class="momentum-session">${esc(g.sessionLabel)}${store.order.length>1?`<select id="momentumSessionSelect" aria-label="Momentum scoring window">${opts}</select>`:''}</div><div class="momentum-summary"><div class="momentum-side blue ${leftShown?'':'inactive'}"><b>${esc(teamName(lr))}</b><span>Momentum ${Math.round(g.left)}</span></div><div class="momentum-now">${selected===currentId?'LIVE PRESSURE':'SESSION HISTORY'}</div><div class="momentum-side red right ${rightShown?'':'inactive'}"><b>${esc(teamName(rr))}</b><span>Momentum ${Math.round(g.right)}</span></div></div><canvas class="momentum-canvas" id="momentumCanvas" aria-label="Game momentum chart"></canvas><div class="momentum-legend"><span class="momentum-key ${leftShown?'':'inactive'}"><i class="blue"></i>Left team</span><span class="momentum-key ${rightShown?'':'inactive'}"><i class="red"></i>Right team</span></div><div class="momentum-note">Momentum rises with scoring runs and close-game pressure.</div>`;const ss=$('#momentumSessionSelect');if(ss)ss.onchange=()=>{store.selected=ss.value;renderMomentum(pair)};requestAnimationFrame(()=>drawMomentumCanvas($('#momentumCanvas'),g))}
+function renderMomentum(pair){
+  const p=orientedPair(pair),root=$('#momentum');if(!root||!p)return;
+  const session=currentSessionInfo(),store=momentumStore(pair),now=gameNow();
 
+  // Do not create a fake zero-valued "idle" session between Thursday and Sunday.
+  // During quiet gaps show the most recent real scoring window and hold its endpoint.
+  if(session?.id!=='idle')ensureMomentumGame(pair,now,session);
+  const currentId=session?.id!=='idle'?session.id:null;
+  const latestReal=[...store.order].reverse().find(id=>id!=='idle'&&store.sessions[id]);
+  const selected=(store.selected&&store.sessions[store.selected]&&store.selected!=='idle')?store.selected:(currentId||latestReal);
+  const g=selected?store.sessions[selected]:null;
 
+  if(!g){
+    root.innerHTML='<div class="empty">Momentum will begin when the first scoring play is detected.</div>';
+    return
+  }
 
+  const lr=rosterFor(p.rows[0].roster_id),rr=rosterFor(p.rows[1].roster_id),
+    leftShown=g.leftActive||g.history.some(x=>x.left>.15),rightShown=g.rightActive||g.history.some(x=>x.right>.15);
+  const opts=store.order.filter(id=>id!=='idle'&&store.sessions[id]).map(id=>`<option value="${esc(id)}" ${id===selected?'selected':''}>${esc(store.sessions[id].sessionLabel)}</option>`).join('');
+  const isQuiet=session?.id==='idle',isCurrent=selected===currentId;
+  const center=isQuiet?'BETWEEN SCORING WINDOWS':(isCurrent?'LIVE MOMENTUM':'SESSION HISTORY');
+  const label=isQuiet?`${g.sessionLabel} • holding through quiet period`:g.sessionLabel;
+
+  root.innerHTML=`<div class="momentum-session">${esc(label)}${store.order.filter(id=>id!=='idle').length>1?`<select id="momentumSessionSelect" aria-label="Momentum scoring window">${opts}</select>`:''}</div>
+    <div class="momentum-summary">
+      <div class="momentum-side blue ${leftShown?'':'inactive'}"><b>${esc(teamName(lr))}</b><span>Momentum ${Math.round(g.left)}</span></div>
+      <div class="momentum-now">${center}</div>
+      <div class="momentum-side red right ${rightShown?'':'inactive'}"><b>${esc(teamName(rr))}</b><span>Momentum ${Math.round(g.right)}</span></div>
+    </div>
+    <canvas class="momentum-canvas" id="momentumCanvas" aria-label="Game momentum chart"></canvas>
+    <div class="momentum-legend"><span class="momentum-key ${leftShown?'':'inactive'}"><i class="blue"></i>Left team</span><span class="momentum-key ${rightShown?'':'inactive'}"><i class="red"></i>Right team</span></div>
+    <div class="momentum-note">${isQuiet?'Momentum is held from the last scoring window; no artificial Friday/Saturday movement is added.':'Momentum rises only from detected fantasy scoring events and carries forward between scoring windows.'}</div>`;
+  const ss=$('#momentumSessionSelect');if(ss)ss.onchange=()=>{store.selected=ss.value;renderMomentum(pair)};
+  requestAnimationFrame(()=>drawMomentumCanvas($('#momentumCanvas'),g))
+}
 function clone(v){return JSON.parse(JSON.stringify(v))}
 const SIM_SESSION_LIBRARY={
   wed:{id:'wed',label:'Wednesday Kickoff',duration:210*60},
@@ -253,19 +365,7 @@ function simEventWeight(pos,seed,i){
 // Sleeper-shaped stat delta, and its fantasy-point delta is calculated from the
 // league's scoring_settings. This lets Live Lineups, delta interpretation, and
 // GameView all consume the same kind of information they receive on a live Sunday.
-function simScoreStats(stats){
-  const fallbacks={rush_yd:.1,rec_yd:.1,rec:1,pass_yd:.04,rush_td:6,rec_td:6,pass_td:6,pass_int:-2,fum_lost:-2,
-    fgm:3,fgm_0_19:0,fgm_20_29:0,fgm_30_39:0,fgm_40_49:1,fgm_50p:2,fgmiss:-1,xpm:1,
-    sack:1,int:2,fum_rec:2,def_td:6,def_st_td:6,def_int_ret_yd:0,fum_rec_yd:0,kick_ret_yd:0,punt_ret_yd:0};
-  let total=0;
-  for(const [key,val] of Object.entries(stats||{})){
-    const num=Number(val||0);if(!Number.isFinite(num)||!num)continue;
-    const configured=Number(leagueInfo?.scoring_settings?.[key]);
-    const weight=Number.isFinite(configured)?configured:Number(fallbacks[key]??0);
-    total+=num*weight;
-  }
-  return Number(total.toFixed(2));
-}
+function simScoreStats(stats,pos=''){return uclScoreStats(stats,pos)}
 function simMergeStats(base,delta){
   const out={...(base||{})};
   for(const [k,v] of Object.entries(delta||{}))out[k]=Number(((Number(out[k])||0)+(Number(v)||0)).toFixed(3));
@@ -292,7 +392,7 @@ function simStatEvent(pos,desired,seed=1){
     else{const y=2+Math.round(r2*19);stats={rush_att:1,rush_yd:y};detail=`Rush • ${y} yards`}
   }else if(p==='K'){
     if(r<.26){stats={xpm:1};detail='Extra point made'}
-    else{const y=20+Math.round(r2*39);stats={fgm:1};if(y>=50)stats.fgm_50p=1;else if(y>=40)stats.fgm_40_49=1;else if(y>=30)stats.fgm_30_39=1;else if(y>=20)stats.fgm_20_29=1;else stats.fgm_0_19=1;detail=`${y}-yard field goal`}
+    else{const y=20+Math.round(r2*39);stats={fgm:1,fgm_yds_over_30:Math.max(0,y-30)};if(y>=50)stats.fgm_50p=1;else if(y>=40)stats.fgm_40_49=1;else if(y>=30)stats.fgm_30_39=1;else if(y>=20)stats.fgm_20_29=1;else stats.fgm_0_19=1;detail=`${y}-yard field goal`}
   }else if(p==='DEF'){
     if(r<.12){const y=Math.round(r2*45);stats={int:1,def_int_ret_yd:y,def_td:1};detail=`Interception return touchdown • ${y} yards`}
     else if(r<.24){const y=Math.round(r2*35);stats={fum_rec:1,fum_rec_yd:y,def_td:1};detail=`Fumble return touchdown • ${y} yards`}
@@ -302,7 +402,7 @@ function simStatEvent(pos,desired,seed=1){
   }else{
     const y=3+Math.round(r2*30);stats={rec:1,rec_yd:y};detail=`Reception • ${y} yards`;
   }
-  return {stats,delta:simScoreStats(stats),detail};
+  return {stats,delta:simScoreStats(stats,p),detail};
 }
 function simResetStatBoard(){
   gameViewStats={};lastGameViewStats={};gameViewStatsAt=Date.now();
@@ -353,7 +453,7 @@ function simulationRosterActive(rosterId,sessionId){
 }
 function applyScheduledSimEvent(e){
   const m=matchups.find(x=>String(x.roster_id)===String(e.rosterId));if(!m)return;
-  const pid=String(e.playerId),stats=e.stats||{},computed=simScoreStats(stats);
+  const pid=String(e.playerId),stats=e.stats||{},computed=simScoreStats(stats,e.pos||playerInfo(pid)?.pos||'');
   // The schedule may carry a preview delta for diagnostics, but the scoreboard is
   // always driven by re-scoring the actual simulated stats at arrival time.
   e.delta=computed;
@@ -557,11 +657,22 @@ function gvIntervalPlayAnalysis(pid,pos,statDelta,pointDelta){
   const passCmp=Math.max(0,Math.round(d.pass_cmp||0)),passAtt=Math.max(0,Math.round(d.pass_att||0)),passY=Math.round(d.pass_yd||0),passTd=Math.max(0,Math.round(d.pass_td||0));
   const passInt=Math.max(0,Math.round(d.pass_int||0));
   const fumLost=Math.max(0,Math.round(d.fum_lost||d.fum_lost_total||0));
+  const pass2=Math.max(0,Math.round(d.pass_2pt||0)),rec2=Math.max(0,Math.round(d.rec_2pt||0)),rush2=Math.max(0,Math.round(d.rush_2pt||0));
+  const offFumRecTd=Math.max(0,Math.round(d.fum_rec_td||0));
+
+  if(pass2>0){count=Math.max(count,pass2);family='qb_pass';detail=pass2===1?'Successful two-point pass':`${pass2} successful two-point passes`;confidence=pass2===1?'single':'burst'}
+  if(rec2>0){count=Math.max(count,rec2);family='reception';detail=rec2===1?'Successful two-point reception':`${rec2} successful two-point receptions`;confidence=rec2===1?'single':'burst'}
+  if(rush2>0){count=Math.max(count,rush2);family=p==='QB'?'qb_run':'rb_run';detail=rush2===1?'Successful two-point rush':`${rush2} successful two-point rushes`;confidence=rush2===1?'single':'burst'}
+  if(offFumRecTd>0&&!['DEF','DST'].includes(p)){count=Math.max(count,offFumRecTd);family='off_fum_recovery';detail='Offensive fumble recovery touchdown';confidence=offFumRecTd===1?'single':'burst'}
 
   if(rec>0){
     count=Math.max(count,rec);family='reception';
     if(rec===1){detail=`${recY}-yard ${recTd?'touchdown ':''}reception`;confidence='single'}
     else{detail=`${rec} receptions • ${recY} receiving yards${recTd?` • ${recTd} receiving TD${recTd===1?'':'s'}`:''}`;confidence='burst'}
+  }
+
+  if(rec===0&&family==='unknown'&&((d.rec_yd||0)!==0||recTd>0)){
+    family='lateral_receive';detail=`${recY} receiving yards after lateral${recTd?' • touchdown':''}`;confidence='single';count=1;
   }
 
   if(rush>0){
@@ -612,9 +723,16 @@ function gvIntervalPlayAnalysis(pid,pos,statDelta,pointDelta){
   }
 
   const sacks=Math.max(0,Math.round(d.sack||0)),ints=Math.max(0,Math.round(d.int||0)),fum=Math.max(0,Math.round(d.fum_rec||0)),defTd=Math.max(0,Math.round(d.def_td||0)),defStTd=Math.max(0,Math.round(d.def_st_td||0));
+  const safeties=Math.max(0,Math.round(d.safe||0)),blocked=Math.max(0,Math.round(d.blk_kick||0)),qbHits=Math.max(0,Math.round(d.qb_hit||0)),def2=Math.max(0,Math.round(d.def_2pt||0));
   const passDef=Math.max(0,Math.round(gvPassDefendedDelta(d)));
   const intRetY=Math.round(Number(d.def_int_ret_yd||0)),fumRetY=Math.round(Number(d.fum_rec_yd||0));
   const kickRetY=Math.round(Number(d.kick_ret_yd||0)),puntRetY=Math.round(Number(d.punt_ret_yd||0));
+  if(['DEF','DST'].includes(p)&&safeties>0){count=Math.max(count,safeties);family='def_safety';detail=safeties===1?'Safety':`${safeties} safeties`;confidence=safeties===1?'single':'burst'}
+  if(['DEF','DST'].includes(p)&&blocked>0){count=Math.max(count,blocked);family='def_blocked_kick';detail=blocked===1?'Blocked kick':`${blocked} blocked kicks`;confidence=blocked===1?'single':'burst'}
+  if(['DEF','DST'].includes(p)&&def2>0&&family==='unknown'){
+    family=(ints>0?'def_interception':fum>0?'def_fumble':'def_2pt');detail=ints>0?'Defensive two-point interception return':fum>0?'Defensive two-point fumble return':'Defensive two-point return';confidence='single';count=1;
+  }
+  if(['DEF','DST'].includes(p)&&qbHits>0&&family==='unknown'){count=Math.max(count,qbHits);family='def_qb_hit';detail=qbHits===1?'Quarterback hit':`${qbHits} quarterback hits`;confidence=qbHits===1?'single':'burst'}
   if(['DEF','DST'].includes(p)&&(kickRetY!==0||puntRetY!==0||defStTd>0)){
     if(kickRetY!==0&&puntRetY===0){
       count=Math.max(count,1);family='kick_return';detail=`${kickRetY}-yard kick return${defStTd?' touchdown':''}`;confidence='single';
@@ -672,10 +790,11 @@ function gvSameTeamReceiverGroups(qb,targets){
     receptions:Math.max(0,Math.round(t.intervalAnalysis?.stats?.rec||0)),
     yards:Math.round(t.intervalAnalysis?.stats?.rec_yd||0),
     tds:Math.max(0,Math.round(t.intervalAnalysis?.stats?.rec_td||0))
-  })).filter(x=>x.receptions>0);
+  })).filter(x=>x.receptions>0 || Number(x.event?.intervalAnalysis?.stats?.rec_2pt||0)>0);
 }
 function gvBuildCorrelatedPassEvent(qb,rec,index=0){
   const r=rec.event;
+  if(!gvSameNflTeam(qb,r))return null;
   const passerPos=String(qb?.pos||'QB').toUpperCase();
   const receiverPos=String(r?.pos||'WR').toUpperCase();
   const trickPlay=passerPos!=='QB'||receiverPos==='QB';
@@ -693,7 +812,8 @@ function gvBuildCorrelatedPassEvent(qb,rec,index=0){
     trickConfidenceLabel:trickConfidence.label,
     trickConfidenceScore:trickConfidence.score,
     trickConfidenceReasons:trickConfidence.reasons,
-    playType:'qb_pass',
+    playType:(Number(qb?.intervalAnalysis?.stats?.pass_2pt||0)>0||Number(r?.intervalAnalysis?.stats?.rec_2pt||0)>0)?'two_point_pass':'qb_pass',
+    twoPointConversion:Number(qb?.intervalAnalysis?.stats?.pass_2pt||0)>0||Number(r?.intervalAnalysis?.stats?.rec_2pt||0)>0,
     correlated:true
   };
 }

@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.03 — build fragment: 50_ctespn_alerts.js
+/* UCL GameDay v0.5.50 — build fragment: 50_ctespn_alerts.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function ctespnIsTouchdown(item){return /touchdown|td/i.test(ctespnAlertDetail(item))}
@@ -342,7 +342,7 @@ function snapshotAndEvents(){const now=gameNow(),snap={},deltas=[];for(const p o
     // v0.4.45: Live GameView playback/feed is owned by gvProcessLiveSnapshot().
     // Keep this legacy/transient ingestion only for the in-app simulation engine,
     // otherwise the same live fantasy delta can enter two independent queues.
-    if(simulation.active)recordGameViewEvent(item);events=events.slice(0,80)}}}const tk=`team:${m.roster_id}`,tv=n(m.points);snap[tk]=tv}lastSnapshot=snap;captureScoreHistory(now);updateMomentum(deltas,now);ctespnQueueLeagueAlerts(deltas,now)}
+    if(simulation.active)recordGameViewEvent(item);events=events.slice(0,80)}}}const tk=`team:${m.roster_id}`,tv=n(m.points);snap[tk]=tv}lastSnapshot=snap;captureScoreHistory(now);if(simulation.active)updateMomentum(deltas,now);ctespnQueueLeagueAlerts(deltas,now)}
 function venueFor(rosterId,idx){return idx===0?'AWAY':'HOME'}
 
 function matchupIndex(){
@@ -390,8 +390,72 @@ function renderRibbon(){
       <div class="game-chip-margin">${lead===0?'TIED':`${margin.toFixed(2)} PT EDGE`}</div>
     </button>`;
   }).join('');
-  root.querySelectorAll('[data-mid]').forEach(b=>b.onclick=()=>{featuredMatchupId=b.dataset.mid;if(currentView!=='gameday')setView('gameday');else render()});
+  root.querySelectorAll('[data-mid]').forEach(b=>b.onclick=()=>{
+    featuredMatchupId=b.dataset.mid;
+    const pair=matchupPairs().find(p=>String(p.id)===String(featuredMatchupId));
+    const current=String($('#teamSelect')?.value||'');
+    const ids=(pair?.rows||[]).map(r=>String(r.roster_id));
+    syncSelectedTeamToFeaturedMatchup(ids.includes(current)?current:(ids[0]||''));
+    if(currentView!=='gameday')setView('gameday');else render();
+  });
 }
+
+function renderScoresView(){
+  const root=$('#scoresGrid'),title=$('#scoresTitle'),status=$('#scoresStatus');if(!root)return;
+  const week=n(nflState?.week)||1,pairs=matchupPairs();
+  if(title)title.textContent=`Week ${week} Scores`;
+  if(status)status.textContent=simulation.active?'Simulation scores':'Live Sleeper scoring';
+  if(!pairs.length){
+    root.innerHTML='<div class="empty scores-empty">No UCL matchups are available for this week yet.</div>';
+    return;
+  }
+  root.innerHTML=pairs.map((pair,index)=>{
+    const a=pair.rows?.[0],b=pair.rows?.[1];if(!a||!b)return '';
+    const ra=rosterFor(a.roster_id),rb=rosterFor(b.roster_id),ap=n(a.points),bp=n(b.points);
+    const lead=ap===bp?'TIED':ap>bp?teamName(ra):teamName(rb);
+    const active=String(pair.id)===String(featuredMatchupId||'');
+    return `<div class="scores-game ${active?'active':''}" data-scores-mid="${esc(String(pair.id))}" role="button" tabindex="0" aria-label="Select Game ${index+1}">
+      <div class="scores-game-top"><span>GAME ${index+1}</span><span>${ap===bp?'TIED':`${esc(lead)} +${Math.abs(ap-bp).toFixed(2)}`}</span></div>
+      <div class="scores-team ${ap>bp?'leading':''}">
+        <button type="button" class="scores-team-link" data-scores-roster="${esc(String(a.roster_id))}" aria-label="Open ${esc(teamName(ra))} in GameView">${esc(teamName(ra))}</button>
+        <strong>${pts(ap)}</strong>
+      </div>
+      <div class="scores-team ${bp>ap?'leading':''}">
+        <button type="button" class="scores-team-link" data-scores-roster="${esc(String(b.roster_id))}" aria-label="Open ${esc(teamName(rb))} in GameView">${esc(teamName(rb))}</button>
+        <strong>${pts(bp)}</strong>
+      </div>
+    </div>`;
+  }).join('');
+
+  const chooseMatchup=mid=>{
+    featuredMatchupId=mid;
+    const pair=matchupPairs().find(p=>String(p.id)===String(featuredMatchupId));
+    const current=String($('#teamSelect')?.value||'');
+    const ids=(pair?.rows||[]).map(r=>String(r.roster_id));
+    syncSelectedTeamToFeaturedMatchup(ids.includes(current)?current:(ids[0]||''));
+    renderScoresView();
+  };
+
+  root.querySelectorAll('[data-scores-mid]').forEach(card=>{
+    card.onclick=e=>{
+      if(e.target.closest('[data-scores-roster]'))return;
+      chooseMatchup(card.dataset.scoresMid);
+    };
+    card.onkeydown=e=>{
+      if(!['Enter',' '].includes(e.key)||e.target.closest('[data-scores-roster]'))return;
+      e.preventDefault();
+      chooseMatchup(card.dataset.scoresMid);
+    };
+  });
+
+  root.querySelectorAll('[data-scores-roster]').forEach(btn=>btn.onclick=e=>{
+    e.stopPropagation();
+    const rid=String(btn.dataset.scoresRoster||'');if(!rid)return;
+    selectPreferredTeam(rid);
+    setView('gameview');
+  });
+}
+
 function renderHero(pair){pair=orientedPair(pair);const [a,b]=pair.rows,ra=rosterFor(a.roster_id),rb=rosterFor(b.roster_id),diff=n(a.points)-n(b.points),leader=diff===0?'TIED':diff>0?teamName(ra):teamName(rb);$('#hero').innerHTML=`<div class="hero-top"><span class="live-pill">GAMEDAY</span><span>WEEK ${esc(nflState?.week||'—')} • FEATURED MATCHUP</span></div><div class="hero-score"><div class="hero-team"><div class="venue">${venueFor(a.roster_id,0)}</div><h2>${esc(teamName(ra))}</h2><div class="score">${pts(a.points)}</div><div class="record">${esc(record(ra))}</div></div><div class="hero-mid"><div class="edge-label">CURRENT EDGE</div><div class="edge-num">${Math.abs(diff).toFixed(2)}</div><div class="edge-team">${esc(leader)}</div></div><div class="hero-team"><div class="venue">${venueFor(b.roster_id,1)}</div><h2>${esc(teamName(rb))}</h2><div class="score">${pts(b.points)}</div><div class="record">${esc(record(rb))}</div></div></div>`}
 function lineupWeekStats(id){
   const sid=String(id||'');
@@ -402,32 +466,170 @@ function lineupWeekStats(id){
 }
 function lineupStatSummary(id,pos){
   const s=lineupWeekStats(id);if(s===null)return '';
-  const p=String(pos||'').toUpperCase(),v=k=>Math.round(Number(s?.[k])||0),segments=[];
-  const add=(label,yd,td)=>segments.push(`${label} ${v(yd)} YD / ${v(td)} TD`);
-  if(p==='QB'){
-    add('PASS','pass_yd','pass_td');
-    if(v('rush_yd')||v('rush_td'))add('RUSH','rush_yd','rush_td');
-  }else if(p==='RB'){
-    add('RUSH','rush_yd','rush_td');add('REC','rec_yd','rec_td');
-  }else if(p==='WR'||p==='TE'){
-    add('REC','rec_yd','rec_td');
-    if(v('rush_yd')||v('rush_td'))add('RUSH','rush_yd','rush_td');
-  }else if(p==='K'){
-    const fg=v('fgm')||v('fgm_0_19')+v('fgm_20_29')+v('fgm_30_39')+v('fgm_40_49')+v('fgm_50p');
-    segments.push(`${fg} FG / ${v('xpm')} XP`);
-  }else if(p==='DEF'||p==='DST'){
-    const td=v('def_td')+v('def_st_td');
-    segments.push(`${v('sack')} SACK / ${v('int')} INT / ${td} TD`);
-  }else{
-    if(v('rec_yd')||v('rec_td'))add('REC','rec_yd','rec_td');
-    if(v('rush_yd')||v('rush_td'))add('RUSH','rush_yd','rush_td');
-    if(v('pass_yd')||v('pass_td'))add('PASS','pass_yd','pass_td');
-  }
-  return segments.join(' • ');
-}
-function renderLineups(pair){pair=orientedPair(pair);const html=pair.rows.map((m,side)=>{const r=rosterFor(m.roster_id),rows=starterRows(m);return `<div class="lineup-side"><div class="lineup-title"><span>${esc(teamName(r))}</span><span>${pts(m.points)}</span></div>${rows.length?rows.map(x=>{const statLine=lineupStatSummary(x.id,x.pos);return `<div class="player-row" data-player="${esc(x.id)}"><span class="pos">${esc(x.slot)}</span><div class="player-copy"><div class="pname">${esc(x.name)}</div><div class="pmeta">${esc(x.pos)} • ${esc(x.team)}${x.status?` • ${esc(x.status)}`:''}</div>${statLine?`<div class="pstats">${esc(statLine)}</div>`:''}</div><div class="pts">${pts(x.points)}<small>PTS</small></div></div>`}).join(''):'<div class="empty">No starters reported.</div>'}</div>`}).join('');$('#lineups').innerHTML=html}
-function renderEvents(pair){pair=orientedPair(pair);const ids=new Set(pair.rows.map(x=>String(x.roster_id))),rows=events.filter(e=>e.separator||ids.has(String(e.rosterId))).slice(0,28);$('#events').innerHTML=rows.length?rows.map(e=>e.separator?`<div class="session-sep">${esc(e.sessionLabel)}</div>`:`<div class="event"><span class="event-time">${simulation.active?simTimeLabel((e.time-simulation.virtualStart)/1000):new Date(e.time).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</span><div><b>${esc(e.name)}</b><small>${esc(teamName(rosterFor(e.rosterId)))} • now ${pts(e.total)}</small></div><span class="delta ${e.delta<0?'neg':''}">${e.delta>=0?'+':''}${e.delta.toFixed(2)}</span></div>`).join(''):'<div class="empty">No score changes detected yet. GameDay will build this feed while it is open.</div>'}
+  const p=String(pos||'').toUpperCase()==='DST'?'DEF':String(pos||'').toUpperCase();
+  const v=k=>Number(s?.[k])||0,parts=[];
+  const push=x=>{if(x)parts.push(x)};
+  const tdLabel=(n,label='TD')=>n>0?`${Math.round(n)} ${label}`:'';
 
+  const pass=()=>{
+    const cmp=v('pass_cmp'),att=v('pass_att'),yd=v('pass_yd'),td=v('pass_td'),ints=v('pass_int');
+    if(cmp||att||yd||td||ints){
+      const x=[];
+      if(cmp||att)x.push(`${Math.round(cmp)}/${Math.round(att)} CMP`);
+      if(yd)x.push(`${Math.round(yd)} YD`);
+      if(td)x.push(tdLabel(td));
+      if(ints)x.push(`${Math.round(ints)} INT`);
+      push(x.join(', '));
+    }
+  };
+  const rush=()=>{
+    const car=v('rush_att'),yd=v('rush_yd'),td=v('rush_td');
+    if(car||yd||td){
+      const x=[];
+      if(car)x.push(`${Math.round(car)} CAR`);
+      if(yd)x.push(`${Math.round(yd)} YD`);
+      if(td)x.push(tdLabel(td));
+      push(x.join(', '));
+    }
+  };
+  const rec=()=>{
+    const catches=v('rec'),tgt=v('rec_tgt'),yd=v('rec_yd'),td=v('rec_td');
+    if(catches||tgt||yd||td){
+      const x=[];
+      if(catches||tgt)x.push(`${Math.round(catches)}/${Math.round(tgt||catches)} REC`);
+      if(yd)x.push(`${Math.round(yd)} YD`);
+      if(td)x.push(tdLabel(td));
+      push(x.join(', '));
+    }
+  };
+  const kick=()=>{
+    const fgm=v('fgm')||v('fgm_0_19')+v('fgm_20_29')+v('fgm_30_39')+v('fgm_40_49')+v('fgm_50p');
+    const fgmiss=v('fgmiss')||v('fg_miss')||v('fgmissed');
+    const fga=v('fga')||v('fg_att')||(fgm+fgmiss);
+    const xpm=v('xpm'),xpmiss=v('xpmiss')||v('xp_miss'),xpa=v('xpa')||v('xp_att')||(xpm+xpmiss);
+    if(fga||fgm)push(`${Math.round(fgm)}/${Math.round(fga||fgm)} FG`);
+    if(xpa||xpm)push(`${Math.round(xpm)}/${Math.round(xpa||xpm)} XP`);
+  };
+  const defense=()=>{
+    const pa=v('pts_allow')||v('points_allow')||v('pa');
+    const sacks=v('sack'),ints=v('int'),fr=v('fum_rec')||v('st_fum_rec');
+    if(pa||Object.prototype.hasOwnProperty.call(s,'pts_allow')||Object.prototype.hasOwnProperty.call(s,'points_allow')||Object.prototype.hasOwnProperty.call(s,'pa'))push(`${Math.round(pa)} PTS ALLOW`);
+    if(sacks)push(`${trimStat(sacks)} SACK`);
+    if(ints)push(`${trimStat(ints)} INT`);
+    if(fr)push(`${trimStat(fr)} FR`);
+
+    // Prefer explicit TD subtype stats when Sleeper supplies them. Fall back to generic TD
+    // only for any remaining aggregate D/ST touchdowns.
+    const intTd=v('int_td')||v('def_int_td');
+    const frTd=v('fum_rec_td')||v('def_fum_td');
+    const koTd=v('kick_ret_td')||v('kr_td')||v('def_kick_ret_td');
+    const pntTd=v('punt_ret_td')||v('pr_td')||v('def_punt_ret_td');
+    if(intTd)push(`${trimStat(intTd)} INT TD`);
+    if(frTd)push(`${trimStat(frTd)} FR TD`);
+    if(koTd)push(`${trimStat(koTd)} KO TD`);
+    if(pntTd)push(`${trimStat(pntTd)} PNT TD`);
+    const typed=intTd+frTd+koTd+pntTd;
+    const totalTd=v('def_td')+v('def_st_td')+v('st_td');
+    if(totalTd>typed)push(`${trimStat(totalTd-typed)} TD`);
+  };
+
+  if(p==='QB'){pass();rush();rec()}
+  else if(p==='RB'){rush();rec();pass()}
+  else if(p==='WR'||p==='TE'){rec();rush();pass()}
+  else if(p==='K'){kick();pass();rush();rec()}
+  else if(p==='DEF'){defense()}
+  else {pass();rush();rec()}
+
+  return parts.join(', ');
+}
+function trimStat(v){const x=Number(v)||0;return Number.isInteger(x)?String(x):x.toFixed(2).replace(/0+$/,'').replace(/\.$/,'')}
+const LINEUP_SCORING_LABELS=Object.freeze({
+  pass_yd:'Passing yards',pass_td:'Passing TD',pass_int:'Interception thrown',pass_2pt:'Passing two-point conversion',
+  rush_yd:'Rushing yards',rush_td:'Rushing TD',rush_2pt:'Rushing two-point conversion',
+  rec:'Reception',rec_yd:'Receiving yards',rec_td:'Receiving TD',rec_2pt:'Receiving two-point conversion',bonus_rec_te:'TE reception bonus',bonus_rec_rb:'RB reception bonus',bonus_rec_wr:'WR reception bonus',
+  fum_lost:'Fumble lost',fum_rec:'Fumble recovery',fum_rec_td:'Fumble recovery TD',fum_ret_yd:'Fumble return yards',
+  fgm:'Field goal made',fgm_yds_over_30:'FG yards over 30',fgmiss:'Field goal missed',xpm:'Extra point made',
+  int:'Interception',int_ret_yd:'Interception return yards',def_int_ret_yd:'Interception return yards',sack:'Sack',sack_yd:'Sack yards',safe:'Safety',blk_kick:'Blocked kick',blk_kick_ret_yd:'Blocked-kick return yards',def_td:'Defensive TD',def_st_td:'D/ST TD',def_2pt:'Defensive two-point return',def_pass_def:'Pass defended',pass_def:'Pass defended',qb_hit:'QB hit',tkl_loss:'Tackle for loss',tkl_solo:'Solo tackle',st_ff:'Special-teams forced fumble',st_fum_rec:'Special-teams fumble recovery',st_td:'Special-teams TD',fg_ret_yd:'Missed-FG return yards'
+});
+function lineupScoringKey(key){
+  return (leagueInfo?.scoring_settings&&Object.prototype.hasOwnProperty.call(leagueInfo.scoring_settings,key))||Object.prototype.hasOwnProperty.call(UCL_2026_SCORING_FALLBACK,key)?key:(UCL_SCORING_ALIASES[key]||key)
+}
+function lineupScoringBreakdown(id,pos,total){
+  const s=lineupWeekStats(id)||{},p=String(pos||'').toUpperCase()==='DST'?'DEF':String(pos||'').toUpperCase(),rows=[];let calc=0;
+  for(const [key,raw] of Object.entries(s)){
+    const stat=Number(raw);if(!Number.isFinite(stat)||stat===0)continue;
+    const scoreKey=lineupScoringKey(key),rate=uclScoringWeight(scoreKey,0),points=stat*rate;if(!rate||Math.abs(points)<.0001)continue;
+    rows.push({key,label:LINEUP_SCORING_LABELS[key]||LINEUP_SCORING_LABELS[scoreKey]||key.replaceAll('_',' '),stat,rate,points});calc+=points;
+  }
+  const rec=Number(s.rec||0),bonusKey=p==='TE'?'bonus_rec_te':p==='RB'?'bonus_rec_rb':p==='WR'?'bonus_rec_wr':'';
+  if(rec&&bonusKey&&!Object.prototype.hasOwnProperty.call(s,bonusKey)){
+    const rate=uclScoringWeight(bonusKey,0),points=rec*rate;if(rate&&Math.abs(points)>=.0001){rows.push({key:bonusKey,label:LINEUP_SCORING_LABELS[bonusKey]||'Reception bonus',stat:rec,rate,points});calc+=points}
+  }
+  const order=p==='QB'?['pass','rush','rec','fum']:p==='RB'?['rush','rec','pass','fum']:(p==='WR'||p==='TE')?['rec','rush','pass','fum']:p==='K'?['fg','xp','pass','rush','rec','fum']:p==='DEF'?['def','int','sack','safe','blk','fum','st','return']:['pass','rush','rec','fg','def','fum'];
+  const family=k=>k.startsWith('pass_')?'pass':k.startsWith('rush_')?'rush':k==='rec'||k.startsWith('rec_')||k.startsWith('bonus_rec_')?'rec':k.startsWith('fg')?'fg':k==='xpm'?'xp':k.startsWith('fum')?'fum':k==='int'||k.startsWith('int_')||k.startsWith('def_int')?'int':k.startsWith('sack')?'sack':k==='safe'?'safe':k.startsWith('blk')?'blk':k.startsWith('st_')?'st':k.startsWith('def_')||k==='qb_hit'||k.startsWith('tkl_')?'def':k.includes('ret_yd')?'return':'other';
+  rows.sort((a,b)=>{const ai=order.indexOf(family(a.key)),bi=order.indexOf(family(b.key));return (ai<0?99:ai)-(bi<0?99:bi)});
+  const actual=Number(total)||0,adjustment=actual-calc;if(Math.abs(adjustment)>=.011)rows.push({key:'other',label:'Other Sleeper scoring',stat:null,rate:null,points:adjustment});
+  return rows;
+}
+function formatScoringRate(v){const x=Number(v)||0;return Number.isInteger(x)?x.toFixed(0):x.toFixed(3).replace(/0+$/,'').replace(/\.$/,'')}
+function openLineupFptsBreakdown(playerId,pos,total){
+  const info=playerInfo(playerId),backdrop=$('#playerFptsBackdrop'),body=$('#playerFptsBody'),title=$('#playerFptsTitle'),meta=$('#playerFptsMeta'),totalEl=$('#playerFptsTotal');if(!backdrop||!body)return;
+  title.textContent=info.name;meta.textContent=`${info.pos||pos||'—'} • ${info.team||'FA'}`;const rows=lineupScoringBreakdown(playerId,pos||info.pos,total);
+  body.innerHTML=rows.length?rows.map(r=>`<div class="player-fpts-row"><div><b>${esc(r.label)}</b>${r.stat===null?'':`<small>${esc(trimStat(r.stat))} × ${esc(formatScoringRate(r.rate))}</small>`}</div><span class="player-fpts-value ${r.points<0?'neg':''}">${r.points>=0?'+':''}${Number(r.points).toFixed(2)}</span></div>`).join(''):'<div class="player-fpts-empty">No scoring stats detected yet.</div>';
+  totalEl.textContent=pts(total);totalEl.classList.toggle('negative',Number(total)<0);backdrop.hidden=false;
+}
+function closeLineupFptsBreakdown(){const b=$('#playerFptsBackdrop');if(b)b.hidden=true}
+function bindLineupFptsBreakdown(){
+  const host=$('#lineups');if(host&&!host.dataset.fptsBound){host.dataset.fptsBound='1';host.addEventListener('click',e=>{const b=e.target.closest('[data-fpts-player]');if(b)openLineupFptsBreakdown(b.dataset.fptsPlayer,b.dataset.fptsPos,Number(b.dataset.fptsTotal||0))})}
+  const close=$('#playerFptsClose'),backdrop=$('#playerFptsBackdrop');if(close&&!close.dataset.bound){close.dataset.bound='1';close.onclick=closeLineupFptsBreakdown}if(backdrop&&!backdrop.dataset.bound){backdrop.dataset.bound='1';backdrop.addEventListener('click',e=>{if(e.target===backdrop)closeLineupFptsBreakdown()})}
+}
+
+function lineupAvailabilityLabel(player){
+  const injury=String(player?.injury_status||player?.injuryStatus||'').trim();
+  const status=String(player?.status||'').trim();
+  const raw=injury||status;
+  if(!raw||/^active$/i.test(raw))return '';
+  const map={
+    'questionable':'Q','q':'Q','doubtful':'D','d':'D','out':'OUT',
+    'injured reserve':'IR','injured_reserve':'IR','ir':'IR',
+    'physically unable to perform':'PUP','physically_unable_to_perform':'PUP','pup':'PUP',
+    'suspended':'SUSP','susp':'SUSP',
+    'non-football injury':'NFI','non_football_injury':'NFI','nfi':'NFI'
+  };
+  return map[raw.toLowerCase()]||raw.toUpperCase();
+}
+function lineupAvailabilityClass(player){
+  const label=lineupAvailabilityLabel(player);
+  if(label==='Q')return 'injury-questionable';
+  if(label==='D')return 'injury-doubtful';
+  if(['OUT','IR','PUP','SUSP','NFI'].includes(label))return 'injury-out';
+  return label?'injury-other':'';
+}
+function renderLineups(pair){
+  pair=orientedPair(pair);
+  const html=pair.rows.map((m,side)=>{
+    const r=rosterFor(m.roster_id),rows=starterRows(m),rid=String(m.roster_id);
+    return `<div class="lineup-side"><div class="lineup-title"><span>${esc(teamName(r))}</span><span>${pts(m.points)}</span></div>${
+      rows.length?rows.map(x=>{
+        const statLine=lineupStatSummary(x.id,x.pos),activity=nflTeamGameActivity(x.team),activeGame=activity.active;
+        const injuryLabel=lineupAvailabilityLabel(x),injuryClass=lineupAvailabilityClass(x);
+        const tip=activeGame?(['status','espn-status'].includes(activity.source)?'NFL game currently in progress':'NFL game expected to be in progress'):(['final','espn-final'].includes(activity.source)?'NFL game final':'Open this UCL team in GameView');
+        return `<div class="player-row ${activeGame?'nfl-game-active':''}" data-player="${esc(x.id)}">
+          <span class="pos">${esc(x.slot)}</span>
+          <div class="player-copy player-gameview-link" role="button" tabindex="0" data-gameday-gv-roster="${esc(rid)}" aria-label="Open ${esc(teamName(r))} in UCL GameView" title="${esc(tip)}">
+            <div class="pname">${esc(x.name)}${activeGame?'<span class="game-active-dot" aria-label="NFL game in progress"></span>':''}</div>
+            <div class="pmeta">${esc(x.pos)} • ${esc(x.team)}${injuryLabel?` <span class="injury-badge ${injuryClass}" title="Availability: ${esc(injuryLabel)}">${esc(injuryLabel)}</span>`:''}</div>
+            ${statLine?`<div class="pstats">${esc(statLine)}</div>`:''}
+          </div>
+          <button type="button" class="pts player-fpts-trigger ${x.points<0?'negative':''}" data-fpts-player="${esc(x.id)}" data-fpts-pos="${esc(x.pos)}" data-fpts-total="${esc(x.points)}" aria-label="Show ${esc(x.name)} fantasy point breakdown">${pts(x.points)}<small>PTS</small></button>
+        </div>`;
+      }).join(''):'<div class="empty">No starters reported.</div>'
+    }</div>`;
+  }).join('');
+  $('#lineups').innerHTML=html;
+  bindLineupFptsBreakdown();
+}
+function renderEvents(pair){pair=orientedPair(pair);const ids=new Set(pair.rows.map(x=>String(x.roster_id))),rows=events.filter(e=>e.separator||ids.has(String(e.rosterId))).slice(0,28);$('#events').innerHTML=rows.length?rows.map(e=>e.separator?`<div class="session-sep">${esc(e.sessionLabel)}</div>`:`<div class="event"><span class="event-time">${simulation.active?simTimeLabel((e.time-simulation.virtualStart)/1000):new Date(e.time).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</span><div><b>${esc(e.name)}</b><small>${esc(teamName(rosterFor(e.rosterId)))} • now ${pts(e.total)}</small></div><span class="delta ${e.delta<0?'neg':''}">${e.delta>=0?'+':''}${e.delta.toFixed(2)}</span></div>`).join(''):'<div class="empty">No score changes detected yet. GameDay will build this feed while it is open.</div>'}
 
 function condensedScoreHistory(rows,maxRows=10){
   if(rows.length<=maxRows)return rows;
@@ -436,6 +638,7 @@ function condensedScoreHistory(rows,maxRows=10){
   if(keep.at(-1)!==rows.at(-1))keep.push(rows.at(-1));
   return keep
 }
+
 function historyTimeLabel(t){
   if(simulation.active){
     const sec=Math.max(0,Number(t)||0),session=simulationSessionAt(sec),within=Math.max(0,sec-session.start);
@@ -453,7 +656,7 @@ function renderScoreHistory(pair){
   root.innerHTML=`<div class="score-history-list">${rows.map(x=>{let l,r;if(String(x.aRosterId)===leftId){l=x.a;r=x.b}else{l=x.b;r=x.a}const diff=l-r,edge=diff===0?'Tied':`${diff>0?teamName(lr):teamName(rr)} +${Math.abs(diff).toFixed(2)}`;return `<div class="score-history-row"><time>${esc(historyTimeLabel(x.t))}</time><div class="score-history-score">${esc(teamName(lr))} ${pts(l)} — ${pts(r)} ${esc(teamName(rr))}</div><div class="score-history-edge">${esc(edge)}</div></div>`}).join('')}</div><div class="score-history-note">${simulation.active?'Simulation score history.':'Half-hour score history saved by GameDay.'}</div>`
 }
 
-function renderFlow(pair){pair=orientedPair(pair);const [a,b]=pair.rows,ta=Math.max(0,n(a.points)),tb=Math.max(0,n(b.points)),max=Math.max(1,ta,tb);$('#flow').innerHTML=`<div class="flow-bars"><div class="flow-row"><b>${esc(teamName(rosterFor(a.roster_id)))}</b><div class="bar"><span style="width:${Math.max(2,ta/max*100)}%"></span></div><strong>${pts(ta)}</strong></div><div class="flow-row"><b>${esc(teamName(rosterFor(b.roster_id)))}</b><div class="bar"><span style="width:${Math.max(2,tb/max*100)}%"></span></div><strong>${pts(tb)}</strong></div></div><div class="flow-note">v0.1.14 keeps the cumulative UCL score across every scoring window. Historical score-over-time snapshots will become richer as GameDay remains open during live scoring.</div>`}
+function renderFlow(pair){pair=orientedPair(pair);const [a,b]=pair.rows,ta=Math.max(0,n(a.points)),tb=Math.max(0,n(b.points)),max=Math.max(1,ta,tb);$('#flow').innerHTML=`<div class="flow-bars"><div class="flow-row"><b>${esc(teamName(rosterFor(a.roster_id)))}</b><div class="bar"><span style="width:${Math.max(2,ta/max*100)}%"></span></div><strong>${pts(ta)}</strong></div><div class="flow-row"><b>${esc(teamName(rosterFor(b.roster_id)))}</b><div class="bar"><span style="width:${Math.max(2,tb/max*100)}%"></span></div><strong>${pts(tb)}</strong></div></div>`}
 
 function gameViewPair(){return chosenPair()}
 function gameViewInitials(name=''){const parts=String(name).trim().split(/\s+/).filter(Boolean);return (parts[0]?.[0]||'P')+(parts.length>1?(parts.at(-1)?.[0]||''):'')}

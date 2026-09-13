@@ -166,7 +166,7 @@ function renderCompanionHome(){
     if(matchup.mine&&matchup.opp&&oppRoster){
       const scoring=matchupScoringContext(roster,oppRoster,matchup.mine,matchup.opp,homeWeek);
       if(scoring.projected||scoring.started){
-        $('#homeFocusValue').textContent=`${scoring.myTotal.toFixed(2)} – ${scoring.oppTotal.toFixed(2)}`;
+        $('#homeFocusValue').textContent=scoring.started?`${matchupScoreText(scoring,'my')} – ${matchupScoreText(scoring,'opp')}`:`${scoring.myTotal.toFixed(2)} – ${scoring.oppTotal.toFixed(2)}`;
         $('#homeFocusDetail').textContent=scoring.projected
           ?`Week ${homeWeek} ${uclMatchupNotation(homeWeek,roster.roster_id,rosterUserName(oppRoster))} • projected ${scoring.diff>0?`edge +${scoring.diff.toFixed(2)}`:scoring.diff<0?`deficit ${Math.abs(scoring.diff).toFixed(2)}`:'tie'}.`
           :`Week ${homeWeek} ${uclMatchupNotation(homeWeek,roster.roster_id,rosterUserName(oppRoster))} • ${scoring.diff>0?`leading by ${scoring.diff.toFixed(2)}`:scoring.diff<0?`trailing by ${Math.abs(scoring.diff).toFixed(2)}`:'tied'}.`;

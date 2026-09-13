@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.03 — build fragment: 90_gameview_playback_runtime.js
+/* UCL GameDay v0.5.50 — build fragment: 90_gameview_playback_runtime.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function gvPruneCorrelation(now=Date.now()){
@@ -18,6 +18,55 @@ function gvSortBySequence(a,b){
   return (a.sequence||0)-(b.sequence||0);
 }
 
+
+const GV_PLAYBACK_TOMBSTONE_MS=7000;
+const gvPlaybackTombstones=[];
+const gvAutomaticPlaybackClaims=new Set();
+const GV_AUTOMATIC_PLAYBACK_CLAIM_MAX=400;
+function gvPrunePlaybackTombstones(now=Date.now()){
+  for(let i=gvPlaybackTombstones.length-1;i>=0;i--){
+    if(now-Number(gvPlaybackTombstones[i]?.claimedAt||0)>GV_PLAYBACK_TOMBSTONE_MS)gvPlaybackTombstones.splice(i,1);
+  }
+}
+function gvPlaybackAlreadyClaimed(evt){
+  gvPrunePlaybackTombstones();
+  const src=String(evt?.source||'').toLowerCase();
+  if(src==='testing'||src==='simulation')return false;
+  return !!gvFindRecentEquivalentEvent(gvPlaybackTombstones.map(x=>x.event),evt,GV_EVENT_DEDUPE_WINDOW_MS);
+}
+function gvClaimPlayback(evt){
+  gvPrunePlaybackTombstones();
+  const src=String(evt?.source||'').toLowerCase();
+  if(src==='testing'||src==='simulation')return '';
+  gvPlaybackTombstones.push({claimedAt:Date.now(),event:{...evt}});
+  return evt?.semanticKey||evt?.dedupeKey||evt?.id||'';
+}
+
+
+function gvAutomaticPlaybackClaimKey(evt){
+  if(!evt)return '';
+  return String(evt.id||evt.eventId||evt.dedupeKey||evt.semanticKey||'').trim();
+}
+function gvWasAutomaticallyDispatched(evt){
+  const key=gvAutomaticPlaybackClaimKey(evt);
+  return !!key&&gvAutomaticPlaybackClaims.has(key);
+}
+function gvClaimAutomaticDispatch(evt){
+  const key=gvAutomaticPlaybackClaimKey(evt);
+  if(!key)return '';
+  gvAutomaticPlaybackClaims.add(key);
+  if(gvAutomaticPlaybackClaims.size>GV_AUTOMATIC_PLAYBACK_CLAIM_MAX){
+    const excess=gvAutomaticPlaybackClaims.size-GV_AUTOMATIC_PLAYBACK_CLAIM_MAX;
+    const it=gvAutomaticPlaybackClaims.values();
+    for(let i=0;i<excess;i++){
+      const next=it.next();
+      if(next.done)break;
+      gvAutomaticPlaybackClaims.delete(next.value);
+    }
+  }
+  return key;
+}
+
 function gvFlushPending(force=false){
   if(gameViewPendingTimer){clearTimeout(gameViewPendingTimer);gameViewPendingTimer=null}
   const now=Date.now(),ready=[],keep=[];
@@ -29,7 +78,11 @@ function gvFlushPending(force=false){
   ready.sort(gvSortBySequence);
 
   for(const rawEvt of ready){
-    const evt=gvNormalizeEventSource(rawEvt);
+    let evt=gvNormalizeEventSource(rawEvt);
+    const recentRuntime=[...gameViewCorrelationWindow,...gameViewEvents,...gameViewQueue];
+    const runtimeDuplicate=gvFindRecentEquivalentEvent(recentRuntime,evt);
+    if(runtimeDuplicate)continue;
+    evt={...evt,dedupeKey:evt.dedupeKey||gvEventDedupeKey(evt),semanticKey:evt.semanticKey||gvSemanticPlayKey(evt)};
     const hit=gvFindCorrelatedPending(evt);
     if(hit){
       const merged=gvNormalizeEventSource(gvMergePlayEvents(hit.other,evt));
@@ -338,6 +391,22 @@ async function gvAnimateKick(evt,built,totalDuration){
   const ball=gvMakeBall(launch.x,launch.y);
   gvBallContinuityAudit(evt,'kick-release','free',{releasePoint:{...launch}});
 
+  if(String(evt?.playType||gvPlayType(evt))==='def_blocked_kick'){
+    const los=Number(built?.formation?.los||50),blocker=(front||[]).slice().sort((a,b)=>Math.hypot(a.x-launch.x,a.y-launch.y)-Math.hypot(b.x-launch.x,b.y-launch.y))[0]||built.scorer;
+    const blockPoint={x:gvClamp(los+dir*.9,5,95),y:gvClamp(50+(blocker?.y-50)*.08,22,78)};
+    const rebound={x:gvClamp(los-dir*(16+simRand(assignmentHash(`${evt.id}|blocked-kick`),31)*8),5,95),y:gvClamp(50+(simRand(assignmentHash(`${evt.id}|blocked-kick`),32)-.5)*18,12,88)};
+    if(blocker)await gvMove(blocker,[{x:blocker.x,y:blocker.y},{x:blockPoint.x-dir*.4,y:blockPoint.y}],Math.max(340,flightDur*.25),'ease-in');
+    await Promise.allSettled([
+      gvBallMove(ball,[launch,{x:(launch.x+blockPoint.x)/2,y:(launch.y+blockPoint.y)/2-1.5},blockPoint,rebound],Math.max(900,flightDur*.72)),
+      gvMomentLabel(blockPoint.x,blockPoint.y,'BLOCKED!','breakup',900)
+    ]);
+    if(ball?.el)ball.el.remove();
+    gvClearPossession();gvTerminalBallAudit(evt,'blocked-kick',{owner:null,reboundPoint:{...rebound}});
+    evt.blockedKickAudit={blockedBeforeLine:true,blockPoint,reboundPoint:rebound,knockedBackTowardMidfield:true};
+    gvTerminalFrameAudit(evt,'blocked-kick',[kicker,holder,snapper,blocker].filter(Boolean),{blocked:true});
+    return;
+  }
+
   const uprights=gvMakeUprights(dir),endX=dir>0?96:4,curve=(name.includes('left')?-1:name.includes('right')?1:0)*5;
   const kickResult=gvKickResult(evt),missProfile=kickResult.missed?gvKickMissProfile(evt):null;
   const goalY=kickResult.missed?gvClamp(50+missProfile.offset,4,96):50;
@@ -369,6 +438,43 @@ async function gvAnimateKick(evt,built,totalDuration){
   });
   await gvSleep(Math.min(360,finishDur));
   if(uprights?.el)uprights.el.remove();
+}
+
+async function gvAnimateQbKneel(evt,built,totalDuration){
+  const qb=gvUnit(built,'offense','QB');if(!qb)return;
+  gvSetPossession(qb);
+  const dir=built.formation.dir,start={x:qb.x,y:qb.y},end={x:gvClamp(qb.x-dir*.7,5,95),y:qb.y};
+  await gvMove(qb,[start,end],Math.max(420,gvPhaseDur(totalDuration,.12,420)),'ease-out');
+  qb.el?.classList.add('tackled');
+  await gvPulseUnit(qb,'QB KNEEL',820);
+  gvTerminalPossessionAudit(evt,'qb-kneel','offense',{carrier:qb?.playerId||'QB'});
+  gvTerminalBallAudit(evt,'possessed',{owner:'offense',kneel:true});
+  evt.qbKneelAudit={shortRetreat:true,playEndsImmediately:true};
+}
+
+async function gvAnimateSafety(evt,built,totalDuration){
+  const qb=gvUnit(built,'offense','QB'),rb=gvUnit(built,'offense','RB');
+  const defenders=built.units.filter(u=>u.side==='defense').slice().sort((a,b)=>Math.hypot(a.x-(qb?.x||50),a.y-(qb?.y||50))-Math.hypot(b.x-(qb?.x||50),b.y-(qb?.y||50))).slice(0,3);
+  if(!qb||!defenders.length)return;
+  const dir=built.formation.dir;
+  gvSetPossession(qb);
+  const drop={x:gvClamp(qb.x-dir*1.6,3,97),y:qb.y};
+  await Promise.allSettled([
+    gvMove(qb,[{x:qb.x,y:qb.y},drop],Math.max(620,gvPhaseDur(totalDuration,.18,620)),'ease-in-out'),
+    ...(rb?[gvMove(rb,[{x:rb.x,y:rb.y},{x:gvClamp(rb.x-dir*.8,3,97),y:gvClamp(rb.y+(50-rb.y)*.25,10,90)}],620)]:[]),
+    ...defenders.map((d,i)=>gvMove(d,[{x:d.x,y:d.y},{x:drop.x+dir*(1.2+i*.45),y:gvClamp(drop.y+(i-1)*2.2,8,92)}],700+i*70,'ease-in'))
+  ]);
+  const endzoneX=dir>0?6:94,impact={x:endzoneX,y:gvClamp(qb.y+(simRand(assignmentHash(`${evt.id}|safety`),9)-.5)*3,12,88)};
+  await Promise.allSettled([
+    gvMove(qb,[{x:qb.x,y:qb.y},impact],Math.max(700,gvPhaseDur(totalDuration,.18,700)),'ease-in'),
+    ...(rb?[gvMove(rb,[{x:rb.x,y:rb.y},{x:gvClamp(impact.x+dir*1.4,4,96),y:gvClamp(impact.y+3,10,90)}],700)]:[]),
+    ...defenders.map((d,i)=>gvMove(d,[{x:d.x,y:d.y},{x:gvClamp(impact.x+dir*(.6+i*.4),4,96),y:gvClamp(impact.y+(i-1)*1.6,8,92)}],700+i*45,'ease-in'))
+  ]);
+  gvImpactAt(impact.x,impact.y,true);qb.el?.classList.add('tackled');if(rb)rb.el?.classList.add('tackled');
+  gvClearPossession();await gvMomentLabel(impact.x,impact.y,'SAFETY','breakup',1100);
+  gvTerminalPossessionAudit(evt,'safety','none',{qbDownInEndzone:true});
+  gvTerminalBallAudit(evt,'dead',{owner:null,safety:true});
+  evt.safetyAudit={qbPreparingToPass:true,qbAndRbCollapse:true,downBehindGoalLine:true};
 }
 
 function gvDefPressureConcept(evt){
@@ -525,7 +631,7 @@ async function gvAnimateDefReturn(evt,built,totalDuration,type){
   const dir=built.formation.dir,{name,index}=gvDefReturnConcept(evt),seed=assignmentHash(`${evt.id}|def-return|${index}`);
   const qb=gvUnit(built,'offense','QB'),rb=gvUnit(built,'offense','RB'),wr=gvUnit(built,'offense','WR',0);
   const off=built.units.filter(u=>u.side==='offense'),def=built.units.filter(u=>u.side==='defense'&&u!==defender);
-  const isIntPlay=type==='def_int'||type==='def_int_td'||type==='def_interception';
+  const isIntPlay=type==='def_int'||type==='def_int_td'||type==='def_interception'||type==='def_2pt_int';
   // v0.4.40: turnovers need enough time to read as a pass, interception, transition,
   // and return rather than one compressed animation.
   const setupDur=isIntPlay?Math.max(1150,gvPhaseDur(totalDuration,.28,1150)):gvPhaseDur(totalDuration,.26,950);
@@ -596,7 +702,7 @@ async function gvAnimateDefReturn(evt,built,totalDuration,type){
       if(ball?.el)ball.el.remove();
     }
   }else{
-    const carrier=rb||qb||wr;
+    const carrier=evt?.stripSack?(qb||rb||wr):(rb||qb||wr);
     if(carrier){
       const contactSpot={x:gvClamp(carrier.x+dir*2.2,5,95),y:carrier.y};
       const looseSpot={
@@ -612,6 +718,7 @@ async function gvAnimateDefReturn(evt,built,totalDuration,type){
         gvMove(defender,[{x:defender.x,y:defender.y},{x:contactSpot.x-dir*.7,y:contactSpot.y}],Math.max(600,setupDur*.62))
       ]);
       gvClearPossession();gvImpactAt(contactSpot.x,contactSpot.y,true);
+      if(evt?.stripSack)await gvMomentLabel(contactSpot.x,contactSpot.y,'STRIP SACK','breakup',760);
       gvTerminalBallAudit(evt,'loose',{owner:null,phase:'fumble'});
       const ball=gvMakeBall(contactSpot.x,contactSpot.y);
       gvBallContinuityAudit(evt,'fumble-loose','free',{owner:null});
@@ -674,13 +781,15 @@ async function gvAnimateDefReturn(evt,built,totalDuration,type){
 
   await Promise.allSettled([runner,...escort,...chase]);
 
-  const isDefTd=type==='def_int_td'||type==='def_fum_td'||Number(evt?.intervalAnalysis?.stats?.def_td||0)>0;
+  const isDef2pt=type==='def_2pt_int'||type==='def_2pt_fumble'||Number(evt?.intervalAnalysis?.stats?.def_2pt||0)>0;
+  const isDefTd=type==='def_int_td'||type==='def_fum_td'||Number(evt?.intervalAnalysis?.stats?.def_td||0)>0||isDef2pt;
   gvSetPossession(defender);
   gvTerminalPossessionAudit(evt,isIntPlay?'interception':'fumble','defense',{carrier:defender?.playerId||defender?.role||null,returnComplete:true});
   gvTerminalBallAudit(evt,'possessed',{owner:'defense',returnComplete:true});
   if(isDefTd){
-    await gvExtendTouchdownToEndzone(evt,defender,built,-dir,Math.max(700,finishDur),'defensive-return-td');
-    await gvAnimateScorerCelebration(evt,defender,'celebration',totalDuration);
+    await gvExtendTouchdownToEndzone(evt,defender,built,-dir,Math.max(700,finishDur),isDef2pt?'defensive-two-point-return':'defensive-return-td');
+    if(isDef2pt)await gvMomentLabel(defender.x,defender.y,'TWO POINTS!','catch',900);
+    else await gvAnimateScorerCelebration(evt,defender,'celebration',totalDuration);
   }else{
     await gvAnimateContactFinish(evt,defender,off,-dir,totalDuration,'turnover-return');
   }
@@ -736,14 +845,17 @@ function gvBurstSubEvent(evt,play){
     played:false
   };
 }
-async function playGameViewBurst(evt,replay=false){
+async function playGameViewBurst(evt,replay=false,runnerManaged=false){
+  if(!evt)return;
+  if(!runnerManaged)gameViewPlaying=true;
+  if(!replay&&typeof gvPlayMajorNotification==='function')gvPlayMajorNotification(evt);
   const parts=gvBurstVisualPlays(evt);
   const status=$('#gvStatus');
   for(const p of parts){
     if(status)status.textContent=`${evt.name} • ${p.index} of ${p.count}`;
     const sub=gvBurstSubEvent(evt,p);
     try{
-      await playGameViewEvent(sub,true);
+      await playGameViewEvent(sub,true,true);
     }catch(error){
       sub.gameViewPlaybackError={message:String(error?.message||error),recovered:false,time:Date.now()};
       throw error;
@@ -752,6 +864,7 @@ async function playGameViewBurst(evt,replay=false){
   }
   if(!replay)gvMarkEventPlayed(evt);
   renderGameViewFeed();
+  if(!runnerManaged)gameViewPlaying=false;
 }
 
 function gvWholePlayUnitSnapshot(built){
@@ -828,17 +941,36 @@ function gvWholePlayReliabilityAudit(evt,built,before=[],phase='post-action'){
   return result;
 }
 
-async function playGameViewEvent(evt,replay=false){
+async function gvPresentStatCorrection(evt){
+  const pop=$('#gvPointsPop'),identity=$('#gvPlayerIdentity'),value=$('#gvPointsValue'),impact=$('#gvPointsImpactBreakdown'),detail=$('#gvPlayDetail'),context=$('#gvMatchupContext');
+  const delta=Number(evt?.delta||0),lost=delta<0?delta:-Math.abs(delta||0);
+  if(identity)identity.textContent=evt?.overturnedLabel||'STAT CORRECTION';
+  if(value)value.textContent=`${lost.toFixed(2)} FPTS`;
+  if(impact)impact.textContent='';
+  if(detail)detail.textContent=evt?.removedPriorEvent?'PRIOR PLAY REMOVED':(evt?.correctionReason||'Sleeper scoring revision');
+  if(context&&Number.isFinite(Number(evt?.leftScore))&&Number.isFinite(Number(evt?.rightScore)))context.textContent=`UPDATED SCORE ${Number(evt.leftScore).toFixed(2)}–${Number(evt.rightScore).toFixed(2)}`;
+  if(pop){pop.classList.add('stat-correction');pop.hidden=false;pop.animate([{opacity:0,transform:'translate(-50%,-50%) scale(.8)'},{opacity:1,transform:'translate(-50%,-50%) scale(1)'}],{duration:300,easing:'ease-out',fill:'forwards'});}
+  if($('#gvStatus'))$('#gvStatus').textContent='STAT CORRECTION';
+  await gvSleep(1700);
+  if(pop){pop.hidden=true;pop.classList.remove('stat-correction');}
+}
+
+async function playGameViewEvent(evt,replay=false,runnerManaged=false){
   if(!evt)return;
-  gameViewPlaying=true;clearGameViewEffects();renderGameViewScorebar();
+  if(!replay&&typeof gvPlayMajorNotification==='function')gvPlayMajorNotification(evt);
+  if(!runnerManaged)gameViewPlaying=true;clearGameViewEffects();renderGameViewScorebar();
+  if(gvIsLikelyStatCorrection(evt)&&!evt?.correctionApplied){
+    await gvPresentStatCorrection(evt);
+    if(!replay)gvMarkPlayed(evt);
+    if(!runnerManaged){gameViewPlaying=false;if(gameViewQueue.length||gameViewPending.length)setTimeout(playNextGameViewEvent,180)}return;
+  }
   if(evt.testingForced&&typeof gvTestingRenderScorePhase==='function')gvTestingRenderScorePhase(evt,'pre');
   const field=$('#gameViewField'),pop=$('#gvPointsPop'),detail=$('#gvPlayDetail'),banner=$('#gvBanner');
   if(!field){if(!replay)gvMarkPlayed(evt);
-  gameViewPlaying=false;return}
+  if(!runnerManaged)gameViewPlaying=false;return}
   $('#gvStatus').textContent=replay?`Replay • ${gvFeedSource(evt)}`:`${gvFeedSource(evt)} play`;
   const totalDuration=gvPlayDuration(evt,evt.playType||gvPlayType(evt));
-  if(!replay)ctespnAudioPrepareForGameViewEvent(evt,totalDuration);
-  const built=gvBuildUnits(evt);if(built?.formation?.label&&$('#gvStatus'))$('#gvStatus').textContent=built.formation.label;
+const built=gvBuildUnits(evt);if(built?.formation?.label&&$('#gvStatus'))$('#gvStatus').textContent=built.formation.label;
   const wholePlayStart=gvWholePlayUnitSnapshot(built);
   gvRenderNflEndzones(evt,built);
   const initialType=evt.playType||gvPlayType(evt),initialQb=gvUnit(built,'offense','QB'),initialRb=gvUnit(built,'offense','RB');
@@ -850,15 +982,14 @@ async function playGameViewEvent(evt,replay=false){
   if(built.scorer){const v=built.scorer.el.querySelector('.gv-unit-visual');if(v)v.animate([{transform:'scale(1)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],{duration:320,easing:'ease-out'})}
   if(!gvIsSpecialTeamsReturnType(initialType)&&!gvIsKickAttemptType(initialType))await gvBasicSnapAndPlay(evt,built,totalDuration);
   await gvAnimateActionPlay(evt,built,totalDuration);
-  if(!replay)ctespnAudioGameViewMilestone(evt,'outcome');
-  gvWholePlayReliabilityAudit(evt,built,wholePlayStart,'post-action');
+gvWholePlayReliabilityAudit(evt,built,wholePlayStart,'post-action');
   if(evt.testingForced&&typeof gvTestingRenderScorePhase==='function')gvTestingRenderScorePhase(evt,'post');
   const identity=$('#gvPlayerIdentity'),value=$('#gvPointsValue'),impact=$('#gvPointsImpactBreakdown'),context=$('#gvMatchupContext');
   const hasMultipleImpacts=gvEventHasMultipleFantasyImpacts(evt);
   if(identity)identity.textContent=evt.turnoverKind&&evt.offensivePlayerName&&evt.defensivePlayerName
     ?`${evt.offensivePlayerName} → ${evt.defensivePlayerName}`
-    :evt.multiActor&&evt.qbName&&evt.receiverName
-      ?`${evt.qbName} (QB) → ${evt.receiverName} (${evt.receiverPos||'REC'})`
+    :evt.multiActor&&(evt.passerName||evt.qbName)&&evt.receiverName
+      ?`${evt.passerName||evt.qbName} (${evt.passerPos||evt.qbPos||'QB'}) → ${evt.receiverName} (${evt.receiverPos||'REC'})`
       :`${evt.name||'Unknown Player'} (${evt.pos||'—'})`;
   pop.classList.toggle('multi-impact',hasMultipleImpacts);
   if(value)value.textContent=hasMultipleImpacts
@@ -903,15 +1034,14 @@ async function playGameViewEvent(evt,replay=false){
     field.classList.add(evt.tier==='huge'?'impact-huge':'impact-medium');
     banner.animate([{opacity:0,transform:'translateX(-50%) scale(.7)'},{opacity:1,transform:'translateX(-50%) scale(1.05)'},{opacity:1,transform:'translateX(-50%) scale(1)'}],{duration:420,easing:'ease-out',fill:'forwards'});
   }
-  if(!replay)ctespnAudioGameViewMilestone(evt,'post_outcome');
-  // v0.4.45: hold the completed, motionless field picture for two extra seconds
+// v0.4.45: hold the completed, motionless field picture for two extra seconds
   // while the play-stat popup is visible. The action animation has already finished
   // at this point, so this is a true post-play reading pause rather than slow motion.
   const gvPostPlayReadPause=2000;
   await gvSleep(gvPostPlayReadPause+(evt.tier==='huge'?900:evt.tier==='celebration'?700:500));
   await gvExitFormation();
   clearGameViewEffects();$('#gvStatus').textContent='Waiting for scoring';
-  gameViewPlaying=false;
+  if(!runnerManaged)gameViewPlaying=false;
   gvActorAnimations=[];
   if(!replay){
     // v0.4.45: a completed animation must retire its persistent queue entry and
@@ -919,8 +1049,10 @@ async function playGameViewEvent(evt,replay=false){
     // did this for bursts, leaving ordinary plays permanently marked unplayed.
     gvMarkEventPlayed(evt);
     renderGameViewFeed();
-    if(gameViewQueue.length||gameViewPending.length)setTimeout(playNextGameViewEvent,260);
-    else playNextGameViewEvent();
+    if(!runnerManaged){
+      if(gameViewQueue.length||gameViewPending.length)setTimeout(playNextGameViewEvent,260);
+      else playNextGameViewEvent();
+    }
   }
 }
 
@@ -935,7 +1067,7 @@ function cancelGameViewPlayback(blank=true){
   clearGameViewEffects(blank);
 }
 
-function gvRecoverPlaybackFailure(evt,error){
+function gvRecoverPlaybackFailure(evt,error,runnerManaged=false){
   const message=String(error?.message||error||'GameView playback error');
   if(evt){
     evt.gameViewPlaybackError={message,recovered:true,time:Date.now()};
@@ -943,12 +1075,12 @@ function gvRecoverPlaybackFailure(evt,error){
   gvActiveMotionFrames.forEach(id=>{try{cancelAnimationFrame(id)}catch(e){}});
   gvActiveMotionFrames.clear();
   try{clearGameViewEffects()}catch(e){}
-  gameViewPlaying=false;
+  if(!runnerManaged)gameViewPlaying=false;
   gvActorAnimations=[];
   const status=$('#gvStatus');
   if(status)status.textContent='Waiting for scoring';
   // Do not let a broken play block a tandem/burst/next queued event.
-  if(gameViewQueue.length||gameViewPending.length)setTimeout(playNextGameViewEvent,260);
+  if(!runnerManaged&&(gameViewQueue.length||gameViewPending.length))setTimeout(playNextGameViewEvent,260);
   return {recovered:true,message};
 }
 
@@ -958,19 +1090,88 @@ function playNextGameViewEvent(){
     if(gameViewPending.length)gvSchedulePendingFlush();
     return;
   }
-  const evt=gameViewQueue.shift();
-  const playback=evt?.type==='burst'?playGameViewBurst(evt,false):playGameViewEvent(evt,false);
-  Promise.resolve(playback).catch(error=>gvRecoverPlaybackFailure(evt,error));
+
+  let evt=null;
+  while(gameViewQueue.length&&!evt){
+    const candidate=gameViewQueue.shift();
+    if(!candidate)continue;
+
+    // A queue item may only be automatically dispatched once.
+    if(gvWasAutomaticallyDispatched(candidate))continue;
+
+    // Protect the renderer from a recently claimed equivalent event.
+    if(gvPlaybackAlreadyClaimed(candidate))continue;
+
+    gvClaimAutomaticDispatch(candidate);
+    gvClaimPlayback(candidate);
+    evt=candidate;
+  }
+
+  if(!evt){
+    if(gameViewPending.length)gvSchedulePendingFlush();
+    return;
+  }
+
+  // One runner owns the playback lock for the full event/burst lifetime.
+  gameViewPlaying=true;
+  const playback=evt?.type==='burst'
+    ?playGameViewBurst(evt,false,true)
+    :playGameViewEvent(evt,false,true);
+
+  Promise.resolve(playback)
+    .catch(error=>gvRecoverPlaybackFailure(evt,error,true))
+    .finally(()=>{
+      gameViewPlaying=false;
+      gvActorAnimations=[];
+      if(gameViewQueue.length||gameViewPending.length)setTimeout(playNextGameViewEvent,260);
+    });
 }
-function renderGameView(){renderGameViewScorebar();renderGameViewFeed();if(!gameViewPlaying)clearGameViewEffects(true)}
+function renderGameView(){bindGameViewTeamControls();renderGameViewScorebar();renderGameViewFeed();if(!gameViewPlaying)clearGameViewEffects(true)}
 
-function render(){bindWatchControls();const pair=chosenPair();renderRibbon();renderWatchBar(pair);if(!pair){$('#hero').innerHTML='<div class="empty">Sleeper has not published a paired matchup for this week yet.</div>';$('#lineups').innerHTML='';$('#events').innerHTML='';$('#flow').innerHTML='';if($('#momentum'))$('#momentum').innerHTML='';if($('#scoreHistory'))$('#scoreHistory').innerHTML='';return}renderHero(pair);renderLineups(pair);renderEvents(pair);renderFlow(pair);renderMomentum(pair);renderScoreHistory(pair);renderGameViewScorebar();renderGameViewFeed()}
+function render(){bindWatchControls();bindGameViewTeamControls();if(currentView==='scores')renderScoresView();const pair=chosenPair();renderRibbon();renderWatchBar(pair);if(!pair){$('#hero').innerHTML='<div class="empty">Sleeper has not published a paired matchup for this week yet.</div>';$('#lineups').innerHTML='';$('#events').innerHTML='';$('#flow').innerHTML='';if($('#momentum'))$('#momentum').innerHTML='';if($('#scoreHistory'))$('#scoreHistory').innerHTML='';return}renderHero(pair);renderLineups(pair);renderEvents(pair);renderFlow(pair);renderMomentum(pair);renderScoreHistory(pair);renderGameViewScorebar();renderGameViewFeed()}
 
+
+function selectableTeamIds(){const sel=$('#teamSelect');return sel?[...sel.options].map(o=>String(o.value)).filter(Boolean):rosters.map(r=>String(r.roster_id))}
+function cycleSelectedTeam(step=1){
+  const ids=selectableTeamIds();if(!ids.length)return;const current=String($('#teamSelect')?.value||ids[0]),idx=Math.max(0,ids.indexOf(current)),next=ids[(idx+step+ids.length)%ids.length];selectPreferredTeam(next);if(currentView==='gameview')renderGameView()
+}
+function gvTeamPickerRender(){
+  const menu=$('#gvTeamPickerMenu'),label=$('#gvViewingTeamLabel'),btn=$('#gvViewingTeamBtn');if(!menu)return;
+  const current=String($('#teamSelect')?.value||'');
+  if(label)label.textContent=teamName(rosterFor(current));
+  menu.innerHTML=selectableTeamIds().map(rid=>{
+    const roster=rosterFor(rid),name=teamName(roster),active=String(rid)===current;
+    return `<button type="button" role="option" aria-selected="${active?'true':'false'}" data-gv-team-id="${esc(String(rid))}" class="${active?'active':''}">${esc(name)}</button>`;
+  }).join('');
+  if(btn)btn.setAttribute('aria-expanded',menu.hidden?'false':'true');
+}
+function gvTeamPickerClose(){
+  const menu=$('#gvTeamPickerMenu'),btn=$('#gvViewingTeamBtn');if(menu)menu.hidden=true;if(btn)btn.setAttribute('aria-expanded','false');
+}
+function gvTeamPickerToggle(){
+  const menu=$('#gvTeamPickerMenu'),btn=$('#gvViewingTeamBtn');if(!menu)return;
+  gvTeamPickerRender();menu.hidden=!menu.hidden;if(btn)btn.setAttribute('aria-expanded',menu.hidden?'false':'true');
+}
+function bindGameViewTeamControls(){
+  const prev=$('#gvPrevTeamBtn'),next=$('#gvNextTeamBtn'),btn=$('#gvViewingTeamBtn');
+  if(prev&&!prev.dataset.bound){prev.dataset.bound='1';prev.onclick=()=>{gvTeamPickerClose();cycleSelectedTeam(-1)}}
+  if(next&&!next.dataset.bound){next.dataset.bound='1';next.onclick=()=>{gvTeamPickerClose();cycleSelectedTeam(1)}}
+  if(btn&&!btn.dataset.bound){btn.dataset.bound='1';btn.onclick=e=>{e.stopPropagation();gvTeamPickerToggle()}}
+  gvTeamPickerRender();
+}
 function bindWatchControls(){
   const prev=$('#prevMatchupBtn'),next=$('#nextMatchupBtn');
-  if(prev&&!prev.dataset.bound){prev.dataset.bound='1';prev.onclick=()=>cycleMatchup(-1)}
-  if(next&&!next.dataset.bound){next.dataset.bound='1';next.onclick=()=>cycleMatchup(1)}
+  if(prev&&!prev.dataset.bound){prev.dataset.bound='1';prev.onclick=()=>cycleSelectedTeam(-1)}
+  if(next&&!next.dataset.bound){next.dataset.bound='1';next.onclick=()=>cycleSelectedTeam(1)}
 }
 
-async function get(url){if(!liveLoadingEnabled())throw new Error('Live Sleeper loading is disabled in GameDay Settings');const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(`${r.status} ${r.statusText}`);return r.json()}
+class SleeperRequestError extends Error{constructor(message,endpoint='',status=0,cause=null){super(message);this.name='SleeperRequestError';this.endpoint=endpoint;this.status=Number(status)||0;this.isSleeperRequestError=true;if(cause)this.cause=cause}}
+function sleeperEndpointLabel(url){try{const u=new URL(url);return `${u.hostname}${u.pathname}`}catch(_){return String(url||'Sleeper API')}}
+async function get(url){
+  if(!liveLoadingEnabled())throw new Error('Live Sleeper loading is disabled in GameDay Settings');
+  const endpoint=sleeperEndpointLabel(url);let r;
+  try{r=await fetch(url,{cache:'no-store'})}catch(cause){throw new SleeperRequestError('Network request failed',endpoint,0,cause)}
+  if(!r.ok)throw new SleeperRequestError(`HTTP ${r.status}${r.statusText?` ${r.statusText}`:''}`,endpoint,r.status);
+  try{return await r.json()}catch(cause){throw new SleeperRequestError('Sleeper returned unreadable data',endpoint,r.status,cause)}
+}
 async 

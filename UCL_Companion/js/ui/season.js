@@ -1,3 +1,12 @@
+function renderSeasonGameDayLiveBanner(){
+  const banner=$('#seasonGameDayLiveBanner'),detail=$('#seasonGameDayLiveDetail');
+  if(!banner)return;
+  const live=typeof uclGameDayLiveState==='function'?uclGameDayLiveState():{live:false,count:0,games:[]};
+  banner.hidden=!live.live;
+  if(!live.live)return;
+  if(detail)detail.textContent=live.count===1?'1 NFL game is currently in progress.':`${live.count} NFL games are currently in progress.`;
+}
+
 const SEASON_LAZY_GROUPS={
   seasonManagement(roster,oppRoster,mine,opp){renderWaiverCenter(roster);},
   seasonPostseason(roster,oppRoster,mine,opp){renderPlayoffMachine();renderStandingsAndPlayoffRace();void ensureRemainingRegularSeasonSchedule();},
@@ -50,6 +59,7 @@ function prepareSeasonSection(section){
 
 function renderSeasonCompanion(){
   const view=$('#seasonView');if(!view)return;
+  renderSeasonGameDayLiveBanner();
   const week=seasonDisplayWeek();
   applyLifecycleUI();
   populateSeasonWeekSelector();
@@ -86,14 +96,14 @@ function renderSeasonCompanion(){
   if(opp){
     oppRoster=leagueRosters.find(r=>String(r.roster_id)===String(opp.roster_id));
     scoring=matchupScoringContext(roster,oppRoster,mine,opp,week);
-    $('#seasonMyPoints').textContent=scoring.myTotal.toFixed(2);
+    $('#seasonMyPoints').textContent=matchupScoreText(scoring,'my');
     $('#seasonOppTeam').innerHTML=`${esc(rosterUserName(oppRoster))} ${uclVenuePill(week,oppRoster.roster_id)}`;
-    $('#seasonOppPoints').textContent=scoring.oppTotal.toFixed(2);
+    $('#seasonOppPoints').textContent=matchupScoreText(scoring,'opp');
     $('#seasonOppRecord').textContent=rosterRecord(oppRoster);
     $('#matchupState').textContent=scoring.projected?`Week ${week} projections`:`Matchup ${mine.matchup_id}`;
     $('#matchupNote').textContent=scoring.projected
       ?`Pregame totals use Sleeper Week ${week} projections and will switch to actual points after kickoff.`
-      :scoring.started?`Week ${week} live scoring from Sleeper.`:`Week ${week} projections are still loading; totals will update automatically.`;
+      :scoring.started?(scoring.projectionAvailable?`Week ${week} live scoring from Sleeper with projected final totals in parentheses.`:`Week ${week} live scoring from Sleeper.`):`Week ${week} projections are still loading; totals will update automatically.`;
   }else{
     $('#seasonOppTeam').textContent='Opponent';
     $('#seasonOppPoints').textContent='—';

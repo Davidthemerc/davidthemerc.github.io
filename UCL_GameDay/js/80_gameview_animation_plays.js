@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.03 — build fragment: 80_gameview_animation_plays.js
+/* UCL GameDay v0.5.50 — build fragment: 80_gameview_animation_plays.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function gvRbBlockingPlan(concept,built,dir){
@@ -2703,6 +2703,55 @@ function gvQbPassFollowThroughPath(qb,dir,pocketOutcome){
   return [start,{x:gvClamp(start.x+dir*step,5,95),y:gvClamp(start.y+lateral,6,94)}];
 }
 
+async function gvPrepareTrickPassExchange(evt,built,totalDuration,passer,receiver){
+  const passerPos=String(evt?.passerPos||evt?.qbPos||passer?.role||'QB').toUpperCase();
+  if(!evt?.trickPlay||passerPos==='QB'||!passer)return {prepared:false};
+  const initialQb=gvUnit(built,'offense','QB');
+  if(!initialQb||initialQb===passer)return {prepared:false};
+  const dir=built.formation.dir,los=Number(built.formation.los||50),seed=assignmentHash(`${evt?.id||''}|trick-exchange-v2|${passerPos}`);
+  const qbStart={x:initialQb.x,y:initialQb.y},passerStart={x:passer.x,y:passer.y};
+  const naturalSide=passerStart.y<50?-1:1;
+  const wideExchange=simRand(seed,19)>.48;
+  const exchangeY=wideExchange
+    ?gvClamp(passerStart.y+naturalSide*(3+simRand(seed,20)*5),10,90)
+    :gvClamp(50+naturalSide*(5+simRand(seed,21)*4),12,88);
+  // Stay just behind the line of scrimmage. The action passer begins in the
+  // normal WR/RB/TE slot and reveals the trick only after the snap.
+  const exchangeX=gvClamp(los-dir*(.9+simRand(seed,22)*.8),5,95);
+  const qbMesh={x:gvClamp(initialQb.x+dir*(.5+simRand(seed,23)*.55),5,95),y:gvClamp(50+naturalSide*(1.5+simRand(seed,24)*1.4),8,92)};
+  const exchangeDur=Math.max(700,gvPhaseDur(totalDuration,.12,700));
+  gvSetPossession(initialQb);
+  gvBallContinuityAudit(evt,'trick-pre-pitch','carried',{owner:'QB',passerRole:passerPos,receiverRole:String(evt?.receiverPos||receiver?.role||'').toUpperCase()});
+  const support=(built.units||[]).filter(u=>u.side==='offense'&&u!==initialQb&&u!==passer&&u!==receiver&&['WR','RB','TE'].includes(u.role)).slice(0,3)
+    .map((u,i)=>gvMove(u,[{x:u.x,y:u.y},{x:gvClamp(u.x+dir*(2.0+i*.5),5,95),y:gvClamp(u.y+(i%2?2:-2),7,93)}],exchangeDur));
+  await Promise.allSettled([
+    gvMove(initialQb,[qbStart,qbMesh],exchangeDur,'ease-in-out'),
+    gvMove(passer,[passerStart,{x:exchangeX-dir*.25,y:(passerStart.y+exchangeY)/2},{x:exchangeX,y:exchangeY}],exchangeDur,'ease-in-out'),
+    ...support
+  ]);
+  const release={x:initialQb.x,y:initialQb.y},target={x:passer.x,y:passer.y};
+  gvClearPossession();
+  gvTerminalBallAudit(evt,'released',{owner:null,from:'QB',trickPlay:true});
+  const ball=gvMakeBall(release.x,release.y);
+  gvBallContinuityAudit(evt,'trick-pitch-release','free',{from:'QB',to:passerPos,backwardOrHorizontal:true});
+  const pitchDur=Math.max(380,gvPhaseDur(totalDuration,.07,380));
+  await gvBallMove(ball,[release,{x:(release.x+target.x)/2,y:(release.y+target.y)/2+(naturalSide*-.8)},{...target}],pitchDur);
+  if(ball?.el)ball.el.remove();
+  gvSetPossession(passer);
+  gvBallContinuityAudit(evt,'trick-pitch-catch','carried',{owner:passerPos,from:'QB'});
+  await gvPulseUnit(passer,'ACTION',Math.max(300,gvPhaseDur(totalDuration,.045,300)));
+  const setSide=simRand(seed,25)>.5?1:-1;
+  const setPath=[{x:passer.x,y:passer.y},{x:gvClamp(passer.x-dir*(1.0+simRand(seed,26)*.6),5,95),y:gvClamp(passer.y+setSide*(.4+simRand(seed,27)*.5),7,93)}];
+  await gvMove(passer,setPath,Math.max(320,gvPhaseDur(totalDuration,.05,320)),'ease-out');
+  evt.trickExchangeAudit={
+    kind:String(evt?.receiverPos||receiver?.role||'').toUpperCase()==='QB'?'qb-throwback':'non-qb-pass',
+    initialOwner:'QB',pitchTo:passerPos,passerSet:true,receiverRole:String(evt?.receiverPos||receiver?.role||'').toUpperCase(),
+    normalPreSnapAlignment:true,exchangePoint:{x:Number(exchangeX.toFixed(2)),y:Number(exchangeY.toFixed(2))},wideExchange,
+    backwardOrHorizontalPass:true,ballSequence:['QB','free',passerPos]
+  };
+  return {prepared:true,initialQb,passer,receiver};
+}
+
 async function gvAnimateQbPass(evt,built,totalDuration,receiver,route,catchPt,coverage,outcome){
   const qb=gvPasserUnit(evt,built,receiver);if(!qb||!receiver)return;
   const dir=built.formation.dir,{name,index}=gvQbPassConcept(evt),seed=assignmentHash(`${evt.id}|pass|${index}`);
@@ -3343,8 +3392,9 @@ function gvResolvePassParticipants(evt,built,initialReceiver,type='qb_pass'){
 
   const receiverIsPasser=!!(receiver&&passer&&(receiver===passer||
     (receiver.playerId&&passer.playerId&&String(receiver.playerId)===String(passer.playerId))));
+  const explicitTrickQbReceiver=!!(evt?.trickPlay&&String(evt?.receiverPos||'').toUpperCase()==='QB'&&String(evt?.passerPos||evt?.qbPos||'QB').toUpperCase()!=='QB');
 
-  if(type==='qb_pass'&&(!receiver||(!explicitSelfReception&&(receiver.role==='QB'||receiverIsPasser)))){
+  if(type==='qb_pass'&&(!receiver||(!explicitSelfReception&&((receiver.role==='QB'&&!explicitTrickQbReceiver)||receiverIsPasser)))){
     const eligible=(built?.units||[]).filter(u=>u.side==='offense'&&['WR','TE','RB'].includes(u.role)&&u!==passer);
     receiver=eligible.length
       ?eligible[assignmentHash(`${evt?.id||''}|qb-pass-target`)%eligible.length]
@@ -3465,13 +3515,67 @@ async function gvAnimateTestingOffensiveFumble(evt,built,totalDuration,type){
   gvTerminalFrameAudit(evt,'testing-offensive-fumble',[carrier,defender],{origin:receiving?'reception':'rush',carrierPos,recoveryReadable:true});
 }
 
+async function gvAnimatePostCatchLateral(evt,built,totalDuration,primary,dir){
+  if(!evt?.lateralChain||!primary)return false;
+  const role=String(evt?.lateralRecipientPos||'WR').toUpperCase();
+  const candidates=built.units.filter(u=>u.side==='offense'&&u!==primary&&u.role===role);
+  const recipient=candidates.length?candidates[assignmentHash(`${evt.id}|lateral-recipient`)%candidates.length]:built.units.find(u=>u.side==='offense'&&u!==primary&&['WR','RB','TE'].includes(u.role));
+  if(!recipient)return false;
+  const seed=assignmentHash(`${evt.id}|post-catch-lateral`),advance=4+simRand(seed,1)*4;
+  const lateralPoint={x:gvClamp(primary.x+dir*advance,5,95),y:gvClamp(primary.y+(simRand(seed,2)>.5?1:-1)*(2+simRand(seed,3)*3),9,91)};
+  const recvMeet={x:gvClamp(lateralPoint.x-dir*.8,5,95),y:gvClamp(lateralPoint.y+(recipient.y<lateralPoint.y?-2.2:2.2),9,91)};
+  gvSetPossession(primary);
+  await Promise.allSettled([
+    gvMove(primary,[{x:primary.x,y:primary.y},lateralPoint],Math.max(620,gvPhaseDur(totalDuration,.12,620)),'ease-in-out'),
+    gvMove(recipient,[{x:recipient.x,y:recipient.y},recvMeet],Math.max(620,gvPhaseDur(totalDuration,.12,620)),'ease-in-out')
+  ]);
+  gvClearPossession();const ball=gvMakeBall(primary.x,primary.y);
+  await Promise.allSettled([gvBallMove(ball,[{x:primary.x,y:primary.y},{x:(primary.x+recipient.x)/2,y:(primary.y+recipient.y)/2-1},{x:recipient.x,y:recipient.y}],430),gvMomentLabel(primary.x,primary.y,'LATERAL','catch',680)]);
+  if(ball?.el)ball.el.remove();gvSetPossession(recipient);await gvPulseUnit(recipient,'LATERAL',580);
+  const lateralYards=Math.max(3,Math.abs(Number(evt?.lateralYards||12))),runGain=gvClamp(lateralYards*.72,4,42);
+  const path=[{x:recipient.x,y:recipient.y},{x:gvClamp(recipient.x+dir*runGain*.48,5,95),y:gvClamp(recipient.y+(simRand(seed,5)-.5)*6,9,91)},{x:gvClamp(recipient.x+dir*runGain,5,95),y:gvClamp(recipient.y+(simRand(seed,6)-.5)*8,9,91)}];
+  await gvMove(recipient,path,Math.max(900,gvPhaseDur(totalDuration,.20,900)),'ease-in-out');
+  if(evt?.lateralTouchdown||gvIsTouchdownEvent(evt)){
+    await gvExtendTouchdownToEndzone(evt,recipient,built,dir,Math.max(700,gvPhaseDur(totalDuration,.16,700)),'lateral-td');
+    await gvAnimateScorerCelebration(evt,recipient,'celebration',totalDuration);
+  }else{
+    const defenders=built.units.filter(u=>u.side==='defense');await gvAnimateContactFinish(evt,recipient,defenders,dir,totalDuration,'lateral-run');
+  }
+  evt.lateralAnimationAudit={completionFirst:true,lateralVisible:true,recipientRole:role,lateralYards,finalScorer:evt?.lateralRecipientName||null};
+  return true;
+}
+
+async function gvAnimateOffensiveFumbleRecoveryTd(evt,built,totalDuration){
+  const scorer=built.scorer||built.units.find(u=>u.side==='offense'&&['RB','WR','TE'].includes(u.role));
+  const qb=gvUnit(built,'offense','QB');
+  const carriers=built.units.filter(u=>u.side==='offense'&&u!==scorer&&['RB','WR','TE','QB'].includes(u.role));
+  const carrier=carriers[assignmentHash(`${evt.id}|off-fum-carrier`)%Math.max(1,carriers.length)]||qb;if(!scorer||!carrier)return;
+  const dir=built.formation.dir,seed=assignmentHash(`${evt.id}|off-fum-rec-td`),contact={x:gvClamp(carrier.x+dir*(5+simRand(seed,1)*4),5,95),y:gvClamp(carrier.y+(simRand(seed,2)-.5)*5,9,91)};
+  gvSetPossession(carrier);await gvMove(carrier,[{x:carrier.x,y:carrier.y},contact],Math.max(650,gvPhaseDur(totalDuration,.12,650)),'ease-in-out');
+  const loose={x:gvClamp(contact.x+dir*(2+simRand(seed,3)*2),5,95),y:gvClamp(contact.y+(simRand(seed,4)>.5?1:-1)*3,9,91)};
+  gvClearPossession();const ball=gvMakeBall(contact.x,contact.y);await Promise.allSettled([gvBallMove(ball,[contact,{x:(contact.x+loose.x)/2,y:(contact.y+loose.y)/2-1.6},loose],480),gvMomentLabel(contact.x,contact.y,'FUMBLE','breakup',700)]);
+  await gvMove(scorer,[{x:scorer.x,y:scorer.y},loose],Math.max(620,gvPhaseDur(totalDuration,.10,620)),'ease-in-out');if(ball?.el)ball.el.remove();gvSetPossession(scorer);
+  await gvPulseUnit(scorer,'OFFENSIVE RECOVERY',760);
+  await gvExtendTouchdownToEndzone(evt,scorer,built,dir,Math.max(850,gvPhaseDur(totalDuration,.20,850)),'offensive-fumble-recovery-td');
+  await gvAnimateScorerCelebration(evt,scorer,'celebration',totalDuration);
+  evt.offensiveRecoveryTdAudit={neverScoopAndScore:true,recoveryByTeammate:true,looseBallVisible:true};
+}
+
 async function gvAnimateActionPlay(evt,built,totalDuration){
   const type=evt.playType||gvPlayType(evt),dir=built.formation.dir,s=built.scorer;
   const qb=gvUnit(built,'offense','QB'),rb=gvUnit(built,'offense','RB');
+  if(type==='off_fum_rec_td'){await gvAnimateOffensiveFumbleRecoveryTd(evt,built,totalDuration);return}
   if(['wr_rec_fumble','rb_rec_fumble','wr_rush_fumble','rb_rush_fumble'].includes(type)){await gvAnimateTestingOffensiveFumble(evt,built,totalDuration,type);return}
+  if(type==='qb_kneel'){await gvAnimateQbKneel(evt,built,totalDuration);return}
+  if(type==='def_safety'){await gvAnimateSafety(evt,built,totalDuration);return}
+  if(type==='def_blocked_kick'){await gvAnimateKick(evt,built,totalDuration);return}
+  if(type==='two_point_rush'){
+    if(String(evt?.pos||'').toUpperCase()==='QB')await gvAnimateQbRun(evt,built,totalDuration);else await gvAnimateRbConcept(evt,built,totalDuration);
+    await gvMomentLabel(built.scorer?.x||50,built.scorer?.y||50,'TWO POINTS!','catch',820);return
+  }
   if(type==='rb_run'){await gvAnimateRbConcept(evt,built,totalDuration);return}
   if(type==='qb_run'){await gvAnimateQbRun(evt,built,totalDuration);return}
-  if(type==='reception'||type==='qb_pass'){
+  if(type==='reception'||type==='qb_pass'||type==='two_point_pass'||type==='two_point_reception'){
     let receiver=s;
     // v0.4.86: ordinary QB fantasy events identify the passer, not the target.
     // Resolve the actual target separately; self-receptions remain available only
@@ -3493,6 +3597,12 @@ async function gvAnimateActionPlay(evt,built,totalDuration){
       built.scorer=receiver;
     }
 
+    // v0.5.09: live correlated trick passes and Testing Area Tandem plays share
+    // this exact exchange phase. A non-QB passer never starts with magically
+    // transferred possession: the QB takes the snap, pitches/laterals to the
+    // action passer, then becomes a route runner when he is the receiver.
+    await gvPrepareTrickPassExchange(evt,built,totalDuration,passer,receiver);
+
     const variant=gvRouteVariant(evt,receiver.role||evt.pos),motionPlan=gvReceptionMotionPlan(evt,variant),gain=motionPlan.airAdvance;
     evt.receptionMotionPlan=motionPlan;
     const rawRoute=gvNormalizeRoutePath(gvSharpenRoutePath(gvRoutePath({x:receiver.x,y:receiver.y},dir,variant,gain),variant,dir),variant,dir);
@@ -3508,6 +3618,14 @@ async function gvAnimateActionPlay(evt,built,totalDuration){
     route=gvGuardActionPath(route,evt,built,dir);
     const catchPt=gvCoverageCatchPoint(route,receiver,coverage,dir,outcome);
     if(catchX!==null)catchPt.x=catchX;
+    const qbThrowbackTd=!!evt?.trickPlay&&String(evt?.passerPos||'').toUpperCase()!=='QB'&&String(evt?.receiverPos||'').toUpperCase()==='QB'&&gvIsTouchdownEvent(evt);
+    if(qbThrowbackTd){
+      const endzone=gvEndzoneTarget(built,dir,catchPt.y,5.2);
+      catchPt.x=endzone.x;
+      catchPt.y=gvClamp(catchPt.y,12,88);
+      route=gvAlignPathFinalX(route,catchPt.x);
+      evt.trickThrowbackTdAudit={receiverRunsToEndzone:true,catchTarget:{...catchPt},longVariant:true};
+    }
     if(!gvIsTouchdownEvent(evt)){
       const goalBounds=gvGoalLineBounds();
       catchPt.x=gvClamp(catchPt.x,goalBounds.left,goalBounds.right);
@@ -3524,15 +3642,17 @@ async function gvAnimateActionPlay(evt,built,totalDuration){
     evt.passVisualScale={yards:motionPlan.yards,totalAdvance:motionPlan.totalAdvance,airAdvance:motionPlan.airAdvance,yacAdvance:motionPlan.yacAdvance,inStride:motionPlan.inStride};
     await gvAnimateQbPass(evt,built,totalDuration,receiver,route,catchPt,coverage,outcome);
 
+    if(evt?.lateralChain){await gvAnimatePostCatchLateral(evt,built,totalDuration,receiver,dir);return;}
     if(outcome==='immediate-tackle'||outcome==='broken-tackle')gvImpactAt(catchPt.x,catchPt.y,true);
     await gvAnimateCatchFinish(evt,built,receiver,coverage,catchPt,outcome,dir,totalDuration);
+    if(type==='two_point_pass'||type==='two_point_reception')await gvMomentLabel(receiver.x,receiver.y,'TWO POINTS!','catch',820);
     return;
   }
   if(type==='pass_incomplete'||type==='incomplete'){await gvAnimateIncompletePass(evt,built,totalDuration);return}
   if(type==='kick'){await gvAnimateKick(evt,built,totalDuration);return}
   if(type.startsWith('def_')){
     if(['def_kick_return','def_kick_ret_td','def_punt_return','def_punt_ret_td'].includes(type)){await gvAnimateSpecialTeamsReturn(evt,built,totalDuration,type);return}
-    if(['def_int','def_int_td','def_fumble','def_fum_td'].includes(type)){await gvAnimateDefReturn(evt,built,totalDuration,type);return}
+    if(['def_int','def_int_td','def_fumble','def_fum_td','def_2pt_int','def_2pt_fumble'].includes(type)){await gvAnimateDefReturn(evt,built,totalDuration,type);return}
     if(type==='def_breakup'){await gvAnimatePassBreakup(evt,built,totalDuration);return}
     if(type==='def_generic'){await gvScorerAdvance(evt,built);return}
     await gvAnimateDefPressure(evt,built,totalDuration,type);return
@@ -3656,7 +3776,8 @@ function gvMergePlayEvents(primary,secondary){
   merged.trickConfidenceLabel=trickConfidence.label;
   merged.trickConfidenceScore=trickConfidence.score;
   merged.trickConfidenceReasons=trickConfidence.reasons;
-  merged.playType='qb_pass';
+  merged.playType=(Number(passer?.intervalAnalysis?.stats?.pass_2pt||0)>0||Number(receiver?.intervalAnalysis?.stats?.rec_2pt||0)>0)?'two_point_pass':'qb_pass';
+  merged.twoPointConversion=merged.playType==='two_point_pass';
   merged.detail=receiver?.detail||passer?.detail||a.detail||b.detail||'Pass';
   merged.correlationScore=gvCorrelationScore(a,b);
   merged.playSeed=assignmentHash(`${merged.id}|pass|${merged.passerPlayerId}|${merged.receiverPlayerId}`);

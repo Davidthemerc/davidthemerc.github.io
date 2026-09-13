@@ -363,6 +363,11 @@ function managerIdentityMatches(label,ownerId,identity){
   const a=managerIdentityKey(label,ownerId),b=managerIdentityKey(identity);
   return !!a&&!!b&&a===b;
 }
+function historicalGameTeamIs(game,identity,side='A'){
+  const label=side==='A'?game?.teamA:game?.teamB;
+  const ownerId=side==='A'?game?.userA:game?.userB;
+  return managerIdentityMatches(label,ownerId,identity);
+}
 function historicalGameParticipantKey(game,side){
   return managerIdentityKey(
     side==='A'?game?.teamA:game?.teamB,
@@ -493,7 +498,7 @@ function rivalrySeries(teamA,teamB,gamesOverride=null){
   const games=Array.isArray(gamesOverride)?gamesOverride:rivalryGamesBetween(teamA,teamB);
   let aWins=0,bWins=0,ties=0,aPts=0,bPts=0,largest=null,closest=null,highestScoring=null;
   for(const g of games){
-    const aIsA=sameTeamLabel(g.teamA,teamA);
+    const aIsA=historicalGameTeamIs(g,teamA,'A');
     const ap=aIsA?g.scoreA:g.scoreB,bp=aIsA?g.scoreB:g.scoreA;
     aPts+=ap;bPts+=bp;
     if(ap>bp)aWins++;else if(bp>ap)bWins++;else ties++;
@@ -508,7 +513,7 @@ function rivalrySeries(teamA,teamB,gamesOverride=null){
   let streakTeam=null,streakCount=0,streakStart=null,streakEnd=null;
   let currentTeam=null,currentCount=0,currentStart=null,currentEnd=null;
   for(const g of chronological){
-    const aIsA=sameTeamLabel(g.teamA,teamA),ap=aIsA?g.scoreA:g.scoreB,bp=aIsA?g.scoreB:g.scoreA;
+    const aIsA=historicalGameTeamIs(g,teamA,'A'),ap=aIsA?g.scoreA:g.scoreB,bp=aIsA?g.scoreB:g.scoreA;
     const winner=ap>bp?teamA:bp>ap?teamB:null;
     if(!winner){currentTeam=null;currentCount=0;currentStart=null;currentEnd=null;continue;}
     if(winner===currentTeam){currentCount++;currentEnd=g;}
@@ -533,7 +538,7 @@ function rivalryStreakSpan(streak){
 }
 function rivalryGameWinnerDetail(game,teamA,teamB){
   if(!game)return {winner:'—',winnerScore:null,loserScore:null,margin:null};
-  const aIsA=sameTeamLabel(game.teamA,teamA);
+  const aIsA=historicalGameTeamIs(game,teamA,'A');
   const ap=aIsA?Number(game.scoreA):Number(game.scoreB),bp=aIsA?Number(game.scoreB):Number(game.scoreA);
   if(ap===bp)return {winner:'Tie',winnerScore:ap,loserScore:bp,margin:0};
   return {winner:ap>bp?teamA:teamB,winnerScore:Math.max(ap,bp),loserScore:Math.min(ap,bp),margin:Math.abs(ap-bp)};
@@ -571,7 +576,7 @@ function rivalryDetailMarkup(teamA,teamB){
   ];
   const metrics=metricRows.map(x=>`<div class="rivalry-metric"><span>${esc(x.l)}</span><b>${esc(x.v)}</b><small>${esc(x.d)}</small></div>`).join('');
   const games=series.games.length?series.games.slice(0,6).map(g=>{
-    const aIsA=sameTeamLabel(g.teamA,a),ap=aIsA?g.scoreA:g.scoreB,bp=aIsA?g.scoreB:g.scoreA;
+    const aIsA=historicalGameTeamIs(g,a,'A'),ap=aIsA?g.scoreA:g.scoreB,bp=aIsA?g.scoreB:g.scoreA;
     const winner=ap>bp?a:bp>ap?b:'Tie';
     const championship=rivalryGameIsChampionship(g);
     return `<div class="rivalry-game ${championship?'championship':''}">
@@ -582,7 +587,7 @@ function rivalryDetailMarkup(teamA,teamB){
   }).join(''):'<div class="empty">No finalized meeting is available in the current source.</div>';
   const noteRows=[];
   for(const bowlGame of series.games.filter(rivalryGameIsChampionship)){
-    const aIsA=sameTeamLabel(bowlGame.teamA,a),ap=aIsA?bowlGame.scoreA:bowlGame.scoreB,bp=aIsA?bowlGame.scoreB:bowlGame.scoreA;
+    const aIsA=historicalGameTeamIs(bowlGame,a,'A'),ap=aIsA?bowlGame.scoreA:bowlGame.scoreB,bp=aIsA?bowlGame.scoreB:bowlGame.scoreA;
     if(ap===bp)continue;
     const winning=ap>bp?a:b,losing=ap>bp?b:a;
     const winningScore=ap>bp?ap:bp,losingScore=ap>bp?bp:ap;
@@ -927,7 +932,7 @@ function weakerTeamBowlWin(teamA,teamB,series){
   const weaker=series.aWins<series.bWins?teamA:teamB;
   return series.games.some(g=>{
     if(!rivalryGameIsChampionship(g))return false;
-    const weakerIsA=sameTeamLabel(g.teamA,weaker);
+    const weakerIsA=historicalGameTeamIs(g,weaker,'A');
     const wp=weakerIsA?Number(g.scoreA):Number(g.scoreB),op=weakerIsA?Number(g.scoreB):Number(g.scoreA);
     return wp>op;
   });
@@ -990,13 +995,17 @@ function newsroomRivalryStories(){
   return stories;
 }
 function newsroomStorySort(a,b){
-  return b.priority-a.priority||(b.week||0)-(a.week||0)||a.headline.localeCompare(b.headline);
+  return b.priority-a.priority||(b.week||0)-(a.week||0)||Number(b.dateMs||0)-Number(a.dateMs||0)||a.headline.localeCompare(b.headline);
 }
+
 function newsroomLeadStory(stories){
   if(!stories.length)return null;
-  const onlyRivalry=stories.every(s=>s.category==='rivalry');
-  if(!onlyRivalry)return [...stories].sort(newsroomStorySort)[0];
-  return [...stories].sort((a,b)=>
+  const eligible=stories.filter(s=>!s.manualSource||s.leadEligible===true);
+  const pool=eligible.length?eligible:stories.filter(s=>!s.manualSource);
+  const candidates=pool.length?pool:stories;
+  const onlyRivalry=candidates.every(s=>s.category==='rivalry');
+  if(!onlyRivalry)return [...candidates].sort(newsroomStorySort)[0];
+  return [...candidates].sort((a,b)=>
     Number(b.seriesGames||0)-Number(a.seriesGames||0)||
     Number(!!b.hasBowl)-Number(!!a.hasBowl)||
     b.priority-a.priority||
@@ -1009,7 +1018,8 @@ function newsroomStories(){
     ...newsroomStreakStories(),
     ...newsroomPlayoffStories(),
     ...newsroomTransactionStories(),
-    ...newsroomRivalryStories()
+    ...newsroomRivalryStories(),
+    ...(ctespnManualStories||[])
   ].filter(s=>newsroomWeekInWindow(s.week));
   const dedup=new Map();
   for(const s of all){
@@ -1027,6 +1037,7 @@ function renderNewsroom(){
   const myName=rosterUserName(leagueRosters.find(r=>String(r.roster_id)===String(sleeperCtx.rosterId))||{});
   const storyInvolvesMyTeam=s=>{
     const myRosterId=String(sleeperCtx.rosterId||'');
+    if(s.manualSource)return manualStoryMatchesMyTeam(s);
     if(myRosterId&&Array.isArray(s.teamRosterIds)&&s.teamRosterIds.includes(myRosterId))return true;
     const needle=normName(myName);
     return !!needle&&[s.headline,s.detail,s.fact,s.teamA,s.teamB].some(v=>normName(v||'').includes(needle));
@@ -1050,12 +1061,14 @@ function renderNewsroom(){
     delete lead.dataset.openRivalryDetail;delete lead.dataset.rivalryTeamA;delete lead.dataset.rivalryTeamB;
     lead.removeAttribute('role');lead.removeAttribute('tabindex');
   }
-  lead.innerHTML=`<div class="nr-kicker">CTESPN LEAD STORY${top.week?` • WEEK ${top.week}`:''}</div><b>${esc(top.headline)}</b><span>${esc(top.detail)}</span>${top.category==='rivalry'?'<small class="nr-open-detail">Tap for rivalry history ↗</small>':''}`;
+  const leadKicker=top.manualSource?(top.sourceKicker||'CTESPN DESK'):'CTESPN LEAD STORY';
+  const leadLink=top.link?`<a class="nr-external-link" href="${esc(top.link)}" target="_blank" rel="noopener noreferrer">Read more ↗</a>`:'';
+  lead.innerHTML=`<div class="nr-kicker">${esc(leadKicker)}${top.week?` • WEEK ${top.week}`:''}</div><b>${esc(top.headline)}</b><span>${esc(top.detail)}</span>${top.category==='rivalry'?'<small class="nr-open-detail">Tap for rivalry history ↗</small>':''}${leadLink}`;
   grid.innerHTML=shown.length?shown.slice(0,18).map((s,i)=>`<article class="news-card ${esc(s.kind||'')} ${s.category==='rivalry'?'news-rivalry-link':''}" ${s.category==='rivalry'?`data-open-rivalry-detail="1" data-rivalry-team-a="${esc(s.teamA||'')}" data-rivalry-team-b="${esc(s.teamB||'')}" role="button" tabindex="0"`:''}>
-    <div class="nc-top"><span class="nc-tag">${esc(s.category)}</span><span class="nc-when">${s.week?`Week ${s.week}`:'Current'}</span></div>
+    <div class="nc-top"><span class="nc-tag">${esc(s.manualSource?(s.sourceKicker||'CTESPN DESK'):s.category)}</span><span class="nc-when">${s.week?`Week ${s.week}`:'Current'}</span></div>
     <h4>${esc(s.headline)}</h4>
     <p>${esc(s.detail)}</p>
-    <div class="nc-fact">${esc(s.fact||'')}${s.category==='rivalry'?'<span class="nc-open-detail"> • Tap for history ↗</span>':''}</div>
+    <div class="nc-fact">${esc(s.fact||'')}${s.category==='rivalry'?'<span class="nc-open-detail"> • Tap for history ↗</span>':''}${s.link?`<a class="nc-external-link" href="${esc(s.link)}" target="_blank" rel="noopener noreferrer">Read more ↗</a>`:''}</div>
   </article>`).join(''):'<div class="empty">No stories match this filter.</div>';
 }
 function renderWeeklyLeagueReport(){

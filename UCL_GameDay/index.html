@@ -4,20 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#102a56">
-<title>UCL GameDay v0.5.03</title>
+<title>UCL GameDay v0.5.50</title>
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <header><div class="header-inner">
   <div class="topline">
-    <div class="brand"><div class="eyebrow">CTESPN • UNMANAGED CHAOS LEAGUE</div><div class="brand-main"><h1>UCL GAMEDAY <span>v0.5.03</span></h1><span class="header-week" id="weekLabel">Week —</span></div></div>
-    <div class="header-actions"><a id="companionLink" href="./Unmanaged_Chaos_League_Companion_2026_v1.10.0.html">← Companion</a><button class="refresh" id="refreshBtn"><span class="refresh-dot" id="liveDot"></span><span class="refresh-label">Refresh Live</span></button></div>
+    <div class="brand"><div class="eyebrow">CTESPN • UNMANAGED CHAOS LEAGUE</div><div class="brand-main"><h1>UCL GAMEDAY <span>v0.5.50</span></h1><span class="header-week" id="weekLabel">Week —</span></div></div>
+    <div class="header-actions"><button class="refresh" id="refreshBtn"><span class="refresh-dot" id="liveDot"></span><span class="refresh-label">Refresh Live</span></button></div>
   </div>
 </div>
 <nav class="primary-nav" aria-label="UCL GameDay navigation">
+  <a class="nav-link companion-nav-link" id="companionLink" href="https://ucl-companion.netlify.app/" target="_blank" rel="noopener noreferrer" aria-label="Open UCL Companion">Companion</a>
   <button type="button" class="active" data-view="gameday">GameDay</button>
-  <button type="button" data-view="gameview">UCL GameView</button>
-      <button type="button" data-view="testing">Testing Area</button>
+  <button type="button" data-view="scores">Scores</button>
+  <button type="button" data-view="gameview">GameView</button>
+      <button type="button" data-view="testing" id="testingAreaNavBtn" hidden>Testing Area</button>
   <select id="teamSelect" hidden aria-hidden="true"></select>
   <button type="button" data-view="settings">Settings</button>
 </nav>
@@ -40,7 +42,7 @@
     <div class="watch-brand"><span class="watch-live-dot"></span><b>CTESPN LIVE</b><small id="watchState">Sunday Watch</small></div>
     <div class="watch-matchup">
       <button type="button" class="watch-swap" id="prevMatchupBtn" aria-label="Previous matchup">‹</button>
-      <div class="watch-matchup-copy"><small>FEATURED</small><b id="watchMatchupLabel">Matchup</b></div>
+      <div class="watch-matchup-copy"><small>VIEWING</small><b id="watchMatchupLabel">Matchup</b></div>
       <button type="button" class="watch-swap" id="nextMatchupBtn" aria-label="Next matchup">›</button>
     </div>
     <div class="watch-activity">
@@ -63,8 +65,24 @@
 </div>
 
 </div>
+
+<div id="scoresView" class="app-view" hidden>
+  <section class="scores-shell">
+    <div class="scores-head">
+      <div><small>UCL SCOREBOARD</small><h2 id="scoresTitle">Week Scores</h2></div>
+      <span id="scoresStatus">Live Sleeper scoring</span>
+    </div>
+    <div class="scores-grid" id="scoresGrid"></div>
+  </section>
+</div>
+
 <div id="gameView" class="app-view" hidden>
   <section class="gameview-shell">
+    <div class="gameview-team-switcher" aria-label="Select team for UCL GameView">
+      <button type="button" class="watch-swap" id="gvPrevTeamBtn" aria-label="Previous team">‹</button>
+      <div class="gameview-team-switcher-copy"><small>VIEWING TEAM</small><button type="button" class="gv-team-picker-btn" id="gvViewingTeamBtn" aria-haspopup="listbox" aria-expanded="false"><span id="gvViewingTeamLabel">Team</span><span class="gv-team-picker-caret">▾</span></button><div class="gv-team-picker-menu" id="gvTeamPickerMenu" role="listbox" hidden></div></div>
+      <button type="button" class="watch-swap" id="gvNextTeamBtn" aria-label="Next team">›</button>
+    </div>
     <div class="gameview-scorebar">
       <div class="gameview-team left"><span id="gvLeftName">Team</span><b id="gvLeftScore">0.00</b></div>
       <div class="gameview-center"><span>UCL GAMEVIEW</span><small id="gvStatus">Waiting for scoring</small></div>
@@ -96,6 +114,13 @@
     </div>
   </section>
 </div>
+<div class="player-fpts-backdrop" id="playerFptsBackdrop" hidden>
+  <section class="player-fpts-card" role="dialog" aria-modal="true" aria-labelledby="playerFptsTitle">
+    <div class="player-fpts-head"><div><small>FANTASY POINTS</small><h3 id="playerFptsTitle">Player</h3><span id="playerFptsMeta"></span></div><button type="button" id="playerFptsClose" aria-label="Close fantasy points breakdown">×</button></div>
+    <div class="player-fpts-body" id="playerFptsBody"></div>
+    <div class="player-fpts-total"><span>TOTAL</span><b id="playerFptsTotal">0.00</b></div>
+  </section>
+</div>
 <div class="first-run-backdrop" id="firstRunBackdrop" hidden>
 <section class="first-run-card" role="dialog" aria-modal="true" aria-labelledby="firstRunTitle">
 <div class="first-run-kicker">WELCOME TO UCL GAMEDAY</div>
@@ -113,23 +138,10 @@
 <div class="setting-row"><div><b>Default Team</b><small>GameDay centers this team and its current matchup.</small></div>
 <select id="settingsTeamSelect" aria-label="Default UCL team"></select></div>
 <div class="setting-note">You can change your team here at any time.</div>
-</section><section class="settings-section"><h3>Color Theme</h3><div class="theme-grid" id="themeGrid" role="radiogroup" aria-label="Color theme"><button type="button" class="theme-option" data-theme-choice="UCL Blue" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>UCL Blue</b></button><button type="button" class="theme-option" data-theme-choice="Forest" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Forest</b></button><button type="button" class="theme-option" data-theme-choice="Purple" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Purple</b></button><button type="button" class="theme-option" data-theme-choice="Crimson" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Crimson</b></button><button type="button" class="theme-option" data-theme-choice="Orange" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Orange</b></button><button type="button" class="theme-option" data-theme-choice="Slate" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Slate</b></button><button type="button" class="theme-option" data-theme-choice="Gold" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Gold</b></button><button type="button" class="theme-option" data-theme-choice="Ice Blue" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Ice Blue</b></button></div></section><section class="settings-section"><h3>Live Updates</h3><p>Control live Sleeper updates. API loading is disabled by default and must be turned on manually.</p><div class="setting-row"><div><b>Live Sleeper Updates</b><small>Off by default. When off, GameDay uses the latest saved data and makes no Sleeper API requests.</small></div><input class="settings-toggle" id="liveLoadingToggle" type="checkbox" aria-label="Enable live Sleeper loading"></div><div class="live-off-note" id="liveOffNote">Live updates are off. Turn them on manually to contact Sleeper.</div></section><section class="settings-section" id="ctespnScoreAlertSettingsSection">
+</section><section class="settings-section"><h3>Color Theme</h3><div class="theme-grid" id="themeGrid" role="radiogroup" aria-label="Color theme"><button type="button" class="theme-option" data-theme-choice="UCL Blue" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>UCL Blue</b></button><button type="button" class="theme-option" data-theme-choice="Forest" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Forest</b></button><button type="button" class="theme-option" data-theme-choice="Purple" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Purple</b></button><button type="button" class="theme-option" data-theme-choice="Crimson" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Crimson</b></button><button type="button" class="theme-option" data-theme-choice="Orange" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Orange</b></button><button type="button" class="theme-option" data-theme-choice="Slate" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Slate</b></button><button type="button" class="theme-option" data-theme-choice="Gold" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Gold</b></button><button type="button" class="theme-option" data-theme-choice="Ice Blue" role="radio" aria-checked="false"><span class="theme-preview" aria-hidden="true"></span><b>Ice Blue</b></button></div></section><section class="settings-section"><h3>Live Updates</h3><p>Control live Sleeper updates. New installs load live data automatically.</p><div class="setting-row"><div><b>Live Sleeper Updates</b><small>On by default. Turn this off to use only the latest saved data and make no Sleeper API requests.</small></div><input class="settings-toggle" id="liveLoadingToggle" type="checkbox" aria-label="Enable live Sleeper loading"></div><div class="live-off-note" id="liveOffNote">Live updates are off. Turn them on manually to contact Sleeper.</div></section><section class="settings-section" id="notificationSoundSettingsSection"><h3>Notification Sounds</h3><p>Control GameDay notification audio without affecting scoring, feeds, or animations.</p><div class="setting-row"><div><b>Notification Sounds</b><small>Disable all GameDay notification sounds.</small></div><input class="settings-toggle" id="notificationSoundsToggle" type="checkbox" aria-label="Enable notification sounds"></div><div class="setting-row"><div><b>Notification Volume</b><small id="notificationVolumeValue">100%</small></div><input id="notificationVolumeControl" type="range" min="0" max="100" step="1" value="100" aria-label="Notification volume"></div></section><section class="settings-section"><h3>Testing Features</h3><p>Advanced testing tools are hidden unless you explicitly enable them.</p><div class="setting-row"><div><b>Show Testing Features</b><small>Off by default. The first time you enable testing on this browser, a password is required. Once authorized, you can turn testing features on or off without entering it again.</small></div><input class="settings-toggle" id="testingAreaVisibleToggle" type="checkbox" aria-label="Show Testing Features"></div></section><section class="settings-section" id="ctespnScoreAlertSettingsSection">
 <h3>CTESPN Score Alerts</h3>
 <p>Choose which saved Week matchups may generate CTESPN score alerts. GameView for the selected matchup is unaffected.</p>
 <div class="ctespn-matchup-alerts" id="ctespnMatchupAlertSettings"><div class="ctespn-matchup-alert-empty">Load saved matchup data to choose games.</div></div>
-</section><section class="settings-section" id="audioSettingsSection">
-<h3>CTESPN Audio</h3>
-<p>Optional announcer, stadium, stinger, and effect layers. Audio starts only after you interact with the page.</p>
-<div class="setting-row"><div><b>Enable CTESPN Audio</b><small>Off by default until sound files are installed.</small></div><input class="settings-toggle" id="ctespnAudioEnabled" type="checkbox" aria-label="Enable CTESPN audio"></div>
-<div class="audio-controls">
-  <div class="audio-volume-grid">
-    <label>Master <input id="ctespnAudioMaster" type="range" min="0" max="100" value="80"></label>
-    <label>Announcer <input id="ctespnAudioAnnouncer" type="range" min="0" max="100" value="100"></label>
-    <label>Stadium & Effects <input id="ctespnAudioStadium" type="range" min="0" max="100" value="85"></label>
-    <label>Stingers <input id="ctespnAudioStingers" type="range" min="0" max="100" value="90"></label>
-  </div>
-  <div class="audio-actions"><button type="button" id="ctespnAudioMute">Mute</button><span class="audio-status" id="ctespnAudioStatus">Audio disabled.</span></div>
-</div>
 </section><section class="settings-section">
 
     <div class="settings-section">
@@ -164,7 +176,7 @@
       <div class="setting-note" id="saveDataStatus">Save data stays on this device unless you export it.</div>
     </div>
 
-<h3>Simulation</h3><p>Run an accelerated GameDay simulation.</p><div class="setting-row"><div><b>Simulation Speed</b><small>Scoring follows typical NFL game windows.</small></div><select id="simSpeed"><option value="1">1× — Normal</option><option value="10">10× — about 24 minutes</option><option value="20" selected>20× — about 12 minutes</option><option value="50">50× — about 5 minutes</option><option value="100">100× — about 2.5 minutes</option><option value="200">200× — about 1.2 minutes</option></select></div><div class="setting-row"><div><b>Simulation Scenario</b><small>Choose the scoring schedule.</small></div><select id="simScenario"><option value="full" selected>Full Fantasy Week — Thu through Mon</option><option value="sunday">Sunday GameDay</option><option value="night">Night Football</option><option value="quick">10-Second GameView Test</option><option value="burst30">30-Second GameView Burst</option><option value="burst60">60-Second GameView Burst</option></select></div><div class="setting-row"><div><b>Scoring Style</b><small>Controls how concentrated the fake scoring tends to be.</small></div><select id="simStyle"><option value="balanced">Balanced</option><option value="high">High Scoring</option><option value="chaos" selected>UCL Chaos</option><option value="defensive">Low scoring</option></select></div><div class="setting-row"><div><b>Open UCL GameView on Start</b><small>Jump directly to GameView when a simulation begins.</small></div><label class="switch"><input type="checkbox" id="simOpenGameView"><span></span></label></div><div class="sim-actions"><button class="primary" id="simStart">Start Simulation</button><button id="simPause" disabled>Pause</button><button class="danger" id="simStop" disabled>Stop & Return to Sleeper</button></div><div class="sim-status" id="simStatus">Simulation off.</div></section></div></div></dialog>
+<section class="settings-section testing-feature-settings" id="testingFeatureSimulationSettings" hidden><h3>Simulation</h3><p>Run an accelerated GameDay simulation.</p><div class="setting-row"><div><b>Simulation Speed</b><small>Scoring follows typical NFL game windows.</small></div><select id="simSpeed"><option value="1">1× — Normal</option><option value="10">10× — about 24 minutes</option><option value="20" selected>20× — about 12 minutes</option><option value="50">50× — about 5 minutes</option><option value="100">100× — about 2.5 minutes</option><option value="200">200× — about 1.2 minutes</option></select></div><div class="setting-row"><div><b>Simulation Scenario</b><small>Choose the scoring schedule.</small></div><select id="simScenario"><option value="full" selected>Full Fantasy Week — Thu through Mon</option><option value="sunday">Sunday GameDay</option><option value="night">Night Football</option><option value="quick">10-Second GameView Test</option><option value="burst30">30-Second GameView Burst</option><option value="burst60">60-Second GameView Burst</option></select></div><div class="setting-row"><div><b>Scoring Style</b><small>Controls how concentrated the fake scoring tends to be.</small></div><select id="simStyle"><option value="balanced">Balanced</option><option value="high">High Scoring</option><option value="chaos" selected>UCL Chaos</option><option value="defensive">Low scoring</option></select></div><div class="setting-row"><div><b>Open UCL GameView on Start</b><small>Jump directly to GameView when a simulation begins.</small></div><label class="switch"><input type="checkbox" id="simOpenGameView"><span></span></label></div><div class="sim-actions"><button class="primary" id="simStart">Start Simulation</button><button id="simPause" disabled>Pause</button><button class="danger" id="simStop" disabled>Stop & Return to Sleeper</button></div><div class="sim-status" id="simStatus">Simulation off.</div></section></section></div></div></dialog>
 <script src="js/loader.js" defer></script>
 
 <section class="view" id="testingView" hidden>
@@ -193,28 +205,7 @@
       </div>
       <label class="testing-raw-toggle"><input type="checkbox" id="testingRawToggle"> Raw Sleeper Data</label>
     </div>
-    <div class="testing-status" id="testingStatus">Waiting for Sleeper data…</div><details class="testing-group audio-soundboard testing-delta-collapsible" id="ctespnAudioSoundboard">
-  <summary class="testing-delta-summary audio-soundboard-summary">
-    <div><b>CTESPN Audio Soundboard</b><small>Test the simplified 31-slot announcer library and one-event resolver.</small></div>
-    <div class="testing-delta-summary-meta"><span class="audio-count-badge">31 announcer clips</span><span class="testing-delta-chevron" aria-hidden="true">▾</span></div>
-  </summary>
-  <div class="testing-delta-body audio-soundboard-body">
-  <div class="testing-audio-note">No clips are bundled yet. The resolver now uses outcome-specific calls only; Trick Play has no dedicated sound. Qualifying late lead changes use one generic follow-up.</div>
-  <div class="testing-sound-family"><b>Touchdown</b><div class="testing-sound-buttons"><button type="button" data-audio-test="touchdown" data-audio-variant="0">TD 1</button><button type="button" data-audio-test="touchdown" data-audio-variant="1">TD 2</button><button type="button" data-audio-test="touchdown" data-audio-variant="2">TD 3</button></div></div>
-  <div class="testing-sound-family"><b>Pick Six</b><div class="testing-sound-buttons"><button type="button" data-audio-test="pick_six" data-audio-variant="0">Pick Six 1</button><button type="button" data-audio-test="pick_six" data-audio-variant="1">Pick Six 2</button><button type="button" data-audio-test="pick_six" data-audio-variant="2">Pick Six 3</button></div></div>
-  <div class="testing-sound-family"><b>Rare TD Returns</b><div class="testing-sound-buttons"><button type="button" data-audio-test="kick_six" data-audio-variant="0">Kick Six</button><button type="button" data-audio-test="scoop_score" data-audio-variant="0">Scoop &amp; Score</button></div></div>
-  <div class="testing-sound-family"><b>Sack</b><div class="testing-sound-buttons"><button type="button" data-audio-test="sack" data-audio-variant="0">Sack 1</button><button type="button" data-audio-test="sack" data-audio-variant="1">Sack 2</button><button type="button" data-audio-test="sack" data-audio-variant="2">Sack 3</button></div></div>
-  <div class="testing-sound-family"><b>QB Intercepted</b><div class="testing-sound-buttons"><button type="button" data-audio-test="qb_intercepted" data-audio-variant="0">QB INT 1</button><button type="button" data-audio-test="qb_intercepted" data-audio-variant="1">QB INT 2</button><button type="button" data-audio-test="qb_intercepted" data-audio-variant="2">QB INT 3</button></div></div>
-  <div class="testing-sound-family"><b>Your Player Fumbled</b><div class="testing-sound-buttons"><button type="button" data-audio-test="your_player_fumbled" data-audio-variant="0">Fumble 1</button><button type="button" data-audio-test="your_player_fumbled" data-audio-variant="1">Fumble 2</button><button type="button" data-audio-test="your_player_fumbled" data-audio-variant="2">Fumble 3</button></div></div>
-  <div class="testing-sound-family"><b>Defensive Interception</b><div class="testing-sound-buttons"><button type="button" data-audio-test="defensive_interception" data-audio-variant="0">DEF INT 1</button><button type="button" data-audio-test="defensive_interception" data-audio-variant="1">DEF INT 2</button><button type="button" data-audio-test="defensive_interception" data-audio-variant="2">DEF INT 3</button></div></div>
-  <div class="testing-sound-family"><b>Fumble Recovery</b><div class="testing-sound-buttons"><button type="button" data-audio-test="fumble_recovery" data-audio-variant="0">Recovery 1</button><button type="button" data-audio-test="fumble_recovery" data-audio-variant="1">Recovery 2</button><button type="button" data-audio-test="fumble_recovery" data-audio-variant="2">Recovery 3</button></div></div>
-  <div class="testing-sound-family"><b>Explosive Plays</b><div class="testing-sound-buttons"><button type="button" data-audio-test="long_rush" data-audio-variant="0">Long Rush 1</button><button type="button" data-audio-test="long_rush" data-audio-variant="1">Long Rush 2</button><button type="button" data-audio-test="long_rush" data-audio-variant="2">Long Rush 3</button><button type="button" data-audio-test="long_reception" data-audio-variant="0">Long Rec 1</button><button type="button" data-audio-test="long_reception" data-audio-variant="1">Long Rec 2</button><button type="button" data-audio-test="long_reception" data-audio-variant="2">Long Rec 3</button></div></div>
-  <div class="testing-sound-family"><b>Generic Qualifying Lead Change</b><div class="testing-sound-buttons"><button type="button" data-audio-test="late_lead_change" data-audio-variant="0">Lead Change 1</button><button type="button" data-audio-test="late_lead_change" data-audio-variant="1">Lead Change 2</button></div></div>
-  <div class="testing-sound-family testing-audio-resolver-tests"><b>Resolver Tests</b><div class="testing-audio-note">Primary outcome call first. If the existing CTESPN maturity rules qualify a late lead change, the only allowed second announcer call is the generic lead-change follow-up.</div><div class="testing-sound-buttons"><button type="button" data-audio-resolve-test="touchdown_lead_change">TD → Lead</button><button type="button" data-audio-resolve-test="pick_six_lead_change">Pick Six → Lead</button><button type="button" data-audio-resolve-test="defensive_int_lead_change">DEF INT → Lead</button><button type="button" data-audio-resolve-test="offensive_int_lost_lead">QB INT → Lead</button><button type="button" data-audio-resolve-test="offensive_fumble">Your Player Fumbled</button><button type="button" data-audio-resolve-test="defensive_fumble">Fumble Recovery</button><button type="button" data-audio-resolve-test="sack_lead_change">Sack → Lead</button><button type="button" data-audio-resolve-test="long_rush_lead_change">Long Rush → Lead</button></div><div class="audio-resolver-status" id="ctespnAudioResolverStatus">Resolver idle.</div></div>
-  <div class="audio-status" id="ctespnAudioTestStatus">No sound files are bundled yet. Add the named clips under assets/audio/announcer/ when ready.</div>
-  </div>
-</details>
-    <details class="testing-delta-sim testing-delta-collapsible" id="testingDeltaSimulator">
+    <div class="testing-status" id="testingStatus">Waiting for Sleeper data…</div><details class="testing-delta-sim testing-delta-collapsible" id="testingDeltaSimulator">
       <summary class="testing-delta-head testing-delta-summary">
         <div>
           <b>API Delta Simulator</b>
@@ -444,6 +435,10 @@
         <div><small>Start Check</small><strong id="diagStartCheck">—</strong></div>
         <div><small>Formation Check</small><strong id="diagFormationCheck">—</strong></div>
       </div>
+    </div>
+    <div class="testing-diagnostics sleeper-connection-debug" id="sleeperConnectionDebug">
+      <div class="testing-diagnostics-head"><b>Sleeper Connection</b><span>Debug</span></div>
+      <div class="testing-connection-debug-text" id="sleeperConnectionDebugText">Connection diagnostics have not initialized yet.</div>
     </div>
     <div class="testing-stream" id="testingStream">
       <div class="empty">No rostered-player stat changes received yet.</div>

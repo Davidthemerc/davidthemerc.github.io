@@ -435,6 +435,127 @@ function currentWeekProjectionForPlayer(playerId,week=currentWeekNumber()){
   if(!playerId)return null;
   return projectionMapForWeek(week)?.get(String(playerId))?.pts??null;
 }
+
+// v1.10.21: optional Sleeper weekly box-score stats used only for compact live stat lines.
+// Matchup fantasy points remain authoritative; this feed is additive and fails soft.
+const weeklyStatMaps=new Map(),weeklyStatSyncPromises=new Map();
+function normalizeWeeklyStatsPayload(payload){
+  const map=new Map();
+  const put=(id,stats)=>{
+    id=String(id||'').trim();
+    if(!id||!stats||typeof stats!=='object')return;
+    map.set(id,stats);
+    if(id.startsWith('TEAM_'))map.set(id.slice(5),stats);
+  };
+  if(Array.isArray(payload)){
+    for(const row of payload){
+      const id=row?.player_id??row?.player?.player_id??row?.id;
+      put(id,row?.stats||row);
+    }
+  }else if(payload&&typeof payload==='object'){
+    for(const [id,row] of Object.entries(payload))put(id,row?.stats||row);
+  }
+  return map;
+}
+function weeklyStatMapForWeek(week=currentWeekNumber()){
+  return weeklyStatMaps.get(Math.max(1,Number(week)||1))||null;
+}
+function weeklyStatsForPlayer(playerId,week=currentWeekNumber()){
+  if(!playerId)return null;
+  const key=String(playerId);
+  const map=weeklyStatMapForWeek(week);
+  return map?.get(key)||map?.get(`TEAM_${key}`)||null;
+}
+function compactWeeklyStatsPayload(payload){
+  const full=normalizeWeeklyStatsPayload(payload),owned=new Set();
+  for(const roster of leagueRosters||[])for(const id of roster?.players||[])owned.add(String(id));
+  const out={};
+  for(const id of owned){
+    const stats=full.get(id)||full.get(`TEAM_${id}`);
+    if(stats)out[id]=stats;
+  }
+  return out;
+}
+async function syncWeeklyStats(week=currentWeekNumber(),force=false){
+  week=Math.max(1,Number(week)||1);
+  if(weeklyStatSyncPromises.has(week))return weeklyStatSyncPromises.get(week);
+  const existing=weeklyStatMapForWeek(week);
+  if(existing&&!force)return existing;
+  const promise=(async()=>{
+    const cacheKey=`week-${week}`,ttlMs=week===currentWeekNumber()?2*60*1000:24*60*60*1000;
+    try{
+      const cached=await apiCacheGet('weekly-stats',cacheKey);
+      if(!force&&cached&&Date.now()-Number(cached.time||0)<ttlMs){
+        const map=normalizeWeeklyStatsPayload(cached.value);
+        if(map.size){weeklyStatMaps.set(week,map);return map;}
+      }
+    }catch(e){}
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
+    try{
+      const qs='season_type=regular&position%5B%5D=QB&position%5B%5D=RB&position%5B%5D=WR&position%5B%5D=TE&position%5B%5D=K&position%5B%5D=DEF';
+      const r=await fetch(`https://api.sleeper.com/stats/nfl/${SLEEPER_SEASON}/${week}?${qs}`,{cache:'no-store',signal:controller.signal});
+      if(!r.ok)throw new Error(`Sleeper weekly stats ${r.status}`);
+      const raw=await r.json(),map=normalizeWeeklyStatsPayload(raw);
+      if(!map.size)return existing||new Map();
+      weeklyStatMaps.set(week,map);
+      apiCachePut('weekly-stats',cacheKey,compactWeeklyStatsPayload(raw),{ttlMs,compact:true}).catch(()=>{});
+      return map;
+    }catch(e){return existing||new Map();}
+    finally{clearTimeout(timer);weeklyStatSyncPromises.delete(week);}
+  })();
+  weeklyStatSyncPromises.set(week,promise);
+  return promise;
+}
+function statNumber(stats,...keys){
+  for(const key of keys){const raw=stats?.[key];if(raw==null||raw==='')continue;const v=Number(raw);if(Number.isFinite(v))return v;}
+  return 0;
+}
+function statAny(stats,...keys){return keys.some(key=>Math.abs(Number(stats?.[key]||0))>1e-9);}
+function statSum(stats,...keys){return keys.reduce((sum,key)=>sum+(Number.isFinite(Number(stats?.[key]))?Number(stats[key]):0),0);}
+function compactPlayerStatLine(playerId,week=currentWeekNumber(),position=''){
+  const s=weeklyStatsForPlayer(playerId,week);if(!s)return '';
+  let pos=String(position||s.position||'').toUpperCase();if(pos==='DST')pos='DEF';
+  const parts=[];
+  const push=(v,label,{allowZero=false}={})=>{v=Number(v);if(!Number.isFinite(v)||(!allowZero&&Math.abs(v)<1e-9))return;parts.push(`${Number.isInteger(v)?v:v.toFixed(1)} ${label}`);};
+  const addPass=()=>{
+    const cmp=statNumber(s,'pass_cmp'),att=statNumber(s,'pass_att'),yd=statNumber(s,'pass_yd','pass_yds'),td=statNumber(s,'pass_td'),intr=statNumber(s,'pass_int');
+    if(cmp||att)parts.push(`${cmp}/${att} CMP`);push(yd,'YD');push(td,'TD');push(intr,'INT');
+  };
+  const addRush=()=>{
+    const att=statNumber(s,'rush_att'),yd=statNumber(s,'rush_yd','rush_yds'),td=statNumber(s,'rush_td');
+    if(att)push(att,'CAR');if(yd)push(yd,'YD');if(td)push(td,'TD');
+  };
+  const addRec=()=>{
+    const rec=statNumber(s,'rec'),tgt=statNumber(s,'rec_tgt','targets'),yd=statNumber(s,'rec_yd','rec_yds'),td=statNumber(s,'rec_td');
+    if(rec||tgt)parts.push(`${rec}/${tgt||rec} REC`);if(yd)push(yd,'YD');if(td)push(td,'TD');
+  };
+  if(pos==='QB'){
+    addPass();addRush();
+    if(statAny(s,'rec','rec_tgt','rec_yd','rec_yds','rec_td'))addRec();
+  }else if(['RB','WR','TE'].includes(pos)){
+    if(statAny(s,'rush_att','rush_yd','rush_yds','rush_td'))addRush();
+    if(statAny(s,'rec','rec_tgt','targets','rec_yd','rec_yds','rec_td'))addRec();
+    if(statAny(s,'pass_att','pass_cmp','pass_yd','pass_yds','pass_td','pass_int'))addPass();
+  }else if(pos==='K'){
+    let fgm=statNumber(s,'fgm','fg_made');
+    if(!fgm)fgm=statSum(s,'fgm_0_19','fgm_20_29','fgm_30_39','fgm_40_49','fgm_50p');
+    let fga=statNumber(s,'fga','fg_att');
+    if(!fga)fga=fgm+(statNumber(s,'fgmiss','fg_missed')||statSum(s,'fgmiss_0_19','fgmiss_20_29','fgmiss_30_39','fgmiss_40_49','fgmiss_50p'));
+    const xpm=statNumber(s,'xpm','xp_made'),xpa=statNumber(s,'xpa','xp_att')||xpm+statNumber(s,'xpmiss','xp_missed');
+    if(fgm||fga)parts.push(`${fgm}/${fga||fgm} FG`);if(xpm||xpa)parts.push(`${xpm}/${xpa||xpm} XP`);
+  }else if(pos==='DEF'){
+    push(statNumber(s,'pts_allow','pts_allowed'),'PTS ALLOW');push(statNumber(s,'sack'),'SACK');push(statNumber(s,'int'),'INT');push(statNumber(s,'fum_rec','def_fum_rec'),'FR');
+    const intTd=statNumber(s,'def_int_td','int_ret_td'),frTd=statNumber(s,'def_fum_td','fum_ret_td'),koTd=statNumber(s,'def_kr_td','kick_ret_td'),pntTd=statNumber(s,'def_pr_td','pr_td','punt_ret_td');
+    const breakdown=[];if(frTd)breakdown.push(`${frTd} FR TD`);if(intTd)breakdown.push(`${intTd} INT TD`);if(koTd)breakdown.push(`${koTd} KO TD`);if(pntTd)breakdown.push(`${pntTd} PNT TD`);
+    const totalTd=statNumber(s,'def_td')||(intTd+frTd+koTd+pntTd);
+    if(totalTd)parts.push(`${totalTd} TD${breakdown.length?` (${breakdown.join(', ')})`:''}`);
+  }else{
+    if(statAny(s,'pass_att','pass_cmp','pass_yd','pass_yds','pass_td','pass_int'))addPass();
+    if(statAny(s,'rush_att','rush_yd','rush_yds','rush_td'))addRush();
+    if(statAny(s,'rec','rec_tgt','targets','rec_yd','rec_yds','rec_td'))addRec();
+  }
+  return parts.join(', ');
+}
 function rememberProjectionMap(week,map){
   week=Math.max(1,Number(week)||1);
   if(map?.size)weekProjectionMaps.set(week,map);
@@ -508,27 +629,130 @@ function matchupHasStarted(mine,opp,roster=null,oppRoster=null){
   const ids=[...matchupStarterIds(roster,mine),...matchupStarterIds(oppRoster,opp)];
   return ids.some(id=>Math.abs(matchupPlayerPoints(mine,id))>0.005||Math.abs(matchupPlayerPoints(opp,id))>0.005);
 }
+function scheduleGameForPlayerWeek(playerId,week=currentWeekNumber()){
+  week=Math.max(1,Number(week)||1);
+  const id=String(playerId||''),meta=discoveredSleeperPlayers?.[id]||playerMetadataFallback(id)||{};
+  const rawTeam=meta?.team||(/^[A-Z]{2,3}$/.test(id)?id:'');
+  const team=typeof nflTeamCode==='function'?nflTeamCode(rawTeam):String(rawTeam||'').toUpperCase();
+  if(!team||team==='—')return null;
+  return (nflScheduleGames||[]).find(game=>{
+    const gw=sleeperScheduleGameWeek(game);if(gw&&gw!==week)return false;
+    const teams=typeof sleeperScheduleTeamCodes==='function'?sleeperScheduleTeamCodes(game):new Set();
+    return teams.has(team);
+  })||null;
+}
+function scheduleClockMinutesRemaining(game){
+  const raw=game?.clock??game?.game_clock??game?.gameClock??game?.time_remaining??game?.timeRemaining??'';
+  const m=String(raw||'').trim().match(/^(\d{1,2}):(\d{2})$/);
+  if(!m)return null;
+  const mins=Number(m[1]),secs=Number(m[2]);
+  if(!Number.isFinite(mins)||!Number.isFinite(secs))return null;
+  return Math.max(0,Math.min(15,mins+secs/60));
+}
+function scheduleGameProgressFraction(game,now=Date.now()){
+  if(!game)return null;
+  const status=sleeperScheduleStatus(game);
+  const finalStatuses=new Set(['complete','completed','finished','final','post','closed']);
+  const pregameStatuses=new Set(['pregame','scheduled','notstarted','upcoming','created']);
+  if(finalStatuses.has(status))return 1;
+  if(pregameStatuses.has(status))return 0;
+  if(status==='halftime')return .5;
+  const q=Number(game?.quarter??game?.qtr??game?.period??game?.game_quarter??game?.gameQuarter??0);
+  const clock=scheduleClockMinutesRemaining(game);
+  if(Number.isFinite(q)&&q>=1&&q<=4&&clock!=null){
+    const played=((q-1)*15)+(15-clock);
+    return Math.max(.02,Math.min(.99,played/60));
+  }
+  if(Number.isFinite(q)&&q>4)return .97;
+  const kickoff=sleeperScheduleKickoffMs(game);
+  if(kickoff!=null&&now>=kickoff){
+    return Math.max(.02,Math.min(.99,(now-kickoff)/(3.25*60*60*1000)));
+  }
+  // No quarter/clock and no true kickoff timestamp means elapsed-game progress
+  // is unknowable. Preserve the pregame baseline instead of inventing decay.
+  return null;
+}
+function liveProjectedFinalForPlayer(playerId,matchup,week=currentWeekNumber(),now=Date.now()){
+  week=Math.max(1,Number(week)||1);
+  const baseline=currentWeekProjectionForPlayer(playerId,week);
+  const actual=Number(matchupPlayerPoints(matchup,playerId)||0);
+  const current=currentWeekNumber();
+  if(week<current)return actual;
+  if(week>current)return baseline==null?null:Number(baseline);
+  const game=scheduleGameForPlayerWeek(playerId,week);
+  if(!game){
+    if(Math.abs(actual)>.005)return Math.max(actual,Number(baseline??actual));
+    return baseline==null?null:Number(baseline);
+  }
+  const progress=scheduleGameProgressFraction(game,now);
+  if(progress==null||progress<=0)return baseline==null?null:Number(baseline);
+  if(progress>=.999)return actual;
+  const base=Number(baseline);
+  if(!Number.isFinite(base))return actual;
+  // Replace the portion of the pregame expectation that has already elapsed
+  // with actual fantasy production; preserve only the unplayed share.
+  return Math.max(actual,actual+(base*Math.max(0,1-progress)));
+}
 function projectedRosterStarterTotal(roster,week=currentWeekNumber(),matchup=null){
-  return matchupStarterIds(roster,matchup).reduce((sum,id)=>sum+Number(currentWeekProjectionForPlayer(id,week)||0),0);
+  return matchupStarterIds(roster,matchup).reduce((sum,id)=>{
+    const value=liveProjectedFinalForPlayer(id,matchup,week);
+    return sum+Number(value??0);
+  },0);
 }
 function projectedRosterBenchTotal(roster,week=currentWeekNumber(),matchup=null){
   const starters=new Set(matchupStarterIds(roster,matchup));
-  return matchupPlayerIds(roster,matchup).filter(id=>!starters.has(String(id))).reduce((sum,id)=>sum+Number(currentWeekProjectionForPlayer(id,week)||0),0);
+  return matchupPlayerIds(roster,matchup).filter(id=>!starters.has(String(id))).reduce((sum,id)=>{
+    const value=liveProjectedFinalForPlayer(id,matchup,week);
+    return sum+Number(value??0);
+  },0);
 }
 function matchupScoringContext(roster,oppRoster,mine,opp,week=currentWeekNumber()){
   week=Math.max(1,Number(week)||1);
   const started=matchupHasStarted(mine,opp,roster,oppRoster);
   const projectionMap=projectionMapForWeek(week);
-  const projected=!started&&!!projectionMap;
-  const myTotal=projected?projectedRosterStarterTotal(roster,week,mine):Number(mine?.points||0);
-  const oppTotal=projected?projectedRosterStarterTotal(oppRoster,week,opp):Number(opp?.points||0);
-  const myBench=projected?projectedRosterBenchTotal(roster,week,mine):matchupBenchTotal(roster,mine);
-  const oppBench=projected?projectedRosterBenchTotal(oppRoster,week,opp):matchupBenchTotal(oppRoster,opp);
+  const projectionAvailable=!!projectionMap;
+  const projected=!started&&projectionAvailable;
+  const myProjectedTotal=projectionAvailable?projectedRosterStarterTotal(roster,week,mine):null;
+  const oppProjectedTotal=projectionAvailable?projectedRosterStarterTotal(oppRoster,week,opp):null;
+  const myProjectedBench=projectionAvailable?projectedRosterBenchTotal(roster,week,mine):null;
+  const oppProjectedBench=projectionAvailable?projectedRosterBenchTotal(oppRoster,week,opp):null;
+  const myTotal=projected?myProjectedTotal:Number(mine?.points||0);
+  const oppTotal=projected?oppProjectedTotal:Number(opp?.points||0);
+  const myBench=projected?myProjectedBench:matchupBenchTotal(roster,mine);
+  const oppBench=projected?oppProjectedBench:matchupBenchTotal(oppRoster,opp);
   return {
-    week,started,projected,projectionAvailable:!!projectionMap,
+    week,started,projected,projectionAvailable,
     myTotal,oppTotal,myBench,oppBench,diff:myTotal-oppTotal,
+    myProjectedTotal,oppProjectedTotal,myProjectedBench,oppProjectedBench,
     label:projected?'projected':'actual'
   };
+}
+function liveScoreText(actual,projected,{started=false,projectionAvailable=false}={}){
+  if(!started)return Number.isFinite(Number(actual))?Number(actual).toFixed(2):'—';
+  const live=Number.isFinite(Number(actual))?Number(actual).toFixed(2):'0.00';
+  return projectionAvailable&&Number.isFinite(Number(projected))?`${live} (${Number(projected).toFixed(2)})`:live;
+}
+function matchupScoreText(scoring,side='my'){
+  if(!scoring)return '—';
+  const mine=side!=='opp';
+  return liveScoreText(mine?scoring.myTotal:scoring.oppTotal,mine?scoring.myProjectedTotal:scoring.oppProjectedTotal,scoring);
+}
+function matchupBenchScoreText(scoring,side='my'){
+  if(!scoring)return '—';
+  const mine=side!=='opp';
+  return liveScoreText(mine?scoring.myBench:scoring.oppBench,mine?scoring.myProjectedBench:scoring.oppProjectedBench,scoring);
+}
+function matchupPlayerScoreText(match,id,scoring,week=currentWeekNumber()){
+  if(!id||!scoring)return '—';
+  if(scoring.projected){
+    const p=currentWeekProjectionForPlayer(id,week);
+    return p==null?'—':`${Number(p).toFixed(2)} P`;
+  }
+  if(scoring.started){
+    const actual=matchupPlayerPoints(match,id),proj=liveProjectedFinalForPlayer(id,match,week);
+    return liveScoreText(actual,proj,scoring);
+  }
+  return '—';
 }async function syncWeek1Projections(force=false){
   if(week1ProjectionSyncPromise)return week1ProjectionSyncPromise;
   if(week1ProjectionData&&!force)return week1ProjectionData;

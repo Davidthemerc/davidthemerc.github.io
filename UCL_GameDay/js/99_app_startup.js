@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.03 — build fragment: 99_app_startup.js
+/* UCL GameDay v0.5.50 — build fragment: 99_app_startup.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function loadPlayers(forceApi=false){
@@ -7,18 +7,94 @@ function loadPlayers(forceApi=false){
   await resolveMissingReferencedPlayers();
   return discoveredSleeperPlayers;
 }
-async function sync(){if(simulation.active){updateSimulationUi();render();return}if(!liveLoadingEnabled()){
+
+
+async function ensureInitialActivityPrerequisites(){
+  try{
+    loadDiscoveredPlayers();
+    const tasks=[];
+    if(missingReferencedPlayerIds().length)tasks.push(resolveMissingReferencedPlayers().catch(e=>{if(!e?.isSleeperRequestError)throw e;return 0}));
+    tasks.push(refreshNflScheduleStatus(false).catch(e=>{if(!e?.isSleeperRequestError)throw e;return false}));
+    tasks.push(refreshNflKickoffSchedule(false).catch(()=>false));
+    await Promise.all(tasks);
+    refreshNflActivityUi();
+    return true;
+  }catch(e){
+    try{console.warn('Initial active-game prerequisites failed',e)}catch(_){}
+    refreshNflActivityUi();
+    return false;
+  }
+}
+
+async function sync(){
+  if(simulation.active){updateSimulationUi();render();return true}
+  if(!liveLoadingEnabled()){
     loadSavedGameDayData();
     if(rosters.length&&!$('#teamSelect').options.length)populateControls();
-    updateLiveLoadingUi();
-    render();
-    return
-  }if(busy)return;busy=true;$('#errorBox').classList.remove('show');try{const [state,leagueUsers,leagueRosters,leagueMeta]=await Promise.all([get(`${API}/state/nfl`),get(`${API}/league/${LEAGUE_ID}/users`),get(`${API}/league/${LEAGUE_ID}/rosters`),get(`${API}/league/${LEAGUE_ID}`).catch(()=>null)]);nflState=state;leagueInfo=leagueMeta||leagueInfo;users=leagueUsers||[];rosters=leagueRosters||[];const week=n(state?.week)||1;matchups=await get(`${API}/league/${LEAGUE_ID}/matchups/${week}`);loadDiscoveredPlayers();await resolveMissingReferencedPlayers();await Promise.all([refreshGameViewStats(false),refreshGameViewProjections(false)]);captureTestingAreaPoll();saveLiveSnapshot();saveRosterCache();saveRosterCacheV2();const teamControl=$('#teamSelect'),liveRosterIds=new Set(rosters.map(r=>String(r.roster_id)));if(!teamControl.options.length||!liveRosterIds.has(String(teamControl.value)))populateControls();else renderCtespnMatchupAlertSettings();if(!featuredMatchupId)featuredMatchupId=pairForRoster($('#teamSelect').value)?.id||matchupPairs()[0]?.id||null;snapshotAndEvents();gvProcessLiveSnapshot();$('#weekLabel').textContent=`Week ${week}`;if($('#liveDot'))$('#liveDot').classList.add('on');render();renderPlayerDataStatus()}catch(e){console.error(e);appendJsError(e?.stack||e?.message||String(e));$('#errorBox').textContent=`Sleeper data unavailable: ${e.message}.`;$('#errorBox').classList.add('show');if($('#liveDot'))$('#liveDot').classList.remove('on')}finally{busy=false}}
+    updateLiveLoadingUi();render();return true
+  }
+  if(busy)return false;busy=true;
+  try{
+    // Stage every core Sleeper response first. A failed poll must not partially replace
+    // the last known-good users/rosters/matchups already displayed in the app.
+    const [state,leagueUsers,leagueRosters,leagueMeta]=await Promise.all([
+      get(`${API}/state/nfl`),
+      get(`${API}/league/${LEAGUE_ID}/users`),
+      get(`${API}/league/${LEAGUE_ID}/rosters`),
+      get(`${API}/league/${LEAGUE_ID}`).catch(e=>{if(e?.isSleeperRequestError)return null;throw e})
+    ]);
+    const week=n(state?.week)||1;
+    const nextMatchups=await get(`${API}/league/${LEAGUE_ID}/matchups/${week}`);
+
+    // Commit only after the required core payloads all succeeded.
+    nflState=state;leagueInfo=leagueMeta||leagueInfo;users=leagueUsers||[];rosters=leagueRosters||[];matchups=nextMatchups||[];
+    if(!rosters.length)ensureDefaultUclTeams();
+    loadDiscoveredPlayers();
+    // Player-directory hydration is optional. A blocked/failed giant players endpoint
+    // must not invalidate an otherwise successful league poll.
+    try{await resolveMissingReferencedPlayers()}catch(e){if(!e?.isSleeperRequestError)throw e}
+    // NFL schedule/status is optional: use it when available, never fail the core Sleeper poll because of it.
+    try{await refreshNflScheduleStatus(false)}catch(e){if(!e?.isSleeperRequestError)throw e}
+    try{await refreshNflKickoffSchedule(false)}catch(e){}
+    await Promise.all([refreshGameViewStats(false),refreshGameViewProjections(false)]);
+    captureTestingAreaPoll();testingCaptureLiveDebugPoll();saveLiveSnapshot();saveRosterCache();saveRosterCacheV2();
+    const teamControl=$('#teamSelect'),liveRosterIds=new Set(rosters.map(r=>String(r.roster_id)));
+    if(!teamControl.options.length||!liveRosterIds.has(String(teamControl.value)))populateControls();else renderCtespnMatchupAlertSettings();
+    if(typeof testingRefreshAllPlayerSelectors==='function')testingRefreshAllPlayerSelectors();
+    if(!featuredMatchupId)featuredMatchupId=pairForRoster($('#teamSelect').value)?.id||matchupPairs()[0]?.id||null;
+    snapshotAndEvents();gvProcessLiveSnapshot();$('#weekLabel').textContent=`Week ${week}`;
+    if($('#liveDot'))$('#liveDot').classList.add('on');
+    markSleeperConnectionSuccess();render();renderPlayerDataStatus();refreshNflActivityUi();
+    return true;
+  }catch(e){
+    if(e?.isSleeperRequestError){
+      markSleeperConnectionFailure(e);
+      if($('#liveDot'))$('#liveDot').classList.remove('on');
+      // Keep rendering the last successful snapshot/cache; the interval will retry.
+      if(!rosters.length||!matchups.length)loadSavedGameDayData();
+      if(!rosters.length)ensureDefaultUclTeams();
+      if(rosters.length&&!$('#teamSelect').options.length)populateControls();
+      render();renderPlayerDataStatus();
+      return false;
+    }else{
+      console.error(e);appendJsError(e?.stack||e?.message||String(e));
+      $('#errorBox').textContent=`GameDay error: ${e?.message||e}.`;$('#errorBox').classList.add('show');
+      if($('#liveDot'))$('#liveDot').classList.remove('on');
+      return false;
+    }
+  }finally{busy=false}
+}
 window.addEventListener('resize',()=>{const p=chosenPair();if(p)renderMomentum(p)});
 $('#refreshBtn').onclick=()=>{if(liveLoadingEnabled())sync()};
 // Testing Area is physically below this script in the document, so direct startup
 // queries cannot see its controls. Delegate events from document instead.
 document.addEventListener('click',e=>{
+  const gameDayPlayerLink=e.target.closest?.('[data-gameday-gv-roster]');
+  if(gameDayPlayerLink){
+    selectPreferredTeam(gameDayPlayerLink.dataset.gamedayGvRoster);
+    setView('gameview');
+    return;
+  }
   if(e.target?.id==='testingDeltaNextPoll'){
     testingAdvancePoll();
     return;
@@ -40,7 +116,17 @@ document.addEventListener('click',e=>{
     return;
   }
 
+  const gvTeamChoice=e.target.closest?.('[data-gv-team-id]');
+  if(gvTeamChoice){
+    selectPreferredTeam(gvTeamChoice.dataset.gvTeamId);
+    gvTeamPickerClose();
+    if(currentView==='gameview')renderGameView();
+    return;
+  }
+  if(!e.target.closest?.('.gameview-team-switcher-copy'))gvTeamPickerClose();
   const btn=e.target.closest?.('button');if(!btn)return;
+  if(btn.dataset.testingTab){testingSetTab(btn.dataset.testingTab);return;}
+  if(btn.id==='testingLiveDebugClear'){testingLiveDebugPlays.length=0;renderTestingLiveDebug();return;}
   if(btn.id==='clearTestingLogBtn'){
     testingLog.length=0;testingSequenceStateReset();saveTestingState();renderTestingArea();return;
   }
@@ -79,6 +165,14 @@ document.addEventListener('click',e=>{
   }
 });
 
+document.addEventListener('keydown',e=>{
+  const link=e.target?.closest?.('[data-gameday-gv-roster]');
+  if(!link||!['Enter',' '].includes(e.key))return;
+  e.preventDefault();
+  selectPreferredTeam(link.dataset.gamedayGvRoster);
+  setView('gameview');
+});
+
 document.addEventListener('wheel',e=>{
   const el=e.target;
   if(!el?.matches?.('#testingView input[type="number"]')||document.activeElement!==el)return;
@@ -99,9 +193,7 @@ document.addEventListener('input',e=>{
 
 document.addEventListener('change',e=>{
   if(e.target?.id==='testingPlayPositionSelect'){gvTestingPopulateSimplePlaySelect();return}
-  if(e.target?.id==='testingPlayTeamSelect'){
-    if($('#testingPlayPositionSelect')?.value==='TANDEM')testingPopulateTandemPair('play');
-    gvTestingUpdateSimplePlaySummary();return;
+  if(e.target?.id==='testingPlayTeamSelect'){testingRefreshAllPlayerSelectors();return;
   }
   if(e.target?.id==='testingPlaySelect'){gvTestingUpdateSimplePlaySummary();return}
   if(['testingPlayTandemPasser','testingPlayTandemReceiver'].includes(e.target?.id)){
@@ -109,10 +201,7 @@ document.addEventListener('change',e=>{
     if(e.target.value&&e.target.value===$('#'+other)?.value)testingPopulateTandemPair('play');
     gvTestingUpdateSimplePlaySummary();return;
   }
-  if(e.target?.id==='testingDeltaTeamSelect'){
-    testingPopulateDeltaPlayers();
-    if($('#testingDeltaPositionSelect')?.value==='TANDEM')testingPopulateTandemPair('delta');
-    testingUpdateQuickDeltaSummary();return;
+  if(e.target?.id==='testingDeltaTeamSelect'){testingRefreshAllPlayerSelectors();return;
   }
   if(e.target?.id==='testingDeltaPositionSelect'){testingPopulateDeltaPlaySelect();return}
   if(e.target?.id==='testingDeltaPlaySelect'){testingPopulateDeltaValueSelect(true);testingUpdateQuickDeltaSummary();return}
@@ -138,7 +227,7 @@ document.addEventListener('change',e=>{
 });
 
 
-document.addEventListener('DOMContentLoaded',()=>{testingPanelStateBind();if(typeof gvTestingRenderIdleScore==='function')gvTestingRenderIdleScore();if(typeof testingInitSimpleControls==='function')testingInitSimpleControls()},{once:true});
+document.addEventListener('DOMContentLoaded',()=>{testingInitTabs();testingPanelStateBind();if(typeof gvTestingRenderIdleScore==='function')gvTestingRenderIdleScore();if(typeof testingInitSimpleControls==='function')testingInitSimpleControls();if(typeof testingRefreshAllPlayerSelectors==='function')testingRefreshAllPlayerSelectors()},{once:true});
 document.querySelectorAll('.primary-nav [data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));$('#settingsClose').onclick=closeSettings;
 $('#resolveMissingPlayersBtn').onclick=resolveMissingPlayersNow;
 $('#exportSaveDataBtn').onclick=exportGameDaySave;
@@ -146,6 +235,7 @@ $('#importSaveDataBtn').onclick=()=>$('#importSaveDataFile').click();
 $('#importSaveDataFile').onchange=e=>{const file=e.target.files?.[0];if(file)importGameDaySaveFile(file)};
 $('#simStart').onclick=startSimulation;$('#simPause').onclick=toggleSimulationPause;$('#simStop').onclick=stopSimulation;
 $('#liveLoadingToggle').onchange=e=>setLiveLoading(!!e.target.checked);
+$('#testingAreaVisibleToggle').onchange=e=>setTestingAreaVisible(!!e.target.checked);
 $('#simSpeed').value=storage.get('ucl-gameday-sim-speed','20');
 $('#simStyle').value=storage.get('ucl-gameday-sim-style','chaos');
 const savedSimScenario=normalizeSimulationScenarioId(storage.get('ucl-gameday-sim-scenario','full'));
@@ -163,16 +253,38 @@ if(liveLoadingEnabled()){
   loadRosterCache();
   loadDiscoveredPlayers();
   restoreLiveSnapshot();
+  ensureDefaultUclTeams();
 }else{
   loadSavedGameDayData();
 }
 if(rosters.length)populateControls();
-updateSimulationUi();updateLiveLoadingUi();
+updateSimulationUi();updateLiveLoadingUi();updateTestingAreaVisibilityUi();
 window.addEventListener('orientationchange',()=>{cancelGameViewPlayback(true);renderGameView()});
 
-window.addEventListener('pagehide',()=>{try{gvSaveSession()}catch(e){}});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){try{gvSaveSession()}catch(e){}}});
+window.addEventListener('pagehide',()=>{if(clearingLocalAppData)return;try{gvSaveSession()}catch(e){}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&!clearingLocalAppData){try{gvSaveSession()}catch(e){}}});
 
-if(liveLoadingEnabled()){sync();timer=setInterval(sync,POLL_MS)}
-else{loadSavedGameDayData();render();updateLiveLoadingUi()}
+if(liveLoadingEnabled()){
+  // Use the exact same full sync path as the manual Refresh Live button for the
+  // first authoritative render. Do not put a slower prerequisite pass in front of it.
+  sync().finally(()=>{
+    refreshNflActivityUi();
+    startNflActivityUiTimer();
+    // Any still-missing optional metadata can hydrate afterward without blocking first sync.
+    ensureInitialActivityPrerequisites();
+  });
+  timer=setInterval(sync,POLL_MS);
+}else{
+  loadSavedGameDayData();
+  ensureInitialActivityPrerequisites().finally(()=>{
+    render();updateLiveLoadingUi();refreshNflActivityUi();startNflActivityUiTimer();
+  });
+}
 })();
+
+document.addEventListener('click',e=>{
+  if(e.target?.closest?.('[data-view="settings"],#settingsBtn,[data-target="settings"]')){
+    setTimeout(()=>window.ensureNotificationSettingsControls?.(),0);
+  }
+});
+setTimeout(()=>window.ensureNotificationSettingsControls?.(),0);

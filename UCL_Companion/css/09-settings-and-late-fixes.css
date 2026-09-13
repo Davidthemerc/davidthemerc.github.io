@@ -2203,3 +2203,15 @@ body.live-season-build.post-draft-mode #teamView .strategy-history-box{display:n
 @media(max-width:720px){
   .venue-pill{min-width:40px;padding:3px 6px;font-size:9px}
 }
+
+
+/* v1.10.3 CTESPN Desk manual story links */
+.nr-external-link,.nc-external-link{display:inline-flex;align-items:center;gap:3px;color:var(--theme-accent,#173b67);font-weight:800;text-decoration:none}
+.nr-external-link{margin-top:7px;font-size:11px}
+.nc-external-link{margin-left:8px;font-size:10px}
+.nr-external-link:hover,.nc-external-link:hover{text-decoration:underline}
+
+
+/* v1.10.21 compact live box-score lines */
+.live-stat-line{display:block!important;margin-top:2px;color:var(--ink)!important;font-size:10px!important;font-weight:700!important;line-height:1.25!important;white-space:normal;}
+.matchup-pos-player.right .live-stat-line{text-align:right;}

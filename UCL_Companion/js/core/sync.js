@@ -114,7 +114,7 @@ async function _syncSeasonDataImpl(showStatus=false){
     const stateRes=await sleeperGetSafe('/state/nfl',{ttlMs:60000,force:showStatus,fallback:nflState,label:'NFL state'});
     if(stateRes.ok)nflState=stateRes.value||nflState;
     else failures.push(stateRes.label);
-
+    try{await syncNflScheduleStatus(showStatus);}catch(e){/* Live banner is optional; normal season sync continues. */}
     const week=currentWeekNumber();
     handleWeekTransition(week);
     const txWeeks=[week,Math.max(1,week-1)].filter((v,i,a)=>a.indexOf(v)===i);
@@ -179,7 +179,12 @@ async function _syncSeasonDataImpl(showStatus=false){
     // Remove the obsolete full-player database cache if an older build left it behind.
     // v1.9.19 never fetches /players/nfl and does not need to retain that large record.
     apiCacheDelete('api','/players/nfl').catch(()=>{});
-    try{await syncCurrentWeekProjections(week,showStatus);}catch(e){failures.push(`Week ${week} projections`);}
+    const liveScoringPresent=(currentMatchups||[]).some(m=>{
+      if(Math.abs(Number(m?.points||0))>0.005)return true;
+      return Object.values(m?.players_points||{}).some(v=>Math.abs(Number(v||0))>0.005);
+    });
+    try{await syncCurrentWeekProjections(week,showStatus||liveScoringPresent);}catch(e){failures.push(`Week ${week} projections`);}
+    try{await syncWeeklyStats(week,showStatus||liveScoringPresent);}catch(e){}
 
     seasonDataMeta={
       lastSync:Date.now(),

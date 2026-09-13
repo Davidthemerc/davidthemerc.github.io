@@ -23,6 +23,7 @@ async function selectTeamWeek(week){
       if(r.ok)seasonMatchupsByWeek[week]=dedupeMatchupList(r.value);
     }
     try{await syncCurrentWeekProjections(week,false);}catch(e){}
+    try{await syncWeeklyStats(week,false);}catch(e){}
   }finally{
     teamWeekSelectionBusy=false;
     populateTeamWeekSelector();
@@ -110,7 +111,7 @@ function renderTeam(){
   const mode=(started||historical&&!!mine)?'actual':projectionMap?'projected':'pending';
   if($('#teamWeekStatus'))$('#teamWeekStatus').innerHTML=`Week ${week} • ${mode==='actual'?'Sleeper scoring':mode==='projected'?'Sleeper projections':'projection data loading'}${oppRoster?` • ${uclVenuePill(week,roster.roster_id)} ${esc(uclMatchupNotation(week,roster.roster_id,rosterUserName(oppRoster)))}`:''}`;
   if($('#teamWeekNote'))$('#teamWeekNote').textContent=mode==='actual'
-    ?`Week ${week} shows the lineup snapshot and scoring reported by Sleeper for that matchup.`
+    ?`Week ${week} shows Sleeper live scoring first, with projected points in parentheses when projections are available.`
     :mode==='projected'
       ?`Week ${week} shows the available lineup with Sleeper projected points. Bye weeks use the official 2026 NFL schedule.`
       :`Week ${week} lineup is available; projection data is still loading. Bye weeks use the official 2026 NFL schedule.`;
@@ -118,9 +119,12 @@ function renderTeam(){
   const row=(label,id,bench=false)=>{
     if(!id)return `<div class="slot-row ${bench?'bench-row':''}"><div class="slot-pos">${esc(label)}</div><div class="slot-player"><strong class="slot-empty">Empty</strong><small>Open lineup slot</small></div><div class="slot-proj">—<small>WEEK ${week}</small></div><div class="slot-bye">—</div></div>`;
     const p=player(id),pts=pointFor(id),bye=p.bye==null?'—':`Bye ${p.bye}`,injury=myTeamInjuryStatus(id,roster);
-    const ptsLabel=mode==='actual'?'PTS':mode==='projected'?'PROJ':'PENDING';
+    const ptsLabel=mode==='actual'?'PTS + PROJ':mode==='projected'?'PROJ':'PENDING';
+    const proj=projectionMap?.get(String(id))?.pts??null;
+    const ptsText=mode==='actual'?liveScoreText(pts,proj,{started:true,projectionAvailable:proj!=null}):(pts==null?'—':Number(pts).toFixed(2));
     const injuryBadge=injury?` <span class="my-team-injury ${injury.kind}">${esc(injury.label)}</span>`:'';
-    return `<div class="slot-row ${bench?'bench-row':''}"><div class="slot-pos">${esc(label)}</div><div class="slot-player"><strong>${esc(p.name)}</strong><small>${esc(p.team)} • ${esc(p.pos||'—')}${injuryBadge}</small></div><div class="slot-proj">${pts==null?'—':Number(pts).toFixed(2)}<small>WEEK ${week} ${ptsLabel}</small></div><div class="slot-bye">${esc(bye)}</div></div>`;
+    const statLine=mode==='actual'?compactPlayerStatLine(id,week,p.pos):'';
+    return `<div class="slot-row ${bench?'bench-row':''}"><div class="slot-pos">${esc(label)}</div><div class="slot-player"><strong>${esc(p.name)}</strong><small>${esc(p.team)} • ${esc(p.pos||'—')}${injuryBadge}</small>${statLine?`<small class="live-stat-line">${esc(statLine)}</small>`:''}</div><div class="slot-proj">${ptsText}<small>WEEK ${week} ${ptsLabel}</small></div><div class="slot-bye">${esc(bye)}</div></div>`;
   };
 
   const starterRows=[];
@@ -139,8 +143,10 @@ function renderTeam(){
 
   const sp=starterIds.reduce((sum,id)=>sum+Number(pointFor(id)||0),0);
   const bp=benchIds.reduce((sum,id)=>sum+Number(pointFor(id)||0),0);
-  $('#starterPts').textContent=mode==='pending'?'—':sp.toFixed(2);
-  $('#benchPts').textContent=mode==='pending'?'—':bp.toFixed(2);
+  const starterProj=projectionMap?starterIds.reduce((sum,id)=>sum+Number(projectionMap.get(String(id))?.pts||0),0):null;
+  const benchProj=projectionMap?benchIds.reduce((sum,id)=>sum+Number(projectionMap.get(String(id))?.pts||0),0):null;
+  $('#starterPts').textContent=mode==='pending'?'—':mode==='actual'?liveScoreText(sp,starterProj,{started:true,projectionAvailable:starterProj!=null}):sp.toFixed(2);
+  $('#benchPts').textContent=mode==='pending'?'—':mode==='actual'?liveScoreText(bp,benchProj,{started:true,projectionAvailable:benchProj!=null}):bp.toFixed(2);
   $('#extraBox').style.display='none';
   if($('#teamRosterPressureGrid'))$('#teamRosterPressureGrid').innerHTML=seasonRosterPressure(roster,playerCache).map(x=>`<div class="season-pressure ${x.kind}"><span>${esc(x.label)}</span><b>${esc(x.value)}</b><small>${esc(x.detail)}</small></div>`).join('');
 }
