@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.50 — build fragment: 70_gameview_animation_core.js
+/* UCL GameDay v0.5.51 — build fragment: 70_gameview_animation_core.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function gvScoringRole(evt){

@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.50 — build fragment: 30_matchup_simulation.js
+/* UCL GameDay v0.5.51 — build fragment: 30_matchup_simulation.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function chosenPair(){const pairs=matchupPairs();return pairs.find(p=>String(p.id)===String(featuredMatchupId))||pairForRoster($('#teamSelect')?.value)||pairs[0]}

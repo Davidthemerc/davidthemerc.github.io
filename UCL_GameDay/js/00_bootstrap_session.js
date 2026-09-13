@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.50 — build fragment: 00_bootstrap_session.js
+/* UCL GameDay v0.5.51 — build fragment: 00_bootstrap_session.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 
@@ -25,7 +25,7 @@ window.addEventListener('unhandledrejection',e=>{
 });
 
 'use strict';
-const VERSION='0.5.50',LEAGUE_ID='1386066375474180096',API='https://api.sleeper.app/v1',POLL_MS=15000;
+const VERSION='0.5.51',LEAGUE_ID='1386066375474180096',API='https://api.sleeper.app/v1',POLL_MS=15000;
 const THEMES={
  'UCL Blue':['#102a56','#2f65ad','#173d73','#eef3f9'],Forest:['#183d2b','#2e7653','#24563f','#eef5f0'],Purple:['#35265f','#7558b5','#513b86','#f2eff8'],Crimson:['#5b1f2b','#a53c50','#7d2939','#f8eff1'],Orange:['#5a3416','#c26b27','#84491e','#faf2eb'],Slate:['#273342','#5a6b7e','#3f4d5e','#f0f3f6'],Gold:['#4e3d13','#af861d','#735b19','#f8f4e8'],'Ice Blue':['#16465a','#2b95b8','#21738f','#edf7fa']
 };
@@ -143,7 +143,7 @@ const gvStatFirstReconciliation=new Map();
 const GV_FPTS_CONFIRM_WINDOW_MS=45000;
 const gvPendingStatCandidates=new Map();
 
-// v0.5.50: immediate stat-first play capture with a small-correction rejection layer.
+// v0.5.51: immediate stat-first play capture with a small-correction rejection layer.
 const GV_STAT_REJECTION_WINDOW_MS=15000;
 const GV_SMALL_YARDAGE_CORRECTION_MAX=4;
 const gvRecentAcceptedStatPlays=new Map();

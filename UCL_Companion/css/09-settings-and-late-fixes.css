@@ -2212,6 +2212,6 @@ body.live-season-build.post-draft-mode #teamView .strategy-history-box{display:n
 .nr-external-link:hover,.nc-external-link:hover{text-decoration:underline}
 
 
-/* v1.10.21 compact live box-score lines */
+/* v1.10.22 compact live box-score lines */
 .live-stat-line{display:block!important;margin-top:2px;color:var(--ink)!important;font-size:10px!important;font-weight:700!important;line-height:1.25!important;white-space:normal;}
 .matchup-pos-player.right .live-stat-line{text-align:right;}

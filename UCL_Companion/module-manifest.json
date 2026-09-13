@@ -1,6 +1,6 @@
 {
   "app": "UCL Companion 2026",
-  "version": "1.10.21",
+  "version": "1.10.22",
   "channel": "Stable",
   "sourceOfTruth": "modular",
   "remotePlayerDatabaseFetch": false,
@@ -46,7 +46,7 @@
     "standalone": "build/build_standalone.py"
   },
   "notes": [
-    "v1.10.21 replaces static in-game team projections with a live revised-final estimate: pregame players keep their weekly baseline, completed players contribute actual final points, and active players contribute actual points plus only the unplayed share of their pregame projection. Player-level live score parentheses use the same model.",
+    "v1.10.22 replaces static in-game team projections with a live revised-final estimate: pregame players keep their weekly baseline, completed players contribute actual final points, and active players contribute actual points plus only the unplayed share of their pregame projection. Player-level live score parentheses use the same model.",
     "v1.10.8 fixes startup draft-utility visibility initialization by using the active LIVE_SEASON_BUILD flag instead of the removed FORCE_POST_DRAFT flag.",
     "v1.10.5 simplifies live score-plus-projection displays to compact `actual (projection)` formatting with no `proj` label.",
     "v1.10.7 immediately refreshes Sleeper and live season API data on startup whenever a saved team is available, while keeping first paint non-blocking.",

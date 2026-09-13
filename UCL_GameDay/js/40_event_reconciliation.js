@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.50 — build fragment: 40_event_reconciliation.js
+/* UCL GameDay v0.5.51 — build fragment: 40_event_reconciliation.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function gvTdCandidateKey(e){
@@ -1095,7 +1095,7 @@ function gvDeltaEvents(prevSnap,nextSnap,options={}){
         continue;
       }
 
-      // Live v0.5.50 path: stats construct the play immediately. players_points is
+      // Live v0.5.51 path: stats construct the play immediately. players_points is
       // supporting score data only and never creates a second/ghost GameView play.
       if(Math.abs(expectedDelta)<.01&&!gvIsDiscreteMajorStatPackage(statDelta,p.pos))continue;
 

@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.50 — build fragment: 99_app_startup.js
+/* UCL GameDay v0.5.51 — build fragment: 99_app_startup.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function loadPlayers(forceApi=false){
