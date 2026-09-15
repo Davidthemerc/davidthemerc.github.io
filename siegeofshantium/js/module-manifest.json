@@ -1,8 +1,8 @@
 {
   "game": "Siege of Shantium",
-  "version": "1.6.66.8.3",
+  "version": "1.6.66.8.4",
   "architecture": "modular-source-of-truth",
-  "standalone": "Siege of Shantium v1.6.66.8.3 Standalone.html",
+  "standalone": "Siege of Shantium v1.6.66.8.4 Standalone.html",
   "modules": [
     "core/language.js",
     "core/services.js",
