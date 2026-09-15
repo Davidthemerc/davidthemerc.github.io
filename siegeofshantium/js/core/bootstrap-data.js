@@ -1,4 +1,4 @@
-const RELEASE_VERSION='1.6.66.8.2';
+const RELEASE_VERSION='1.6.66.8.3';
 const SAVE_SCHEMA_VERSION='1.6.41';
 const VERSION=SAVE_SCHEMA_VERSION;
 const SAVE_KEY='siegeOfShantium.save.v1'; // legacy/current mirror

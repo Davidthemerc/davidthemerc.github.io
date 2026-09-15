@@ -1,8 +1,8 @@
 {
   "game": "Siege of Shantium",
-  "version": "1.6.66.8.2",
+  "version": "1.6.66.8.3",
   "architecture": "modular-source-of-truth",
-  "standalone": "Siege of Shantium v1.6.66.8.2 Standalone.html",
+  "standalone": "Siege of Shantium v1.6.66.8.3 Standalone.html",
   "modules": [
     "core/language.js",
     "core/services.js",
@@ -102,6 +102,7 @@
     "siege/prisoner-work-crews.js",
     "hall/crystal-ward.js",
     "war/notifications.js",
+    "ui/keyboard-controls.js",
     "core/runtime-start.js"
   ]
 }
