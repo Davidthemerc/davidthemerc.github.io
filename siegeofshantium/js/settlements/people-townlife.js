@@ -135,21 +135,98 @@ function npcRelationshipState(id){ensureNpcRelations();if(!state.world.npcRelati
 function npcFamiliarity(id){return npcRelationshipState(id).familiarity||0}
 function npcFamiliarityTier(v){return v>=9?'Trusted Contact':v>=6?'Familiar':v>=3?'Acquainted':SOSText("settlements_people_townlife.npcFamiliarityTier.001")}
 function settlementNpc(locId,npcId){return (SETTLEMENT_NPCS[locId]||[]).find(n=>n.id===npcId)||Object.values(SETTLEMENT_NPCS).flat().find(n=>n.id===npcId)}
-function npcRoleAdvice(npc,locId){
- const role=(npc.role||'').toLowerCase(),ss=settlementState(locId);
- if(role.includes('trader')||role.includes('factor')||role.includes('quartermaster'))return ss.prosperity>=65?'Trade is moving well; prices should be fairly stable today.':SOSText("settlements_people_townlife.npcRoleAdvice.001");
- if(role.includes('sergeant')||role.includes('officer')||role.includes('guard')||role.includes('watch')||role.includes('scout'))return ss.security<50?'Road security is poor enough that armed travel is sensible.':SOSText("settlements_people_townlife.npcRoleAdvice.002");
- if(role.includes('smith'))return SOSText("settlements_people_townlife.npcRoleAdvice.003");
- if(role.includes('fletcher'))return SOSText("settlements_people_townlife.npcRoleAdvice.004");
- if(role.includes('archivist')||role.includes('clerk'))return SOSText("settlements_people_townlife.npcRoleAdvice.005");
- if(role.includes('ferryman')||role.includes('runner'))return SOSText("settlements_people_townlife.npcRoleAdvice.006");if(role.includes('baker')||role.includes('cook')||role.includes('fisher'))return SOSText("settlements_people_townlife.npcRoleAdvice.007");if(role.includes('carpenter')||role.includes('wagon')||role.includes('boatwright')||role.includes('engineer')||role.includes('mender'))return SOSText("settlements_people_townlife.npcRoleAdvice.008");if(role.includes('teacher'))return SOSText("settlements_people_townlife.npcRoleAdvice.009");if(role.includes('porter')||role.includes('supplier')||role.includes('farrier'))return SOSText("settlements_people_townlife.npcRoleAdvice.010");
- return SOSText("settlements_people_townlife.npcRoleAdvice.011")
+function npcContextSeed(npc,locId,topic){
+ const raw=`${npc?.id||'npc'}|${locId}|${topic}|${state?.world?.day||0}`;let h=2166136261;
+ for(let i=0;i<raw.length;i++){h^=raw.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0
 }
-function npcRoadNews(locId){
- const hostile=state.world.parties.filter(p=>worldPartyDisposition(p)==='hostile').sort((a,b)=>worldPartyDistanceToPlayer(a)-worldPartyDistanceToPlayer(b));
- if(hostile.length){const p=hostile[0];return SOSText("settlements_people_townlife.npcRoadNews.001",p.name,worldLocation(p.destination).name,worldPartyTravelEstimate(p).label)}
- const merchants=state.world.parties.filter(p=>p.kind==='merchant');if(merchants.length){const p=pick(merchants);return SOSText("settlements_people_townlife.npcRoadNews.002",p.name,worldLocation(p.destination).name)}
- return SOSText("settlements_people_townlife.npcRoadNews.003")
+function npcContextPick(rows,npc,locId,topic){const a=(rows||[]).filter(Boolean);return a.length?a[npcContextSeed(npc,locId,topic)%a.length]:''}
+function npcContextTrade(locId,mode='either'){
+ const rows=(typeof TRADE_GOODS!=='undefined'?TRADE_GOODS:[]).filter(g=>mode==='source'?(g.sources||[]).includes(locId):mode==='demand'?(g.demand||[]).includes(locId):(g.sources||[]).includes(locId)||(g.demand||[]).includes(locId));
+ return rows.length?rows[(state.world.day+locId.length)%rows.length]:null
+}
+function npcContextFaction(npc,locId){
+ try{const a=npcFactionAlignment(npc.id);if(a&&typeof majorFaction==='function')return {id:a.faction,name:majorFaction(a.faction)?.short||a.faction,support:a.support||0}}catch(e){}
+ try{const reps=factionRepresentativesAt(locId);if(reps?.length){const f=reps[0][0];return {id:f,name:majorFaction(f)?.short||f,support:0}}}catch(e){}
+ return null
+}
+function npcContextParty(locId,predicate=null){
+ const rows=(state.world.parties||[]).filter(p=>p&&(p.location===locId||p.destination===locId||p.origin===locId)&&(!predicate||predicate(p)));
+ if(!rows.length)return null;return rows[(state.world.day+locId.length)%rows.length]
+}
+function npcContextPartyPlace(p,field){try{return p?.[field]?worldLocation(p[field]).name:null}catch(e){return null}}
+function npcContextRoleKind(npc){
+ const r=String(npc?.role||'').toLowerCase();
+ if(/healer|midwife|physician|apothec/.test(r))return'healer';
+ if(/trader|factor|merchant|broker|quartermaster|supplier|packer/.test(r))return'merchant';
+ if(/sergeant|officer|guard|watch|scout|warden|garrison/.test(r))return'guard';
+ if(/smith|fletcher|carpenter|wagon|boatwright|engineer|mender|rigger|tool|artisan/.test(r))return'artisan';
+ if(/archivist|clerk|council|speaker|liaison|teacher/.test(r))return'civic';
+ if(/ferryman|runner|teamster|porter|farrier/.test(r))return'road';
+ if(/baker|cook|fisher|farmer|herder/.test(r))return'food';
+ if(/tavern|inn|host/.test(r))return'host';
+ return'local'
+}
+function npcContextTownLine(npc,locId){
+ const ss=settlementState(locId),loc=worldLocation(locId),kind=npcContextRoleKind(npc),src=npcContextTrade(locId,'source'),need=npcContextTrade(locId,'demand'),f=npcContextFaction(npc,locId),event=typeof settlementEvent==='function'?settlementEvent(locId):null;
+ if(event&&!event.resolved)return npcContextPick([
+  `“Most talk in ${loc.name} today is about ${event.title},” ${npc.name} says. “You won't get far without hearing somebody's version of it.”`,
+  `${npc.name} glances toward the street. “${event.title}. That's what people are watching today. Everything else has had to make room for it.”`
+ ],npc,locId,'town-event');
+ if(kind==='merchant')return ss.prosperity<45?`“Business is thin,” ${npc.name} says. “${need?need.name:'Basic stock'} moves when it appears, but buyers are counting coins twice before spending them.”`:`“The market has some life in it,” ${npc.name} says. “${src?src.name:need?.name||'Goods'} are moving, and wagons aren't sitting long once they unload.”`;
+ if(kind==='guard')return ss.security<45?`“I wouldn't send anyone out alone from ${loc.name} after dark,” ${npc.name} says. “We've had too few eyes on the approaches.”`:`“The approaches have been quiet enough,” ${npc.name} says. “Patrols are making their rounds and travelers are coming through without much trouble.”`;
+ if(kind==='healer')return ss.prosperity<45?`“People are putting off treatment because coin is tight,” ${npc.name} says. “I notice it before the market does.”`:`“Nothing unusual in the sickroom,” ${npc.name} says. “A few road injuries, ordinary fevers, tired people. That's a good day.”`;
+ if(kind==='food')return need?.id==='food'?`“Food doesn't stay on a stall long here,” ${npc.name} says. “Anything fresh that reaches ${loc.name} is spoken for quickly.”`:`“The kitchens aren't scraping yet,” ${npc.name} says. “That's usually the first thing I watch.”`;
+ if(f&&Math.abs(f.support)>=2)return `“You can feel ${f.name} in the room before anyone says the name,” ${npc.name} says. “People here know where I stand.”`;
+ return ss.security<45?`“People are keeping closer to home than usual,” ${npc.name} says. “You notice fewer doors open after sundown.”`:`“${loc.name} is carrying on,” ${npc.name} says. “Work in the morning, gossip by noon, and somebody complaining about prices before supper.”`
+}
+function npcRoadNews(locId,npc=null){
+ const who=npc||{id:'road',name:'They'},hostile=(state.world.parties||[]).filter(p=>worldPartyDisposition(p)==='hostile').sort((a,b)=>worldPartyDistanceToPlayer(a)-worldPartyDistanceToPlayer(b));
+ if(hostile.length){const p=hostile[0],dest=npcContextPartyPlace(p,'destination')||'the road ahead',origin=npcContextPartyPlace(p,'origin');return `“${p.name} have been seen ${origin?`out from ${origin}, `:''}moving toward ${dest},” ${who.name} says. “If you're taking that road, don't assume you're alone on it.”`}
+ const merchants=(state.world.parties||[]).filter(p=>p.kind==='merchant'&&(p.location===locId||p.destination===locId||p.origin===locId));
+ if(merchants.length){const p=merchants[(state.world.day+locId.length)%merchants.length],dest=npcContextPartyPlace(p,'destination')||'their next stop',origin=npcContextPartyPlace(p,'origin'),manifest=p.manifest?Object.entries(p.manifest).filter(([,v])=>Number(v)>0).map(([id,v])=>`${v} ${TRADE_GOODS.find(g=>g.id===id)?.name||id}`).slice(0,2).join(' and '):'';return `“${p.name}${origin?` came in from ${origin}`:''}${dest?` and ${dest!==locId?`are bound for ${dest}`:`are finishing here`}`:''},” ${who.name} says.${manifest?` “They've got ${manifest} in the wagons.”`:''}`}
+ const roadParty=npcContextParty(locId,p=>['refugees','mercenary','coalition','redstone','bluestone','spawn'].includes(p.kind));if(roadParty){const dest=npcContextPartyPlace(roadParty,'destination');return `“${roadParty.name} passed through recently${dest?` on the way to ${dest}`:''},” ${who.name} says. “That's the freshest road news I have.”`}
+ return `“Nothing dramatic on the roads today,” ${who.name} says. “A few wagons, a few riders, and nobody arriving with blood on them. I'll take that.”`
+}
+function npcWorkLine(npc,locId,authored=''){
+ const kind=npcContextRoleKind(npc),loc=worldLocation(locId),src=npcContextTrade(locId,'source'),need=npcContextTrade(locId,'demand'),party=npcContextParty(locId,p=>p.kind==='merchant');
+ if(kind==='merchant'){if(party){const d=npcContextPartyPlace(party,'destination');return `“I'm watching ${party.name},” ${npc.name} says. “${d?`${d} is where they're headed. `:''}${need?`${need.name} should move if they brought enough of it.`:'Their prices will tell me more than their driver will.'}”`}return `“Right now I can sell ${need?.name||'anything people actually need'} faster than I can replace it,” ${npc.name} says. “That's the part of trade that keeps me awake.”`}
+ if(kind==='healer')return `“My work is simple until it isn't,” ${npc.name} says. “Keep ${need?.id==='medicine'?'medicine':'clean cloth'} close, keep the fever cases apart, and hope the next knock is somebody who can walk in under their own power.”`;
+ if(kind==='guard')return `“Most of the job is knowing who should be on which road,” ${npc.name} says. “A missing patrol worries me more than a loud drunk ever will.”`;
+ if(kind==='artisan')return `“Give me ${need?.name||src?.name||'sound material'} and enough daylight and I can keep working,” ${npc.name} says. “It's waiting on supplies that wastes the week.”`;
+ if(kind==='civic')return `“Half my work is people bringing me the same quarrel from opposite doors,” ${npc.name} says. “The other half is making sure somebody remembers what was actually decided.”`;
+ if(kind==='road')return `“I hear the road before most people do,” ${npc.name} says. “A late team, a lame mule, a missing runner—small things tell you when a route is going bad.”`;
+ if(kind==='food')return `“I know how ${loc.name} is doing by what gets left on the board at closing,” ${npc.name} says. “Lately, ${src?src.name.toLowerCase():'the staples'} haven't been lingering.”`;
+ if(authored)return authored;
+ return `“Work keeps me here in ${loc.name},” ${npc.name} says. “There is always something that needs doing before somebody important notices it.”`
+}
+function npcRoleAdvice(npc,locId){
+ const kind=npcContextRoleKind(npc),ss=settlementState(locId),need=npcContextTrade(locId,'demand'),src=npcContextTrade(locId,'source'),p=npcContextParty(locId,p=>p.kind==='merchant'),f=npcContextFaction(npc,locId);
+ if(kind==='merchant')return p?`“If you're buying today, see what ${p.name} unloads before you agree to a price,” ${npc.name} says. “One full wagon can change a market.”`:`“Don't buy ${need?.name||'scarce goods'} in a hurry,” ${npc.name} says. “Ask who arrived this morning first.”`;
+ if(kind==='guard')return ss.security<50?`“Travel armed, leave early, and don't let the company string out on the road,” ${npc.name} says. “That's where people get separated.”`:`“Keep to the used roads and arrive before dark,” ${npc.name} says. “There is no prize for finding trouble in the brush.”`;
+ if(kind==='healer')return `“Carry clean bandages and don't wait for a wound to smell wrong,” ${npc.name} says. “That's advice people usually learn once.”`;
+ if(kind==='artisan')return `“If you find good ${need?.name||src?.name||'material'} at a fair price, buy it before somebody promises you a better load next week,” ${npc.name} says.`;
+ if(kind==='civic')return f?`“If you're going to speak about ${f.name} here, know who is listening before you raise your voice,” ${npc.name} says.`:`“Ask two people before you believe a public story,” ${npc.name} says. “Ask three if the story came from an official.”`;
+ if(kind==='road')return npcRoadNews(locId,npc);
+ if(kind==='food')return `“Eat before you leave town and keep something dry in your pack,” ${npc.name} says. “Road hunger makes fools out of sensible people.”`;
+ return `“Watch who people make room for,” ${npc.name} says. “That tells you more about ${worldLocation(locId).name} than the signs on the doors.”`
+}
+function npcPersonalLine(npc,locId,authored=''){
+ const rr=typeof npcResidenceRecord==='function'?npcResidenceRecord(npc.id):null,home=rr?.home||npc.home||locId,current=rr?.current||locId,kind=npcContextRoleKind(npc);
+ if(rr&&current!==home)return `“I still think of ${worldLocation(home).name} as home,” ${npc.name} says. “But I've been in ${worldLocation(current).name} long enough to know which floorboards complain at night.”`;
+ if(kind==='road')return `“I learned early that roads remember people,” ${npc.name} says. “You pass the same gatekeepers, the same cooks, the same tired horses. After a while they remember you too.”`;
+ if(kind==='guard')return `“I didn't choose this work because I enjoy giving orders,” ${npc.name} says. “I chose it because I got tired of watching other people decide who was worth protecting.”`;
+ if(kind==='merchant')return `“My first trade was small enough to carry under one arm,” ${npc.name} says. “I made three bad bargains before I made a good one. I remember all four.”`;
+ if(kind==='healer')return `“You learn quickly which cries mean pain and which mean fear,” ${npc.name} says. “Fear is usually the harder one to treat.”`;
+ if(authored)return authored;
+ return `“I've been in ${worldLocation(home).name} long enough that people know where to find me,” ${npc.name} says. “Some days that's a comfort. Some days it isn't.”`
+}
+function npcChangedLine(npc,locId){
+ const ss=settlementState(locId),mem=npcRelationshipState(npc.id).memory||[],last=mem.length?mem[mem.length-1]:null,need=npcContextTrade(locId,'demand');
+ if(last&&last.day<state.world.day)return `“Since we last spoke? ${last.text},” ${npc.name} says. “That hasn't quite left people's minds yet.”`;
+ if(ss.security<45)return `“More doors are barred before dark,” ${npc.name} says. “That wasn't true a few weeks ago.”`;
+ if(ss.prosperity<45)return `“There are more empty places on the market boards,” ${npc.name} says. “${need?need.name+' is':'Goods are'} harder to replace once sold.”`;
+ if(ss.prosperity>=70)return `“More wagons are staying to unload instead of passing through,” ${npc.name} says. “You notice it in the noise before you notice it in the ledgers.”`;
+ return `“Nothing has broken all at once,” ${npc.name} says. “It's smaller things—different faces at the stalls, different patrols at the road, people talking about different worries.”`
 }
 function growNpcFamiliarity(locId,npc,r){if(r.lastTalkDay===state.world.day)return false;r.lastTalkDay=state.world.day;r.conversations=(r.conversations||0)+1;const before=r.familiarity||0;r.familiarity=Math.min(10,before+1);state.world.npcFamiliarity[npc.id]=r.familiarity;if(before===0)changeLocalReputation(locId,1,SOSText("settlements_people_townlife.growNpcFamiliarity.001",npc.name));return true}
 function npcFavor(npc,locId,r){
@@ -170,13 +247,13 @@ function npcFavor(npc,locId,r){
 }
 function talkSettlementNPC(locId,npcId,topic){
  const npc=settlementNpc(locId,npcId);if(!npc)return showSettlementPeople(locId);const r=npcRelationshipState(npcId),d=NPC_DIALOGUE[npcId]||{};syncSengiaNpcMemory(npc,locId);const first=growNpcFamiliarity(locId,npc,r);let text='';
- if(topic==='town')text=settlementConditionText(locId);
- if(topic==='roads'){text=npcRoadNews(locId);if(r.lastRoadInfoDay!==state.world.day){r.lastRoadInfoDay=state.world.day;if(r.familiarity>=5&&chance(.35)){const c=revealCompanionRumor();if(c)text+=SOSText("settlements_people_townlife.talkSettlementNPC.001",allyDef(c.id).name,worldLocation(c.location).name)}}}
- if(topic==='work')text=d.work||SOSText("settlements_people_townlife.talkSettlementNPC.002",npc.name,worldLocation(locId).name);
+ if(topic==='town')text=npcContextTownLine(npc,locId);
+ if(topic==='roads'){text=npcRoadNews(locId,npc);if(r.lastRoadInfoDay!==state.world.day){r.lastRoadInfoDay=state.world.day;if(r.familiarity>=5&&chance(.35)){const c=revealCompanionRumor();if(c)text+=` “One more thing: I've heard ${allyDef(c.id).name} was seen near ${worldLocation(c.location).name}.”`}}}
+ if(topic==='work')text=npcWorkLine(npc,locId,d.work||'');
  if(topic==='advice')text=npcRoleAdvice(npc,locId);
- if(topic==='personal')text=d.background||SOSText("settlements_people_townlife.talkSettlementNPC.003",npc.name);
- if(topic==='changed')text=sengiaNpcReactionText(npc,locId);
- if(first)npcMemoryAdd(npcId,SOSText("settlements_people_townlife.talkSettlementNPC.004",npc.name,worldLocation(locId).name),1);save();actionResult(npc.name,`${text}${first?' You part on slightly more familiar terms.':''}`,'info',()=>showSettlementNPCConversation(locId,npcId))
+ if(topic==='personal')text=npcPersonalLine(npc,locId,d.background||'');
+ if(topic==='changed')text=npcChangedLine(npc,locId);
+ if(first)npcMemoryAdd(npcId,`${npc.name} and the Guardian spoke in ${worldLocation(locId).name}.`,1);save();actionResult(npc.name,text,'info',()=>showSettlementNPCConversation(locId,npcId))
 }
 function showSettlementNPCConversation(locId,npcId){modalRouteEnter(SOSText("settlements_people_townlife.showSettlementNPCConversation.001"),Array.from(arguments));
  const npc=settlementNpc(locId,npcId);if(!npc)return showSettlementPeople(locId);syncSengiaNpcMemory(npc,locId);const r=npcRelationshipState(npcId),tier=npcFamiliarityTier(r.familiarity),att=npcAttitudeLabel(r),red=locationRegion(locId)==='redstone',roadReaction=travelerNpcReaction(locId,npc),compInterest=npcCompanionInterest(locId,npc);
@@ -408,9 +485,9 @@ function wireTownLifeMigratedSettlementContent(locId){
  wireSettlementEvent(locId);if($('#helpLocalProblem'))$('#helpLocalProblem').onclick=()=>helpSettlementProblem(locId);document.querySelectorAll('[data-openopportunity]').forEach(b=>b.onclick=()=>showRegionalOpportunity(b.dataset.openopportunity));if($('#townRegionalSimulation'))$('#townRegionalSimulation').onclick=showRegionOverview;document.querySelectorAll('[data-townstoryhere]').forEach(b=>b.onclick=()=>{if(!companionStoryScene(b.dataset.townstoryhere))showCompanionStory(b.dataset.townstoryhere)});document.querySelectorAll('[data-towndigmap]').forEach(b=>b.onclick=()=>recoverTreasureMap(b.dataset.towndigmap));if($('#townLedgerDecision'))$('#townLedgerDecision').onclick=showLedgerResolution;const site=adventureSiteForLocation(locId);if($('#townExploreSite')&&site)$('#townExploreSite').onclick=()=>showAdventureSite(site.location)
 }
 function showOpenWorldSettlementTownLife(locId=state.world.location){modalRouteEnter(SOSText("settlements_people_townlife.showOpenWorldSettlementTownLife.001"),Array.from(arguments));
- refreshTownLife(locId);const loc=worldLocation(locId),T=townLifeState(),rumors=T.rumors[locId]||[],notices=T.notices[locId]||[],visual=townVisualState(locId),storyArcs=activeRegionalStories().filter(a=>regionalStoryTarget(a.id)===locId||regionalStoryDef(a.id).start===locId),localContacts=knownTravelersAtSettlement(locId),migrated=townLifeMigratedSettlementContentHTML(locId);
- overlay(SOSText("settlements_people_townlife.showOpenWorldSettlementTownLife.002",esc(loc.name),esc(townSceneText(locId)),settlementSnapshotHTML(locId),`<p class="living-welcome">${esc(settlementWelcomeText(locId))}</p>${migrated}${regionalLocalLifeHTML(locId)}`,locationRegion(locId)==='redstone'?redstonePolicyNoticeHTML(locId):'',visual.length?`<h3>What You Can See</h3>${visual.map(x=>`<div class="card compact">${esc(x)}</div>`).join('')}`:'',storyArcs.length?`<h3>Regional Stories</h3>${storyArcs.map(a=>`<button class="regional-story-inline" data-townstory="${a.id}"><b>${esc(regionalStoryDef(a.id).title)}</b><br><small>${esc(regionalStoryObjective(a.id))}</small></button>`).join('')}`:'',esc(settlementVisitorSummary(locId)),'',populationAtSettlementHTML(locId),companionTownInterjection(locId),companionSocialTownHTML(locId),socialEventHTML(locId),socialChainHTML(locId),socialLifeHistoryHTML(locId),rumors.map(x=>`<div class="town-rumor">${esc(x)}</div>`).join(''),notices.map(x=>`<div class="town-notice">${esc(x)}</div>`).join(''),townLifeLocalAffairsReadout(locId),travelerTownLifeHTML(locId)) ,true);
- wireTownLifeMigratedSettlementContent(locId);document.querySelectorAll('[data-townstory]').forEach(b=>b.onclick=()=>showRegionalStory(b.dataset.townstory));document.querySelectorAll('[data-townroadcontact]').forEach(b=>b.onclick=()=>showTownTravelerContact(locId,b.dataset.townroadcontact,'town'));if($('#openCompanionSocialRequest')){const cr=companionSocialRequests(locId)[0];if(cr)$('#openCompanionSocialRequest').onclick=()=>showCompanionSocialRequest(cr.id)}if($('#openSocialLifeEvent'))$('#openSocialLifeEvent').onclick=()=>showSocialLifeEvent(locId);document.querySelectorAll('[data-socialchain]').forEach(b=>b.onclick=()=>showSocialChain(b.dataset.socialchain));if($('#specialAct'))$('#specialAct').onclick=()=>settlementSpecialAction(locId);$('#townPeople').onclick=()=>navigateTownMenu('people',{locId});$('#townSocialize').onclick=()=>townLifeSocialize(locId);wireClose()
+ refreshTownLife(locId);const loc=worldLocation(locId),T=townLifeState(),rumors=T.rumors[locId]||[],notices=T.notices[locId]||[],visual=townVisualState(locId),regionalCrossing=regionConnectionAt(locId),regionalCrossingHTML=regionalCrossing?`<h3>Regional Travel</h3><div class=\"mountain-route notice\"><b>${esc(regionalCrossing.name)}</b><br>${esc(regionalCrossing.desc)}<br><small>${regionalCrossing.days} travel day${regionalCrossing.days===1?'':'s'}</small><br><button id=\"townRegionalTravel\">Travel to ${esc(worldLocation(regionConnectionOther(regionalCrossing,locId)).name)}</button></div>`:'',storyArcs=activeRegionalStories().filter(a=>regionalStoryTarget(a.id)===locId||regionalStoryDef(a.id).start===locId),localContacts=knownTravelersAtSettlement(locId),migrated=townLifeMigratedSettlementContentHTML(locId);
+ overlay(SOSText("settlements_people_townlife.showOpenWorldSettlementTownLife.002",esc(loc.name),esc(townSceneText(locId)),settlementSnapshotHTML(locId),`<p class="living-welcome">${esc(settlementWelcomeText(locId))}</p>${migrated}${regionalLocalLifeHTML(locId)}`,locationRegion(locId)==='redstone'?redstonePolicyNoticeHTML(locId):'',visual.length?`<h3>What You Can See</h3>${visual.map(x=>`<div class="card compact">${esc(x)}</div>`).join('')}`:'',storyArcs.length?`<h3>Regional Stories</h3>${storyArcs.map(a=>`<button class="regional-story-inline" data-townstory="${a.id}"><b>${esc(regionalStoryDef(a.id).title)}</b><br><small>${esc(regionalStoryObjective(a.id))}</small></button>`).join('')}`:'',esc(settlementVisitorSummary(locId)),regionalCrossingHTML,populationAtSettlementHTML(locId),companionTownInterjection(locId),companionSocialTownHTML(locId),socialEventHTML(locId),socialChainHTML(locId),socialLifeHistoryHTML(locId),rumors.map(x=>`<div class="town-rumor">${esc(x)}</div>`).join(''),notices.map(x=>`<div class="town-notice">${esc(x)}</div>`).join(''),townLifeLocalAffairsReadout(locId),travelerTownLifeHTML(locId)) ,true);
+ wireTownLifeMigratedSettlementContent(locId);if($('#townRegionalTravel'))$('#townRegionalTravel').onclick=()=>commitInterRegionJourney(regionalCrossing,locId,regionConnectionOther(regionalCrossing,locId));document.querySelectorAll('[data-townstory]').forEach(b=>b.onclick=()=>showRegionalStory(b.dataset.townstory));document.querySelectorAll('[data-townroadcontact]').forEach(b=>b.onclick=()=>showTownTravelerContact(locId,b.dataset.townroadcontact,'town'));if($('#openCompanionSocialRequest')){const cr=companionSocialRequests(locId)[0];if(cr)$('#openCompanionSocialRequest').onclick=()=>showCompanionSocialRequest(cr.id)}if($('#openSocialLifeEvent'))$('#openSocialLifeEvent').onclick=()=>showSocialLifeEvent(locId);document.querySelectorAll('[data-socialchain]').forEach(b=>b.onclick=()=>showSocialChain(b.dataset.socialchain));if($('#specialAct'))$('#specialAct').onclick=()=>settlementSpecialAction(locId);$('#townPeople').onclick=()=>navigateTownMenu('people',{locId});$('#townSocialize').onclick=()=>townLifeSocialize(locId);wireClose()
 }
 function townLifeDailyTick(){
  if(!isOpenWorld())return;const T=townLifeState();for(const id of Object.keys(state.world.settlements)){if(T.jobs[id]?.status==='available'&&T.jobs[id].expiresDay<state.world.day){T.jobs[id].status='expired';if(T.jobs[id].workOfferId)updateWorldWorkOffer(T.jobs[id].workOfferId,{status:'expired'})};if(chance(.45))refreshTownLife(id,true)}
@@ -496,7 +573,18 @@ function npcLocalProblem(npc,locId,r){
 
 
 function ensureRegionalSimulation(){ensureWorldState();const r=state.world.regionalSimulation||(state.world.regionalSimulation={threads:[],flows:[],routePressure:{},lastResponseDay:{}});if(!Array.isArray(r.threads))r.threads=[];if(!Array.isArray(r.flows))r.flows=[];if(!r.routePressure)r.routePressure={};if(!r.lastResponseDay)r.lastResponseDay={};if(!Array.isArray(r.opportunities))r.opportunities=[];if(!Array.isArray(r.interventions))r.interventions=[];return r}
-function regionalSettlements(region=null){return WORLD_LOCATIONS.filter(x=>state.world.settlements?.[x.id]&&(!region||locationRegion(x)===region))}
+let SOSRegionalDailyReadCache=null;
+function beginRegionalDailyReadCache(){
+ const all=WORLD_LOCATIONS.filter(x=>state.world.settlements?.[x.id]),byRegion=new Map(),pressure=new Map();
+ for(const loc of all){const r=locationRegion(loc);if(!byRegion.has(r))byRegion.set(r,[]);byRegion.get(r).push(loc)}
+ const rp=ensureRegionalSimulation().routePressure||{},sum=new Map(),count=new Map();
+ for(const [k,v] of Object.entries(rp)){const parts=k.split('|');for(const id of parts){sum.set(id,(sum.get(id)||0)+(v||0));count.set(id,(count.get(id)||0)+1)}}
+ for(const loc of all)pressure.set(loc.id,(count.get(loc.id)||0)?(sum.get(loc.id)||0)/count.get(loc.id):0);
+ SOSRegionalDailyReadCache={state,day:state.world.day,all,byRegion,pressure}
+}
+function endRegionalDailyReadCache(){SOSRegionalDailyReadCache=null}
+function regionalDailyReadCache(){return SOSRegionalDailyReadCache&&SOSRegionalDailyReadCache.state===state&&SOSRegionalDailyReadCache.day===state.world.day?SOSRegionalDailyReadCache:null}
+function regionalSettlements(region=null){const c=regionalDailyReadCache();if(c)return region?[...(c.byRegion.get(region)||[])]:c.all;return WORLD_LOCATIONS.filter(x=>state.world.settlements?.[x.id]&&(!region||locationRegion(x)===region))}
 
 function regionalEvidenceState(){const r=ensureRegionalSimulation();if(!r.evidence)r.evidence={settlements:{},routes:{},history:[]};return r.evidence}
 function addSettlementEvidence(locId,text,type='info',days=4){
@@ -504,8 +592,8 @@ function addSettlementEvidence(locId,text,type='info',days=4){
 }
 function settlementEvidence(locId){const E=regionalEvidenceState();return (E.settlements[locId]||[]).filter(x=>x.expiresDay>=state.world.day)}
 function routeEvidenceKey(a,b){return routePressureKey(a,b)}
-function updateRouteEvidence(a,b,reason=''){
- if(!a||!b||a===b)return;const E=regionalEvidenceState(),k=routeEvidenceKey(a,b),p=routePressure(a,b);let status=p>=7?'dangerous':p>=4?'risky':p>=1?'watched':'open';
+function updateRouteEvidence(a,b,reason='',knownPressure=null){
+ if(!a||!b||a===b)return;const E=regionalEvidenceState(),k=routeEvidenceKey(a,b),p=knownPressure==null?routePressure(a,b):Number(knownPressure)||0;let status=p>=7?'dangerous':p>=4?'risky':p>=1?'watched':'open';
  E.routes[k]={a,b,status,pressure:p,lastDay:state.world.day,reason};return E.routes[k]
 }
 function routeEvidence(a,b){const k=routeEvidenceKey(a,b),E=regionalEvidenceState();return E.routes[k]||updateRouteEvidence(a,b)}

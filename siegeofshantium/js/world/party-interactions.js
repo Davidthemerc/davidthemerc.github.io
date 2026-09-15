@@ -51,7 +51,7 @@ function paidRoadInformation(p,cost){
  const c=chance(.45)?revealCompanionRumor():null;
  const detail=c?SOSText("world_party_interactions.paidRoadInformation.005",allyDef(c.id).name,worldLocation(c.location).name):SOSText("world_party_interactions.paidRoadInformation.006");
  recordWorldHistory(SOSText("world_party_interactions.paidRoadInformation.007",state.name,p.name,cost),'info','encounter');
- save();actionResult(SOSText("world_party_interactions.paidRoadInformation.008"),SOSText("world_party_interactions.paidRoadInformation.009",p.name,detail),'good',renderOpenWorld)
+ save();actionResult(SOSText("world_party_interactions.paidRoadInformation.008"),`${partyRoadReportText(p)}${detail?`\n\n${detail}`:''}`,'good',renderOpenWorld)
 }
 function threatenForInformation(p){
  if(!canEngageWorldParty(p))return actionResult(SOSText("world_party_interactions.threatenForInformation.001"),SOSText("world_party_interactions.threatenForInformation.002"),'info',renderOpenWorld);
@@ -63,7 +63,7 @@ function threatenForInformation(p){
    p.infoSold=true;gainScoutingIntel(2,{type:'coerced_road_contact',location:p.location,source:p.name,sourceRef:p.actorRef||`world_party:${p.id}`,summary:SOSText("world_party_interactions.intelGain.002",p.name,worldLocation(p.location).name),reliability:66,precision:'route'});
    const c=chance(.55)?revealCompanionRumor():null;
    recordWorldHistory(SOSText("world_party_interactions.threatenForInformation.005",state.name,p.name),'bad','encounter');
-   save();return actionResult(SOSText("world_party_interactions.threatenForInformation.006"),SOSText("world_party_interactions.threatenForInformation.007",p.name,c?` They also reveal that ${allyDef(c.id).name} was seen near ${worldLocation(c.location).name}.`:''),'bad',renderOpenWorld)
+   save();return actionResult(SOSText("world_party_interactions.threatenForInformation.006"),`${partyRoadReportText(p)}${c?`\n\nUnder pressure, they also say ${allyDef(c.id).name} was seen near ${worldLocation(c.location).name}.`:''}\n\nThey make it clear the Guardian will be remembered for how the information was taken.`,'bad',renderOpenWorld)
  }
  state.world.factionStanding[p.faction]=(state.world.factionStanding[p.faction]||0)-1;
  p.attitude='wary';recordWorldHistory(SOSText("world_party_interactions.threatenForInformation.008",state.name,p.name),'bad','encounter');save();
@@ -110,35 +110,112 @@ const PARTY_TALK_TOPICS={
 function partyTalkTopics(p){const base=[...(PARTY_TALK_TOPICS[p.kind]||[['route',SOSText("world_party_interactions.partyTalkTopics.001")],['destination',SOSText("world_party_interactions.partyTalkTopics.002")],['help',SOSText("world_party_interactions.partyTalkTopics.003")]])];if(p?.travelerId&&travelerIdentityEligibleKind(p.kind))base.splice(Math.min(2,base.length),0,['people',p.kind==='refugees'?'Ask About Their Family':SOSText("world_party_interactions.partyTalkTopics.004")]);return base}
 function ensurePartySocial(p){if(!p.social)p.social={talks:0,topics:{},firstDay:state.world.day,lastDay:state.world.day,familiarity:0,helped:0};if(!p.social.topics)p.social.topics={};if(!p.travelerId)assignTravelerIdentity(p,worldPartyDisplayRegion(p));return p.social}
 function partyRelationshipLabel(p){const s=ensurePartySocial(p),d=worldPartyDisposition(p);if(s.familiarity>=4)return SOSText("world_party_interactions.partyRelationshipLabel.001");if(s.familiarity>=2)return SOSText("world_party_interactions.partyRelationshipLabel.002");return d==='friendly'?'Friendly':d==='wary'?'Wary':SOSText("world_party_interactions.partyRelationshipLabel.003")}
-function partyTalkText(p,topic){
- const loc=worldLocation(p.location||state.world.location),dest=worldLocation(p.destination),origin=worldLocation(p.origin||p.location),ss=settlementState(p.destination);
- if(topic==='people')return travelerPeopleConversationText(p);
- if(topic==='route'){const pressure=routePressure(p.location||p.origin,p.destination);return pressure>=6?SOSText("world_party_interactions.partyTalkText.001",p.name,dest.name):pressure>=3?SOSText("world_party_interactions.partyTalkText.002",p.name,dest.name):SOSText("world_party_interactions.partyTalkText.003",p.name,dest.name)}
- if(topic==='trade')return SOSText("world_party_interactions.partyTalkText.004",p.name,manifestText(p.manifest),dest.name,ss.prosperity<40?'They expect shortages there to keep prices high.':'They expect ordinary bargaining unless conditions change before arrival.');
- if(topic==='destination')return SOSText("world_party_interactions.partyTalkText.005",p.name,dest.name,p.purpose||partyPurpose(p.kind));
- if(topic==='work')return SOSText("world_party_interactions.partyTalkText.006",p.name,String(p.purpose||'road work').toLowerCase());
- if(topic==='faction')return p.kind==='mercenary'?SOSText("world_party_interactions.partyTalkText.007",p.name):SOSText("world_party_interactions.partyTalkText.008",p.name,p.faction,loc.name,factionPresenceTier(factionPresenceAt(loc.id)?.[p.faction]||0).toLowerCase());
- if(topic==='needs')return SOSText("world_party_interactions.partyTalkText.009",p.name,dest.name);
- if(topic==='origin')return SOSText("world_party_interactions.partyTalkText.010",p.name,origin.name);
- if(topic==='help'){const offer=spotContractOffer(p,true);return offer?SOSText("world_party_interactions.partyTalkText.011",p.name):SOSText("world_party_interactions.partyTalkText.012",p.name)}
- return SOSText("world_party_interactions.partyTalkText.013",p.name)
+function partyConversationSpokesperson(p){
+ const r=p?.travelerId?travelerRegistryState().records[p.travelerId]:null,sp=r?travelerSpokesperson(r):null;
+ return sp?.name||p?.contactName||p?.leaderName||p?.name||'The traveler'
+}
+function partyConversationManifestLead(p){
+ const rows=Object.entries(p?.manifest||{}).filter(([,q])=>q>0).sort((a,b)=>b[1]-a[1]);if(!rows.length)return null;
+ const [id,qty]=rows[0],g=worldGood(id);return {id,qty,name:g?.name||id,demand:tradeDemandScore(p.destination,id),originRole:tradeGoodRole(p.origin||p.location,id),destRole:tradeGoodRole(p.destination,id)}
+}
+function partyConversationNearbyThreat(p){
+ const region=worldPartyDisplayRegion(p),rows=(state.world.parties||[]).filter(x=>x.id!==p.id&&['bandits','raiders'].includes(x.kind)&&worldPartyDisplayRegion(x)===region);
+ return rows.sort((a,b)=>{const as=(a.location===p.location?3:0)+(a.destination===p.destination?2:0),bs=(b.location===p.location?3:0)+(b.destination===p.destination?2:0);return bs-as})[0]||null
+}
+function ensurePartyConversationContext(p){
+ if(!p.conversationContext)p.conversationContext={createdDay:state.world.day,topics:{}};const c=p.conversationContext;
+ if(!c.topics)c.topics={};
+ if(p.kind==='refugees'&&!c.departureDetail){
+   const o=settlementState(p.origin||p.location),origin=worldLocation(p.origin||p.location).name;
+   const reasons=[];
+   if((o.security||50)<45)reasons.push(`We stopped letting the children sleep near the door in ${origin}. Too many people were checking shutters after dark.`);
+   if((o.prosperity||50)<45)reasons.push(`By the last market day in ${origin}, there were more people asking for work than offering it. We sold what we could carry and left.`);
+   if((o.prosperity||50)>=45&&(o.security||50)>=45)reasons.push(`Nothing dramatic drove us out of ${origin}. Work thinned out, two households we relied on moved first, and staying stopped making sense.`);
+   c.departureDetail=pick(reasons.length?reasons:[`We left ${origin} because keeping everyone fed there was getting harder each week.`]);
+ }
+ return c
+}
+function partyTopicSnapshot(p,topic){
+ const c=ensurePartyConversationContext(p),snap={day:state.world.day,location:p.location,destination:p.destination,pressure:routePressure(p.location||p.origin,p.destination),prosperity:settlementState(p.destination).prosperity,manifest:manifestText(p.manifest)};c.topics[topic]=snap;return snap
+}
+function partyRepeatLead(p,topic){
+ const c=ensurePartyConversationContext(p),last=c.topics?.[topic];if(!last)return'';
+ const nowPressure=routePressure(p.location||p.origin,p.destination),dest=worldLocation(p.destination).name;
+ if(topic==='route'){
+   if(nowPressure>last.pressure)return `“It has gotten worse since we last spoke,” ${partyConversationSpokesperson(p)} says. “The road to ${dest} is drawing more trouble now.”\n\n`;
+   if(nowPressure<last.pressure)return `“The road has quieted some since we last spoke,” ${partyConversationSpokesperson(p)} says. “Not safe enough to get careless, but better.”\n\n`;
+ }
+ if(topic==='trade'&&last.manifest!==manifestText(p.manifest))return `“The load has changed since we last spoke,” ${partyConversationSpokesperson(p)} says.\n\n`;
+ if(p.location!==last.location)return `“We have covered some ground since we last spoke,” ${partyConversationSpokesperson(p)} says.\n\n`;
+ return `“Nothing important has changed since we last spoke,” ${partyConversationSpokesperson(p)} says.\n\n`
+}
+function partyDialogueCleanSentence(text){
+ let s=String(text||'').replace(/\s+/g,' ').trim().replace(/[.?!]+$/,'');if(!s)return'';s=s.charAt(0).toUpperCase()+s.slice(1);return `${s}.`
+}
+function partyDialogueJoin(...parts){return parts.map(p=>partyDialogueCleanSentence(p)).filter(Boolean).join(' ')}
+function partyTalkText(p,topic,prior=0){
+ const loc=worldLocation(p.location||state.world.location),dest=worldLocation(p.destination),origin=worldLocation(p.origin||p.location),ss=settlementState(p.destination),who=partyConversationSpokesperson(p),lead=partyConversationManifestLead(p),threat=partyConversationNearbyThreat(p),pressure=routePressure(p.location||p.origin,p.destination),repeat=prior?partyRepeatLead(p,topic):'';
+ ensurePartyConversationContext(p);
+ let text='';
+ if(topic==='people')text=travelerPeopleConversationText(p);
+ else if(topic==='route'){
+   if(threat)text=`“We saw ${threat.name} near ${worldLocation(threat.location).name},” ${who} says. “They were moving toward ${worldLocation(threat.destination).name}. We gave them room.”`;
+   else if(pressure>=6)text=`“Do not take the road to ${dest.name} lightly,” ${who} says. “We have been keeping the wagons close, posting two watches at night, and stopping well before dark.”`;
+   else if(pressure>=3)text=`“The road to ${dest.name} is passable,” ${who} says. “We have seen enough trouble that nobody is wandering far from the wagons when we stop.”`;
+   else text=`“The road toward ${dest.name} has been quiet for us,” ${who} says. “A broken wheel has worried me more than bandits this stretch.”`;
+ }else if(topic==='trade'){
+   if(!lead)text=`“There is not much worth calling a cargo this trip,” ${who} says. “Mostly provisions and what the company needs for itself.”`;
+   else{const rest=Object.entries(p.manifest||{}).filter(([id,q])=>q>0&&id!==lead.id).map(([id,q])=>`${worldGood(id)?.name||id} ×${q}`).join(', '),market=lead.demand>=2?`${dest.name} has been short of ${lead.name.toLowerCase()}, so that is the load I expect to move first.`:lead.demand>0?`There should be buyers for ${lead.name.toLowerCase()} in ${dest.name}, if nobody beats us there.`:`${lead.name} may be the slow part of the load in ${dest.name}; I may have to hold it or take less.`;text=`“We have ${lead.qty} lot${lead.qty===1?'':'s'} of ${lead.name.toLowerCase()}${rest?`, plus ${rest}`:''},” ${who} says. “${market}”`}
+ }else if(topic==='destination'){
+   const condition=(ss.security||50)<40?'The guards there have enough trouble already.':(ss.prosperity||50)<40?'Money is tight there; we are not counting on an easy arrival.':'They are expecting us.';
+   const assignment=partyDialogueCleanSentence(typeof worldPartySpokenAssignment==='function'?worldPartySpokenAssignment(p):`We're bound for ${dest.name}.`);
+   text=`“${dest.name} is the end of this leg,” ${who} says. “${partyDialogueJoin(assignment,condition)}”`;
+ }else if(topic==='work'){
+   const assignment=partyDialogueCleanSentence(typeof worldPartySpokenAssignment==='function'?worldPartySpokenAssignment(p):`We're bound for ${dest.name}.`);text=`“${assignment}” ${who} says.`;
+ }else if(topic==='faction'){
+   if(p.kind==='mercenary')text=`“The contract pays us, not the banner,” ${who} says. “We are headed for ${dest.name}. If the terms change, we renegotiate before we bleed for somebody else's quarrel.”`;
+   else text=`“We are ${p.faction},” ${who} says. “Our orders take us from ${origin.name} toward ${dest.name}. Around ${loc.name}, that means keeping our colors visible and our hands off anyone who leaves us alone.”`;
+ }else if(topic==='needs'){
+   const need=(ss.prosperity||50)<40?'food, dry blankets, and work once we arrive':'a safe place to sleep for a few nights and somebody who can tell us where work is';text=`“What we need most is ${need},” ${who} says. “We are trying to reach ${dest.name} without selling the last things we still own.”`;
+ }else if(topic==='origin')text=`${ensurePartyConversationContext(p).departureDetail}
+
+“${dest.name} was the first place everyone could agree to try,” ${who} adds.`;
+ else if(topic==='help'){
+   const offer=spotContractOffer(p,true);text=offer?`“If you really mean to help, I have something specific,” ${who} says. “${offer.desc}”`:`“Not today,” ${who} says. “If that changes before ${dest.name}, I will ask plainly.”`;
+ }else text=`“We are still bound for ${dest.name},” ${who} says. “That is the part that matters today.”`;
+ return `${repeat}${text}`
 }
 function discussWorldPartyTopic(p,topic){
  if(!canEngageWorldParty(p))return actionResult(SOSText("world_party_interactions.discussWorldPartyTopic.001"),SOSText("world_party_interactions.discussWorldPartyTopic.002"),'info',renderOpenWorld);
  const s=ensurePartySocial(p),prior=s.topics[topic]||0;s.topics[topic]=prior+1;s.talks++;s.lastDay=state.world.day;if(!prior)s.familiarity=Math.min(6,s.familiarity+1);
- syncTravelerRecord(p);const text=partyTalkText(p,topic);syncTravelerRecord(p,'meeting',topic);recordWorldHistory(SOSText("world_party_interactions.discussWorldPartyTopic.003",state.name,p.name,text),'info',SOSText("world_party_interactions.discussWorldPartyTopic.004"));save();
- actionResult(prior?'Continuing the Conversation':SOSText("world_party_interactions.discussWorldPartyTopic.005"),`${text}${prior?'\n\nYou have discussed this subject with them before.':''}`,'info',()=>showFriendlyPartyInteraction(p))
+ syncTravelerRecord(p);const text=partyTalkText(p,topic,prior);partyTopicSnapshot(p,topic);syncTravelerRecord(p,'meeting',topic);recordWorldHistory(SOSText("world_party_interactions.discussWorldPartyTopic.003",state.name,p.name,text),'info',SOSText("world_party_interactions.discussWorldPartyTopic.004"));save();
+ actionResult(prior?'Road Update':SOSText("world_party_interactions.discussWorldPartyTopic.005"),text,'info',()=>showFriendlyPartyInteraction(p))
+}
+function partyRoadReportText(p){
+ const who=partyConversationSpokesperson(p),dest=worldLocation(p.destination).name,threat=partyConversationNearbyThreat(p),pressure=routePressure(p.location||p.origin,p.destination);
+ if(threat)return `“We saw ${threat.name} near ${worldLocation(threat.location).name},” ${who} says. “They were headed toward ${worldLocation(threat.destination).name}. If you are following us toward ${dest}, keep your eyes open there.”`;
+ if(pressure>=6)return `“The road to ${dest} is bad enough that we doubled the night watch,” ${who} says. “Nobody leaves the fire alone, and we move at first light.”`;
+ if(pressure>=3)return `“There is traffic moving toward ${dest}, but people are bunching up before the lonely stretches,” ${who} says. “We have been doing the same.”`;
+ return `“We have had a quiet stretch toward ${dest},” ${who} says. “No attacks, no blocked road, and enough travelers coming the other way to know the road is still open.”`
+}
+function partyAidAcceptanceText(p,cost){
+ const who=partyConversationSpokesperson(p),dest=worldLocation(p.destination).name;
+ if(p.kind==='refugees')return `“Thank you,” ${who} says. “This buys food and dry bedding before ${dest}. That means we do not have to sell anything else tonight.”`;
+ if(p.kind==='merchant')return `“That covers feed, lamp oil, and a little repair work before ${dest},” ${who} says. “Useful things, not ceremony.”`;
+ if(['coalition','redstone','bluestone','spawn'].includes(p.kind))return `“We will put it toward rations and road stores before ${dest},” ${who} says. “Much appreciated.”`;
+ if(p.kind==='mercenary')return `“That keeps the company supplied another stretch,” ${who} says. “We will remember who paid without asking for a favor first.”`;
+ return `“We can use that before ${dest},” ${who} says. “Thank you.”`
 }
 function partyAidCost(p){return p.kind==='refugees'?12:p.kind==='merchant'?8:10}
 function giveWorldPartyAid(p){
  if(!canEngageWorldParty(p))return actionResult(SOSText("world_party_interactions.giveWorldPartyAid.001"),SOSText("world_party_interactions.giveWorldPartyAid.002"),'info',renderOpenWorld);const cost=partyAidCost(p);
  if(state.gold<cost)return actionResult(SOSText("world_party_interactions.giveWorldPartyAid.003"),SOSText("world_party_interactions.giveWorldPartyAid.004",cost),'info',()=>showFriendlyPartyInteraction(p));
  pay(state,cost);const s=ensurePartySocial(p);s.helped++;s.familiarity=Math.min(6,s.familiarity+1);syncTravelerRecord(p);ensureTravelerGroupIdentity(p);state.reputation++;state.world.factionStanding[p.faction]=(state.world.factionStanding[p.faction]||0)+1;
- syncTravelerRecord(p,'help',SOSText("world_party_interactions.giveWorldPartyAid.005",cost));maybeGrantTravelerFavor(p,SOSText("world_party_interactions.giveWorldPartyAid.006"));recordWorldHistory(SOSText("world_party_interactions.giveWorldPartyAid.007",state.name,cost,p.name),'good',SOSText("world_party_interactions.giveWorldPartyAid.008"));save();actionResult(SOSText("world_party_interactions.giveWorldPartyAid.009"),SOSText("world_party_interactions.giveWorldPartyAid.010",p.name),'good',()=>showFriendlyPartyInteraction(p))
+ syncTravelerRecord(p,'help',SOSText("world_party_interactions.giveWorldPartyAid.005",cost));maybeGrantTravelerFavor(p,SOSText("world_party_interactions.giveWorldPartyAid.006"));recordWorldHistory(SOSText("world_party_interactions.giveWorldPartyAid.007",state.name,cost,p.name),'good',SOSText("world_party_interactions.giveWorldPartyAid.008"));save();actionResult(SOSText("world_party_interactions.giveWorldPartyAid.009"),partyAidAcceptanceText(p,cost),'good',()=>showFriendlyPartyInteraction(p))
 }
 function shareRoadInformation(p){
  if(!canEngageWorldParty(p))return actionResult(SOSText("world_party_interactions.shareRoadInformation.001"),SOSText("world_party_interactions.shareRoadInformation.002"),'info',renderOpenWorld);const s=ensurePartySocial(p);s.familiarity=Math.min(6,s.familiarity+1);syncTravelerRecord(p);ensureTravelerGroupIdentity(p);gainScoutingIntel(1,{type:'shared_road_report',location:p.location,source:p.name,sourceRef:p.actorRef||`world_party:${p.id}`,summary:SOSText("world_party_interactions.intelGain.003",p.name),reliability:74,precision:'route'});
- syncTravelerRecord(p,'meeting',SOSText("world_party_interactions.shareRoadInformation.003"));recordWorldHistory(SOSText("world_party_interactions.shareRoadInformation.004",state.name,p.name),'info',SOSText("world_party_interactions.shareRoadInformation.005"));save();actionResult(SOSText("world_party_interactions.shareRoadInformation.006"),SOSText("world_party_interactions.shareRoadInformation.007"),'good',()=>showFriendlyPartyInteraction(p))
+ syncTravelerRecord(p,'meeting',SOSText("world_party_interactions.shareRoadInformation.003"));recordWorldHistory(SOSText("world_party_interactions.shareRoadInformation.004",state.name,p.name),'info',SOSText("world_party_interactions.shareRoadInformation.005"));save();actionResult(SOSText("world_party_interactions.shareRoadInformation.006"),`${partyRoadReportText(p)}\n\nThe Guardian passes along the latest trouble seen on the company’s own road.`, 'good',()=>showFriendlyPartyInteraction(p))
 }
 function partySpotContractEligible(p){
  if(!p||!canEngageWorldParty(p)||worldPartyDisposition(p)==='hostile'||p.questId||p.contractProtected)return false;
@@ -205,13 +282,13 @@ function finishSpotPartyContract(q){
 function showFriendlyPartyInteraction(p){modalRouteEnter(SOSText("world_party_interactions.showFriendlyPartyInteraction.001"),Array.from(arguments));
  if(!canEngageWorldParty(p))return actionResult(SOSText("world_party_interactions.showFriendlyPartyInteraction.002"),SOSText("world_party_interactions.showFriendlyPartyInteraction.003"),'info',renderOpenWorld);
  const d=worldPartyDisposition(p),s=ensurePartySocial(p),topics=partyTalkTopics(p),offer=interregionalSpotContractOffer(p)||spotContractOffer(p,false),info=['merchant','mercenary'].includes(p.kind);
- if(guardianHallAffiliatedParty(p))ensureGuardianHallPartyRecognition(p);syncTravelerRecord(p,'meeting',SOSText("world_party_interactions.showFriendlyPartyInteraction.004"));if(p.groupIdentity)recognizeTravelerWithCompanions(p);overlay(SOSText("world_party_interactions.showFriendlyPartyInteraction.005",esc(p.name),`${guardianHallPartyRecognitionHTML(p)}${recurringTravelerText(p)}`,travelerGroupIdentityHTML(p),esc(p.faction),esc(partyRelationshipLabel(p)),esc(p.purpose||partyPurpose(p.kind)),esc(worldLocation(p.destination).name),s.talks?`<p class="muted compact">You have spoken with this party ${s.talks} time${s.talks===1?'':'s'} about ${Object.keys(s.topics).length} subject${Object.keys(s.topics).length===1?'':'s'}.</p>`:'',topics.map(([id,label])=>`<button data-partytopic="${id}">${esc(label)}${s.topics[id]?` <small>• discussed ${s.topics[id]}×</small>`:''}</button>`).join(''),partyAidCost(p),info?'<button id="partyInfoBusiness">Ask About Information for Sale</button>':'',offer?`<button id="partySpotOffer"><b>Hear Their Job Offer</b><br><small>${esc(offer.title)}</small></button>`:''),true);
+ if(guardianHallAffiliatedParty(p))ensureGuardianHallPartyRecognition(p);syncTravelerRecord(p,'meeting',SOSText("world_party_interactions.showFriendlyPartyInteraction.004"));if(p.groupIdentity)recognizeTravelerWithCompanions(p);overlay(SOSText("world_party_interactions.showFriendlyPartyInteraction.005",esc(p.name),`${guardianHallPartyRecognitionHTML(p)}${recurringTravelerText(p)}`,travelerGroupIdentityHTML(p),esc(p.faction),esc(partyRelationshipLabel(p)),esc(p.purpose||partyPurpose(p.kind)),esc(worldLocation(p.destination).name),s.talks?`<p class="muted compact">They recognize the Guardian from ${s.talks} earlier conversation${s.talks===1?'':'s'}${s.lastDay?` • last spoke Day ${s.lastDay}`:''}.</p>`:'',topics.map(([id,label])=>`<button data-partytopic="${id}">${esc(label)}${s.topics[id]?` <small>• ask for an update</small>`:''}</button>`).join(''),partyAidCost(p),info?'<button id="partyInfoBusiness">Ask About Information for Sale</button>':'',offer?`<button id="partySpotOffer"><b>Hear Their Job Offer</b><br><small>${esc(offer.title)}</small></button>`:''),true);
  document.querySelectorAll('[data-partytopic]').forEach(b=>b.onclick=()=>discussWorldPartyTopic(p,b.dataset.partytopic));$('#partyShareInfo').onclick=()=>shareRoadInformation(p);$('#partyAid').onclick=()=>giveWorldPartyAid(p);if($('#partyInfoBusiness'))$('#partyInfoBusiness').onclick=()=>showInformationPartyInteraction(p);if($('#partySpotOffer'))$('#partySpotOffer').onclick=()=>showSpotContractOffer(p,offer);$('#partyTalkBack').onclick=()=>SOSServices.navigation.back(()=>showWorldParty(p.id))
 if($('#partyAskKnownGroup'))$('#partyAskKnownGroup').onclick=()=>showTravelerInquiryPicker('party',p,()=>showFriendlyPartyInteraction(p));}
 function showInformationPartyInteraction(p){modalRouteEnter(SOSText("world_party_interactions.showInformationPartyInteraction.001"),Array.from(arguments));
  if(!canEngageWorldParty(p))return actionResult(SOSText("world_party_interactions.showInformationPartyInteraction.002"),SOSText("world_party_interactions.showInformationPartyInteraction.003"),'info',renderOpenWorld);
- const cost=informationOfferCost(p),merchant=p.kind==='merchant',already=!!p.infoSold;
- overlay(SOSText("world_party_interactions.showInformationPartyInteraction.004",esc(p.name),merchant?'The caravan has heard a great deal on the road, but information is part of its business.':'The free company is willing to sell what it knows about movements in the region.',cost,already?' • already purchased from this party':'',already||state.gold<cost?'disabled':'',cost,already?'disabled':''));
+ const cost=informationOfferCost(p),merchant=p.kind==='merchant',already=!!p.infoSold,from=worldLocation(p.origin||p.location).name,to=worldLocation(p.destination).name,who=partyConversationSpokesperson(p);
+ overlay(SOSText("world_party_interactions.showInformationPartyInteraction.004",esc(p.name),merchant?`“We can tell you what we saw between ${from} and ${to},” ${who} says. “That knowledge costs ${cost} gold.”`:`“We have fresh eyes on the road toward ${to},” ${who} says. “For ${cost} gold, we will tell you what our scouts saw.”`,cost,already?' • already purchased from this party':'',already||state.gold<cost?'disabled':'',cost,already?'disabled':''));
  $('#buyRoadInfo').onclick=()=>paidRoadInformation(p,cost);
  $('#declineRoadInfo').onclick=()=>{recordWorldHistory(SOSText("world_party_interactions.showInformationPartyInteraction.005",state.name,p.name),'info','encounter');save();actionResult(SOSText("world_party_interactions.showInformationPartyInteraction.006"),SOSText("world_party_interactions.showInformationPartyInteraction.007"),'info',renderOpenWorld)};
  $('#threatenRoadInfo').onclick=()=>threatenForInformation(p);
@@ -363,7 +440,7 @@ function removeWorldParty(id){
  if(!id)return false;const p=state.world.parties.find(x=>x.id===id),q=p?.questId?activeQuest(p.questId):null;
  if(p?.contractProtected&&q&&!p.contractResolutionAllowed)return false;
  if(p)p.contractResolutionAllowed=false;
- state.world.parties=state.world.parties.filter(x=>x.id!==id);if(state.world.trackedPartyId===id)state.world.trackedPartyId=null;
+ if(p&&typeof retireWorldPartyIntegrationAtSource==='function')retireWorldPartyIntegrationAtSource(p,'removeWorldParty');state.world.parties=state.world.parties.filter(x=>x.id!==id);if(state.world.trackedPartyId===id)state.world.trackedPartyId=null;
  if(q?.type==='hunt')markQuestReady(q);
  if(q?.type==='recovery'){q.recovered=true;roadEventCargo(q.goodId,q.qty||1);markQuestReady(q);log(SOSText("world_party_interactions.removeWorldParty.001",q.qty||1,TRADE_GOODS.find(g=>g.id===q.goodId)?.name||'goods'),'good')}
  maintainWorldParties();return true

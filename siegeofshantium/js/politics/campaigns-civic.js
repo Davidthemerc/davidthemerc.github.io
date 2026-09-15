@@ -80,8 +80,15 @@ function simulateLocalPoliticalCampaignDay(locId){
 function politicalCampaignSourceHTML(q){
  if(!q?.politicalCampaign)return'';return SOSText("politics_campaigns_civic.politicalCampaignSourceHTML.001",esc(majorFaction(q.politicalFaction||q.faction).name),esc(worldLocation(q.politicalLocId||q.origin).name),esc(q.politicalNeed||'Strengthen the local campaign'),esc(q.politicalReason||''),esc(politicalCampaignEffectText(q)),q.politicalRival?`<br>Main rival: ${esc(majorFaction(q.politicalRival).short)}`:'')
 }
+function markLocalPoliticsDirty(locId){const ps=politicalSettlement(locId);ps.uiRevision=(ps.uiRevision||0)+1;ps.uiUpdatedDay=state.world.day;return ps.uiRevision}
 function recordLocalPoliticalAction(locId,faction,action,text){
- const ps=politicalSettlement(locId),row={day:state.world.day,faction,action,text};ps.civicHistory.push(row);ps.civicHistory=ps.civicHistory.slice(-30);ps.lastCivicActionDay=state.world.day;politicalHistory(`${worldLocation(locId).name}: ${text}`,'info')
+ const ps=politicalSettlement(locId),row={day:state.world.day,faction,action,text};ps.civicHistory.push(row);ps.civicHistory=ps.civicHistory.slice(-30);ps.lastCivicActionDay=state.world.day;markLocalPoliticsDirty(locId);politicalHistory(`${worldLocation(locId).name}: ${text}`,'info')
+}
+function applyPoliticalDamage(locId,faction,damage,scale=1){
+ if(!faction||!OPEN_WORLD_FACTIONS[faction]||!damage)return;const ps=politicalSettlement(locId),c=localPoliticalFactionState(locId,faction);
+ for(const k of ['support','organization','legitimacy','merchant','security'])if(damage[k])c[k]=clamp((c[k]||0)-damage[k]*scale,-6,12);
+ if(damage.pressure)ps.pressure[faction]=Math.max(0,(ps.pressure[faction]||0)-damage.pressure*scale);
+ if(damage.lean)ps.lean[faction]=clamp((ps.lean[faction]||0)-damage.lean*scale,-6,12);c.lastActionDay=state.world.day
 }
 function applyLocalPoliticalEffects(locId,faction,effect,reason,channel='politics'){
  const ps=politicalSettlement(locId),c=localPoliticalFactionState(locId,faction),presence=state.world.factionPresence[locId]||(state.world.factionPresence[locId]={});
@@ -91,7 +98,8 @@ function applyLocalPoliticalEffects(locId,faction,effect,reason,channel='politic
  if(effect.pressure)ps.pressure[faction]=clamp((ps.pressure[faction]||0)+effect.pressure,0,12);
  if(effect.power)recordFactionPower(locId,faction,channel,effect.power,reason,effect.days||10);
  const rival=effect.rival?localPoliticalRival(locId,faction):null;
- if(rival){const rc=localPoliticalFactionState(locId,rival);rc.support=clamp((rc.support||0)-effect.rival,-6,12);ps.pressure[rival]=Math.max(0,(ps.pressure[rival]||0)-effect.rival*.35);ps.lean[rival]=clamp((ps.lean[rival]||0)-effect.rival*.25,-6,12)}
+ if(rival){const d=typeof effect.rival==='object'?effect.rival:{support:Number(effect.rival)||0,pressure:(Number(effect.rival)||0)*.35,lean:(Number(effect.rival)||0)*.25};applyPoliticalDamage(locId,rival,d,1);if(effect.rivalSpillover!==false){for(const other of localPoliticalFactions(locId))if(other!==faction&&other!==rival)applyPoliticalDamage(locId,other,d,.2)}}
+ markLocalPoliticsDirty(locId)
 }
 function decayLocalPoliticalCivic(locId){
  const ps=politicalSettlement(locId),control=settlementControl(locId),ss=settlementState(locId),rr=roadRights(locId);
@@ -120,13 +128,45 @@ const LOCAL_POLITICAL_ACTIONS={
 };
 function politicalActionCost(locId,id){const ss=settlementState(locId),a=LOCAL_POLITICAL_ACTIONS[id];if(!a)return 0;if(id==='relief')return a.cost+(ss.prosperity<45?6:0);if(id==='repairs')return a.cost+(ss.prosperity<40?4:0);return a.cost}
 function politicalActionReturnToActivities(locId){return navigateTownMenu('politicalActivities',{locId})}
-function politicalActionTransaction(label,fallback,fn){
+function persistPoliticalDiagnosticFallback(err,system='Political Action',action='',details={}){
+ const key='sosRuntimeJavascriptErrorsV1';
+ try{
+  const current=JSON.parse(localStorage.getItem(key)||'[]'),rows=Array.isArray(current)?current:[],day=state?.world?.day??null,locId=state?.world?.location||null;
+  let locName=locId;try{locName=locId?(worldLocation(locId)?.name||locId):null}catch{}
+  const message=err?.message||String(err||'Unknown political simulation error'),stack=String(err?.stack||'').split('\n').map(x=>x.trim()).filter(Boolean),where=stack.find(x=>/\.html:\d+|\.js:\d+|<anonymous>:\d+/.test(x))||'';
+  const line=`[JS ERROR] ${message}${where?` • ${where.replace(/^at\s+/,'')}`:''}`,detailLocation=details?.location||details?.locId||'';
+  const row={time:new Date().toISOString(),kind:'recoverable',line,day,mode:state?.mode||null,location:locName,system,action,detailLocation,faction:details?.faction||'',rollbackRestored:details?.rollbackRestored??null,fallbackPersisted:true};
+  const same=(a,b)=>a&&a.line===b.line&&a.day===b.day&&a.system===b.system&&a.action===b.action;
+  const last=rows[rows.length-1];if(!same(last,row))rows.push(row);
+  localStorage.setItem(key,JSON.stringify(rows.slice(-40)));
+  // Keep a second copy inside campaign state so World Journal diagnostics do not depend on browser storage alone.
+  if(state?.world){
+   if(!state.world.runtimeDiagnostics||typeof state.world.runtimeDiagnostics!=='object')state.world.runtimeDiagnostics={};
+   if(!Array.isArray(state.world.runtimeDiagnostics.errors))state.world.runtimeDiagnostics.errors=[];
+   const campaignRows=state.world.runtimeDiagnostics.errors,lastCampaign=campaignRows[campaignRows.length-1];
+   if(!same(lastCampaign,row))campaignRows.push({...row,campaignPersisted:true});
+   state.world.runtimeDiagnostics.errors=campaignRows.slice(-40);
+  }
+  return true
+ }catch(fallbackError){console.error('[Politics] Could not persist political diagnostic fallback.',fallbackError);return false}
+}
+function recordPoliticalTransactionError(err,system,label,context={}){
+ let recorded=false;
+ try{if(typeof reportRecoverableGameError==='function'){reportRecoverableGameError(err,system,label,context);recorded=true}}catch(logError){console.error('[Politics] Primary Journal error reporter failed.',logError)}
+ // Always write the independent fallback/campaign copy too; duplicate suppression keeps one visible entry.
+ const fallbackRecorded=persistPoliticalDiagnosticFallback(err,system,label,context);
+ return recorded||fallbackRecorded
+}
+function politicalActionTransaction(label,fallback,fn,context={}){
  let snapshot=null;try{snapshot=JSON.stringify(state)}catch(e){console.warn('[Politics] Could not prepare rollback snapshot.',e)}
  try{return fn()}catch(e){
   console.error(`[Politics] ${label} failed; rolling back the political action.`,e);
-  if(snapshot){try{state=JSON.parse(snapshot);ensureWorldState()}catch(restoreError){console.error('[Politics] Political rollback restore failed.',restoreError)}}
-  try{save()}catch(saveError){console.error('[Politics] Could not save rolled-back political state.',saveError)}
-  return actionResult(SOSText("politics_campaigns_civic.politicalActionTransaction.001"),SOSText("politics_campaigns_civic.politicalActionTransaction.002"),'bad',fallback)
+  let rollbackRestored=false;
+  if(snapshot){try{state=JSON.parse(snapshot);ensureWorldState();rollbackRestored=true}catch(restoreError){console.error('[Politics] Political rollback restore failed.',restoreError);recordPoliticalTransactionError(restoreError,'Political Rollback',label,{...context,rollbackRestored:false})}}
+  try{save()}catch(saveError){console.error('[Politics] Could not save rolled-back political state.',saveError);recordPoliticalTransactionError(saveError,'Political Rollback Save',label,{...context,rollbackRestored})}
+  recordPoliticalTransactionError(e,'Political Action',label,{...context,rollbackRestored});
+  try{save()}catch(diagSaveError){console.error('[Politics] Could not save campaign diagnostic copy.',diagSaveError)}
+  return actionResult(SOSText("politics_campaigns_civic.politicalActionTransaction.001"),SOSText("politics_campaigns_civic.politicalActionTransaction.003"),'bad',fallback)
  }
 }
 function executeLocalPoliticalAction(locId,faction,id){
@@ -140,15 +180,15 @@ function executeLocalPoliticalAction(locId,faction,id){
   const before=politicalOutcomeSnapshot(locId,[faction,localPoliticalRival(locId,faction)]),ss=settlementState(locId);
   if(cost)state.gold-=cost;
   let effect={},text='',tone='good',standingGain=0,repGain=0,roll=0;
-  if(id==='rally'){roll=rnd(1,20)+stat(state,'cha')+Math.floor(rep/2)+Math.floor(standing/3);if(roll>=16){effect={support:2,organization:1,legitimacy:.5,power:3,pressure:1,rival:.75};text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.005",majorFaction(faction).short);standingGain=1}else{effect={support:.5,organization:.5,power:.5};text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.006");tone='info'}}
-  if(id==='endorse'){const e=guardianPublicEndorsement(),oldFaction=e.faction,impact=rep>=8?2:rep>=3?1.5:rep>=0?1:.5;effect={support:impact,legitimacy:rep>=3?1:.25,power:1.5+impact*.5,pressure:.5,rival:impact>=1.5?.5:0};
+  if(id==='rally'){roll=rnd(1,20)+stat(state,'cha')+Math.floor(rep/2)+Math.floor(standing/3);if(roll>=16){effect={support:2,organization:1,legitimacy:.5,power:3,pressure:1,rival:{support:.75,organization:.3,legitimacy:.2,pressure:.3,lean:.2}};text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.005",majorFaction(faction).short);standingGain=1}else{effect={support:.5,organization:.5,power:.5};text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.006");tone='info'}}
+  if(id==='endorse'){const e=guardianPublicEndorsement(),oldFaction=e.faction,impact=rep>=8?2:rep>=3?1.5:rep>=0?1:.5;effect={support:impact,legitimacy:rep>=3?1:.25,power:1.5+impact*.5,pressure:.5,rival:impact>=1.5?{support:.5,legitimacy:.2,pressure:.18,lean:.12}:0};
    if(oldFaction&&oldFaction!==faction){adjustFactionStanding(oldFaction,-1,SOSText("politics_campaigns_civic.executeLocalPoliticalAction.007",majorFaction(faction).short));const oldP=localPoliticalFactionState(locId,oldFaction);oldP.support=clamp((oldP.support||0)-.75,-6,12);oldP.legitimacy=clamp((oldP.legitimacy||0)-.25,-6,12);text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.008",majorFaction(oldFaction).short,majorFaction(faction).short,worldLocation(locId).name)}
    else text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.009",majorFaction(faction).short,worldLocation(locId).name,rep>=8?'The endorsement carries considerable local weight.':rep>=3?'The endorsement is taken seriously by people who know the company.':'The statement is noticed, though the Guardian’s local pull is limited.');
    e.faction=faction;e.day=state.world.day;e.history.push({day:state.world.day,faction,from:oldFaction||null,locId});e.history=e.history.slice(-12);standingGain=1}
-  if(id==='organize'){effect={organization:2,support:standing>=6?1:.5,power:2.5,pressure:.75,presence:1,rival:.35};text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.012",majorFaction(faction).short);standingGain=chance(.35)?1:0}
-  if(id==='petition'){roll=rnd(1,20)+stat(state,'cha')+Math.floor(rep/2);if(roll>=15){effect={support:1.5,organization:1,legitimacy:.5,power:2.5,pressure:.75,rival:.5};text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.013")}else{effect={organization:.75,support:.25,power:.5};text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.014");tone='info'}}
-  if(id==='relief'){const bonus=ss.prosperity<45?.75:0;effect={support:1.25+bonus,legitimacy:2,merchant:.5,power:2.75,pressure:.5,rival:.4};ss.prosperity=Math.min(100,ss.prosperity+2);text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.015",majorFaction(faction).short);repGain=1;standingGain=1}
-  if(id==='repairs'){effect={support:.75,legitimacy:2,merchant:1,security:.75,power:2.5,pressure:.5,rival:.35};ss.prosperity=Math.min(100,ss.prosperity+2);ss.security=Math.min(100,ss.security+1);text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.016",majorFaction(faction).short);repGain=1;standingGain=1}
+  if(id==='organize'){effect={organization:2,support:standing>=6?1:.5,power:2.5,pressure:.75,presence:1,rival:{support:.35,organization:.35,pressure:.15,lean:.1}};text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.012",majorFaction(faction).short);standingGain=chance(.35)?1:0}
+  if(id==='petition'){roll=rnd(1,20)+stat(state,'cha')+Math.floor(rep/2);if(roll>=15){effect={support:1.5,organization:1,legitimacy:.5,power:2.5,pressure:.75,rival:{support:.5,organization:.2,legitimacy:.15,pressure:.2,lean:.12}};text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.013")}else{effect={organization:.75,support:.25,power:.5};text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.014");tone='info'}}
+  if(id==='relief'){const bonus=ss.prosperity<45?.75:0;effect={support:1.25+bonus,legitimacy:2,merchant:.5,power:2.75,pressure:.5,rival:{support:.4,legitimacy:.25,merchant:.1,pressure:.12,lean:.1}};ss.prosperity=Math.min(100,ss.prosperity+2);text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.015",majorFaction(faction).short);repGain=1;standingGain=1}
+  if(id==='repairs'){effect={support:.75,legitimacy:2,merchant:1,security:.75,power:2.5,pressure:.5,rival:{support:.35,legitimacy:.3,merchant:.15,pressure:.12,lean:.1}};ss.prosperity=Math.min(100,ss.prosperity+2);ss.security=Math.min(100,ss.security+1);text=SOSText("politics_campaigns_civic.executeLocalPoliticalAction.016",majorFaction(faction).short);repGain=1;standingGain=1}
   applyLocalPoliticalEffects(locId,faction,effect,text,a.channel);adjustPoliticalCapital(locId,faction,id==='relief'||id==='repairs'?2:id==='organize'?1.5:1,SOSText("politics_campaigns_civic.executeLocalPoliticalAction.017",a.title));
   if(standingGain)adjustFactionStanding(faction,standingGain,SOSText("politics_campaigns_civic.executeLocalPoliticalAction.018",worldLocation(locId).name));
   if(repGain)changeLocalReputation(locId,repGain,SOSText("politics_campaigns_civic.executeLocalPoliticalAction.019",majorFaction(faction).short));
@@ -156,7 +196,7 @@ function executeLocalPoliticalAction(locId,faction,id){
   if(['organize','relief','repairs'].includes(id))advanceWorldDays(1,`${a.title} in ${worldLocation(locId).name}`);
   const after=politicalOutcomeSnapshot(locId,[faction,localPoliticalRival(locId,faction)]);
   sfxWorld('politics');save();return showPoliticalOutcome(a.title,text,before,after,{tone,notes,back:()=>politicalActionReturnToActivities(locId)})
- })
+ },{location:worldLocation(locId)?.name||locId,faction:majorFaction(faction)?.short||faction})
 }
 function executeIndependentCivicAction(locId,id){
  if(!['relief','works','forum'].includes(id))return showIndependentCivicActions(locId);
@@ -168,8 +208,30 @@ function executeIndependentCivicAction(locId,id){
   if(id==='works'){cost=30;state.gold-=cost;ss.prosperity=Math.min(100,ss.prosperity+2);ss.security=Math.min(100,ss.security+1);changeLocalReputation(locId,2,SOSText("politics_campaigns_civic.executeIndependentCivicAction.007"));ps.autonomy=Math.min(10,ps.autonomy+.5);text=SOSText("politics_campaigns_civic.executeIndependentCivicAction.008")}
   if(id==='forum'){cost=12;state.gold-=cost;const rows=Object.entries(ps.pressure||{}).sort((a,b)=>b[1]-a[1]);for(const [f] of rows.slice(0,2))ps.pressure[f]=Math.max(0,(ps.pressure[f]||0)-.35);ps.autonomy=Math.min(10,ps.autonomy+1);changeLocalReputation(locId,1,SOSText("politics_campaigns_civic.executeIndependentCivicAction.011"));text=SOSText("politics_campaigns_civic.executeIndependentCivicAction.012")}
   recordLocalPoliticalAction(locId,SOSText("politics_campaigns_civic.executeIndependentCivicAction.013"),id,text);const notes=cost?[SOSText("politics_campaigns_civic.executeIndependentCivicAction.014",cost)]:[];if(id!=='forum')advanceWorldDays(1,SOSText("politics_campaigns_civic.executeIndependentCivicAction.015",worldLocation(locId).name));const after=politicalOutcomeSnapshot(locId);save();return showPoliticalOutcome(SOSText("politics_campaigns_civic.executeIndependentCivicAction.016"),text,before,after,{tone,notes,back:()=>politicalActionReturnToActivities(locId)})
- })
+ },{location:worldLocation(locId)?.name||locId,faction:'Independent'})
 }
+const LEGITIMATE_OPPOSITION_ACTIONS={
+ rally_against:{title:'Hold an Opposition Rally',cost:14,desc:'Organize a lawful public rally arguing against the faction’s local agenda.',difficulty:15,damage:{support:1.5,organization:.5,legitimacy:.25,pressure:.45,lean:.25}},
+ disparage:{title:'Disparage Their Leaders in Public',cost:8,desc:'Attack the faction’s leadership, judgment, and record in speeches and public conversations.',difficulty:14,damage:{support:.55,legitimacy:1.05,pressure:.25,lean:.2}},
+ debate:{title:'Challenge Their Rivals to a Public Debate',cost:10,desc:'Demand a public debate with a prominent local representative. Winning can badly damage credibility; losing can strengthen them.',difficulty:16,damage:{support:1,legitimacy:1.25,organization:.25,pressure:.35,lean:.25}},
+ critique:{title:'Publish a Public Critique',cost:6,desc:'Circulate a detailed lawful critique of the faction’s policies and local record.',difficulty:13,damage:{support:.4,legitimacy:.8,merchant:.2,pressure:.2,lean:.15}},
+ counter_petition:{title:'Organize a Counter-Petition',cost:8,desc:'Mobilize residents against the faction’s current demands and organizing drive.',difficulty:14,damage:{support:.4,organization:.8,pressure:1,lean:.2}},
+ expose_failures:{title:'Expose Their Policy Failures',cost:10,desc:'Make a public case that local insecurity, poverty, closed roads, or other failures reflect badly on the faction.',difficulty:15,damage:{support:.55,legitimacy:1.1,pressure:.35,lean:.2},context:true},
+ counter_campaign:{title:'Mount a Counter-Campaign',cost:20,desc:'Coordinate a sustained legal campaign to blunt the faction’s local organization and momentum.',difficulty:16,damage:{support:1,organization:1.5,legitimacy:.35,pressure:1.2,lean:.35},dayScale:true},
+ court_constituency:{title:'Court Their Constituency',cost:14,desc:'Try to peel merchants, civic groups, security interests, and other local supporters away from the faction.',difficulty:16,damage:{support:.55,merchant:.8,security:.55,organization:.35,pressure:.3,lean:.2}}
+};
+function legitimateOppositionActionState(locId,target){const ps=politicalSettlement(locId);if(!ps.legalOpposition||typeof ps.legalOpposition!=='object')ps.legalOpposition={};if(!ps.legalOpposition[target])ps.legalOpposition[target]={lastActionDay:-99,history:[]};return ps.legalOpposition[target]}
+function executeLegitimateOppositionAction(locId,target,id){
+ const a=LEGITIMATE_OPPOSITION_ACTIONS[id];if(!a||!OPEN_WORLD_FACTIONS[target])return showLegitimateOppositionActions(locId,target);const os=legitimateOppositionActionState(locId,target),rep=localReputation(locId),standing=state.world.factionStanding[target]||0;if(os.lastActionDay===state.world.day)return actionResult('Already Opposed This Faction Today',`You have already led a major public political action against ${majorFaction(target).short} today.`,'info',()=>showLegitimateOppositionActions(locId,target));if(state.gold<a.cost)return actionResult('Not Enough Gold',`${a.title} requires ${a.cost} gold.`,'bad',()=>showLegitimateOppositionActions(locId,target));
+ return politicalActionTransaction(a.title,()=>showLegitimateOppositionActions(locId,target),()=>{ensureLocalPoliticalLeadership(locId);const before=politicalOutcomeSnapshot(locId,[target,localPoliticalRival(locId,target)]),ss=settlementState(locId),leader=politicalLeaderCandidates(locId,target)[0],leaderStrength=leader?.a?.support||2,contextBonus=a.context?((ss.security<45?2:0)+(ss.prosperity<45?2:0)+(roadRights(locId).openness<=4?1:0)):0,difficulty=a.difficulty+Math.floor(localPoliticalProfile(locId,target).legitimacy/25)+Math.max(0,leaderStrength-3)-contextBonus,roll=rnd(1,20)+stat(state,'cha')+Math.floor(rep/3),success=roll>=difficulty;state.gold-=a.cost;let tone=success?'good':'bad',text,damage={...a.damage};
+  if(success){if(a.context&&contextBonus===0)for(const k of Object.keys(damage))damage[k]*=.65;applyPoliticalDamage(locId,target,damage,1);text=`The Guardian’s ${a.title.toLowerCase()} lands effectively, weakening ${majorFaction(target).short} in ${worldLocation(locId).name}.`}
+  else{const tc=localPoliticalFactionState(locId,target),backfire=id==='debate'?0.65:0.35;tc.support=clamp((tc.support||0)+backfire,-6,12);tc.legitimacy=clamp((tc.legitimacy||0)+(id==='debate'?.5:.2),-6,12);text=id==='debate'?`${majorFaction(target).short} gets the better of the public exchange and leaves with fresh momentum.`:`The public effort fails to land cleanly, giving ${majorFaction(target).short} a modest sympathy boost.`}
+  os.lastActionDay=state.world.day;os.history.push({day:state.world.day,id,success,text});os.history=os.history.slice(-20);recordLocalPoliticalAction(locId,'Civic','legal_opposition',`${a.title} against ${majorFaction(target).short}: ${success?'effective':'unsuccessful'}.`);if(a.dayScale)advanceWorldDays(1,`${a.title} in ${worldLocation(locId).name}`);markLocalPoliticsDirty(locId);const after=politicalOutcomeSnapshot(locId,[target,localPoliticalRival(locId,target)]);save();return showPoliticalOutcome(a.title,text,before,after,{tone,success,notes:[`Target: ${majorFaction(target).name}`,`Public political action • ${a.cost} gold`,a.dayScale?'This was a day-scale organizing effort.':'This action occurred within the current campaign day.'],back:()=>politicalActionReturnToActivities(locId)})},{location:worldLocation(locId)?.name||locId,faction:majorFaction(target)?.short||target})
+}
+function showLegitimateOppositionActions(locId=state.world.location,target=null){modalRouteEnter('politicalOpposition',Array.from(arguments));ensureLocalPoliticalLeadership(locId);const factions=localPoliticalFactions(locId);if(!target){overlay(`<h2>${esc(worldLocation(locId).name)} — Oppose a Faction</h2><p>Use lawful public politics to weaken a rival faction without resorting to covert or criminal action.</p><div class="political-profile-list">${localPoliticalGlanceRowsHTML(locId,'activities')}</div><div class="choice-list">${factions.map(f=>{const p=localPoliticalProfile(locId,f);return `<button class="political-action-faction" data-oppositiontarget="${f}"><span><b>${esc(majorFaction(f).name)}</b><small>${esc(politicalSupportLabel(p.publicSupport))} support • ${esc(politicalLegitimacyLabel(p.legitimacy))}</small></span><b>${p.overall}</b></button>`}).join('')}</div><div class="dialog-footer"><button id="oppositionBack">Back to Political Activities</button></div>`,true);document.querySelectorAll('[data-oppositiontarget]').forEach(b=>b.onclick=()=>showLegitimateOppositionActions(locId,b.dataset.oppositiontarget));document.querySelectorAll('[data-politicalfaction]').forEach(b=>b.onclick=()=>showLegitimateOppositionActions(locId,b.dataset.politicalfaction));$('#oppositionBack').onclick=()=>SOSServices.navigation.back(()=>showLocalPoliticalActions(locId));return}
+ const os=legitimateOppositionActionState(locId,target),leader=politicalLeaderCandidates(locId,target)[0],used=os.lastActionDay===state.world.day;overlay(`<h2>Oppose ${esc(majorFaction(target).short)} — ${esc(worldLocation(locId).name)}</h2><div class="notice compact"><b>Legal political opposition</b><br>${leader?`Visible local representative: <b>${esc(leader.n.name)}</b> — ${esc(leader.n.role)}`:'No prominent representative is currently visible.'}<br><small>${used?'You have already led a major public action against this faction today.':'These actions are public and lawful, but political failure can strengthen the faction you attack.'}</small></div><div class="choice-list">${Object.entries(LEGITIMATE_OPPOSITION_ACTIONS).map(([id,a])=>`<button data-oppositionaction="${id}" ${used?'disabled':''}><b>${esc(a.title)}</b><br><small>${esc(a.desc)} • ${a.cost}g${a.dayScale?' • advances 1 day':''}</small></button>`).join('')}</div><div class="dialog-footer"><button id="oppositionTargetBack">Back to Faction Selection</button></div>`,true);document.querySelectorAll('[data-oppositionaction]').forEach(b=>b.onclick=()=>executeLegitimateOppositionAction(locId,target,b.dataset.oppositionaction));$('#oppositionTargetBack').onclick=()=>SOSServices.navigation.back(()=>showLegitimateOppositionActions(locId,null))
+}
+
 function showFactionCivicActions(locId,faction,parent='politics'){modalRouteEnter(SOSText("politics_campaigns_civic.showFactionCivicActions.001"),Array.from(arguments));
  const p=localPoliticalProfile(locId,faction),standing=state.world.factionStanding[faction]||0;
  overlay(SOSText("politics_campaigns_civic.showFactionCivicActions.002",esc(worldLocation(locId).name),esc(majorFaction(faction).short),esc(politicalSupportLabel(p.publicSupport)),esc(politicalOrganizationLabel(p.organization)),esc(politicalLegitimacyLabel(p.legitimacy)),standing>=0?'+':'',standing,guardianPublicEndorsement().faction?`Guardian public endorsement: <b>${esc(majorFaction(guardianPublicEndorsement().faction).short)}</b> since Day ${guardianPublicEndorsement().day}`:'Guardian public endorsement: <b>None</b>',Object.entries(LOCAL_POLITICAL_ACTIONS).map(([id,a])=>{const cost=politicalActionCost(locId,id),es=id==='endorse'?guardianEndorsementButtonState(faction):null,locked=(id==='organize'&&standing<2)||!!es?.disabled,label=es?.label||a.title,desc=id==='organize'&&standing<2?'Requires faction standing 2.':es?.reason||a.desc;return `<button data-civicaction="${id}" ${locked?'disabled':''}><b>${esc(label)}</b><br><small>${esc(desc)}${cost?` • ${cost}g`:''}</small></button>`}).join('')),true);
@@ -187,14 +249,14 @@ function showPoliticalCampaignDesk(locId=state.world.location,faction=null,paren
  if($('#campaignExistingContract'))$('#campaignExistingContract').onclick=()=>showContractDetails(existing.id);if($('#campaignCommission'))$('#campaignCommission').onclick=()=>{const before=politicalOutcomeSnapshot(locId,[faction]),q=generatePoliticalCampaignContract(locId,faction,true);if(!q)return actionResult(SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.004"),SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.005"),'info',()=>showPoliticalCampaignDesk(locId,faction));const after=politicalOutcomeSnapshot(locId,[faction]);save();showPoliticalOutcome(SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.006"),SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.007",q.name),before,after,{tone:'info',notes:[SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.008",q.politicalNeed),SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.009",politicalCampaignEffectText(q))],back:()=>showContractBoard(locId)})};$('#campaignFactionBack').onclick=()=>parent===SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.010")&&townNavCurrent?townNavBackOrExit():showPoliticalCampaignDesk(locId)
 }
 const POLITICAL_COVERT_ACTIONS={
- garbage:{title:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.011"),desc:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.012"),cost:18,success:88,exposure:22,evidence:18,skill:'cha',crime:'trespass',severity:1,effect:{organization:.45,support:.15},benefit:{support:.15},petty:true},
- notices:{title:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.013"),desc:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.014"),cost:10,success:82,exposure:25,evidence:24,skill:'dex',crime:'trespass',severity:1,effect:{organization:.35,support:.25},benefit:{organization:.15}},
- redirect:{title:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.015"),desc:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.016"),cost:25,success:68,exposure:34,evidence:42,skill:'cha',crime:'theft',severity:2,effect:{organization:.65,merchant:.9},benefit:{merchant:.35,organization:.15}},
- records:{title:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.017"),desc:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.018"),cost:28,success:59,exposure:41,evidence:52,skill:'dex',crime:'theft',severity:3,effect:{organization:1.35,support:.25},benefit:{organization:.35}},
- stockpile:{title:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.019"),desc:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.020"),cost:36,success:53,exposure:51,evidence:66,skill:'dex',crime:'robbery',severity:4,effect:{organization:1.25,merchant:1.05,security:.25},benefit:{organization:.45,merchant:.25}},
- supporter:{title:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.021"),desc:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.022"),cost:22,success:62,exposure:47,evidence:56,skill:'dex',crime:'assault',severity:3,effect:{support:.8,organization:.75},benefit:{support:.25,organization:.2},named:true},
- forged_letters:{title:'Plant Forged Correspondence',desc:'Plant convincing letters or records that appear to implicate the rival faction in corruption, collusion, or betrayal.',cost:35,success:58,exposure:42,evidence:58,skill:'cha',crime:'fraud',severity:3,effect:{support:.35,organization:.35,legitimacy:1.25},benefit:{support:.2,legitimacy:.15}},
- event_sabotage:{title:'Sabotage Rival Public Event',desc:'Disrupt a rally, speech, fundraiser, or organizing event before it can build momentum.',cost:30,success:66,exposure:44,evidence:50,skill:'dex',crime:'vandalism',severity:2,effect:{support:.4,organization:.9},benefit:{organization:.25}},
+ garbage:{title:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.011"),desc:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.012"),cost:18,success:88,exposure:22,evidence:18,skill:'cha',crime:'trespass',severity:1,effect:{organization:1.35,support:.45},benefit:{support:.3},petty:true},
+ notices:{title:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.013"),desc:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.014"),cost:10,success:82,exposure:25,evidence:24,skill:'dex',crime:'trespass',severity:1,effect:{organization:.875,support:.625},benefit:{organization:.3}},
+ redirect:{title:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.015"),desc:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.016"),cost:25,success:68,exposure:34,evidence:42,skill:'cha',crime:'theft',severity:2,effect:{organization:1.4625,merchant:2.025},benefit:{merchant:.6,organization:.25}},
+ records:{title:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.017"),desc:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.018"),cost:28,success:59,exposure:41,evidence:52,skill:'dex',crime:'theft',severity:3,effect:{organization:2.43,support:.45},benefit:{organization:.55}},
+ stockpile:{title:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.019"),desc:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.020"),cost:36,success:53,exposure:51,evidence:66,skill:'dex',crime:'robbery',severity:4,effect:{organization:1.875,merchant:1.575,security:.375},benefit:{organization:.65,merchant:.35}},
+ supporter:{title:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.021"),desc:SOSText("politics_campaigns_civic.showPoliticalCampaignDesk.022"),cost:22,success:62,exposure:47,evidence:56,skill:'dex',crime:'assault',severity:3,effect:{support:1.4,organization:1.3125},benefit:{support:.4,organization:.3},named:true},
+ forged_letters:{title:'Plant Forged Correspondence',desc:'Plant convincing letters or records that appear to implicate the rival faction in corruption, collusion, or betrayal.',cost:35,success:58,exposure:42,evidence:58,skill:'cha',crime:'fraud',severity:3,effect:{support:.6125,organization:.6125,legitimacy:2.1875},benefit:{support:.3,legitimacy:.25}},
+ event_sabotage:{title:'Sabotage Rival Public Event',desc:'Disrupt a rally, speech, fundraiser, or organizing event before it can build momentum.',cost:30,success:66,exposure:44,evidence:50,skill:'dex',crime:'vandalism',severity:2,effect:{support:.8,organization:1.8},benefit:{organization:.4}},
  falseflag_market:{title:'Stage False-Flag Attack on Market District',desc:'Acquire rival colors and identifying material, attack the local Market District, and try to make witnesses blame the selected faction.',cost:60,success:64,exposure:56,evidence:66,skill:'dex',crime:'robbery',severity:5,effect:{},benefit:{},special:'falseflag_market'}
 };
 

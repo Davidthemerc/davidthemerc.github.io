@@ -1,4 +1,6 @@
-const VERSION='1.6.41';
+const RELEASE_VERSION='1.6.66.8.2';
+const SAVE_SCHEMA_VERSION='1.6.41';
+const VERSION=SAVE_SCHEMA_VERSION;
 const SAVE_KEY='siegeOfShantium.save.v1'; // legacy/current mirror
 const SAVE_OPEN_WORLD_KEY='siegeOfShantium.save.openworld.v1';
 const SAVE_SIEGE_KEY='siegeOfShantium.save.siege.v1'; // pre-v1.6.9 Siege migration source only

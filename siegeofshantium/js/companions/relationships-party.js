@@ -312,7 +312,7 @@ function companionTopicKnown(m,id){const mem=companionMemory(m);return mem.known
 function companionTopicsKnown(m){return COMPANION_TOPIC_DEFS.filter(t=>companionTopicKnown(m,t.id)).length}
 function companionTopicUnlocked(m,t){return companionTrust(m)>=t.trust}
 function companionConversationFact(m,id){return COMPANION_VOICE_HISTORY[m.id]?.[id]||COMPANION_HISTORY[m.id]?.[id]||SOSText("companions_relationships_party.companionConversationFact.001")}
-function companionConversationRepeat(m,id){const mem=companionMemory(m),topic=mem.topics[id],fact=companionConversationFact(m,id),count=topic?.count||0;if(count<=0)return fact;if(m.id==='rogue')return count%2?SOSText("companions_relationships_party.companionConversationRepeat.001",fact):SOSText("companions_relationships_party.companionConversationRepeat.002",fact);return count%3===0?SOSText("companions_relationships_party.companionConversationRepeat.003",fact):SOSText("companions_relationships_party.companionConversationRepeat.004",fact)}
+function companionConversationRepeat(m,id){const fact=companionConversationFact(m,id);return fact}
 function rememberCompanionTopic(m,id,text){
  const mem=companionMemory(m),t=mem.topics[id]||{count:0,firstDay:null,lastDay:null};const first=!companionTopicKnown(m,id);t.count=(t.count||0)+1;t.firstDay=t.firstDay??(isOpenWorld()?state.world.day:state.round);t.lastDay=isOpenWorld()?state.world.day:state.round;mem.topics[id]=t;mem.knownTopics[id]=true;mem.history.push({day:t.lastDay,topic:id,text});mem.history=mem.history.slice(-15);if(first){mem.newTopics=(mem.newTopics||0)+1;adjustTrust(m.id,1)}return first
 }
@@ -371,14 +371,14 @@ function showCompanionHistory(id){modalRouteEnter(SOSText("companions_relationsh
 function discussCompanionTopic(id,topic){
  const m=state.party.members[id],def=COMPANION_TOPIC_DEFS.find(t=>t.id===topic);if(!m||!def||!companionTopicUnlocked(m,def))return showCompanionConversation(id);
  const text=companionConversationRepeat(m,topic),first=rememberCompanionTopic(m,topic,text);save();
- actionResult(m.name,`${text}${first?`\n\nThe Guardian understands ${m.name} a little better.`:''}`,'info',()=>showCompanionConversation(id))
+ actionResult(m.name,text,'info',()=>showCompanionConversation(id))
 }
 function casualCompanionTalk(id,topic){
  const m=state.party.members[id];if(!m)return showParty();const mem=companionMemory(m),period=companionInteractionPeriod(),fresh=mem.lastDay!==period;let text='';
  if(topic==='status')text=companionStatusSpeech(m);
  if(topic==='place')text=companionLocationOpinion(m);
- if(topic==='recent')text=companionRecentOpinion(m);
- if(topic==='prepare'){m.preparedPeriod=period;m.preparedRound=state.round;text=SOSText("companions_relationships_party.casualCompanionTalk.001",m.name)}
+ if(topic==='recent')text=companionContextRecentLine(m)||companionRecentOpinion(m);
+ if(topic==='prepare'){m.preparedPeriod=period;m.preparedRound=state.round;const loc=isOpenWorld()?companionContextLocationName():'the field',foes=isOpenWorld()?(state.world?.parties||[]).filter(p=>p.location===state.world.location&&['hostile','enemy'].includes(p.attitude)).slice(0,1):[];text=foes.length?`${m.name} points toward ${foes[0].name}. “If they come at us here, don’t let them choose the ground. Make them move first.”`:`${m.name} checks their gear. “If trouble finds us around ${loc}, I’d rather meet it ready than clever.”`}
  if(fresh&&(topic==='status'||topic==='prepare')){mem.lastDay=period;adjustTrust(id,1)}
  mem.history.push({day:period,topic,text});mem.history=mem.history.slice(-15);save();actionResult(m.name,text,'info',()=>showCompanionConversation(id))
 }
@@ -396,7 +396,7 @@ function showCompanionProfile(id){modalRouteEnter(SOSText("companions_relationsh
 }
 function showCompanionConversation(id){modalRouteEnter(SOSText("companions_relationships_party.showCompanionConversation.001"),Array.from(arguments));
  const m=state.party.members[id];if(!m)return showParty();const trust=companionTrust(m),known=companionTopicsKnown(m);
- overlay(SOSText("companions_relationships_party.showCompanionConversation.002",esc(m.name),esc(companionContextLine(m)),trustTier(trust),trust,known,COMPANION_TOPIC_DEFS.length,isOpenWorld()?`<button data-casualtopic="place">What do you think of this place?</button><button data-casualtopic="recent">Anything on your mind?</button><button id="talkRoadLife">Road life / camp moments</button><button id="talkLoyalty">Loyalty / shared history</button>${companionExplorationDef(id)?'<button id="talkExpedition">Personal expedition</button>':''}`:'',COMPANION_TOPIC_DEFS.map(t=>{const unlocked=companionTopicUnlocked(m,t),seen=companionTopicKnown(m,t.id);return `<button data-historytopic="${t.id}" ${unlocked?'':'disabled'}><b>${esc(t.label)}</b><br><small>${seen?'Discussed before':unlocked?'New topic':`Requires ${trustTier(t.trust)} trust`}</small></button>`}).join('')),true);
+ overlay(SOSText("companions_relationships_party.showCompanionConversation.002",esc(m.name),esc(companionContextLine(m)),trustTier(trust),trust,known,COMPANION_TOPIC_DEFS.length,isOpenWorld()?`<button data-casualtopic="place">What do you think of this place?</button><button data-casualtopic="recent">Anything on your mind?</button><button id="talkRoadLife">Road life / camp moments</button><button id="talkLoyalty">Loyalty / shared history</button>${companionExplorationDef(id)?'<button id="talkExpedition">Personal expedition</button>':''}`:'',COMPANION_TOPIC_DEFS.map(t=>{const unlocked=companionTopicUnlocked(m,t),seen=companionTopicKnown(m,t.id);return `<button data-historytopic="${t.id}" ${unlocked?'':'disabled'}><b>${esc(t.label)}</b><br><small>${seen?'Known subject':unlocked?'New topic':`Requires ${trustTier(t.trust)} trust`}</small></button>`}).join('')),true);
  document.querySelectorAll('[data-casualtopic]').forEach(b=>b.onclick=()=>casualCompanionTalk(id,b.dataset.casualtopic));document.querySelectorAll('[data-historytopic]').forEach(b=>b.onclick=()=>discussCompanionTopic(id,b.dataset.historytopic));$('#talkRelationships').onclick=()=>showCompanionRelationships(id);if($('#talkRoadLife'))$('#talkRoadLife').onclick=showRoadLife;if($('#talkLoyalty'))$('#talkLoyalty').onclick=()=>showCompanionLifeProfile(id);if($('#talkExpedition'))$('#talkExpedition').onclick=()=>{const q=companionExplorationQuest(id);if(q.status==='locked'&&companionExplorationEligible(id))q.status='available';showCompanionExplorationQuest(id)};$('#talkHistory').onclick=()=>showCompanionHistory(id);$('#talkCancel').onclick=()=>showCompanionProfile(id)
 }
 function upgradeMark(it,ownerId='guardian'){

@@ -64,6 +64,7 @@ function repairOpenWorldState(){
  w.quests=(w.quests||[]).filter(q=>{if(!q||!q.id||qseen.has(q.id)){fix(SOSText("openworld_state_captivity.repairOpenWorldState.009"));return false}qseen.add(q.id);ensureContractPaymentTerms(q);const pay=contractPaymentLocation(q);if(q.paymentLocation!==pay){q.paymentLocation=pay;fix(SOSText("openworld_state_captivity.repairOpenWorldState.010",q.name||'contract'))}return true});
  const activeBefore=(state.party.active||[]).length;state.party.active=(state.party.active||[]).filter(id=>!!state.party.members?.[id]);if(state.party.active.length!==activeBefore)fix(SOSText("openworld_state_captivity.repairOpenWorldState.011"));
  if(w.trackedQuestId&&!w.quests.some(q=>q.id===w.trackedQuestId&&['active','ready'].includes(q.status))){w.trackedQuestId=null;fix(SOSText("openworld_state_captivity.repairOpenWorldState.012"))};for(const a of activeRegionalStories()){const q=a.linkedQuestId?w.quests.find(x=>x.id===a.linkedQuestId):null;if(a.linkedQuestId&&!q){a.linkedQuestId=null;if(['winterstone_run','bread_uphill'].includes(a.id)&&a.stage===2)a.stage=1;fix(SOSText("openworld_state_captivity.repairOpenWorldState.013",regionalStoryDef(a.id).title))}}
+ if(typeof reconcilePlayerPartyPhysicalContext==='function'&&reconcilePlayerPartyPhysicalContext())fix('Repaired stale Player Party physical location.');
  const escorts=w.quests.filter(q=>q.type==='escort'&&q.status==='active');
  if(w.activeEscortQuestId&&!escorts.some(q=>q.id===w.activeEscortQuestId)){w.activeEscortQuestId=null;fix(SOSText("openworld_state_captivity.repairOpenWorldState.014"))}
  if(escorts.length>1){
@@ -265,29 +266,32 @@ function advanceWorldDays(days,reason=SOSText("openworld_state_captivity.advance
    });
    perf('Day Tick — Moving Parties',()=>moveWorldParties());
    perf('Day Tick — Conflict & Settlements',()=>{
-     factionSecurityResponseDailyTick();
-     simulateRegionalConflict();
-     updateSettlementControl();
-     simulateSettlementLife();
+     perf('Conflict & Settlements — Security Response',()=>factionSecurityResponseDailyTick());
+     perf('Conflict & Settlements — Regional Conflict',()=>simulateRegionalConflict());
+     perf('Conflict & Settlements — Control Updates',()=>updateSettlementControl());
+     perf('Conflict & Settlements — Settlement Life',()=>simulateSettlementLife());
    });
    perf('Day Tick — Social & Regional Life',()=>{
      perf('Social — Town Life & Population',()=>{townLifeDailyTick();populationMovementDailyTick()});
      perf('Social — Relationships & NPC Life',()=>{relationshipContractDailyTick();socialLifeDailyTick();socialChainDailyTick();companionNpcSocialDailyTick()});
      perf('Social — Regional Civic & Economy',()=>{redstoneCivicDailyTick();redstoneAuthorityDailyTick();sengiaEconomyDailyTick();sengiaSecurityDailyTick();sengiaRegionalConsequenceDailyTick();if(typeof spawnEconomyDailyTick==='function')spawnEconomyDailyTick()});
-     perf('Social — Consolidation & Supply',()=>{consolidateWorldSystems();simulateRegionalNetworkDay();crossRegionSupplyPressure()});
+     perf('Social — Consolidation & Supply',()=>{perf('Social — World Consolidation',()=>consolidateWorldSystems());perf('Social — Regional Network',()=>simulateRegionalNetworkDay());perf('Social — Cross-Region Supply',()=>crossRegionSupplyPressure())});
    });
    perf('Day Tick — Factions & Politics',()=>{
-     perf('Politics — Faction Presence',()=>simulateFactionPresence());
-     perf('Politics — Faction Social',()=>factionSocialDailyTick());
-     perf('Politics — Political Simulation',()=>simulatePoliticalDay());
-     perf('Politics — Periodic Maintenance',()=>{if(state.world.day%4===0)travelerLifeTransitionTick();if(state.world.day%5===0)compactMatureWorldState()});
+     if(typeof beginFactionSocialReadCache==='function')beginFactionSocialReadCache();
+     try{
+      perf('Politics — Faction Presence',()=>simulateFactionPresence());
+      perf('Politics — Faction Social',()=>factionSocialDailyTick());
+      perf('Politics — Political Simulation',()=>simulatePoliticalDay());
+      perf('Politics — Periodic Maintenance',()=>{if(state.world.day%4===0)travelerLifeTransitionTick();if(state.world.day%5===0)compactMatureWorldState()});
+     }finally{if(typeof endFactionSocialReadCache==='function')endFactionSocialReadCache()}
    });
+   perf('Day Tick — War',()=>{if(typeof warFoundationDailyTick==='function')warFoundationDailyTick();if(typeof warStrategicDailyTick==='function')warStrategicDailyTick()});
    perf('Day Tick — Incidents & Home',()=>{
-     const settlementLocs=typeof settlementWorldLocations==='function'?settlementWorldLocations():WORLD_LOCATIONS.filter(x=>state.world.settlements?.[x.id]);
-     for(const loc of settlementLocs)if((state.world.day+loc.id.length)%2===0)maybeCreateFactionIncident(loc.id);
-     maybeCompanionPersonalRequest();
-     homeDailyTick();
-     propertyDailyTick();
+     perf('Incidents & Home — Faction Incidents',()=>{const settlementLocs=typeof settlementWorldLocations==='function'?settlementWorldLocations():WORLD_LOCATIONS.filter(x=>state.world.settlements?.[x.id]);for(const loc of settlementLocs)if((state.world.day+loc.id.length)%2===0)maybeCreateFactionIncident(loc.id)});
+     perf('Incidents & Home — Companion Requests',()=>maybeCompanionPersonalRequest());
+     perf('Incidents & Home — Guardian Hall',()=>homeDailyTick());
+     perf('Incidents & Home — Property',()=>propertyDailyTick());
    });
    perf('Day Tick — Cleanup',()=>{
      worldIntegrationEndDayTick();
@@ -298,9 +302,10 @@ function advanceWorldDays(days,reason=SOSText("openworld_state_captivity.advance
    });
  }
  perf('Day Tick — Post Processing',()=>{
-   syncOpenWorldProgress();updateCompanionStoryAvailability();
-   state.world.travelHistory.push({day:state.world.day,location:state.world.location,reason});
-   refreshContracts();refreshRegionalStories();checkRegionalStoryArrival();checkWorldQuestArrival();checkAdventureStoryArrival();checkFactionQuestProgress();checkPersonalRequests();checkCompanionStories();maybeCompanyQuartersBenefit();syncHomeTrophies();save();
+   perf('Post Processing — Progress & Stories',()=>{perf('Progress & Stories — Open World Progress',()=>syncOpenWorldProgress());perf('Progress & Stories — Companion Availability',()=>updateCompanionStoryAvailability());perf('Progress & Stories — Travel History',()=>state.world.travelHistory.push({day:state.world.day,location:state.world.location,reason}));perf('Progress & Stories — Contracts',()=>refreshContracts());perf('Progress & Stories — Regional Stories',()=>refreshRegionalStories())});
+   perf('Post Processing — Arrival Checks',()=>{checkRegionalStoryArrival();checkWorldQuestArrival();checkAdventureStoryArrival()});
+   perf('Post Processing — Quest & Companion Checks',()=>{checkFactionQuestProgress();checkPersonalRequests();checkCompanionStories();maybeCompanyQuartersBenefit();syncHomeTrophies()});
+   perf('Post Processing — Save Request',()=>save());
  });
 }
 
@@ -323,11 +328,11 @@ function restoreConfiscatedProperty(c=state.world?.captivity){
 }
 function beginOpenWorldCaptivity(gr){
  ensureWorldState();const activeIds=[...(state.party.active||[])],party=gr.worldPartyId?state.world.parties.find(p=>p.id===gr.worldPartyId):null;
- state.world.captivity={active:true,captorName:gr.name||SOSText("openworld_state_captivity.beginOpenWorldCaptivity.001"),faction:gr.faction||party?.faction||SOSText("openworld_state_captivity.beginOpenWorldCaptivity.002"),captorPartyId:gr.worldPartyId||null,location:party?.location||state.world.location,startDay:state.world.day,turns:0,escapeProgress:0,observed:0,careless:false,companions:[...activeIds],separated:[],confiscated:null,propertyRecovered:false,escapeFight:false,rescueFight:null};
+ state.world.captivity={active:true,captorName:gr.name||SOSText("openworld_state_captivity.beginOpenWorldCaptivity.001"),faction:gr.politicalRetaliation?'Unknown':(gr.faction||party?.faction||SOSText("openworld_state_captivity.beginOpenWorldCaptivity.002")),secretFaction:gr.politicalRetaliation?(gr.politicalRetaliationFaction||null):null,politicalRetaliation:!!gr.politicalRetaliation,politicalRetaliationIdentified:false,captorPartyId:gr.worldPartyId||null,location:party?.location||state.world.location,startDay:state.world.day,turns:0,escapeProgress:0,observed:0,careless:false,companions:[...activeIds],separated:[],confiscated:null,propertyRecovered:false,escapeFight:false,rescueFight:null};
  confiscateForCaptivity();
  state.guardian.hp=Math.max(1,Math.round(maxHP()*.28));state.guardian.stamina=Math.max(10,Math.round(maxStamina()*.35));
  for(const id of activeIds){const m=state.party.members[id];if(m){m.hp=Math.max(1,Math.round(allyMaxHP(m)*.25));m.stamina=Math.max(8,Math.round(allyMaxStamina(m)*.3))}}
- state.world.location=captivityCaptorLocation();state.world.region=locationRegion(state.world.location);ensureMapView().lastLocation=null;log(SOSText("openworld_state_captivity.beginOpenWorldCaptivity.003",gr.name),'bad');recordWorldHistory(SOSText("openworld_state_captivity.beginOpenWorldCaptivity.004",gr.name),'bad','captivity');SOSServices.companions.noteSharedEvent('capture',SOSText("openworld_state_captivity.beginOpenWorldCaptivity.005",gr.name),activeIds);for(const id of activeIds)SOSServices.companions.adjustTrust(id,1);save();renderOpenWorld()
+ relocatePlayerParty(captivityCaptorLocation(),{field:true,inside:false,clearTravel:true});log(SOSText("openworld_state_captivity.beginOpenWorldCaptivity.003",gr.name),'bad');recordWorldHistory(SOSText("openworld_state_captivity.beginOpenWorldCaptivity.004",gr.name),'bad','captivity');SOSServices.companions.noteSharedEvent('capture',SOSText("openworld_state_captivity.beginOpenWorldCaptivity.005",gr.name),activeIds);for(const id of activeIds)SOSServices.companions.adjustTrust(id,1);save();renderOpenWorld()
 }
 function captivityEscapeChance(){
  const c=state.world.captivity,companions=(c.companions||[]).filter(id=>state.party.active.includes(id)).length;
@@ -342,6 +347,7 @@ function captivityTurn(action){
  c.location=captivityCaptorLocation(c);
  if(c.turns>=2&&chance(.16)){c.careless=true;text+=SOSText("openworld_state_captivity.captivityTurn.006");good=true}
  maybeSeparateCaptiveCompanion();
+ const politicalReveal=typeof politicalRetaliationCaptivityReveal==='function'?politicalRetaliationCaptivityReveal(c):null;if(politicalReveal){text+=`\n\n${politicalReveal}`;good=true}
  save();actionResult(SOSText("openworld_state_captivity.captivityTurn.007"),text,good?'good':'info',showCaptivity)
 }
 function maybeSeparateCaptiveCompanion(){

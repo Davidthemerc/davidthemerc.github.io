@@ -2635,3 +2635,54 @@ button.sos-pressed:not(.world-location):not(.world-party), [role="button"].sos-p
 .spawn-road-network .minor .road-line{stroke-width:.48;opacity:.86}
 .spawn-road-network .minor .road-highlight{stroke-width:.10;opacity:.58}
 .spawn-road-network .diagonal .road-line{stroke-dasharray:1.1 .55}
+
+
+/* v1.6.57.12 Steward administration mobile layout */
+.steward-settings-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0 12px}
+.steward-setting-row{display:flex;flex-direction:column;gap:6px;margin:0;min-width:0}
+.steward-setting-label{display:block;line-height:1.25}
+.steward-setting-row select{display:block;width:100%;max-width:100%;min-width:0;padding:7px 28px 7px 8px}
+.steward-explainer>div{display:grid;grid-template-columns:minmax(140px,.65fr) 1fr;gap:8px;padding-top:5px}
+.steward-explainer small{display:block;line-height:1.3}
+.steward-spending-card{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.steward-spending-card label{display:flex;flex-direction:column;gap:4px;min-width:0}
+.steward-spending-card input{width:100%;min-width:0;padding:6px}
+.steward-spending-card p,.steward-spending-card button{grid-column:1/-1}
+@media(max-width:700px){
+ .steward-settings-list{grid-template-columns:1fr;gap:7px}
+ .steward-setting-row{padding:9px}
+ .steward-setting-row select{font-size:16px;min-height:42px}
+ .steward-explainer>div{grid-template-columns:1fr;gap:1px;border-top:1px dotted #999;padding:7px 0}
+ .steward-spending-card{grid-template-columns:1fr}
+ .steward-spending-card p,.steward-spending-card button{grid-column:1}
+}
+
+/* v1.6.65.24 — Prisoner population management */
+.prisoner-population-summary{display:grid;gap:4px;margin:8px 0 12px}
+.prisoner-cohort-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin:10px 0}
+.prisoner-population-card{min-width:0}
+.prisoner-population-card .prisoner-actions{margin-top:8px}
+
+/* v1.6.65.29 — Crystal Ward high-capacity inventory */
+.crystal-ward-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:8px 0 12px}
+.crystal-ward-summary>div{display:flex;flex-direction:column;gap:2px;padding:7px 8px;border:1px solid #aaa08a;background:rgba(255,255,255,.5);min-width:0}
+.crystal-ward-summary small{font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:#655;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crystal-ward-summary b{font-size:15px}
+.crystal-inventory-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:12px 0 6px}
+.crystal-inventory-heading h3{margin:0}
+.crystal-inventory-heading>div:first-child{display:flex;align-items:baseline;gap:8px;min-width:0}
+.crystal-inventory-heading small{opacity:.72;white-space:nowrap}
+.crystal-inventory-controls{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.crystal-inventory-controls label{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700}
+.crystal-inventory-controls select{min-width:112px;padding:5px 24px 5px 6px}
+.crystal-inventory-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;max-height:380px;overflow:auto;padding:2px 3px 4px 0;overscroll-behavior:contain}
+.crystal-inventory-row{display:flex;flex-direction:column;gap:3px;padding:7px 8px;border:1px solid #aaa08a;background:rgba(255,255,255,.45);min-width:0}
+.crystal-inventory-main{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.crystal-inventory-main b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crystal-status-pill{flex:0 0 auto;padding:1px 5px;border:1px solid currentColor;border-radius:999px;font-size:9px;text-transform:capitalize;opacity:.85}
+.crystal-inventory-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:10px;opacity:.78}
+.crystal-inventory-meta span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.crystal-inventory-empty{grid-column:1/-1;margin:8px 2px}
+.crystal-status-lost{opacity:.72}
+@media(max-width:700px){.crystal-ward-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.crystal-inventory-heading{align-items:stretch;flex-direction:column}.crystal-inventory-controls{justify-content:stretch}.crystal-inventory-controls label{flex:1 1 130px;flex-direction:column;align-items:stretch}.crystal-inventory-controls select{width:100%;font-size:16px;min-height:40px}.crystal-inventory-list{grid-template-columns:1fr;max-height:430px}}
+@media(max-width:430px){.crystal-ward-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}

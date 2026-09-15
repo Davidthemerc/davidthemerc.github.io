@@ -195,21 +195,37 @@ function showCompanionSocialRequest(id){modalRouteEnter(SOSText("social_world_li
  overlay(SOSText("social_world_life_chains.showCompanionSocialRequest.002",esc(m.name),esc(companionSocialRequestText(r)),npc?`<div class="notice compact"><b>${esc(npc.name)}</b> • ${esc(npc.role)}<br>${esc(m.name)} → ${esc(npc.name)}: ${esc(companionNpcOpinionLabel(m.id,npc.id))}</div>`:'',tr?`<div class="notice compact"><b>${esc(travelerReferenceForCompanion(tr,m.id))}</b><br>${esc(m.name)} → contact: ${esc(companionTravelerOpinionLabel(m.id,tr.id))} • Guardian/company standing: ${esc(travelerAttitudeLabel(tr))}${tr.identity?`<br><small>${esc(tr.identity.groupName)} • ${tr.identity.members.length} known members</small>`:''}</div>`:''),true);
  document.querySelectorAll('[data-comp-social]').forEach(b=>b.onclick=()=>resolveCompanionSocialRequest(id,b.dataset.compSocial));$('#compSocialBack').onclick=()=>SOSServices.navigation.back(()=>showTownLife(r.locId))
 }
+function companionSocialConcreteLine(r,m,npc,tr,choice,contract=null){
+ const place=worldLocation(r.locId)?.name||'town',ref=npc?.name||(tr?travelerReferenceForCompanion(tr,m.id):'the contact');
+ if(choice==='agree'){
+  if(r.type==='avoid')return `${m.name} says, “Thank you. If ${ref} is here, I’d rather know which street they’re on so I can take another one.”`;
+  if(npc){const role=npc.role?`the ${String(npc.role).toLowerCase()}`:'someone local';return `${m.name} says, “I want a little time with ${npc.name}. ${role} knows ${place} better than we do, and I don’t want every conversation here to begin with a favor.”`}
+  if(tr)return `${m.name} says, “I know ${ref} from the road. I’d like to hear where they’ve been since we last crossed paths.”`;
+  return `${m.name} says, “Good. I’ll find them before we leave ${place}.”`;
+ }
+ if(choice==='talk'){
+  if(contract)return `${m.name} says, “That’s why I asked.” The conversation turns up one thing that can actually be acted on: ${contract.name}.`;
+  if(npc)return `${m.name} says, “${npc.name} has been straight with me before. I don’t need you to make us friends—I just don’t want to lose a useful acquaintance because we were in a hurry.”`;
+  if(tr)return `${m.name} says, “${ref} remembers faces, wagons, and who was nervous at the last checkpoint. That is reason enough for me to keep the acquaintance.”`;
+  return `${m.name} says, “It matters because people remember whether we only speak to them when we need something.”`;
+ }
+ return r.type==='avoid'?`${m.name} says, “Fine. I’ll keep clear of ${ref} myself.”`:`${m.name} says, “All right. I won’t press it.”`;
+}
 function resolveCompanionSocialRequest(id,choice){
  const C=companionSocialNetworkState(),r=C.requests.find(x=>x.id===id);if(!r||r.status!=='active')return showTownLife(state.world.location);const m=state.party.members[r.compId],npc=r.npcId?settlementNpc(r.locId,r.npcId):null,tr=r.travelerId?travelerRegistryState().records[r.travelerId]:null;let text='',tone='info';
  if(choice==='agree'){
   SOSServices.companions.adjustTrust(m.id,2);if(npc){setCompanionNpcOpinion(m.id,npc.id,r.type==='avoid'?0:1,SOSText("social_world_life_chains.resolveCompanionSocialRequest.001"));const nr=npcRelationshipState(npc.id);nr.familiarity=clamp(nr.familiarity+1,0,10);npcMemoryAdd(npc.id,SOSText("social_world_life_chains.resolveCompanionSocialRequest.002",m.name),1)}
   if(tr){setCompanionTravelerOpinion(m.id,tr.id,r.type==='avoid'?0:1,SOSText("social_world_life_chains.resolveCompanionSocialRequest.003"));tr.social=tr.social||{familiarity:0};if(r.type!=='avoid')tr.social.familiarity=clamp((tr.social.familiarity||0)+1,0,10)}
-  text=r.type==='avoid'?SOSText("social_world_life_chains.resolveCompanionSocialRequest.004",m.name):SOSText("social_world_life_chains.resolveCompanionSocialRequest.005",m.name);tone='good'
+  text=companionSocialConcreteLine(r,m,npc,tr,'agree');tone='good'
  }else if(choice==='talk'){
-  SOSServices.companions.adjustTrust(m.id,1);if(chance(.35)){const q=createRelationshipGeneratedContract(r.locId,{kind:'companion',companion:m,weight:Math.floor((m.trust||0)/10)},true);text=SOSText("social_world_life_chains.resolveCompanionSocialRequest.006",m.name,q.name)}else{text=SOSText("social_world_life_chains.resolveCompanionSocialRequest.007",m.name)}SOSServices.companions.noteSharedEvent('social_request',SOSText("social_world_life_chains.resolveCompanionSocialRequest.008",m.name,npc?.name||tr?.name||'a local relationship'),[m.id],r.locId)
- }else{SOSServices.companions.adjustTrust(m.id,-1);text=SOSText("social_world_life_chains.resolveCompanionSocialRequest.009",m.name);tone='bad'}
+  SOSServices.companions.adjustTrust(m.id,1);let q=null;if(chance(.35))q=createRelationshipGeneratedContract(r.locId,{kind:'companion',companion:m,weight:Math.floor((m.trust||0)/10)},true);text=companionSocialConcreteLine(r,m,npc,tr,'talk',q);SOSServices.companions.noteSharedEvent('social_request',`${m.name} asked to keep contact with ${npc?.name||(tr?travelerReferenceForCompanion(tr,m.id):null)||'someone in '+(worldLocation(r.locId)?.name||'town')}.`,[m.id],r.locId)
+ }else{SOSServices.companions.adjustTrust(m.id,-1);text=companionSocialConcreteLine(r,m,npc,tr,'decline');tone='bad'}
  r.status='resolved';r.resolvedDay=state.world.day;r.choice=choice;r.result=text;C.history.push({day:state.world.day,type:'resolved_request',locId:r.locId,compId:r.compId,text});C.history=C.history.slice(-80);save();actionResult(SOSText("social_world_life_chains.resolveCompanionSocialRequest.010"),text,tone,()=>showTownLife(r.locId))
 }
 function companionTownInterjection(locId){
  const active=activeRoadCompanions();if(!active.length)return'';for(const m of active){
   const o=Object.values(companionNpcOpinionState()).filter(x=>x.compId===m.id&&Math.abs(x.score)>=2).sort((a,b)=>Math.abs(b.score)-Math.abs(a.score)).find(x=>(SETTLEMENT_NPCS[locId]||[]).some(n=>n.id===x.npcId));
-  if(o){const npc=settlementNpc(locId,o.npcId);return `<div class="notice compact companion-town-interjection"><b>${esc(m.name)}</b><br>${o.score>0?`${esc(m.name)} seems pleased to be somewhere ${esc(npc.name)} might be around.`:`${esc(m.name)} is visibly less enthusiastic about running into ${esc(npc.name)} here.`}</div>`}
+  if(o){const npc=settlementNpc(locId,o.npcId);return `<div class="notice compact companion-town-interjection"><b>${esc(m.name)}</b><br>${o.score>0?`“If ${esc(npc.name)} is around, I’d like to say hello before we leave.”`:`“If you see ${esc(npc.name)} first, tell me. I’d rather not be surprised.”`}</div>`}
   const to=Object.values(companionSocialNetworkState().travelerOpinions).filter(x=>x.compId===m.id&&Math.abs(x.score)>=2).find(x=>{const tr=travelerRegistryState().records[x.travelerId];return tr&&((tr.regions||[]).includes(locationRegion(locId))||tr.settledAt===locId)});
   if(to){const tr=travelerRegistryState().records[to.travelerId],ref=travelerReferenceForCompanion(tr,m.id);return `<div class="notice compact companion-town-interjection"><b>${esc(m.name)}</b><br>${to.score>0?`${esc(m.name)} asks whether ${esc(ref)} has been seen around town.`:`${esc(m.name)} would prefer not to cross paths with ${esc(ref)}.`}</div>`}
  }
@@ -249,12 +265,25 @@ function relationshipContractState(){
  ensureWorldState();if(!state.world.relationshipContracts||typeof state.world.relationshipContracts!=='object')state.world.relationshipContracts={messengers:[],history:[],lastGenDay:{},serial:0};
  const R=state.world.relationshipContracts;if(!Array.isArray(R.messengers))R.messengers=[];if(!Array.isArray(R.history))R.history=[];if(!R.lastGenDay)R.lastGenDay={};return R
 }
+let SOSRelationshipContractReadCache=null;
+function beginRelationshipContractReadCache(){
+ const contractCache=typeof contractRefreshReadCache==='function'?contractRefreshReadCache():null;SOSRelationshipContractReadCache={state,day:state.world.day,presentNpcsByLoc:contractCache?.presentNpcsByLoc||null,travelerByRegion:null,travelerBySettlement:null,companionRows:null,candidates:new Map(),built:false};return SOSRelationshipContractReadCache
+}
+function endRelationshipContractReadCache(){SOSRelationshipContractReadCache=null}
+function relationshipContractReadCache(){return SOSRelationshipContractReadCache&&SOSRelationshipContractReadCache.state===state&&SOSRelationshipContractReadCache.day===state.world.day?SOSRelationshipContractReadCache:null}
+function ensureRelationshipContractReadCacheBuilt(){
+ const c=relationshipContractReadCache();if(!c||c.built)return c;if(!c.presentNpcsByLoc){c.presentNpcsByLoc=new Map();for(const [home,list] of Object.entries(SETTLEMENT_NPCS||{}))for(const n of list||[]){if(politicalNpcDead(n.id))continue;const loc=currentNpcLocation(n.id,home);if(!c.presentNpcsByLoc.has(loc))c.presentNpcsByLoc.set(loc,[]);c.presentNpcsByLoc.get(loc).push({...n,home})}}
+ const meaningful=Object.values(travelerRegistryState().records||{}).filter(r=>(r.social?.familiarity||0)>=2||r.contractsCompleted||r.threats||r.helped);c.travelerByRegion=new Map();c.travelerBySettlement=new Map();for(const r of meaningful){if(r.settledAt){if(!c.travelerBySettlement.has(r.settledAt))c.travelerBySettlement.set(r.settledAt,[]);c.travelerBySettlement.get(r.settledAt).push(r)}for(const region of new Set(r.regions||[])){if(!c.travelerByRegion.has(region))c.travelerByRegion.set(region,[]);c.travelerByRegion.get(region).push(r)}}
+ const opinionCounts=new Map();for(const o of Object.values(companionNpcOpinionState()))if(Math.abs(o.score)>=2)opinionCounts.set(o.compId,(opinionCounts.get(o.compId)||0)+1);c.companionRows=[];for(const m of activeRoadCompanions()){const ops=opinionCounts.get(m.id)||0;if((m.trust||0)>=55||ops)c.companionRows.push({kind:'companion',companion:m,weight:Math.floor((m.trust||0)/15)+ops})}c.built=true;return c
+}
 function relationshipContractCandidates(locId){
- const rows=[],present=settlementNpcsPresent(locId),companions=activeRoadCompanions(),travelers=meaningfulTravelersForLocation(locId);
+ const c=ensureRelationshipContractReadCacheBuilt();if(c?.candidates.has(locId))return c.candidates.get(locId);
+ const rows=[],present=c?.presentNpcsByLoc?.get(locId)||settlementNpcsPresent(locId),companions=c?.companionRows||null;let travelers;
+ if(c){const seen=new Set(),combined=[...(c.travelerBySettlement.get(locId)||[]),...(c.travelerByRegion.get(locationRegion(locId))||[])];travelers=combined.filter(r=>!seen.has(r.id)&&(seen.add(r.id),true))}else travelers=meaningfulTravelersForLocation(locId);
  for(const npc of present){const rel=npcRelationshipState(npc.id);if((rel.familiarity||0)>=4&&rel.opinion>-3)rows.push({kind:'npc',npc,weight:(rel.familiarity||0)+Math.max(0,rel.opinion||0)})}
- for(const m of companions){const ops=Object.values(companionNpcOpinionState()).filter(o=>o.compId===m.id&&Math.abs(o.score)>=2);if((m.trust||0)>=55||ops.length)rows.push({kind:'companion',companion:m,weight:Math.floor((m.trust||0)/15)+ops.length})}
- for(const r of travelers){if(travelerAttitudeScore(r)>=4&&(r.contractsCompleted||0)>=1)rows.push({kind:'traveler',traveler:r,weight:travelerAttitudeScore(r)+(r.contractsCompleted||0)*2})}
- return rows.sort((a,b)=>b.weight-a.weight)
+ if(companions)rows.push(...companions);else for(const m of activeRoadCompanions()){const ops=Object.values(companionNpcOpinionState()).filter(o=>o.compId===m.id&&Math.abs(o.score)>=2);if((m.trust||0)>=55||ops.length)rows.push({kind:'companion',companion:m,weight:Math.floor((m.trust||0)/15)+ops.length})}
+ for(const r of travelers){const attitude=travelerAttitudeScore(r);if(attitude>=4&&(r.contractsCompleted||0)>=1)rows.push({kind:'traveler',traveler:r,weight:attitude+(r.contractsCompleted||0)*2})}
+ rows.sort((a,b)=>b.weight-a.weight);if(c)c.candidates.set(locId,rows);return rows
 }
 function relationshipContractType(source,locId){
  const role=String(source.npc?.role||'').toLowerCase(),r=source.traveler,comp=source.companion;

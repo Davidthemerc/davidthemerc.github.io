@@ -78,7 +78,7 @@ function powerEvidence(locId,faction){
 }
 function recordFactionPower(locId,faction,channel,amount,reason,days=8){
  if(!OPEN_WORLD_FACTIONS[faction]||!state.world.settlements[locId])return;
- const rows=powerEvidence(locId,faction);rows.push({day:state.world.day,expiresDay:state.world.day+days,channel,amount,reason});while(rows.length>14)rows.shift();
+ const rows=powerEvidence(locId,faction),scaledDays=Math.max(1,Math.round(days*settlementPoliticalPersistence(locId)));rows.push({day:state.world.day,expiresDay:state.world.day+scaledDays,channel,amount,reason});while(rows.length>14)rows.shift();
  const ps=politicalSettlement(locId);ps.lean[faction]=clamp((ps.lean[faction]||0)+amount*.35,-6,12)
 }
 function activeFactionPowerEvidence(locId,faction){
@@ -94,7 +94,7 @@ function settlementLeanTier(locId,faction){
  const n=settlementLeanScore(locId,faction);return n>=10?'Deeply aligned':n>=7?'Strongly leaning':n>=4?'Leaning':n>=2?'Open to influence':n<=-2?'Resistant':SOSText("politics_core.settlementLeanTier.001")
 }
 function rankedSettlementLeans(locId){
- return Object.keys(OPEN_WORLD_FACTIONS).map(f=>({f,score:settlementLeanScore(locId,f),tier:settlementLeanTier(locId,f)})).filter(x=>Math.abs(x.score)>=.5).sort((a,b)=>b.score-a.score)
+ return Object.keys(OPEN_WORLD_FACTIONS).map(f=>{const score=settlementLeanScore(locId,f);return{f,score,tier:score>=10?'Deeply aligned':score>=7?'Strongly leaning':score>=4?'Leaning':score>=2?'Open to influence':score<=-2?'Resistant':SOSText("politics_core.settlementLeanTier.001")}}).filter(x=>Math.abs(x.score)>=.5).sort((a,b)=>b.score-a.score)
 }
 
 function localGuardianFactionRelationState(locId,faction){
@@ -168,11 +168,26 @@ function localPoliticalFactions(locId){
  for(const [f,v] of Object.entries(presence))if(OPEN_WORLD_FACTIONS[f]&&v>=1)set.add(f);
  for(const x of social)if(x.n+x.t>=.5)set.add(x.f);
  for(const x of rankedSettlementLeans(locId).slice(0,4))set.add(x.f);
- return [...set].filter(f=>OPEN_WORLD_FACTIONS[f]).sort((a,b)=>localPoliticalProfile(locId,b).overall-localPoliticalProfile(locId,a).overall)
+ const scored=[...set].filter(f=>OPEN_WORLD_FACTIONS[f]).map(f=>({f,overall:localPoliticalProfile(locId,f).overall}));
+ scored.sort((a,b)=>b.overall-a.overall);return scored.map(x=>x.f)
 }
 function localPoliticalRival(locId,faction){
- return localPoliticalFactions(locId).filter(f=>f!==faction).sort((a,b)=>settlementLeanScore(locId,b)-settlementLeanScore(locId,a))[0]||null
+ const scored=localPoliticalFactions(locId).filter(f=>f!==faction).map(f=>({f,score:localPoliticalProfile(locId,f).overall,lean:settlementLeanScore(locId,f)}));scored.sort((a,b)=>b.score-a.score||b.lean-a.lean);return scored[0]?.f||null
 }
+function localPoliticalLeadershipFactions(locId){const control=settlementControl(locId),rival=localPoliticalRival(locId,control);return rival?[control,rival]:[control]}
+function ensureLocalPoliticalLeadership(locId,injuriesAlreadyRefreshed=false){
+ if(!injuriesAlreadyRefreshed)refreshPoliticalLeaderInjuries(locId);const c=politicalCovertState(locId),people=typeof factionSocialNpcsPresentCached==='function'?factionSocialNpcsPresentCached(locId):settlementNpcsPresent(locId),rows=[],byFaction=new Map();
+ const roleScore=r=>/(council|speaker|liaison|officer|warden|merchant|factor|trader|guild|captain|elder)/.test(String(r||'').toLowerCase())?2:0;
+ for(const n of people){if(c.deadNpcs[n.id]||c.injuredNpcs[n.id])continue;const a=npcFactionAlignment(n.id),row={n,a};rows.push(row);if(a?.faction){if(!byFaction.has(a.faction))byFaction.set(a.faction,[]);byFaction.get(a.faction).push(row)}}
+ for(const list of byFaction.values())list.sort((a,b)=>(b.a?.support||0)-(a.a?.support||0));
+ let fallbackPool=null;
+ for(const faction of localPoliticalLeadershipFactions(locId)){
+  const eligible=byFaction.get(faction)||[];if((eligible[0]?.a?.support||0)>=3)continue;
+  let candidate=eligible[0];if(!candidate){if(!fallbackPool)fallbackPool=[...rows].sort((a,b)=>roleScore(b.n.role)-roleScore(a.n.role)||(a.a?.support||0)-(b.a?.support||0));candidate=fallbackPool.find(x=>(x.a?.support||0)<=2)||fallbackPool[0]}
+  if(candidate){setNpcFactionAlignment(candidate.n.id,faction,3,`${majorFaction(faction).short} elevated ${candidate.n.name} as a visible local political representative in ${worldLocation(locId).name}.`);candidate.a.public=true;candidate.a.localPoliticalLeaderLoc=locId;candidate.a.localPoliticalLeaderSince=state.world.day;if(!byFaction.has(faction))byFaction.set(faction,[]);byFaction.get(faction).unshift(candidate)}
+ }
+}
+
 function localPoliticalHistory(locId,limit=6){return (politicalSettlement(locId).civicHistory||[]).slice(-limit).reverse()}
 
 const INTERNAL_FACTION_BLOCS={
@@ -232,15 +247,15 @@ function internalFactionPoliticsState(locId,faction){
   const dominant=[...defs].sort((a,b)=>(influence[b.id]||0)-(influence[a.id]||0))[0]?.id||defs[0].id;
   ps.internalPolitics[faction]={influence,dominant,policy:dominant,lastActionDay:-99,lastTickDay:state.world.day,history:[],guardianBacked:null,policySinceDay:state.world.day}
  }
- const s=ps.internalPolitics[faction];if(!s.influence)s.influence={};for(const b of defs)if(!Number.isFinite(s.influence[b.id]))s.influence[b.id]=28+rnd(0,8);if(!Array.isArray(s.history))s.history=[];if(!Number.isFinite(s.lastActionDay))s.lastActionDay=-99;if(!Number.isFinite(s.lastTickDay))s.lastTickDay=state.world.day;if(!Number.isFinite(s.policySinceDay))s.policySinceDay=state.world.day;
- s.dominant=[...defs].sort((a,b)=>(s.influence[b.id]||0)-(s.influence[a.id]||0))[0]?.id||defs[0].id;if(!defs.some(b=>b.id===s.policy)){s.policy=s.dominant;s.policySinceDay=state.world.day}return s
+ const s=ps.internalPolitics[faction];if(!s.influence)s.influence={};let dominant=defs[0]?.id||s.dominant,dominantValue=-Infinity;for(const b of defs){if(!Number.isFinite(s.influence[b.id]))s.influence[b.id]=28+rnd(0,8);const v=s.influence[b.id]||0;if(v>dominantValue){dominantValue=v;dominant=b.id}}if(!Array.isArray(s.history))s.history=[];if(!Number.isFinite(s.lastActionDay))s.lastActionDay=-99;if(!Number.isFinite(s.lastTickDay))s.lastTickDay=state.world.day;if(!Number.isFinite(s.policySinceDay))s.policySinceDay=state.world.day;
+ s.dominant=dominant||s.dominant;if(!defs.some(b=>b.id===s.policy)){s.policy=s.dominant;s.policySinceDay=state.world.day}return s
 }
 function internalFactionBloc(faction,id){return (INTERNAL_FACTION_BLOCS[faction]||[]).find(x=>x.id===id)||null}
 function internalFactionAccess(locId,faction){
  const standing=state.world.factionStanding[faction]||0;return standing>=0&&(standing>=6||politicalCapital(locId,faction)>=12)
 }
-function internalFactionPolicyEffect(locId,faction,apply=false){
- const s=internalFactionPoliticsState(locId,faction),bloc=internalFactionBloc(faction,s.policy)||internalFactionBloc(faction,s.dominant),c=localPoliticalFactionState(locId,faction),ss=settlementState(locId),ps=politicalSettlement(locId);if(!bloc)return {text:SOSText("politics_core.internalFactionPolicyEffect.001")};
+function internalFactionPolicyEffect(locId,faction,apply=false,knownState=null){
+ const s=knownState||internalFactionPoliticsState(locId,faction),bloc=internalFactionBloc(faction,s.policy)||internalFactionBloc(faction,s.dominant),c=localPoliticalFactionState(locId,faction),ss=settlementState(locId),ps=politicalSettlement(locId);if(!bloc)return {text:SOSText("politics_core.internalFactionPolicyEffect.001")};
  let text='',support=0,legitimacy=0,org=0,merchant=0,security=0;
  if(['security','wardens','defense','hall','scouts'].includes(bloc.id)){security=.10;org=.05;if(ss.security<48){support=.06;legitimacy=.05;text=SOSText("politics_core.internalFactionPolicyEffect.002")}else if(ps.autonomy>=7){support=-.05;legitimacy=-.06;text=SOSText("politics_core.internalFactionPolicyEffect.003")}else text=SOSText("politics_core.internalFactionPolicyEffect.004")}
  else if(['civic','localist'].includes(bloc.id)){support=.09;legitimacy=.11;security=-.025;text=SOSText("politics_core.internalFactionPolicyEffect.005")}
@@ -250,15 +265,24 @@ function internalFactionPolicyEffect(locId,faction,apply=false){
  return {bloc,text,support,legitimacy,org,merchant,security}
 }
 function simulateInternalFactionPoliticsDay(locId){
- for(const faction of localPoliticalFactions(locId)){
-  const s=internalFactionPoliticsState(locId,faction);if(s.lastTickDay===state.world.day)continue;s.lastTickDay=state.world.day;internalFactionPolicyEffect(locId,faction,true);const defs=INTERNAL_FACTION_BLOCS[faction]||[];
-  for(const b of defs){const v=s.influence[b.id]||0;if(v>62)s.influence[b.id]=Math.max(0,v-.08);else if(v<18)s.influence[b.id]=Math.min(100,v+.05)}
-  if(chance(.06)){const b=pick(defs);s.influence[b.id]=clamp((s.influence[b.id]||0)+.4,0,100)}
-  s.dominant=[...defs].sort((a,b)=>(s.influence[b.id]||0)-(s.influence[a.id]||0))[0]?.id||s.dominant;
+ const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now(),record=(name,ms)=>{if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration(name,ms)};
+ let t=now();const factions=localPoliticalFactions(locId);record('Internal Factions — Discover Local Factions',now()-t);
+ let stateMs=0,policyMs=0,influenceMs=0;
+ for(const faction of factions){
+  t=now();const s=internalFactionPoliticsState(locId,faction);stateMs+=now()-t;if(s.lastTickDay===state.world.day)continue;s.lastTickDay=state.world.day;
+  t=now();internalFactionPolicyEffect(locId,faction,true,s);policyMs+=now()-t;
+  t=now();const defs=INTERNAL_FACTION_BLOCS[faction]||[];
+  let dominant=s.dominant,dominantValue=-Infinity;
+  for(const b of defs){let v=s.influence[b.id]||0;if(v>62)v=Math.max(0,v-.08);else if(v<18)v=Math.min(100,v+.05);s.influence[b.id]=v;if(v>dominantValue){dominantValue=v;dominant=b.id}}
+  if(chance(.06)&&defs.length){const b=pick(defs);s.influence[b.id]=clamp((s.influence[b.id]||0)+.4,0,100);if(s.influence[b.id]>dominantValue){dominantValue=s.influence[b.id];dominant=b.id}}
+  s.dominant=dominant||s.dominant;
   const dominantLead=(s.influence[s.dominant]||0)-(s.influence[s.policy]||0),policyAge=state.world.day-(s.policySinceDay||state.world.day);
   if(dominantLead>14&&policyAge>=4&&chance(.12)){s.policy=s.dominant;s.policySinceDay=state.world.day;s.history.push({day:state.world.day,type:'policy_shift',text:SOSText("politics_core.simulateInternalFactionPoliticsDay.001",internalFactionBloc(faction,s.policy)?.name||'A new bloc')});s.history=s.history.slice(-30)}
+  influenceMs+=now()-t;
  }
+ record('Internal Factions — State',stateMs);record('Internal Factions — Policy Effects',policyMs);record('Internal Factions — Influence & Shifts',influenceMs)
 }
+
 function executeInternalFactionAction(locId,faction,action,blocId=null){
  if(!internalFactionAccess(locId,faction))return showInternalFactionPolitics(locId,faction);const s=internalFactionPoliticsState(locId,faction);if(s.lastActionDay===state.world.day)return actionResult('Political Work Already Done Today','You have already made a major intervention in this faction’s internal politics today.','info',()=>showInternalFactionPolitics(locId,faction));const defs=INTERNAL_FACTION_BLOCS[faction]||[],bloc=internalFactionBloc(faction,blocId)||internalFactionBloc(faction,s.dominant),before=politicalOutcomeSnapshot(locId,[faction]),standing=state.world.factionStanding[faction]||0;let cost=0,text='',tone='good';
  if(action==='back'){cost=10;if(politicalCapital(locId,faction)<cost)return actionResult(SOSText("politics_core.executeInternalFactionAction.001"),SOSText("politics_core.executeInternalFactionAction.002",bloc.name,cost),'bad',()=>showInternalFactionPolitics(locId,faction));adjustPoliticalCapital(locId,faction,-cost,SOSText("politics_core.executeInternalFactionAction.003",bloc.name));s.influence[bloc.id]=clamp((s.influence[bloc.id]||0)+9,0,100);s.guardianBacked=bloc.id;text=SOSText("politics_core.executeInternalFactionAction.004",bloc.name,majorFaction(faction).short)}

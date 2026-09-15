@@ -136,11 +136,24 @@ function runtimeErrorContext(){
  return {day,mode:state?.mode||null,location:locName}
 }
 function saveRuntimeJavascriptErrors(){try{localStorage.setItem(RUNTIME_ERROR_KEY,JSON.stringify(runtimeJavascriptErrors.slice(-40)))}catch{}}
+function refreshRuntimeJavascriptErrorsFromStorage(){
+ try{
+  const stored=JSON.parse(localStorage.getItem(RUNTIME_ERROR_KEY)||'[]'),campaign=state?.world?.runtimeDiagnostics?.errors,merged=[...runtimeJavascriptErrors];
+  const add=row=>{if(row&&!merged.some(e=>(e.time&&row.time&&e.time===row.time)||(e.line===row.line&&e.day===row.day&&e.system===row.system&&e.action===row.action)))merged.push(row)};
+  if(Array.isArray(stored))stored.forEach(add);
+  if(Array.isArray(campaign))campaign.forEach(add);
+  runtimeJavascriptErrors=merged.slice(-40);
+ }catch{}
+ return runtimeJavascriptErrors
+}
 function clearRuntimeJavascriptErrors(){runtimeJavascriptErrors=[];lastCombatJavascriptError='';try{localStorage.removeItem(RUNTIME_ERROR_KEY)}catch{}}
-function reportRuntimeJavascriptError(err,source='',kind='error'){
- const line=formatJavascriptError(err,source),ctx=runtimeErrorContext(),last=runtimeJavascriptErrors[runtimeJavascriptErrors.length-1];
- if(last&&last.line===line&&last.day===ctx.day&&last.location===ctx.location)return line;
- runtimeJavascriptErrors.push({time:new Date().toISOString(),kind,line,...ctx});runtimeJavascriptErrors=runtimeJavascriptErrors.slice(-40);saveRuntimeJavascriptErrors();return line
+function reportRuntimeJavascriptError(err,source='',kind='error',details={}){
+ const line=formatJavascriptError(err,source),ctx=runtimeErrorContext(),last=runtimeJavascriptErrors[runtimeJavascriptErrors.length-1],system=details?.system||'',action=details?.action||'',detailLocation=details?.location||'',faction=details?.faction||'';
+ if(last&&last.line===line&&last.day===ctx.day&&last.location===ctx.location&&last.system===system&&last.action===action)return line;
+ runtimeJavascriptErrors.push({time:new Date().toISOString(),kind,line,...ctx,system,action,detailLocation,faction});runtimeJavascriptErrors=runtimeJavascriptErrors.slice(-40);saveRuntimeJavascriptErrors();return line
+}
+function reportRecoverableGameError(err,system='Simulation',action='',details={}){
+ return reportRuntimeJavascriptError(err,`${system}${action?` — ${action}`:''}`,'recoverable',{...details,system,action})
 }
 function appendCombatConsoleLine(line){
  const box=document.querySelector('.combat-log');if(!box)return;
@@ -157,9 +170,9 @@ function captureJavascriptError(err,source='',kind='error'){
 }
 window.addEventListener('error',e=>captureJavascriptError(e.error||new Error(e.message),`${e.filename||'script'}:${e.lineno||'?'}:${e.colno||'?'}`,'error'));
 window.addEventListener('unhandledrejection',e=>captureJavascriptError(e.reason instanceof Error?e.reason:new Error(String(e.reason||SOSText("events_field_runtime_navigation.captureJavascriptError.001"))),'promise','promise'));
-function showJavascriptErrorJournal(){modalRouteEnter(SOSText("events_field_runtime_navigation.showJavascriptErrorJournal.001"),Array.from(arguments));
+function showJavascriptErrorJournal(){refreshRuntimeJavascriptErrorsFromStorage();modalRouteEnter(SOSText("events_field_runtime_navigation.showJavascriptErrorJournal.001"),Array.from(arguments));
  const rows=runtimeJavascriptErrors.slice().reverse();
- overlay(SOSText("events_field_runtime_navigation.showJavascriptErrorJournal.002",rows.length?rows.map(e=>`<div class="js-error-entry"><small>${esc(e.time||'Unknown time')}${e.day!=null?` • Day ${e.day}`:''}${e.location?` • ${esc(e.location)}`:''}${e.mode?` • ${esc(e.mode)}`:''}</small><br>${esc(e.line)}</div>`).join(''):'<div class="notice success">No JavaScript runtime errors have been recorded.</div>',rows.length?'<button id="clearJavascriptErrors">Clear Error Record</button>':''),true);
+ overlay(SOSText("events_field_runtime_navigation.showJavascriptErrorJournal.002",rows.length?rows.map(e=>`<div class="js-error-entry"><small>${esc(e.time||'Unknown time')}${e.day!=null?` • Day ${e.day}`:''}${e.location?` • ${esc(e.location)}`:''}${e.mode?` • ${esc(e.mode)}`:''}</small>${e.system||e.action?`<br><b>${esc(e.system||'Recoverable Error')}${e.action?` — ${esc(e.action)}`:''}</b>${e.faction?` • ${esc(e.faction)}`:''}${e.detailLocation&&e.detailLocation!==e.location?` • ${esc(e.detailLocation)}`:''}`:''}<br>${esc(e.line)}</div>`).join(''):'<div class="notice success">No JavaScript runtime errors have been recorded.</div>',rows.length?'<button id="clearJavascriptErrors">Clear Error Record</button>':''),true);
  if($('#clearJavascriptErrors'))$('#clearJavascriptErrors').onclick=()=>{clearRuntimeJavascriptErrors();showJavascriptErrorJournal()};$('#javascriptErrorsBack').onclick=()=>modalNavBackOrFallback(showWorldJournal)
 }
 let townNavStack=[];
@@ -443,6 +456,7 @@ function navigationRouteFunction(name){
   case 'showLocalEquipment':return showLocalEquipment;
   case 'showLocalLaw':return showLocalLaw;
   case 'showLocalPoliticalActions':return showLocalPoliticalActions;
+  case 'showLegitimateOppositionActions':return showLegitimateOppositionActions;
   case 'showLocalPoliticalPeople':return showLocalPoliticalPeople;
   case 'showLogisticsHireCandidates':return showLogisticsHireCandidates;
   case 'showMarket':return showMarket;

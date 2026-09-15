@@ -1,8 +1,8 @@
 {
   "game": "Siege of Shantium",
-  "version": "1.6.55.2",
+  "version": "1.6.66.8.2",
   "architecture": "modular-source-of-truth",
-  "standalone": "Siege of Shantium v1.6.55.2 Standalone.html",
+  "standalone": "Siege of Shantium v1.6.66.8.2 Standalone.html",
   "modules": [
     "core/language.js",
     "core/services.js",
@@ -13,6 +13,7 @@
     "politics/protection-outcomes.js",
     "politics/campaigns-civic.js",
     "politics/covert-raids.js",
+    "politics/retaliation.js",
     "politics/control-incidents.js",
     "politics/faction-social.js",
     "social/travelers-contacts.js",
@@ -43,6 +44,15 @@
     "regions/spawn-contracts-opportunities.js",
     "settlements/people-townlife.js",
     "world/regional-simulation.js",
+    "war/foundation.js",
+    "war/campaigns.js",
+    "war/intelligence-encounters.js",
+    "war/battles.js",
+    "war/territorial.js",
+    "war/logistics.js",
+    "war/civilians.js",
+    "war/pows.js",
+    "war/diplomacy.js",
     "world/integration-foundations.js",
     "settlements/problems-stories.js",
     "hall/core-hospitality.js",
@@ -55,6 +65,7 @@
     "hall/security.js",
     "hall/life-visitors-diplomacy.js",
     "hall/homecoming-office-upgrades.js",
+    "hall/steward-administration.js",
     "companions/stories-settlement-services.js",
     "exploration/wilderness-artifacts.js",
     "companions/life-road.js",
@@ -87,6 +98,10 @@
     "hall/integration-safeguards.js",
     "hall/hospitality-ui.js",
     "siege/prisoner-ui.js",
+    "siege/prisoner-population.js",
+    "siege/prisoner-work-crews.js",
+    "hall/crystal-ward.js",
+    "war/notifications.js",
     "core/runtime-start.js"
   ]
 }

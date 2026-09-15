@@ -12,7 +12,7 @@ function compactMatureWorldState(){
    const important=recs.filter(r=>activeIds.has(r.id)||r.identity||r.settledAt||(r.contractsCompleted||0)>0||(r.helped||0)>=2||socialIds.has(r.id)||requestIds.has(r.id));
    const importantIds=new Set(important.map(r=>r.id)),disposable=recs.filter(r=>!importantIds.has(r.id)).sort((a,b)=>((b.social?.familiarity||0)*20+(b.lastSeenDay||0))-((a.social?.familiarity||0)*20+(a.lastSeenDay||0)));
    const target=Math.max(90,important.length),keep=[...important,...disposable.slice(0,Math.max(0,target-important.length))];
-   if(keep.length<recs.length){R.records=Object.fromEntries(keep.map(x=>[x.id,x]));changed++}
+   if(keep.length<recs.length){const keepIds=new Set(keep.map(x=>x.id));for(const r of recs)if(!keepIds.has(r.id)&&typeof retireTravelerIntegrationAtSource==='function')retireTravelerIntegrationAtSource(r.id,'traveler_registry_compaction');R.records=Object.fromEntries(keep.map(x=>[x.id,x]));changed++}
  }
  return changed
 }
@@ -189,10 +189,48 @@ function worldPartyPosition(p){
 }
 function randomWorldDestination(from){const choices=WORLD_LOCATIONS.filter(x=>x.id!==from&&x.id!=='redoubt');return pick(choices).id}
 
-function defaultSettlementState(){const custom={shantium:[72,62],redoubt:[78,55],zion:[76,61],lowcreek:[61,48],ebonheart:[66,46],norwegian:[58,54],winterstone:[68,57],skybreak:[82,40],sengia:[86,82],lockwood:[63,55],grayhaven:[69,48],briarlake:[56,59],glenbrook:[58,49],tyrdon:[54,37],pyreglade:[61,52],azerdon:[76,58],karsen:[60,46],decius:[52,39],velmora:[55,42],skallvik:[38,34],exium:[62,47],crownpass:[66,39]};return Object.fromEntries(WORLD_LOCATIONS.filter(x=>['town','settlement','camp','fort','district'].includes(x.type)).map(x=>{const v=custom[x.id]||[58,55];return[x.id,{security:v[0],prosperity:v[1],lastEventDay:0}]}))}
+function defaultSettlementState(){const custom={shantium:[72,62],redoubt:[78,55],zion:[76,61],lowcreek:[61,48],ebonheart:[66,46],norwegian:[58,54],winterstone:[68,57],skybreak:[82,40],sengia:[86,82],lockwood:[63,55],grayhaven:[69,48],briarlake:[56,59],glenbrook:[58,49],tyrdon:[54,37],pyreglade:[61,52],azerdon:[76,58],karsen:[60,46],decius:[52,39],velmora:[55,42],skallvik:[38,34],exium:[62,47],crownpass:[66,39]};return Object.fromEntries(WORLD_LOCATIONS.filter(x=>['town','settlement','camp','fort','district'].includes(x.type)).map(x=>{const tier=settlementTier(x),baseline={outpost:[62,48],village:[58,55],town:[64,60],city:[72,66],metropolis:[78,72]}[tier]||[58,55],v=custom[x.id]||baseline;return[x.id,{security:v[0],prosperity:v[1],lastEventDay:0}]}))}
 function settlementState(id){ensureWorldState();return state.world.settlements[id]||{security:50,prosperity:50,lastEventDay:0}}
 function partyPurpose(kind){
  return {bandits:SOSText("economy_trade_world_parties.partyPurpose.001"),raiders:SOSText("economy_trade_world_parties.partyPurpose.002"),redstone:SOSText("economy_trade_world_parties.partyPurpose.003"),coalition:SOSText("economy_trade_world_parties.partyPurpose.004"),merchant:SOSText("economy_trade_world_parties.partyPurpose.005"),refugees:SOSText("economy_trade_world_parties.partyPurpose.006"),mercenary:SOSText("economy_trade_world_parties.partyPurpose.007")}[kind]||SOSText("economy_trade_world_parties.partyPurpose.008")
+}
+function worldPartyAssignmentChoices(kind,to){
+ const choices={
+  coalition:[
+   {id:'patrol',label:'Coalition Patrol',detail:`Reinforcing patrols around ${to}.`,spoken:`We're reinforcing the patrols around ${to}.`},
+   {id:'liaison',label:'Coalition Liaison',detail:`Meeting local officials in ${to}.`,spoken:`We're meeting local officials in ${to}.`},
+   {id:'support',label:'Coalition Support',detail:`Supporting local security in ${to}.`,spoken:`We've been asked to support the local watch in ${to}.`}
+  ],
+  redstone:[
+   {id:'military',label:'Redstone Deployment',detail:`Reporting for military duty in ${to}.`,spoken:`We're reporting for duty in ${to}.`},
+   {id:'patrol',label:'Redstone Patrol',detail:`Reinforcing patrols around ${to}.`,spoken:`We're reinforcing the patrols around ${to}.`},
+   {id:'liaison',label:'Redstone Liaison',detail:`Meeting Redstone officials in ${to}.`,spoken:`We're meeting Redstone officials in ${to}.`}
+  ],
+  bluestone:[
+   {id:'patrol',label:'Bluestone Patrol',detail:`Reinforcing patrols around ${to}.`,spoken:`We're reinforcing the patrols around ${to}.`},
+   {id:'escort',label:'Bluestone Escort',detail:`Reporting for escort duty in ${to}.`,spoken:`We're reporting for escort duty in ${to}.`},
+   {id:'support',label:'Bluestone Support',detail:`Supporting local security in ${to}.`,spoken:`We've been asked to support the local watch in ${to}.`}
+  ],
+  spawn:[
+   {id:'trade',label:'Spawn Trade Mission',detail:`Handling trade business in ${to}.`,spoken:`We're handling trade business in ${to}.`},
+   {id:'contact',label:'Spawn Contact Mission',detail:`Meeting local contacts in ${to}.`,spoken:`We're meeting local contacts in ${to}.`},
+   {id:'regional',label:'Spawn Regional Business',detail:`Handling independent regional business in ${to}.`,spoken:`We have business to settle in ${to}.`}
+  ],
+  mercenary:[
+   {id:'contract',label:'Mercenary Contract',detail:`Reporting for paid work in ${to}.`,spoken:`We've got paid work waiting in ${to}.`},
+   {id:'escort',label:'Mercenary Escort',detail:`Reporting for escort duty in ${to}.`,spoken:`We're reporting for escort duty in ${to}.`},
+   {id:'security',label:'Mercenary Security Work',detail:`Reporting for security work in ${to}.`,spoken:`We've been hired for security work in ${to}.`}
+  ]
+ };
+ return choices[kind]||[]
+}
+function ensureWorldPartyAssignment(p){
+ if(!p)return null;const to=worldLocation(p.destination)?.name||'our destination',choices=worldPartyAssignmentChoices(p.kind,to);
+ if(!choices.length)return null;
+ if(!p.assignmentId||p.assignmentDestination!==p.destination||!choices.some(x=>x.id===p.assignmentId)){
+  const chosen=pick(choices);p.assignmentId=chosen.id;p.assignmentDestination=p.destination;p.assignmentSetDay=state.world.day
+ }
+ return choices.find(x=>x.id===p.assignmentId)||choices[0]
 }
 function worldPartyBehavior(p){
  if(!p)return {label:'Traveling',detail:'Moving through the region.'};
@@ -202,43 +240,52 @@ function worldPartyBehavior(p){
  if(p.logisticsShipment)return {label:'Hall Supply Caravan',detail:`Transporting routine Hall supplies toward ${to}.`};
  if(p.securityDeployment)return {label:'Security Deployment',detail:`Moving under orders toward ${to}.`};
  if(p.meetingRequest&&['accepted','waiting'].includes(p.meetingRequest.status))return {label:'Guardian Meeting',detail:`Traveling to a requested meeting at ${worldLocation(p.meetingRequest.targetId)?.name||to}.`};
+ const assignment=ensureWorldPartyAssignment(p);if(assignment)return {label:assignment.label,detail:assignment.detail};
  const byKind={
   merchant:{label:'Trade Run',detail:`Carrying goods from ${from} toward ${to}.`},
   refugees:{label:'Seeking Safety',detail:`Relocating from ${from} toward ${to}.`},
   bandits:{label:'Predatory Roaming',detail:`Looking for exposed roads, travelers or weak settlements around ${to}.`},
-  raiders:{label:'Raid / Pressure',detail:`Moving aggressively toward ${to}, where security or supplies may be vulnerable.`},
-  coalition:{label:'Coalition Movement',detail:`Traveling toward ${to} for patrol, liaison or local support.`},
-  redstone:{label:'Redstone Movement',detail:`Traveling toward ${to} on military, patrol or political business.`},
-  bluestone:{label:'Bluestone Movement',detail:`Traveling toward ${to} on patrol, escort or regional business.`},
-  spawn:{label:'Spawn Movement',detail:`Traveling toward ${to} for trade, contact or independent regional business.`},
-  mercenary:{label:'Contract Seeking',detail:`Moving toward ${to} in search of paid work, escort duty or security employment.`}
+  raiders:{label:'Raid / Pressure',detail:`Moving aggressively toward ${to}, where security or supplies may be vulnerable.`}
  };
  return byKind[p.kind]||{label:'Regional Travel',detail:`Traveling from ${from} toward ${to}.`}
+}
+function worldPartySpokenAssignment(p){
+ if(!p)return'';const to=worldLocation(p.destination)?.name||'our destination';
+ if(p.tradeProcurementCaravan)return `We're acquiring supplies for Guardian Hall through ${to}.`;
+ if(p.homeCommercialCaravan)return `We're running a Hall-backed trade route into ${to}.`;
+ if(p.logisticsShipment)return `We're carrying Hall supplies into ${to}.`;
+ if(p.securityDeployment)return `We're reporting there under security orders.`;
+ if(p.meetingRequest&&['accepted','waiting'].includes(p.meetingRequest.status))return `We're going there for a requested Guardian meeting.`;
+ const assignment=ensureWorldPartyAssignment(p);if(assignment)return assignment.spoken;
+ if(p.kind==='merchant')return `We're taking this load into ${to}.`;
+ if(p.kind==='refugees')return `We're trying to make a new start in ${to}.`;
+ if(p.kind==='bandits')return `We're working the roads around ${to}.`;
+ if(p.kind==='raiders')return `We're pushing toward ${to}.`;
+ return `We're bound for ${to}.`
 }
 function refreshWorldPartyPurpose(p){
  if(!p)return p;const b=worldPartyBehavior(p);p.behaviorLabel=b.label;p.behaviorDetail=b.detail;p.purpose=b.detail;p.behaviorUpdatedDay=state.world.day;return p
 }
 
 function purposefulDestination(kind,from){
- const region=locationRegion(from),regional=state?.world?.regionalSimulation?regionalDestinationForParty(kind,from):null;if(regional&&regional!==from&&locationRegion(regional)===region)return regional;
+ const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now(),region=locationRegion(from);let t=now(),regional=state?.world?.regionalSimulation?regionalDestinationForParty(kind,from):null;if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration('Destination & Purpose — Regional Decision',now()-t);if(regional&&regional!==from&&locationRegion(regional)===region)return regional;
  const shantium={merchant:['shantium','river','stonebridge','northgate','southroad'],refugees:['shantium','stonebridge','northgate','river'],redstone:['redoubt','watchfort','quarry','northgate','river'],coalition:['northgate','river','shantium','woods','watchfort'],bluestone:['northgate','stonebridge','river'],spawn:['river','southroad','stonebridge'],bandits:['river','southroad','stonebridge','woods','marsh'],raiders:['shantium','river','stonebridge','northgate','southroad'],mercenary:['shantium','river','stonebridge','southroad']};
  const bluestone={merchant:['zion','lowcreek','norwegian','ebonheart','winterstone'],refugees:['zion','norwegian','lowcreek'],redstone:['lowcreek','skybreak'],coalition:['lowcreek','zion'],bluestone:['zion','lowcreek','ebonheart','norwegian','winterstone','skybreak','ziongorge','crownpass'],bandits:['lowcreek','norwegian','winterstone','ziongorge','westspawnroad'],raiders:['lowcreek','norwegian','zion','winterstone'],mercenary:['zion','lowcreek','winterstone','norwegian']};
  const redstone={merchant:['sengia','lockwood','grayhaven','briarlake','glenbrook','tyrdon','pyreglade'],refugees:['lockwood','briarlake','glenbrook','tyrdon'],redstone:['sengia','lockwood','grayhaven','briarlake','glenbrook','tyrdon','pyreglade','sengiaroad'],coalition:['lockwood','grayhaven','briarlake'],bluestone:['grayhaven','briarlake'],spawn:['pyreglade','tyrdon'],bandits:['lockwoodforest','grainvalley','grainpass','glenbrook','tyrdon','pyreslopes'],raiders:['grainvalley','briarlake','glenbrook','pyreglade'],mercenary:['sengia','lockwood','glenbrook','pyreglade']};
  const spawn={merchant:['spawn_market','spawn_merchant','spawn_warehouses','spawn_bazaar','spawn_stockyards'],refugees:['spawn_northgate','spawn_northcentral','spawn_southwest'],redstone:['spawn_market','spawn_northcentral'],coalition:['spawn_northcentral','spawn_civic'],spawn:['spawn_civic','spawn_market','spawn_oldcity','spawn_bazaar','spawn_merchant'],bandits:['spawn_working','spawn_warehouses','spawn_southwest'],raiders:['spawn_stockyards','spawn_bazaar'],mercenary:['spawn_market','spawn_merchant','spawn_northgate']};
- const table=region==='spawn'?spawn:region==='bluestone'?bluestone:region==='redstone'?redstone:shantium,ids=(table[kind]||locationsInRegion(region).map(x=>x.id)).filter(x=>x!==from);return pick(ids.length?ids:locationsInRegion(region).filter(x=>x.id!==from).map(x=>x.id))
+ t=now();const table=region==='spawn'?spawn:region==='bluestone'?bluestone:region==='redstone'?redstone:shantium,ids=(table[kind]||locationsInRegion(region).map(x=>x.id)).filter(x=>x!==from),fallback=locationsInRegion(region).filter(x=>x.id!==from).map(x=>x.id),choices=ids.length?ids:fallback,result=['merchant','refugees','mercenary'].includes(kind)?settlementWeightedPick(choices,kind):pick(choices);if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration('Destination & Purpose — Weighted Selection',now()-t);return result
 }
 function resolveWorldPartyArrival(p){
- if(p?.tradeProcurementCaravan&&resolveHomeTradeProcurementArrival(p))return;
- if(p?.logisticsShipment&&p.location==='shantium')completeHomeLogisticsShipment(p);
- const loc=worldLocation(p.location),ss=state.world.settlements[p.location];
- if(!ss)return;
+ const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now(),sub={procurement:0,core:0,regional:0,security:0,investment:0,opportunities:0,quest:0};let t=now();if(p?.tradeProcurementCaravan&&resolveHomeTradeProcurementArrival(p)){sub.procurement+=now()-t;if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration('Arrival Consequences — Procurement',sub.procurement);return}sub.procurement+=now()-t;
+ t=now();if(p?.logisticsShipment&&p.location==='shantium')completeHomeLogisticsShipment(p);const loc=worldLocation(p.location),ss=state.world.settlements[p.location];if(!ss){sub.core+=now()-t;if(typeof sosPerfRecordDuration==='function'){sosPerfRecordDuration('Arrival Consequences — Procurement',sub.procurement);sosPerfRecordDuration('Arrival Consequences — Core Settlement',sub.core)}return}
  if(['bandits','raiders'].includes(p.kind)){if(!settlementProblem(p.location)&&chance(.28))createSettlementProblem(p.location,'raider_pressure');const hit=rnd(2,6);ss.security=Math.max(0,ss.security-hit);ss.prosperity=Math.max(0,ss.prosperity-rnd(1,4));if(state.world.day-ss.lastEventDay>=2){log(SOSText("economy_trade_world_parties.resolveWorldPartyArrival.001",p.name,loc.name),'bad');ss.lastEventDay=state.world.day}}
- if(p.kind==='merchant'&&p.crossRegion)recordCrossRegionDelivery(p,p.location);
- if(p.kind==='refugees'&&p.location==='shantium')state.town.population=Math.min(260,state.town.population+rnd(1,3));
- // Settlement prosperity/security/problem effects are applied once by regionalArrivalConsequences().
- // Keeping those effects out of this legacy arrival layer prevents double-counting after the living-world modernization.
- regionalArrivalConsequences(p,p.location);if(p.securityDeployment){const M=sengiaSecurityState(),d=M.deployments.find(x=>x.partyId===p.id&&x.status==='moving');if(d){d.status='arrived';d.arrivedDay=state.world.day;const sm=M.settlements[p.location];if(sm){sm.patrols=Math.min(100,sm.patrols+3);sm.manpower=Math.min(100,sm.manpower+1)}recordSengiaSecurity(SOSText("economy_trade_world_parties.resolveWorldPartyArrival.005",p.name,worldLocation(p.location).name,d.reason),'good')}p.securityDeployment=false}if(p.investmentId)completeCaravanInvestment(p);for(const o of activeRegionalOpportunities().filter(x=>x.stage==='tracking'&&x.partyId===p.id&&x.location===p.location)){o.status='resolved';o.resolvedDay=state.world.day;o.result=SOSText("economy_trade_world_parties.resolveWorldPartyArrival.006",p.name,worldLocation(p.location).name);progressSettlementProblem(p.location,1,SOSText("economy_trade_world_parties.resolveWorldPartyArrival.007",p.name));ensureRegionalSimulation().interventions.push({day:state.world.day,opportunityId:o.id,title:o.title,action:'escort',result:o.result});recordWorldHistory(`${o.title}: ${o.result}`,'good',SOSText("economy_trade_world_parties.resolveWorldPartyArrival.008"))}const q=p.questId?activeQuest(p.questId):null;
- if(q&&q.type==='escort'&&q.target===p.location)markQuestReady(q);
+ if(p.kind==='merchant'&&p.crossRegion)recordCrossRegionDelivery(p,p.location);if(p.kind==='refugees'&&p.location==='shantium')state.town.population=Math.min(260,state.town.population+rnd(1,3));sub.core+=now()-t;
+ t=now();regionalArrivalConsequences(p,p.location);sub.regional+=now()-t;
+ t=now();if(p.securityDeployment){const M=sengiaSecurityState(),d=M.deployments.find(x=>x.partyId===p.id&&x.status==='moving');if(d){d.status='arrived';d.arrivedDay=state.world.day;const sm=M.settlements[p.location];if(sm){sm.patrols=Math.min(100,sm.patrols+3);sm.manpower=Math.min(100,sm.manpower+1)}recordSengiaSecurity(SOSText("economy_trade_world_parties.resolveWorldPartyArrival.005",p.name,worldLocation(p.location).name,d.reason),'good')}p.securityDeployment=false}sub.security+=now()-t;
+ t=now();if(p.investmentId)completeCaravanInvestment(p);sub.investment+=now()-t;
+ t=now();for(const o of activeRegionalOpportunities().filter(x=>x.stage==='tracking'&&x.partyId===p.id&&x.location===p.location)){o.status='resolved';o.resolvedDay=state.world.day;o.result=SOSText("economy_trade_world_parties.resolveWorldPartyArrival.006",p.name,worldLocation(p.location).name);progressSettlementProblem(p.location,1,SOSText("economy_trade_world_parties.resolveWorldPartyArrival.007",p.name));ensureRegionalSimulation().interventions.push({day:state.world.day,opportunityId:o.id,title:o.title,action:'escort',result:o.result});recordWorldHistory(`${o.title}: ${o.result}`,'good',SOSText("economy_trade_world_parties.resolveWorldPartyArrival.008"))}sub.opportunities+=now()-t;
+ t=now();const q=p.questId?activeQuest(p.questId):null;if(q&&q.type==='escort'&&q.target===p.location)markQuestReady(q);sub.quest+=now()-t;
+ if(typeof sosPerfRecordDuration==='function'){sosPerfRecordDuration('Arrival Consequences — Procurement',sub.procurement);sosPerfRecordDuration('Arrival Consequences — Core Settlement',sub.core);sosPerfRecordDuration('Arrival Consequences — Regional Effects',sub.regional);sosPerfRecordDuration('Arrival Consequences — Security Deployment',sub.security);sosPerfRecordDuration('Arrival Consequences — Investment',sub.investment);sosPerfRecordDuration('Arrival Consequences — Opportunities',sub.opportunities);sosPerfRecordDuration('Arrival Consequences — Quest Check',sub.quest)}
 }
 function maybeCompanionWorldEvent(){
  if(!isOpenWorld()||chance(.72))return;
@@ -372,28 +419,31 @@ function regionalPartyMeetingAcceptance(p,req){
 function regionalPartyMeetingTravelDays(p,targetId){if(targetId==='shantium'&&typeof homeHospitalityTravelDays==='function'){const d=homeHospitalityTravelDays(p.location);if(d!=null)return Math.max(1,d)}return Math.max(1,worldTravelDays(p.location,targetId))}
 function resolveRegionalPartyMeetingRequest(p){
  const req=p?.meetingRequest;if(!req||req.status!=='sent'||!(req.dispatchId?worldDispatchArrived(req.dispatchId):state.world.day>=req.dueDay))return false;const accepted=chance(regionalPartyMeetingAcceptance(p,req));if(req.dispatchId)completeWorldDispatch(req.dispatchId,'delivered',{accepted});if(!accepted){req.status='declined';req.resolvedDay=state.world.day;recordWorldHistory(SOSText("economy_trade_world_parties.resolveRegionalPartyMeetingRequest.001",p.name),'info','travel');return true}
- req.status='accepted';req.acceptedDay=state.world.day;const target=req.targetId;if(req.kind==='hall'&&target==='shantium'&&typeof ensureHomeBase==='function'){ensureHomeBase();ensureTravelerGroupIdentity(p);const H=state.world.homeBase.hospitality,recordId=p.travelerId||null,travelDays=regionalPartyMeetingTravelDays(p,'shantium');H.invitations.push({id:'meet_'+uid(),targetId:`party_${p.id}`,name:p.name,size:Math.max(1,p.memberCount||p.combatantCount||1),kind:'group',recordId,origin:p.location,sentDay:req.sentDay,responseDay:state.world.day,dispatchId:req.dispatchId,travelDays,status:'traveling',acceptedDay:state.world.day,arrivalDay:state.world.day+travelDays,acceptChance:1,directMeeting:true,stayDays:req.waitDays||rnd(2,3)});if(recordId){const tr=travelerRegistryState().records[recordId];if(tr){tr.hospitalityStatus='traveling';tr.hospitalityArrivalDay=state.world.day+travelDays}}archiveTravelerParty(p,SOSText("economy_trade_world_parties.resolveRegionalPartyMeetingRequest.002"));state.world.parties=state.world.parties.filter(x=>x.id!==p.id);if(state.world.trackedPartyId===p.id)state.world.trackedPartyId=null;recordWorldHistory(SOSText("economy_trade_world_parties.resolveRegionalPartyMeetingRequest.003",p.name),'good','home');return true}
+ req.status='accepted';req.acceptedDay=state.world.day;const target=req.targetId;if(req.kind==='hall'&&target==='shantium'&&typeof ensureHomeBase==='function'){ensureHomeBase();ensureTravelerGroupIdentity(p);const H=state.world.homeBase.hospitality,recordId=p.travelerId||null,travelDays=regionalPartyMeetingTravelDays(p,'shantium');H.invitations.push({id:'meet_'+uid(),targetId:`party_${p.id}`,name:p.name,size:Math.max(1,p.memberCount||p.combatantCount||1),kind:'group',recordId,origin:p.location,sentDay:req.sentDay,responseDay:state.world.day,dispatchId:req.dispatchId,travelDays,status:'traveling',acceptedDay:state.world.day,arrivalDay:state.world.day+travelDays,acceptChance:1,directMeeting:true,stayDays:req.waitDays||rnd(2,3)});if(recordId){const tr=travelerRegistryState().records[recordId];if(tr){tr.hospitalityStatus='traveling';tr.hospitalityArrivalDay=state.world.day+travelDays}}archiveTravelerParty(p,SOSText("economy_trade_world_parties.resolveRegionalPartyMeetingRequest.002"));if(typeof retireWorldPartyIntegrationAtSource==='function')retireWorldPartyIntegrationAtSource(p,'hall_meeting_transfer');state.world.parties=state.world.parties.filter(x=>x.id!==p.id);if(state.world.trackedPartyId===p.id)state.world.trackedPartyId=null;recordWorldHistory(SOSText("economy_trade_world_parties.resolveRegionalPartyMeetingRequest.003",p.name),'good','home');return true}
  p.origin=p.location;p.destination=target;p.travelTotal=p.travelLeft=regionalPartyMeetingTravelDays(p,target);p.crossRegion=locationRegion(p.location)!==locationRegion(target);recordWorldHistory(SOSText("economy_trade_world_parties.resolveRegionalPartyMeetingRequest.004",p.name,worldLocation(target).name),'good','travel');return true
 }
 function resolveRegionalPartyMeetingArrival(p){const req=p?.meetingRequest;if(!req||req.status!=='accepted'||p.location!==req.targetId)return false;req.status='waiting';req.arrivedDay=state.world.day;req.waitUntil=state.world.day+Math.max(2,Math.min(3,req.waitDays||2));recordWorldHistory(SOSText("economy_trade_world_parties.resolveRegionalPartyMeetingArrival.001",p.name,worldLocation(req.targetId).name,req.waitUntil),'good','travel');return true}
 function moveWorldParties(){
- ensureWorldState();
- for(const p of [...state.world.parties]){
-  if(resolveRegionalPartyMeetingRequest(p)&&!state.world.parties.some(x=>x.id===p.id))continue;
-  if(p.meetingRequest?.status==='waiting'){if(state.world.day<=p.meetingRequest.waitUntil)continue;p.meetingRequest.status='expired';p.meetingRequest.resolvedDay=state.world.day;p.origin=p.location;p.destination=purposefulDestination(p.kind,p.location);p.travelTotal=p.travelLeft=Math.max(1,worldTravelDays(p.location,p.destination))}
-  if(partyInLiveConflict(p.id))continue;
-  if(p.contractProtected&&(p.escortWaiting||p.escortActive||p.contractRole==='escort'))continue;
-  if(!p.contractProtected&&p.crossRegion&&chance(crossRegionRouteRisk(p.origin,p.destination)*.035*(p.tradeProcurementCaravan?(HOME_TRADE_PROCUREMENT_PRIORITIES[homeTradeProcurementOrders().find(o=>o.id===p.procurementOrderId)?.priority||'balanced']?.risk||1):(p.homeCommercialCaravan?((HOME_TRADE_PROCUREMENT_SECURITY[p.procurementSecurity]||{}).risk||1):1)))){
-   if(p.tradeProcurementCaravan)homeTradeProcurementLost(p,'The caravan disappeared or was destroyed on a dangerous cross-region route.');if(p.homeCommercialCaravan&&typeof homeCommercialCaravanLost==='function')homeCommercialCaravanLost(p,'The caravan disappeared or was destroyed on a dangerous cross-region route.');
-   recordTradeLoss(p,p.location);const X=crossRegionTradeState();X.lost=(X.lost||0)+1;X.disruptions.push({day:state.world.day,party:p.name,origin:p.origin,destination:p.destination,near:p.location,manifest:{...(p.manifest||{})}});X.disruptions=X.disruptions.slice(-40);recordWorldHistory(SOSText("economy_trade_world_parties.moveWorldParties.001",p.name,p.tradeRoute||'cross-region road',worldLocation(p.destination).name),'bad','trade');removeWorldParty(p.id);continue
+ ensureWorldState();const perf=(name,fn)=>typeof sosPerfRun==='function'?sosPerfRun(name,fn):fn();
+ perf('Moving Parties — Movement & Behavior',()=>{const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now(),sub={meetings:0,guards:0,risk:0,advance:0,arrival:0,arrivalLoss:0,arrivalResolve:0,arrivalCommercial:0,replan:0,replanDestination:0,replanManifest:0,replanPurpose:0,replanTravel:0,sync:0};for(const p of [...state.world.parties]){
+  let t=now();if(resolveRegionalPartyMeetingRequest(p)&&!state.world.parties.some(x=>x.id===p.id)){sub.meetings+=now()-t;continue}sub.meetings+=now()-t;
+  t=now();if(p.meetingRequest?.status==='waiting'){if(state.world.day<=p.meetingRequest.waitUntil){sub.meetings+=now()-t;continue}p.meetingRequest.status='expired';p.meetingRequest.resolvedDay=state.world.day;p.origin=p.location;p.destination=purposefulDestination(p.kind,p.location);p.travelTotal=p.travelLeft=Math.max(1,worldTravelDays(p.location,p.destination))}sub.meetings+=now()-t;
+  t=now();if(partyInLiveConflict(p.id)){sub.guards+=now()-t;continue}if(p.contractProtected&&(p.escortWaiting||p.escortActive||p.contractRole==='escort')){sub.guards+=now()-t;continue}sub.guards+=now()-t;
+  t=now();const lost=!p.contractProtected&&p.crossRegion&&chance(crossRegionRouteRisk(p.origin,p.destination)*.035*(p.tradeProcurementCaravan?(HOME_TRADE_PROCUREMENT_PRIORITIES[homeTradeProcurementOrders().find(o=>o.id===p.procurementOrderId)?.priority||'balanced']?.risk||1):(p.homeCommercialCaravan?((HOME_TRADE_PROCUREMENT_SECURITY[p.procurementSecurity]||{}).risk||1):1)));sub.risk+=now()-t;
+  if(lost){
+   t=now();if(p.tradeProcurementCaravan)homeTradeProcurementLost(p,'The caravan disappeared or was destroyed on a dangerous cross-region route.');if(p.homeCommercialCaravan&&typeof homeCommercialCaravanLost==='function')homeCommercialCaravanLost(p,'The caravan disappeared or was destroyed on a dangerous cross-region route.');
+   recordTradeLoss(p,p.location);const X=crossRegionTradeState();X.lost=(X.lost||0)+1;X.disruptions.push({day:state.world.day,party:p.name,origin:p.origin,destination:p.destination,near:p.location,manifest:{...(p.manifest||{})}});X.disruptions=X.disruptions.slice(-40);recordWorldHistory(SOSText("economy_trade_world_parties.moveWorldParties.001",p.name,p.tradeRoute||'cross-region road',worldLocation(p.destination).name),'bad','trade');removeWorldParty(p.id);const dt=now()-t;sub.arrival+=dt;sub.arrivalLoss+=dt;continue
   }
-  p.travelLeft=Math.max(0,(p.travelLeft||0)-1);
-  if(p.travelLeft<=0){p.location=p.destination;resolveWorldPartyArrival(p);if(p.tradeProcurementCaravan){if(state.world.parties.some(x=>x.id===p.id))syncTravelerRecord(p);continue}if(p.homeCommercialCaravan&&typeof resolveHomeCommercialCaravanArrival==='function'){resolveHomeCommercialCaravanArrival(p);if(state.world.parties.some(x=>x.id===p.id))syncTravelerRecord(p);continue}p.origin=p.location;if(resolveRegionalPartyMeetingArrival(p))continue;
-   if(p.kind==='merchant'&&p.crossRegion&&crossRegionTradeUnlocked()){const nextCross=crossRegionDestination(p.location);if(nextCross){p.destination=nextCross;p.region=locationRegion(p.location);p.crossRegion=true;p.tradeRoute=connectionRouteName(p.location,p.destination);p.cargo=rnd(3,7);p.manifest=crossRegionMerchantManifest(p.location,p.destination,p.cargo);p.cargo=manifestLots(p.manifest);p.economyCargoReserved=false;reserveMerchantCargoAtOrigin(p);refreshWorldPartyPurpose(p);p.travelTotal=p.travelLeft=crossRegionRouteDays(p.location,p.destination)}else{p.crossRegion=false;p.tradeRoute=null;p.destination=purposefulDestination(p.kind,p.location);p.cargo=rnd(2,6);assignMerchantManifest(p);refreshWorldPartyPurpose(p);p.travelTotal=p.travelLeft=Math.max(1,worldTravelDays(p.location,p.destination))}}
-   else{p.destination=purposefulDestination(p.kind,p.location);if(p.kind==='merchant'){p.cargo=rnd(2,6);assignMerchantManifest(p)}refreshWorldPartyPurpose(p);p.travelTotal=p.travelLeft=Math.max(1,worldTravelDays(p.location,p.destination))}
+  t=now();p.travelLeft=Math.max(0,(p.travelLeft||0)-1);sub.advance+=now()-t;
+  if(p.travelLeft<=0){p.location=p.destination;t=now();resolveWorldPartyArrival(p);{const dt=now()-t;sub.arrival+=dt;sub.arrivalResolve+=dt}
+   if(p.tradeProcurementCaravan){t=now();if(state.world.parties.some(x=>x.id===p.id))syncTravelerRecord(p);sub.sync+=now()-t;continue}if(p.homeCommercialCaravan&&typeof resolveHomeCommercialCaravanArrival==='function'){t=now();resolveHomeCommercialCaravanArrival(p);{const dt=now()-t;sub.arrival+=dt;sub.arrivalCommercial+=dt}t=now();if(state.world.parties.some(x=>x.id===p.id))syncTravelerRecord(p);sub.sync+=now()-t;continue}p.origin=p.location;t=now();if(resolveRegionalPartyMeetingArrival(p)){sub.meetings+=now()-t;continue}sub.meetings+=now()-t;
+   t=now();if(p.kind==='merchant'&&p.crossRegion&&crossRegionTradeUnlocked()){let q=now(),nextCross=crossRegionDestination(p.location);sub.replanDestination+=now()-q;if(nextCross){p.destination=nextCross;p.region=locationRegion(p.location);p.crossRegion=true;p.tradeRoute=connectionRouteName(p.location,p.destination);q=now();p.cargo=rnd(3,7);p.manifest=crossRegionMerchantManifest(p.location,p.destination,p.cargo);p.cargo=manifestLots(p.manifest);p.economyCargoReserved=false;reserveMerchantCargoAtOrigin(p);sub.replanManifest+=now()-q;q=now();refreshWorldPartyPurpose(p);sub.replanPurpose+=now()-q;q=now();p.travelTotal=p.travelLeft=crossRegionRouteDays(p.location,p.destination);sub.replanTravel+=now()-q}else{p.crossRegion=false;p.tradeRoute=null;q=now();p.destination=purposefulDestination(p.kind,p.location);sub.replanDestination+=now()-q;q=now();p.cargo=rnd(2,6);assignMerchantManifest(p);sub.replanManifest+=now()-q;q=now();refreshWorldPartyPurpose(p);sub.replanPurpose+=now()-q;q=now();p.travelTotal=p.travelLeft=Math.max(1,worldTravelDays(p.location,p.destination));sub.replanTravel+=now()-q}}
+   else{let q=now();p.destination=purposefulDestination(p.kind,p.location);sub.replanDestination+=now()-q;if(p.kind==='merchant'){q=now();p.cargo=rnd(2,6);assignMerchantManifest(p);sub.replanManifest+=now()-q}q=now();refreshWorldPartyPurpose(p);sub.replanPurpose+=now()-q;q=now();p.travelTotal=p.travelLeft=Math.max(1,worldTravelDays(p.location,p.destination));sub.replanTravel+=now()-q}sub.replan+=now()-t
   }
  }
- maintainWorldParties();maybeSpawnCrossRegionTrade();maybeCompanionWorldEvent()
+ if(typeof sosPerfRecordDuration==='function'){sosPerfRecordDuration('Movement & Behavior — Meeting Requests',sub.meetings);sosPerfRecordDuration('Movement & Behavior — Conflict & Contract Guards',sub.guards);sosPerfRecordDuration('Movement & Behavior — Route Risk',sub.risk);sosPerfRecordDuration('Movement & Behavior — Travel Advancement',sub.advance);sosPerfRecordDuration('Movement & Behavior — Arrival Consequences',sub.arrival);sosPerfRecordDuration('Arrival Parent — Loss Handling',sub.arrivalLoss);sosPerfRecordDuration('Arrival Parent — Resolver',sub.arrivalResolve);sosPerfRecordDuration('Arrival Parent — Commercial Arrival',sub.arrivalCommercial);sosPerfRecordDuration('Movement & Behavior — Destination & Purpose',sub.replan);sosPerfRecordDuration('Replan — Destination Selection',sub.replanDestination);sosPerfRecordDuration('Replan — Merchant Manifest',sub.replanManifest);sosPerfRecordDuration('Replan — Purpose Refresh',sub.replanPurpose);sosPerfRecordDuration('Replan — Travel Timing',sub.replanTravel);sosPerfRecordDuration('Movement & Behavior — Traveler Sync',sub.sync)}
+ });
+ perf('Moving Parties — Population Maintenance',()=>maintainWorldParties());perf('Moving Parties — Cross-Region Spawns',()=>maybeSpawnCrossRegionTrade());perf('Moving Parties — Companion Events',()=>maybeCompanionWorldEvent())
 }
 function playerPartyFieldState(){
  ensureWorldState();
@@ -453,6 +503,30 @@ function leaveCurrentSettlementToField(){
  recordWorldHistory(`The Player Party leaves ${worldLocation(locId).name} and moves into the nearby field.`,'info','travel');
  save();renderOpenWorld()
 }
+function relocatePlayerParty(dest,opts={}){
+ ensureWorldState();const loc=worldLocation(dest);if(!loc)return false;
+ const previous=state.world.location,region=locationRegion(dest),F=playerPartyFieldState();
+ state.world.location=dest;state.world.region=region;
+ if(opts.clearTravel!==false)state.world.travelPlan=null;
+ F.active=false;F.region=null;F.x=null;F.y=null;F.anchorLocation=null;F.targetPartyId=null;F.sinceDay=null;
+ if(opts.field===true||(!state.world.settlements?.[dest]&&opts.inside!==true)){
+   F.active=true;F.region=region;F.x=Number.isFinite(opts.x)?opts.x:loc.x;F.y=Number.isFinite(opts.y)?opts.y:loc.y;
+   F.anchorLocation=dest;F.targetPartyId=opts.targetPartyId||null;F.sinceDay=state.world.day;
+ }
+ ensureMapView(region).lastLocation=null;
+ if(opts.record&&previous!==dest)recordWorldHistory(opts.record,'info',opts.category||'travel');
+ return true
+}
+function reconcilePlayerPartyPhysicalContext(){
+ ensureWorldState();const F=playerPartyFieldState();if(!F.active)return false;
+ const badAnchor=!F.anchorLocation||!worldLocation(F.anchorLocation),anchorMismatch=F.anchorLocation!==state.world.location,regionMismatch=F.region!==locationRegion(state.world.location);
+ const protectedTransition=!!state.world.travelPlan||!!state.world.captivity?.active||!!state.world.activeEscortQuestId||!!state.world.pursuit?.active;
+ if((badAnchor||anchorMismatch||regionMismatch)&&!protectedTransition){
+   console.warn('[Physical Context] repaired stale Player Party field anchor',{location:state.world.location,anchor:F.anchorLocation,fieldRegion:F.region});
+   playerPartyClearFieldPosition();return true
+ }
+ return false
+}
 function playerPartyClearFieldPosition(){
  const F=playerPartyFieldState();F.active=false;F.region=null;F.x=null;F.y=null;F.anchorLocation=null;F.targetPartyId=null;F.sinceDay=null;save();return F
 }
@@ -476,18 +550,44 @@ function worldPartyTravelEstimate(p){
 function canEngageWorldParty(p){return !!p&&(worldPartyAtPlayer(p)||pursuitCaughtParty(p))}
 function trackedWorldParty(){ensureWorldState();const p=state.world.parties.find(x=>x.id===state.world.trackedPartyId);if(!p&&state.world.trackedPartyId)state.world.trackedPartyId=null;return p||null}
 function setTrackedWorldParty(p){ensureWorldState();state.world.trackedPartyId=p?.id||null;if(p)log(SOSText("economy_trade_world_parties.setTrackedWorldParty.001",p.name),'info');save()}
-function pursuitState(){ensureWorldState();if(!state.world.pursuit||typeof state.world.pursuit!=='object')state.world.pursuit={targetId:null,progress:0,startedDay:0,lastDay:0,caught:false};return state.world.pursuit}
-function clearPursuit(){if(state.world)state.world.pursuit={targetId:null,progress:0,startedDay:0,lastDay:0,caught:false}}
+function pursuitState(){ensureWorldState();if(!state.world.pursuit||typeof state.world.pursuit!=='object')state.world.pursuit={targetId:null,progress:0,startedDay:0,lastDay:0,caught:false,active:false};if(typeof state.world.pursuit.active!=='boolean')state.world.pursuit.active=!!state.world.pursuit.targetId&&!state.world.pursuit.caught;return state.world.pursuit}
+function clearPursuit(){if(state.world)state.world.pursuit={targetId:null,progress:0,startedDay:0,lastDay:0,caught:false,active:false}}
 function pursuitSpeedBonus(){let b=scoutingLevel()*.42;if(guardianClass()===SOSText("economy_trade_world_parties.pursuitSpeedBonus.001"))b+=1.5;if(guardianClass()===SOSText("economy_trade_world_parties.pursuitSpeedBonus.002"))b+=1;return b}
 function pursuitCaughtParty(p){const P=pursuitState();return !!p&&P.targetId===p.id&&P.caught}
 function pursuitClosingNeed(p){return Math.max(3,Math.ceil(worldPartyDistanceToPlayer(p)/5.5))}
 function continuePersistentPursuit(p,forced=false){
  if(!p||!state.world.parties.some(x=>x.id===p.id)){clearPursuit();return actionResult(SOSText("economy_trade_world_parties.continuePersistentPursuit.001"),SOSText("economy_trade_world_parties.continuePersistentPursuit.002"),'info',renderOpenWorld)}
- const P=pursuitState();playerPartyBeginFieldTravel();if(P.targetId!==p.id){P.targetId=p.id;P.progress=0;P.startedDay=state.world.day;P.caught=false}P.lastDay=state.world.day;
+ const P=pursuitState();if(playerPartyInsideSettlement(state.world.location))placePlayerPartyOutsideSettlement(state.world.location);else playerPartyBeginFieldTravel();if(P.targetId!==p.id){P.targetId=p.id;P.progress=0;P.startedDay=state.world.day;P.caught=false}P.active=true;P.lastDay=state.world.day;
  const before=worldPartyPosition(p),gain=1.5+pursuitSpeedBonus()+(forced?1.5:0);P.progress+=gain;if(forced){state.guardian.stamina=Math.max(0,state.guardian.stamina-18)}
- advanceWorldDays(1,`${forced?'Forced pursuit of':'Pursued'} ${p.name}`);const live=state.world.parties.find(x=>x.id===p.id);if(!live){clearPursuit();return actionResult(SOSText("economy_trade_world_parties.continuePersistentPursuit.003"),SOSText("economy_trade_world_parties.continuePersistentPursuit.004",p.name),'info',renderOpenWorld)}
- const need=pursuitClosingNeed(live);if(P.progress>=need){const pos=worldPartyPosition(live),near=nearestWorldLocationToPosition(currentWorldRegion(),pos);state.world.location=near;playerPartyMoveBesideWorldParty(live);P.caught=true;setTrackedWorldParty(live);save();return actionResult(SOSText("economy_trade_world_parties.continuePersistentPursuit.005"),SOSText("economy_trade_world_parties.continuePersistentPursuit.006",live.name,worldLocation(near).name),'good',()=>showWorldParty(live.id))}
- {const target=worldPartyPosition(live),F=playerPartyFieldState(),ratio=clamp(P.progress/Math.max(1,need),.08,.92);F.x=clamp(F.x+(target.x-F.x)*ratio*.55,2,98);F.y=clamp(F.y+(target.y-F.y)*ratio*.55,2,98);F.targetPartyId=live.id}setTrackedWorldParty(live);save();renderOpenWorld();return actionResult(SOSText("economy_trade_world_parties.continuePersistentPursuit.007"),SOSText("economy_trade_world_parties.continuePersistentPursuit.008",live.name,Math.floor(P.progress),need),'info',()=>showWorldParty(live.id))
+ const pursuitDayBefore=state.world.day;
+ try{advanceWorldDays(1,`${forced?'Forced pursuit of':'Pursued'} ${p.name}`)}
+ catch(err){
+   console.error('[Pursuit] daily simulation failed during pursuit; preserving pursuit turn',err);
+   if(state.world.day===pursuitDayBefore)state.world.day=pursuitDayBefore+1;
+   try{
+     state.world.travelHistory=state.world.travelHistory||[];
+     const reason=`${forced?'Forced pursuit of':'Pursued'} ${p.name}`;
+     const last=state.world.travelHistory[state.world.travelHistory.length-1];
+     if(!last||last.day!==state.world.day||last.reason!==reason)state.world.travelHistory.push({day:state.world.day,location:state.world.location,reason});
+   }catch(historyErr){console.error('[Pursuit] failed to record recovery travel history',historyErr)}
+ }
+ const live=state.world.parties.find(x=>x.id===p.id);if(!live){clearPursuit();save();return actionResult(SOSText("economy_trade_world_parties.continuePersistentPursuit.003"),SOSText("economy_trade_world_parties.continuePersistentPursuit.004",p.name),'info',renderOpenWorld)}
+ const need=pursuitClosingNeed(live);if(P.progress>=need){const pos=worldPartyPosition(live),near=nearestWorldLocationToPosition(currentWorldRegion(),pos);relocatePlayerParty(near,{inside:false,field:true,x:pos.x,y:pos.y,targetPartyId:live.id,clearTravel:true});playerPartyMoveBesideWorldParty(live);P.caught=true;P.active=false;setTrackedWorldParty(live);save();return actionResult(SOSText("economy_trade_world_parties.continuePersistentPursuit.005"),SOSText("economy_trade_world_parties.continuePersistentPursuit.006",live.name,worldLocation(near).name),'good',()=>showWorldParty(live.id))}
+ {const target=worldPartyPosition(live),F=playerPartyFieldState(),base=(F.active&&Number.isFinite(F.x)&&Number.isFinite(F.y))?{x:F.x,y:F.y}:playerPartyMapPosition(),ratio=clamp(P.progress/Math.max(1,need),.08,.92),x=clamp(base.x+(target.x-base.x)*ratio*.55,2,98),y=clamp(base.y+(target.y-base.y)*ratio*.55,2,98);playerPartyMarkFieldPosition(x,y,{region:worldPartyDisplayRegion(live),anchorLocation:state.world.location,targetPartyId:live.id});const PF=playerPartyFieldState();PF.sinceDay=PF.sinceDay||state.world.day}setTrackedWorldParty(live);save();return actionResult(SOSText("economy_trade_world_parties.continuePersistentPursuit.007"),SOSText("economy_trade_world_parties.continuePersistentPursuit.008",live.name,Math.floor(P.progress),need),'info',()=>pursueWorldParty(live))
+}
+function recoverInterruptedPursuit(){
+ ensureWorldState();const P=pursuitState();if(!P.targetId||P.caught)return false;
+ const live=state.world.parties.find(x=>x.id===P.targetId);
+ if(!live){clearPursuit();save();return false}
+ P.active=true;
+ const F=playerPartyFieldState();
+ if(!F.active){
+   const loc=worldLocation(state.world.location);
+   if(state.world.settlements?.[state.world.location])placePlayerPartyOutsideSettlement(state.world.location);
+   else playerPartyBeginFieldTravel();
+   const PF=playerPartyFieldState();PF.targetPartyId=live.id;PF.sinceDay=PF.sinceDay||state.world.day;
+ }
+ save();return true
 }
 function worldPartyInterceptPlan(p){
  const target=worldLocation(p.destination),crossRegion=locationRegion(p.location)!==currentWorldRegion()||locationRegion(p.destination)!==currentWorldRegion();if(crossRegion)return {target,travel:null,eta:Math.max(0,p.travelLeft||0),wait:0,likely:false,total:null,crossRegion:true};

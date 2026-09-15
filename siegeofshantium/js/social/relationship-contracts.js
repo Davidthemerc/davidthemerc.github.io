@@ -101,29 +101,30 @@ function settlementEconomyIII(locId){
  if(row.flowHealth===undefined)row.flowHealth=50;if(row.shortageDays===undefined)row.shortageDays=0;if(row.surplusDays===undefined)row.surplusDays=0;return row
 }
 function tradeRoutePressureAround(locId){
- const R=ensureRegionalSimulation(),keys=Object.entries(R.routePressure||{}).filter(([k])=>k.split('|').includes(locId));
- if(!keys.length)return 0;return keys.reduce((n,[,v])=>n+(v||0),0)/keys.length
+ const c=typeof regionalDailyReadCache==='function'?regionalDailyReadCache():null;if(c?.pressure?.has(locId))return c.pressure.get(locId);
+ const R=ensureRegionalSimulation();let total=0,count=0;for(const [k,v] of Object.entries(R.routePressure||{})){const [a,b]=k.split('|');if(a===locId||b===locId){total+=v||0;count++}}
+ return count?total/count:0
 }
-function settlementProductionRate(locId,gid){
- const ss=settlementState(locId),role=tradeGoodRole(locId,gid),pressure=tradeRoutePressureAround(locId),problem=settlementProblem(locId);
+function settlementProductionRate(locId,gid,ctx=null){
+ const ss=ctx?.ss||settlementState(locId),role=ctx?.role??tradeGoodRole(locId,gid),pressure=ctx?.pressure??tradeRoutePressureAround(locId),problem=ctx?.problem??settlementProblem(locId);
  let rate=role==='source'?1.0:role==='normal'?.22:.05;
  rate*=clamp(.45+ss.prosperity/100,.45,1.45);rate*=clamp(.55+ss.security/130,.55,1.25);rate*=clamp(1-pressure*.055,.45,1);
  if(problem?.type==='trade_slump')rate*=.7;if(problem?.type==='shortage'&&['food','medicine','tools'].includes(gid))rate*=.82;
  return rate
 }
-function settlementConsumptionRate(locId,gid){
- const ss=settlementState(locId),role=tradeGoodRole(locId,gid),problem=settlementProblem(locId);
+function settlementConsumptionRate(locId,gid,ctx=null){
+ const ss=ctx?.ss||settlementState(locId),role=ctx?.role??tradeGoodRole(locId,gid),problem=ctx?.problem??settlementProblem(locId);
  let rate=role==='demand'?.72:.28;
  if(['food','medicine'].includes(gid))rate+=.18;if(ss.prosperity>65&&['cloth','luxury','tools','spirits','dye'].includes(gid))rate+=.15;if(ss.security<35&&['food','medicine','tools'].includes(gid))rate+=.12;
  if(problem?.type==='shortage'&&['food','medicine','tools'].includes(gid))rate+=.18;return rate
 }
-function economyIIIStockStatus(locId){
- const vals=TRADE_GOODS.map(g=>tradeStock(locId,g.id)),ess=['food','medicine','tools'].map(g=>tradeStock(locId,g));
+function economyIIIStockStatus(locId,stock=null){
+ stock=stock||ensureTradeStock(locId);const vals=TRADE_GOODS.map(g=>stock[g.id]||0),ess=['food','medicine','tools'].map(g=>stock[g]||0);
  const avg=vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length),essential=ess.reduce((a,b)=>a+b,0)/ess.length;
  return {avg,essential,critical:ess.filter(x=>x<=1).length,low:vals.filter(x=>x<=2).length,healthy:vals.filter(x=>x>=6).length}
 }
-function economyIIIFlowHealth(locId){
- const ss=settlementState(locId),st=economyIIIStockStatus(locId),pressure=tradeRoutePressureAround(locId),recentDeliveries=tradeEconomyState().deliveries.filter(x=>x.destination===locId&&state.world.day-x.day<=6).length,recentLosses=tradeEconomyState().losses.filter(x=>x.destination===locId&&state.world.day-x.day<=6).length;
+function economyIIIFlowHealth(locId,ctx=null){
+ const ss=ctx?.ss||settlementState(locId),st=ctx?.stockStatus||economyIIIStockStatus(locId,ctx?.stock),pressure=ctx?.pressure??tradeRoutePressureAround(locId),recentDeliveries=ctx?.recentDeliveries??tradeEconomyState().deliveries.filter(x=>x.destination===locId&&state.world.day-x.day<=6).length,recentLosses=ctx?.recentLosses??tradeEconomyState().losses.filter(x=>x.destination===locId&&state.world.day-x.day<=6).length;
  return clamp(Math.round(35+ss.security*.28+ss.prosperity*.20+st.avg*3+recentDeliveries*5-recentLosses*7-pressure*4),0,100)
 }
 function economyIIIStatusLabel(locId){const h=settlementEconomyIII(locId).flowHealth;return h>=75?'Strong trade flow':h>=55?'Stable trade flow':h>=35?'Strained trade flow':h>=18?'Disrupted trade flow':'Severe supply disruption'}
@@ -134,20 +135,16 @@ function economyIIISettlementHTML(locId){
 }
 function recordEconomyIII(locId,text,type='info'){const E=economyIIIState();E.history.push({day:state.world.day,locId,text,type});E.history=E.history.slice(-100)}
 function simulateEconomyIIIDay(){
- const E=economyIIIState();if(E.lastDay===state.world.day)return;E.lastDay=state.world.day;
+ const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now(),sub={history:0,prep:0,rates:0,flow:0,consequences:0},E=economyIIIState();if(E.lastDay===state.world.day)return;E.lastDay=state.world.day;const T=tradeEconomyState(),cutoff=state.world.day-6,recentDeliveries={},recentLosses={};let t=now();
+ for(const x of T.deliveries||[])if(x.day>=cutoff)recentDeliveries[x.destination]=(recentDeliveries[x.destination]||0)+1;
+ for(const x of T.losses||[])if(x.day>=cutoff)recentLosses[x.destination]=(recentLosses[x.destination]||0)+1;sub.history+=now()-t;
  for(const loc of regionalSettlements()){
-  const id=loc.id,row=settlementEconomyIII(id),ss=settlementState(id);
-  for(const g of TRADE_GOODS){
-   const pr=settlementProductionRate(id,g.id),cr=settlementConsumptionRate(id,g.id);row.production[g.id]=pr;row.consumption[g.id]=cr;
-   if(Math.random()<pr)changeTradeStock(id,g.id,1);if(Math.random()<cr)changeTradeStock(id,g.id,-1);
-  }
-  row.flowHealth=economyIIIFlowHealth(id);row.lastDay=state.world.day;const st=economyIIIStockStatus(id),problem=settlementProblem(id);
-  if(st.essential<2.4||st.critical>=2){row.shortageDays++;row.surplusDays=0;state.world.marketShock[id]=Math.min(.45,(state.world.marketShock[id]||0)+.018);if(row.shortageDays>=3&&!problem&&chance(.35)){createSettlementProblem(id,'shortage');recordEconomyIII(id,`${loc.name} develops a sustained supply shortage.`,'bad')}}
-  else if(st.avg>=6&&row.flowHealth>=62){row.surplusDays++;row.shortageDays=Math.max(0,row.shortageDays-1);if(row.surplusDays>=3&&chance(.28))ss.prosperity=Math.min(100,ss.prosperity+1)}
-  else{row.shortageDays=Math.max(0,row.shortageDays-1);row.surplusDays=0}
-  if(problem?.type==='shortage'&&st.essential>=4.5&&row.flowHealth>=55){progressSettlementProblem(id,1,'sustained market recovery and restored deliveries');recordEconomyIII(id,`${loc.name}'s shortage eases as stocks recover.`,'good')}
-  if(row.flowHealth<25&&chance(.16))ss.prosperity=Math.max(0,ss.prosperity-1);
+  t=now();const id=loc.id,row=settlementEconomyIII(id),ss=settlementState(id),problem=settlementProblem(id),pressure=tradeRoutePressureAround(id),ctx={ss,problem,pressure},stock=ensureTradeStock(id);sub.prep+=now()-t;
+  t=now();for(const g of TRADE_GOODS){const role=g.sources?.includes(id)?'source':g.demand?.includes(id)?'demand':'normal';let pr=role==='source'?1.0:role==='normal'?.22:.05;pr*=clamp(.45+ss.prosperity/100,.45,1.45);pr*=clamp(.55+ss.security/130,.55,1.25);pr*=clamp(1-pressure*.055,.45,1);if(problem?.type==='trade_slump')pr*=.7;if(problem?.type==='shortage'&&['food','medicine','tools'].includes(g.id))pr*=.82;let cr=role==='demand'?.72:.28;if(['food','medicine'].includes(g.id))cr+=.18;if(ss.prosperity>65&&['cloth','luxury','tools','spirits','dye'].includes(g.id))cr+=.15;if(ss.security<35&&['food','medicine','tools'].includes(g.id))cr+=.12;if(problem?.type==='shortage'&&['food','medicine','tools'].includes(g.id))cr+=.18;row.production[g.id]=pr;row.consumption[g.id]=cr;if(Math.random()<pr)stock[g.id]=clamp((stock[g.id]||0)+1,0,30);if(Math.random()<cr)stock[g.id]=clamp((stock[g.id]||0)-1,0,30)}sub.rates+=now()-t;
+  t=now();const st=economyIIIStockStatus(id,stock);row.flowHealth=economyIIIFlowHealth(id,{...ctx,stock,stockStatus:st,recentDeliveries:recentDeliveries[id]||0,recentLosses:recentLosses[id]||0});row.lastDay=state.world.day;sub.flow+=now()-t;
+  t=now();if(st.essential<2.4||st.critical>=2){row.shortageDays++;row.surplusDays=0;state.world.marketShock[id]=Math.min(.45,(state.world.marketShock[id]||0)+.018);if(row.shortageDays>=3&&!problem&&chance(.35)){createSettlementProblem(id,'shortage');recordEconomyIII(id,`${loc.name} develops a sustained supply shortage.`,'bad')}}else if(st.avg>=6&&row.flowHealth>=62){row.surplusDays++;row.shortageDays=Math.max(0,row.shortageDays-1);if(row.surplusDays>=3&&chance(.28))ss.prosperity=Math.min(100,ss.prosperity+1)}else{row.shortageDays=Math.max(0,row.shortageDays-1);row.surplusDays=0}if(problem?.type==='shortage'&&st.essential>=4.5&&row.flowHealth>=55){progressSettlementProblem(id,1,'sustained market recovery and restored deliveries');recordEconomyIII(id,`${loc.name}'s shortage eases as stocks recover.`,'good')}if(row.flowHealth<25&&chance(.16))ss.prosperity=Math.max(0,ss.prosperity-1);sub.consequences+=now()-t;
  }
+ if(typeof sosPerfRecordDuration==='function'){sosPerfRecordDuration('Economy III — Recent Trade History',sub.history);sosPerfRecordDuration('Economy III — Settlement Prep',sub.prep);sosPerfRecordDuration('Economy III — Production & Consumption',sub.rates);sosPerfRecordDuration('Economy III — Flow Health',sub.flow);sosPerfRecordDuration('Economy III — Shortage & Prosperity',sub.consequences)}
 }
 function reserveMerchantCargoAtOrigin(p){
  if(!p||p.kind!=='merchant'||p.economyCargoReserved)return p;const origin=p.origin||p.location;if(!state.world.settlements?.[origin])return p;

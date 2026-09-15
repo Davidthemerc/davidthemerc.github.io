@@ -57,6 +57,15 @@ function homeAudienceTypeLabel(v){
  if(v.political)return'POLITICAL VISIT';
  if(v.kind==='petitioner')return'PETITION';
  if(v.kind==='shelter')return'LODGING REQUEST';
+ if(v.kind==='veteran')return'VETERAN CALL';
+ if(v.kind==='scholar')return'SCHOLARLY CALL';
+ if(v.kind==='healer')return'HEALER / RELIEF CALL';
+ if(v.kind==='courier')return'COURIER BRIEFING';
+ if(v.kind==='caravan_master')return'CARAVAN AFFAIRS';
+ if(v.kind==='civic_delegate')return'CIVIC DELEGATION';
+ if(v.kind==='grateful_family')return'PERSONAL THANKS';
+ if(v.kind==='witness')return'SECURITY WITNESS';
+ if(v.returning)return'RETURNING VISITOR';
  return'SOCIAL CALL'
 }
 function homeAudienceShortPurpose(v){
@@ -66,6 +75,7 @@ function homeAudienceShortPurpose(v){
  if(v.political)return'They came to discuss political relations and possible cooperation.';
  if(v.kind==='petitioner')return'They are asking the Guardian Hall for practical help.';
  if(v.kind==='shelter')return'They need temporary lodging and assistance.';
+ if(v.purpose)return v.purpose;
  return'They came to call on the Guardian without a formal demand.'
 }
 
@@ -119,13 +129,13 @@ showHomeDining=function(){
 showHomeVisitors=function(){
  modalRouteEnter('showHomeVisitors',Array.from(arguments));guardianHallRouteEnter('showHomeVisitors',[]);ensureHomeBase();
  const A=state.world.homeBase.audiences,q=A.queue,recent=A.history.slice(-8).reverse();
- const rows=q.map(v=>{const waiting=Math.max(0,state.world.day-v.arrivedDay);return `<div class="audience-row"><div><span class="audience-type-badge">${homeAudienceTypeLabel(v)}</span><b>${esc(v.name)}</b><small>${esc(homeAudienceShortPurpose(v))}<br>Waiting ${waiting} day${waiting===1?'':'s'} • expected to leave after Day ${v.expiresDay}</small>${v.hallConnection?`<div class="hall-life-connection">${esc(v.hallConnection)}</div>`:''}</div><div class="audience-row-actions"><button data-audience="${v.id}">Receive Visitor</button></div></div>`}).join('')||'<div class="notice muted">Nobody is currently waiting for the Guardian.</div>';
+ const rows=q.map(v=>{homeAudienceProfileDefaults(v);const waiting=Math.max(0,state.world.day-v.arrivedDay);return `<div class="audience-row"><div><span class="audience-type-badge">${homeAudienceTypeLabel(v)}</span><b>${esc(v.name)}</b><small>${esc(homeAudienceShortPurpose(v))}<br>${esc(v.urgency)} urgency • ${esc(v.importance)} matter${v.returning?' • recognized returning caller':''}<br>Waiting ${waiting} day${waiting===1?'':'s'} • expected to leave after Day ${v.expiresDay}</small>${v.hallConnection?`<div class="hall-life-connection">${esc(v.hallConnection)}</div>`:''}</div><div class="audience-row-actions"><button data-audience="${v.id}">Receive Visitor</button></div></div>`}).join('')||'<div class="notice muted">Nobody is currently waiting for the Guardian.</div>';
  const history=recent.map(r=>`<div class="card compact"><b>Day ${r.day}</b><br>${esc(r.text)}</div>`).join('')||'<p class="muted">No audience record yet.</p>';
  overlay(`<h2>Guardian Hall — Audiences & Visitors</h2><p>People arrive at the Hall for different reasons. Review who is waiting, why they came, and decide how much of the Hall’s time or authority to give them.</p>
    <div class="hall-social-dashboard">
      <div><small>Waiting</small><b>${q.length}</b><span>currently at the Hall</span></div>
      <div><small>Audiences Concluded</small><b>${A.totalResolved}</b><span>all recorded visits</span></div>
-     <div><small>Practical Help</small><b>${A.totalPetitions}</b><span>petition${A.totalPetitions===1?'':'s'} assisted • ${A.totalSocial} social visit${A.totalSocial===1?'':'s'}</span></div>
+     <div><small>Hall Relationships</small><b>${A.contacts.length}</b><span>${A.totalReturning||0} returning visit${(A.totalReturning||0)===1?'':'s'} • ${A.totalSocial} social audience${A.totalSocial===1?'':'s'}</span></div>
    </div>
    <h3>Waiting at the Hall</h3>${rows}
    <details style="margin-top:10px"><summary><b>Recent Visits</b></summary>${history}</details>
@@ -144,12 +154,14 @@ showHomeAudienceDetail=function(id){
  else if(v.political)buttons=SOSText("hall_life_visitors_diplomacy.showHomeAudienceDetail.005");
  else if(v.kind==='petitioner')buttons=SOSText("hall_life_visitors_diplomacy.showHomeAudienceDetail.006",v.cost||18);
  else if(v.kind==='shelter'){const need=Math.max(2,v.size||3),offer=SOSServices.accommodation.provider('shantium','hall',need);buttons=SOSText("hall_life_visitors_diplomacy.showHomeAudienceDetail.007",offer.canOffer?'':'disabled',homeLodgingOfferDetail(need))}
- else buttons=SOSText("hall_life_visitors_diplomacy.showHomeAudienceDetail.008");
+ else buttons=homeAudienceConversationButtons(v)||SOSText("hall_life_visitors_diplomacy.showHomeAudienceDetail.008");
  const lodgingNote=v.kind==='shelter'?homeLodgingNoteHTML(Math.max(2,v.size||3)):'';
  overlay(`<h2>${esc(v.name)}</h2>
    <div class="audience-detail-card"><span class="audience-type-badge">${homeAudienceTypeLabel(v)}</span>
      <div class="audience-detail-meta"><span>Arrived Day ${v.arrivedDay}</span><span>Waiting ${age} day${age===1?'':'s'}</span><span>Expected departure after Day ${v.expiresDay}</span></div>
+     <div class="audience-detail-meta"><span><b>Origin:</b> ${esc(v.origin||'Unknown')}</span><span><b>Urgency:</b> ${esc(v.urgency||'Routine')}</span><span><b>Importance:</b> ${esc(v.importance||'Local')}</span><span><b>Trust:</b> ${esc(v.trust||'Unverified')}</span>${v.returning?`<span><b>Prior visits:</b> ${v.priorVisits||1}</span><span><b>Hall relationship:</b> ${v.relationship>=4?'Strong':v.relationship>=2?'Established':'Familiar'}</span>`:''}</div>
      <b>Why they are here</b><p>${esc(homeAudienceShortPurpose(v))}</p>
+     <div class="notice compact"><b>The audience begins</b><br>${esc(homeAudienceSceneProfile(v).hook)}</div>
      <details><summary>Full message / circumstances</summary><p>${esc(v.text)}</p></details>
      ${lodgingNote}${v.hallConnection?`<div class="hall-life-connection">${esc(v.hallConnection)}</div>`:''}
    </div>
@@ -157,6 +169,9 @@ showHomeAudienceDetail=function(id){
    <div class="audience-decision-grid">${buttons}<button id="audDecline"><b>Decline Politely</b><small>End the visit without further involvement.</small></button></div>
    <div class="dialog-footer"><button id="audDetailBack">Back to Audiences</button></div>`,true);
  if($('#audMeet'))$('#audMeet').onclick=()=>homeAudienceResult(v,'meet');
+ if($('#audDetails'))$('#audDetails').onclick=()=>homeAudienceResult(v,'details');
+ if($('#audCounsel'))$('#audCounsel').onclick=()=>homeAudienceResult(v,'counsel');
+ if($('#audStewardFollow'))$('#audStewardFollow').onclick=()=>homeAudienceResult(v,'steward_follow');
  if($('#audCordial'))$('#audCordial').onclick=()=>homeAudienceResult(v,'cordial');
  if($('#audInformal'))$('#audInformal').onclick=()=>homeAudienceResult(v,'informal');
  if($('#audAid'))$('#audAid').onclick=()=>homeAudienceResult(v,'aid');

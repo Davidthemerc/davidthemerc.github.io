@@ -10,10 +10,11 @@ function ensureWorldIntegrationState(world=state?.world){
  const d=defaultWorldIntegrationState(),x=world.worldIntegration;
  if(!x||typeof x!=='object'||Array.isArray(x))world.worldIntegration=d;
  const W=world.worldIntegration;
- for(const k of ['actors','matters','attention','dispatches','intel','incidents','workOffers','resources','accounts','accommodation'])if(!W[k]||typeof W[k]!=='object'||Array.isArray(W[k]))W[k]={};if(!Array.isArray(W.resources.history))W.resources.history=[];if(!Array.isArray(W.accommodation.stays))W.accommodation.stays=[];
+ for(const k of ['actors','actorArchive','matters','attention','dispatches','intel','incidents','workOffers','resources','accounts','accommodation'])if(!W[k]||typeof W[k]!=='object'||Array.isArray(W[k]))W[k]={};if(!Array.isArray(W.resources.history))W.resources.history=[];if(!Array.isArray(W.accommodation.stays))W.accommodation.stays=[];
  for(const k of ['effects','transactions','history'])if(!Array.isArray(W[k]))W[k]=[];
  if(!W.consolidation||typeof W.consolidation!=='object')W.consolidation={lastDay:0,history:[],settlementChecks:{}};
  if(!Array.isArray(W.consolidation.history))W.consolidation.history=[];if(!W.consolidation.settlementChecks||typeof W.consolidation.settlementChecks!=='object')W.consolidation.settlementChecks={};
+ if(!W.lifecycle||typeof W.lifecycle!=='object'||Array.isArray(W.lifecycle))W.lifecycle={lastDay:0,lastReport:null,totalRetired:0,totalReconciled:0};
  W.schemaVersion=Math.max(3,Number(W.schemaVersion)||1);world.consolidation=W.consolidation;return W
 }
 function worldIntegrationState(){ensureWorldState();return ensureWorldIntegrationState(state.world)}
@@ -21,20 +22,52 @@ function worldRecordId(prefix='record'){return `${prefix}_${uid()}`}
 function worldActorRef(kind,id,opts={}){
  if(!kind||!id)return null;const key=`${kind}:${id}`,W=worldIntegrationState();let a=W.actors[key];
  if(!a)a=W.actors[key]={key,kind,id,name:opts.name||'',createdDay:state.world.day,lastSeenDay:state.world.day,active:true,meta:{}};
- if(opts.name)a.name=opts.name;if(opts.location!==undefined)a.location=opts.location;if(opts.active!==undefined)a.active=!!opts.active;if(opts.meta)Object.assign(a.meta,opts.meta);a.lastSeenDay=state.world.day;return a
+ if(opts.name)a.name=opts.name;if(opts.location!==undefined)a.location=opts.location;
+ if(opts.active!==undefined){const next=!!opts.active;if(a.active!==false&&!next&&!a.retiredDay)a.retiredDay=state.world.day;if(next&&a.active===false)delete a.retiredDay;a.active=next}
+ if(opts.meta)Object.assign(a.meta,opts.meta);a.lastSeenDay=state.world.day;return a
 }
-function resolveWorldActor(ref){if(!ref)return null;const key=typeof ref==='string'?ref:ref.key||`${ref.kind}:${ref.id}`;return worldIntegrationState().actors[key]||null}
+function resolveWorldActor(ref){if(!ref)return null;const key=typeof ref==='string'?ref:ref.key||`${ref.kind}:${ref.id}`,W=worldIntegrationState();return W.actors[key]||W.actorArchive?.[key]||null}
+function archiveWorldActorRecord(a){
+ if(!a?.key)return null;const W=worldIntegrationState(),x={key:a.key,kind:a.kind,id:a.id,name:a.name||'',location:a.location??null,active:false,createdDay:a.createdDay||null,lastSeenDay:a.lastSeenDay||null,retiredDay:state.world.day,meta:{retired:true}};
+ W.actorArchive[x.key]=x;const rows=Object.values(W.actorArchive).sort((x,y)=>(y.retiredDay||0)-(x.retiredDay||0));if(rows.length>240){const keep=new Set(rows.slice(0,240).map(x=>x.key));for(const k of Object.keys(W.actorArchive))if(!keep.has(k))delete W.actorArchive[k]}return x
+}
+function worldActorLiveBackingSets(){
+ const parties=new Set((state.world?.parties||[]).map(p=>p.id).filter(Boolean)),travelers=new Set(Object.keys(state.world?.travelerRegistry?.records||{})),travelerPeople=new Set();
+ for(const r of Object.values(state.world?.travelerRegistry?.records||{}))for(const m of r?.identity?.members||[])if(m?.id)travelerPeople.add(m.id);
+ return {parties,travelers,travelerPeople}
+}
+function retireWorldActorAtSource(kind,id,meta={}){
+ if(!kind||!id)return false;const W=worldIntegrationState(),a=W.actors[`${kind}:${id}`];if(!a||a.active===false)return false;a.active=false;a.retiredDay=state.world.day;a.lastSeenDay=state.world.day;a.meta=a.meta||{};Object.assign(a.meta,{retired:true,retiredAtSource:true,...meta});return true
+}
+function retireTravelerIntegrationAtSource(id,reason='source_removed'){
+ if(!id)return 0;let n=0,F=state.world?.factionSocial;if(F?.travelerInfluence?.[id]){delete F.travelerInfluence[id];n++;if(typeof invalidateFactionSocialReadCache==='function')invalidateFactionSocialReadCache()}
+ n+=retireWorldActorAtSource('traveler_group',id,{retireReason:reason})?1:0;const r=state.world?.travelerRegistry?.records?.[id];for(const m of r?.identity?.members||[])n+=retireWorldActorAtSource('traveler_person',m?.id,{retireReason:reason,groupId:id})?1:0;return n
+}
+function retireWorldPartyIntegrationAtSource(p,reason='party_removed'){
+ if(!p)return 0;return retireWorldActorAtSource('world_party',p.id,{retireReason:reason,travelerId:p.travelerId||null})?1:0
+}
+function retireMissingWorldActors(){
+ const W=worldIntegrationState(),B=worldActorLiveBackingSets(),temporary=new Set(['world_party','traveler_group','traveler_person','party_member','reinforcement']);let retired=0;
+ for(const a of Object.values(W.actors)){if(!a||!temporary.has(a.kind))continue;let live=true;
+  if(a.kind==='world_party')live=B.parties.has(a.id);
+  else if(a.kind==='traveler_group')live=B.travelers.has(a.id);
+  else if(a.kind==='traveler_person')live=B.travelerPeople.has(a.id);
+  else live=B.parties.has(a.meta?.partyId||a.id);
+  if(!live&&a.active!==false){a.active=false;a.retiredDay=Math.min(state.world.day,Number(a.lastSeenDay)||state.world.day);a.meta=a.meta||{};a.meta.retired=true;retired++}
+ }
+ return retired
+}
 function syncWorldActorRegistry(){
  if(!isOpenWorld())return 0;const W=worldIntegrationState(),seen=new Set(),mark=(kind,id,opts={})=>{if(!id)return null;const a=worldActorRef(kind,id,opts);if(a)seen.add(a.key);return a};let n=0;
  mark('guardian','guardian',{name:SOSText("world_integration_foundations.syncWorldActorRegistry.001"),location:state.world.location,meta:{level:state.level,class:guardianClass?.()||null}});
  for(const m of Object.values(state.party?.members||{}))if(m?.id){mark('companion',m.id,{name:m.name,location:state.world.captiveCompanions?.[m.id]?.location||state.world.location,active:m.hp!==undefined,meta:{class:m.class||null,activeParty:state.party.active?.includes(m.id)||false}});n++}
  for(const p of state.world.parties||[]){const a=mark('world_party',p.id,{name:p.name,location:p.location,meta:{kind:p.kind,faction:p.faction,travelerId:p.travelerId||null,memberCount:p.memberCount||null,combatantCount:p.combatantCount||null}});if(a)p.actorRef=a.key;n++}
- const R=state.world.travelerRegistry?.records||{};for(const r of Object.values(R)){const i=ensureTravelerRecordIdentity(r,activePartyForTraveler(r));const g=mark('traveler_group',r.id,{name:i?.groupName||r.name,location:r.settledAt||r.lastKnownLocation||null,active:r.locationStatus!=='disbanded',meta:{kind:r.kind,faction:r.faction}});if(g)r.actorRef=g.key;for(const m of i?.members||[]){const a=mark('traveler_person',m.id,{name:m.name,location:m.dependentPlacement?.location||m.currentLocation||r.settledAt||r.lastKnownLocation||null,active:m.status!=='dead',meta:{groupId:r.id,groupName:i.groupName,role:m.role,age:m.age,status:m.status||'active'}});if(a)m.actorRef=a.key;n++}}
+ const R=state.world.travelerRegistry?.records||{};for(const r of Object.values(R)){const i=ensureTravelerRecordIdentity(r,activePartyForTraveler(r)),members=i?.members||[],allDead=members.length>0&&members.every(m=>m?.status==='dead');const g=mark('traveler_group',r.id,{name:i?.groupName||r.name,location:r.settledAt||r.lastKnownLocation||null,active:r.locationStatus!=='disbanded'&&!allDead,meta:{kind:r.kind,faction:r.faction}});if(g)r.actorRef=g.key;for(const m of members){const a=mark('traveler_person',m.id,{name:m.name,location:m.dependentPlacement?.location||m.currentLocation||r.settledAt||r.lastKnownLocation||null,active:m.status!=='dead',meta:{groupId:r.id,groupName:i.groupName,role:m.role,age:m.age,status:m.status||'active'}});if(a)m.actorRef=a.key;n++}}
  const h=state.world.homeBase;if(h){const staff=[['steward',h.staff?.steward],['logistics',h.logistics?.master],['headguard',h.security?.headGuard],['economic',h.business?.adviser]];for(const [role,s] of staff)if(s?.name){const id=s.actorId||`hall_${role}_${String(s.id||s.candidateId||s.name).toLowerCase().replace(/[^a-z0-9]+/g,'_')}`;s.actorId=id;const a=mark('hall_staff',id,{name:s.name,location:'shantium',active:true,meta:{role,competence:s.competence||null,salary:s.salary||null,employedAtHall:true}});if(a)s.actorRef=a.key;n++}}
  if(typeof SETTLEMENT_NPCS!=='undefined')for(const [home,list] of Object.entries(SETTLEMENT_NPCS||{}))for(const npc of list||[]){const loc=typeof currentNpcLocation==='function'?currentNpcLocation(npc.id,home):home;mark('settlement_npc',npc.id,{name:npc.name,location:loc,active:typeof politicalNpcDead==='function'?!politicalNpcDead(npc.id):true,meta:{role:npc.role||'',home}});n++}
  for(const loc of regionalSettlements())if(typeof politicalSettlement==='function'){const ps=politicalSettlement(loc.id),leader=ps?.leader;if(leader)mark('authority',`authority_${loc.id}`,{name:leader,location:loc.id,active:true,meta:{settlement:loc.id,control:typeof settlementControl==='function'?settlementControl(loc.id):null}})}
  for(const a of Object.values(W.actors))if(a.kind==='hall_staff'&&!seen.has(a.key)){a.active=false;a.meta=a.meta||{};a.meta.employedAtHall=false;a.lastSeenDay=state.world.day}
- return n
+ retireMissingWorldActors();return n
 }
 function worldResourceSourceLabel(source){
  const labels={guardian_inventory:SOSText("world_integration_foundations.worldResourceSourceLabel.001"),cargo:SOSText("world_integration_foundations.worldResourceSourceLabel.002"),hall_items:SOSText("world_integration_foundations.worldResourceSourceLabel.003"),hall_trade:SOSText("world_integration_foundations.worldResourceSourceLabel.004")};if(labels[source])return labels[source];if(String(source).startsWith('property:'))return SOSText("world_integration_foundations.worldResourceSourceLabel.005",worldLocation(String(source).slice(9)).name);return source
@@ -123,8 +156,78 @@ function worldMatterChannelLabel(matterId,currentChannel=''){
  return SOSText("world_integration_foundations.worldMatterChannelLabel.005",esc(m.title),other.length?SOSText("world_integration_foundations.worldMatterChannelLabel.006",esc(other.join(' • '))):'',currentChannel&&offers.some(w=>w.channel!==currentChannel)?SOSText("world_integration_foundations.worldMatterChannelLabel.007"):'')
 }
 function linkSettlementProblemChannel(locId,channel,sourceId,opts={}){const p=settlementProblem(locId)||state.world?.settlementProblems?.[locId];if(!p)return null;const m=syncSettlementProblemMatter(locId,p);return m?createWorldWorkOffer(m.id,channel,sourceId,{...opts,location:locId}):null}
+function worldContractById(id){
+ if(!id)return null;for(const q of state.world?.quests||[])if(q?.id===id)return q;
+ for(const rows of Object.values(state.world?.contracts||{}))for(const q of rows||[])if(q?.id===id)return q;return null
+}
+function worldRegionalOpportunityById(id){return (state.world?.regionalSimulation?.opportunities||[]).find(o=>o?.id===id)||null}
+function worldTownJobById(id){if(!id)return null;for(const j of Object.values(state.world?.townLife?.jobs||{}))if(j?.id===id)return j;return null}
+function worldCorrespondenceSourceById(id){
+ if(!id)return null;const C=state.world?.homeBase?.correspondence;if(!C)return null;for(const rows of [C.inbox,C.requests,C.followUps,C.sent])for(const x of rows||[])if(x?.id===id)return x;return null
+}
+function worldWorkOfferSourceStatus(w){
+ if(!w)return{exists:false,status:null};let src=null;
+ if(w.channel==='contract')src=worldContractById(w.sourceId);
+ else if(w.channel==='regional_opportunity')src=worldRegionalOpportunityById(w.sourceId);
+ else if(w.channel==='townlife')src=worldTownJobById(w.sourceId);
+ else if(w.channel==='correspondence')src=worldCorrespondenceSourceById(w.sourceId);
+ if(!src)return{exists:false,status:null};
+ const status=src.status||src.stage||'active';return{exists:true,status,source:src}
+}
 function reconcileWorldMatterLinks(){
- if(!isOpenWorld())return;ensureWorldState();for(const [locId,p] of Object.entries(state.world.settlementProblems||{}))if(p)syncSettlementProblemMatter(locId,p);const W=worldIntegrationState();for(const w of Object.values(W.workOffers)){if(w.status!=='open')continue;if(w.expiresDay&&state.world.day>w.expiresDay)updateWorldWorkOffer(w.id,{status:'expired'});const m=W.matters[w.matterId];if(m&&m.status!=='active')updateWorldWorkOffer(w.id,{status:m.status==='resolved'?'completed':'closed'})}
+ if(!isOpenWorld())return{matters:0,offers:0};ensureWorldState();const W=worldIntegrationState(),now=state.world.day;let matters=0,offers=0;
+ for(const [locId,p] of Object.entries(state.world.settlementProblems||{}))if(p)syncSettlementProblemMatter(locId,p);
+ const threads=new Map((state.world.regionalSimulation?.threads||[]).map(t=>[t.id,t]));
+ for(const m of Object.values(W.matters)){
+  if(!m||m.status!=='active')continue;
+  if(m.source==='settlement_problem'&&m.links?.settlementProblemId){
+   const p=state.world.settlementProblems?.[m.location];
+   if(!p||p.id!==m.links.settlementProblemId||p.status&&p.status!=='active'){m.status='resolved';m.resolvedDay=now;m.resolution=m.resolution||'The underlying settlement condition has ended.';m.updatedDay=now;matters++}
+  }else if(m.source==='regional_thread'&&m.links?.regionalThreadId){
+   const tr=threads.get(m.links.regionalThreadId);
+   if(!tr||tr.status!=='active'){m.status='resolved';m.resolvedDay=tr?.resolvedDay||now;m.resolution=m.resolution||tr?.resolution||'The regional situation is no longer active.';m.updatedDay=now;matters++}
+  }
+ }
+ for(const w of Object.values(W.workOffers)){
+  if(!w||w.status!=='open')continue;const m=W.matters[w.matterId],source=worldWorkOfferSourceStatus(w),age=now-(w.createdDay||now);
+  if(w.expiresDay&&now>w.expiresDay){updateWorldWorkOffer(w.id,{status:'expired'});offers++;continue}
+  if(!m){updateWorldWorkOffer(w.id,{status:'closed'});offers++;continue}
+  if(m.status!=='active'){updateWorldWorkOffer(w.id,{status:m.status==='resolved'?'completed':'closed'});offers++;continue}
+  if(source.exists){
+   if(['complete','completed','resolved'].includes(source.status)){updateWorldWorkOffer(w.id,{status:'completed'});offers++;continue}
+   if(['failed','expired','abandoned','declined','superseded','closed'].includes(source.status)){updateWorldWorkOffer(w.id,{status:source.status==='abandoned'?'declined':'expired'});offers++;continue}
+  }else if(['contract','regional_opportunity','townlife','correspondence'].includes(w.channel)&&age>14){
+   updateWorldWorkOffer(w.id,{status:'expired',orphanedSource:true});offers++
+  }
+ }
+ return{matters,offers}
+}
+function cleanupTravelerFactionInfluence(){
+ const F=state.world?.factionSocial;if(!F?.travelerInfluence)return 0;const R=state.world?.travelerRegistry?.records||{};let removed=0;
+ for(const [id,inf] of Object.entries(F.travelerInfluence)){const r=R[id],members=r?.identity?.members||[],dead=members.length>0&&members.every(m=>m?.status==='dead');
+  if(!r||r.locationStatus==='disbanded'||dead){delete F.travelerInfluence[id];removed++}
+ }
+ if(removed&&typeof invalidateFactionSocialReadCache==='function')invalidateFactionSocialReadCache();return removed
+}
+function cleanupRetiredWorldActors(){
+ const W=worldIntegrationState(),now=state.world.day,retention={world_party:30,traveler_group:45,traveler_person:45,party_member:30,reinforcement:14};let removed=0;
+ for(const [key,a] of Object.entries(W.actors)){if(!a||a.active!==false||retention[a.kind]===undefined)continue;const retired=a.retiredDay||a.lastSeenDay||a.createdDay||now;if(now-retired<retention[a.kind])continue;archiveWorldActorRecord(a);delete W.actors[key];removed++}
+ return removed
+}
+function worldIntelLifecycleAge(i,day=state.world.day){const d=i?.staleDay??i?.updatedDay??i?.createdDay??day;return Math.max(0,day-Number(d||0))}
+function worldIntelPruneEligible(i,day=state.world.day){return !!i&&i.status==='stale'&&!i.meta?.persistent&&worldIntelLifecycleAge(i,day)>=30}
+function pruneWorldIntegrationLifecycleArchives(){
+ const W=worldIntegrationState(),now=state.world.day;let offers=0,matters=0,intel=0;
+ for(const [id,w] of Object.entries(W.workOffers)){if(w.status==='open')continue;const d=w.resolvedDay||w.updatedDay||w.createdDay||now;if(now-d>90){delete W.workOffers[id];offers++}}
+ for(const [id,m] of Object.entries(W.matters)){if(m.status==='active')continue;const d=m.resolvedDay||m.updatedDay||m.createdDay||now;if(now-d>180){delete W.matters[id];matters++}}
+ for(const [id,i] of Object.entries(W.intel))if(worldIntelPruneEligible(i,now)){delete W.intel[id];intel++}
+ return{offers,matters,intel}
+}
+function worldIntegrationLifecycleMaintenance(force=false){
+ if(!isOpenWorld())return null;const W=worldIntegrationState(),now=state.world.day,L=W.lifecycle;if(!force&&now-(L.lastDay||0)<7)return L.lastReport||null;
+ const rec=reconcileWorldMatterLinks(),influence=cleanupTravelerFactionInfluence();retireMissingWorldActors();const actors=cleanupRetiredWorldActors(),pruned=pruneWorldIntegrationLifecycleArchives();
+ const report={day:now,mattersReconciled:rec.matters,offersReconciled:rec.offers,travelerInfluenceRemoved:influence,actorsRetired:actors,offersPruned:pruned.offers,mattersPruned:pruned.matters,intelPruned:pruned.intel};
+ report.total=Object.entries(report).filter(([k])=>k!=='day').reduce((n,[,v])=>n+(Number(v)||0),0);L.lastDay=now;L.lastReport=report;L.totalRetired=(L.totalRetired||0)+actors+influence+pruned.offers+pruned.matters+pruned.intel;L.totalReconciled=(L.totalReconciled||0)+rec.matters+rec.offers;return report
 }
 function updateWorldMatter(id,patch={}){const m=worldIntegrationState().matters[id];if(!m)return null;Object.assign(m,patch);m.updatedDay=state.world.day;return m}
 function activeWorldMatters(filter={}){return Object.values(worldIntegrationState().matters).filter(m=>m.status==='active'&&(!filter.location||m.location===filter.location)&&(!filter.region||m.region===filter.region)&&(!filter.type||m.type===filter.type))}
@@ -181,7 +284,7 @@ function activeWorldIntel(filter={}){
 }
 function worldIntelDailyTick(){
  const W=worldIntegrationState();for(const i of Object.values(W.intel))if(i.status==='active'&&worldIntelReliability(i)<=0){i.status='stale';i.staleDay=state.world.day}
- const cutoff=state.world.day-120;for(const [id,i] of Object.entries(W.intel))if(i.status==='stale'&&(i.staleDay||i.createdDay)<cutoff)delete W.intel[id]
+ for(const [id,i] of Object.entries(W.intel))if(worldIntelPruneEligible(i,state.world.day))delete W.intel[id]
 }
 function worldAttentionUpsert(kind,sourceId,opts={},desired=null){
  const a=registerAttention(kind,sourceId,{...opts,meta:{...(opts.meta||{}),autoSync:true}});if(desired)desired.add(a.id);return a
@@ -202,7 +305,7 @@ function syncWorldAttentionRegistry(){
  for(const a of Object.values(W.attention))if(a.status==='open'&&a.meta?.autoSync&&!desired.has(a.id))resolveAttention(a.id);
  return desired.size
 }
-function worldIntegrationStartDayTick(){worldDispatchDailyTick();worldIntelDailyTick()}
+function worldIntegrationStartDayTick(){worldDispatchDailyTick();worldIntelDailyTick();if(typeof sosPerfRun==='function')sosPerfRun('World Integration — Lifecycle Maintenance',()=>worldIntegrationLifecycleMaintenance(false));else worldIntegrationLifecycleMaintenance(false)}
 function worldIntegrationEndDayTick(){syncWorldAttentionRegistry();syncWorldActorRegistry()}
 function registerAttention(kind,sourceId,opts={}){const W=worldIntegrationState(),id=opts.id||`${kind}:${sourceId}`,old=W.attention[id]||{};return W.attention[id]={...old,id,kind,sourceId,title:opts.title||old.title||'',priority:clamp(Number(opts.priority??old.priority)||1,1,5),interruptRest:opts.interruptRest!==undefined?!!opts.interruptRest:!!old.interruptRest,status:'open',createdDay:old.createdDay||opts.createdDay||state.world.day,location:opts.location??old.location??null,route:opts.route??old.route??null,meta:{...(old.meta||{}),...(opts.meta||{})}}}
 function resolveAttention(id){const a=worldIntegrationState().attention[id];if(!a)return false;a.status='resolved';a.resolvedDay=state.world.day;return true}
@@ -283,19 +386,24 @@ function townJobConflictsWithRegionalWork(locId,job){
 }
 function recordConsolidation(text){const C=worldIntegrationState().consolidation;C.history.push({day:state.world.day,text});C.history=C.history.slice(-40)}
 function consolidateWorldSystems(force=false){
- if(!isOpenWorld())return 0;ensureWorldState();syncWorldActorRegistry();reconcileWorldMatterLinks();const C=worldIntegrationState().consolidation;if(!force&&C.lastDay===state.world.day)return 0;let changes=0;
- for(const loc of regionalSettlements()){
-  const id=loc.id,p=settlementProblem(id),stock=ensureTradeStock(id),key=`${state.world.day}:${id}`;
-  if(p&&C.settlementChecks[key]!==true){
-   if(p.type==='shortage'&&((stock.food||0)+(stock.medicine||0)+(stock.tools||0)>=14)){progressSettlementProblem(id,1,SOSText("settlements_people_townlife.consolidateWorldSystems.001"));recordConsolidation(SOSText("settlements_people_townlife.consolidateWorldSystems.002",loc.name));changes++}
-   if(p.type==='trade_slump'&&state.world.parties.some(x=>x.kind==='merchant'&&x.destination===id)){progressSettlementProblem(id,1,SOSText("settlements_people_townlife.consolidateWorldSystems.003"));recordConsolidation(SOSText("settlements_people_townlife.consolidateWorldSystems.004",loc.name));changes++}
-   if(['raider_pressure','watch_shortage'].includes(p.type)){const pressure=strongestTroubledRoute(id)?.pressure||0,hostile=state.world.parties.some(x=>['bandits','raiders'].includes(x.kind)&&(x.location===id||x.destination===id));if(pressure<=1&&!hostile){progressSettlementProblem(id,1,SOSText("settlements_people_townlife.consolidateWorldSystems.005"));recordConsolidation(SOSText("settlements_people_townlife.consolidateWorldSystems.006",loc.name));changes++}}
-   C.settlementChecks[key]=true
+ if(!isOpenWorld())return 0;const perf=(name,fn)=>typeof sosPerfRun==='function'?sosPerfRun(name,fn):fn();let C;
+ perf('Consolidation — Matter Reconciliation',()=>{ensureWorldState();if(force)syncWorldActorRegistry();reconcileWorldMatterLinks();C=worldIntegrationState().consolidation});if(!force&&C.lastDay===state.world.day)return 0;let changes=0;
+ perf('Consolidation — Settlement Recovery',()=>{
+  const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now(),sub={problems:0,jobs:0,bounds:0};
+  for(const loc of regionalSettlements()){
+   const id=loc.id,p=settlementProblem(id),stock=ensureTradeStock(id),key=`${state.world.day}:${id}`;let t=now();
+   if(p&&C.settlementChecks[key]!==true){
+    if(p.type==='shortage'&&((stock.food||0)+(stock.medicine||0)+(stock.tools||0)>=14)){progressSettlementProblem(id,1,SOSText("settlements_people_townlife.consolidateWorldSystems.001"));recordConsolidation(SOSText("settlements_people_townlife.consolidateWorldSystems.002",loc.name));changes++}
+    if(p.type==='trade_slump'&&state.world.parties.some(x=>x.kind==='merchant'&&x.destination===id)){progressSettlementProblem(id,1,SOSText("settlements_people_townlife.consolidateWorldSystems.003"));recordConsolidation(SOSText("settlements_people_townlife.consolidateWorldSystems.004",loc.name));changes++}
+    if(['raider_pressure','watch_shortage'].includes(p.type)){const pressure=strongestTroubledRoute(id)?.pressure||0,hostile=state.world.parties.some(x=>['bandits','raiders'].includes(x.kind)&&(x.location===id||x.destination===id));if(pressure<=1&&!hostile){progressSettlementProblem(id,1,SOSText("settlements_people_townlife.consolidateWorldSystems.005"));recordConsolidation(SOSText("settlements_people_townlife.consolidateWorldSystems.006",loc.name));changes++}}
+    C.settlementChecks[key]=true
+   }sub.problems+=now()-t;t=now();
+   const job=state.world.townLife?.jobs?.[id];if(job?.status==='available'&&townJobConflictsWithRegionalWork(id,job)){job.status='superseded';job.supersededDay=state.world.day;recordConsolidation(SOSText("settlements_people_townlife.consolidateWorldSystems.007",loc.name));changes++}sub.jobs+=now()-t;t=now();
+   const ss=settlementState(id);ss.security=clamp(ss.security,0,100);ss.prosperity=clamp(ss.prosperity,0,100);sub.bounds+=now()-t
   }
-  const job=state.world.townLife?.jobs?.[id];if(job?.status==='available'&&townJobConflictsWithRegionalWork(id,job)){job.status='superseded';job.supersededDay=state.world.day;recordConsolidation(SOSText("settlements_people_townlife.consolidateWorldSystems.007",loc.name));changes++}
-  const ss=settlementState(id);ss.security=clamp(ss.security,0,100);ss.prosperity=clamp(ss.prosperity,0,100)
- }
- C.settlementChecks=Object.fromEntries(Object.entries(C.settlementChecks).filter(([k])=>Number(k.split(':')[0])>=state.world.day-3));C.lastDay=state.world.day;if(force||C.lastAuditDay!==state.world.day)worldIntegrationAudit(true);return changes
+  if(typeof sosPerfRecordDuration==='function'){sosPerfRecordDuration('Consolidation Recovery — Problems',sub.problems);sosPerfRecordDuration('Consolidation Recovery — Town Jobs',sub.jobs);sosPerfRecordDuration('Consolidation Recovery — Bounds',sub.bounds)}
+ });
+ perf('Consolidation — Cleanup & Audit',()=>{C.settlementChecks=Object.fromEntries(Object.entries(C.settlementChecks).filter(([k])=>Number(k.split(':')[0])>=state.world.day-3));C.lastDay=state.world.day;if(force||C.lastAuditDay!==state.world.day)worldIntegrationAudit(true)});return changes
 }
 
 function maybeCreateSettlementProblem(locId){

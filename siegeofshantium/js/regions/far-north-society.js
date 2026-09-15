@@ -124,7 +124,13 @@ showSettlementFactions=function(locId=state.world.location){
  overlay(`<h2>${esc(worldLocation(locId).name)} — Organized Presence</h2>${farNorthCivicSummaryHTML1622(locId)}${locId==='exium'?'<div class="notice"><b>Gateway exception</b><br>Bluestone, Redstone, Coalition, and other southern interests may send temporary traders, messengers, or representatives to Exium. They do not maintain routine political organizations beyond the gate.</div>':'<div class="notice"><b>Strong Independent local control</b><br>No southern faction maintains routine organized political presence here. Individuals may arrive for exceptional missions, but local institutions remain the normal authority.</div>'}<button id="northFactionAffairs">Open Northern Affairs</button><div class="dialog-footer"><button class="closeModal">Back</button></div>`,true);$('#northFactionAffairs').onclick=()=>showFarNorthCivicLife1622(locId);wireClose()
 };
 const _showLocalPoliticalActions1622=showLocalPoliticalActions;
-showLocalPoliticalActions=function(locId=state.world.location){if(isFarNorthSettlement1622(locId))return showFarNorthCivicLife1622(locId);return _showLocalPoliticalActions1622(locId)};
+showLocalPoliticalActions=function(locId=state.world.location){
+ // Exium is the Far North's southern gateway and uses the standard local political action system.
+ // Northern Affairs remains available separately through Exium Town Life.
+ if(locId==='exium')return _showLocalPoliticalActions1622(locId);
+ if(isFarNorthSettlement1622(locId))return showFarNorthCivicLife1622(locId);
+ return _showLocalPoliticalActions1622(locId)
+};
 const _simulateFactionPresence1622=simulateFactionPresence;
 simulateFactionPresence=function(){
  _simulateFactionPresence1622();if(!isOpenWorld())return;ensureFactionPresence();for(const id of FAR_NORTH_SETTLEMENTS){const p=state.world.factionPresence[id];if(!p)continue;for(const f of Object.keys(p)){if(f==='Independent')continue;if(id==='exium')p[f]=Math.min(p[f]||0,2);else p[f]=0}const ss=settlementState(id);if(id==='azerdon'&&ss.control!=='Independent')ss.control='Independent'}

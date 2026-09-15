@@ -27,16 +27,21 @@ function politicalPowerSummary(locId,faction){
 function decayFactionPowerEvidence(){
  ensurePoliticalState();for(const locId of Object.keys(state.world.politics.powerEvidence))for(const faction of Object.keys(state.world.politics.powerEvidence[locId]))state.world.politics.powerEvidence[locId][faction]=activeFactionPowerEvidence(locId,faction)
 }
+let SOSPoliticalPressureReadCache=null;
+function beginPoliticalPressureReadCache(){SOSPoliticalPressureReadCache={state,day:state.world.day,values:new Map(),locations:new Map(),profile:{shared:0,evidence:0,civic:0,math:0}}}
+function endPoliticalPressureReadCache(){const p=SOSPoliticalPressureReadCache?.profile||null;SOSPoliticalPressureReadCache=null;return p}
 function politicalPressure(locId,faction){
- const ps=politicalSettlement(locId),presence=factionPresenceAt(locId)[faction]||0,control=settlementControl(locId),standing=state.world.factionStanding[faction]||0,security=settlementState(locId).security,evidence=factionPowerEvidenceScore(locId,faction),lean=ps.lean[faction]||0,c=localPoliticalFactionState(locId,faction);
- let v=(presence||0)+(ps.pressure[faction]||0)+Math.round(evidence*.45)+Math.round(lean*.35)+c.organization*.45+c.security*.25+c.support*.12;if(control===faction)v+=3;if(standing>=8)v+=1;if(security<40)v+=1;return Math.max(0,v)
+ const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now(),cache=SOSPoliticalPressureReadCache&&SOSPoliticalPressureReadCache.state===state&&SOSPoliticalPressureReadCache.day===state.world.day?SOSPoliticalPressureReadCache:null,key=`${locId}|${faction}`;if(cache?.values.has(key))return cache.values.get(key);let t=now();
+ let shared=cache?.locations.get(locId);if(!shared){shared={ps:politicalSettlement(locId),presence:factionPresenceAt(locId),control:settlementControl(locId),security:settlementState(locId).security};if(cache)cache.locations.set(locId,shared)}if(cache)cache.profile.shared+=now()-t;const ps=shared.ps,presence=shared.presence[faction]||0,control=shared.control,standing=state.world.factionStanding[faction]||0,security=shared.security,lean=ps.lean[faction]||0;
+ t=now();const evidence=factionPowerEvidenceScore(locId,faction);if(cache)cache.profile.evidence+=now()-t;t=now();const c=localPoliticalFactionState(locId,faction);if(cache)cache.profile.civic+=now()-t;t=now();let v=(presence||0)+(ps.pressure[faction]||0)+Math.round(evidence*.45)+Math.round(lean*.35)+c.organization*.45+c.security*.25+c.support*.12;if(control===faction)v+=3;if(standing>=8)v+=1;if(security<40)v+=1;v=Math.max(0,v);if(cache){cache.profile.math+=now()-t;cache.values.set(key,v)}return v
 }
 function addPoliticalPressure(locId,faction,amt=1,reason=''){
  const ps=politicalSettlement(locId);ps.pressure[faction]=clamp((ps.pressure[faction]||0)+amt,0,12);if(reason){recordFactionPower(locId,faction,'politics',amt,reason,7);politicalHistory(SOSText("politics_control_incidents.addPoliticalPressure.001",worldLocation(locId).name,majorFaction(faction).short,amt>0?'increases':'falls',reason),amt>=0?'info':'good')}
 }
-function politicalStatus(locId){
- const ps=politicalSettlement(locId),control=settlementControl(locId),rows=Object.keys(OPEN_WORLD_FACTIONS).map(f=>[f,politicalPressure(locId,f)]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]),top=rows[0]||[control,0],second=rows[1]||[null,0];
- return {control,leader:ps.leader,style:ps.style,autonomy:ps.autonomy,topFaction:top[0],topPressure:top[1],secondFaction:second[0],secondPressure:second[1],contested:second[0]&&top[1]-second[1]<=2&&second[1]>=5,pending:ps.pending}
+function politicalStatus(locId,perfStats=null){
+ const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now();let t=now(),ps=politicalSettlement(locId),control=settlementControl(locId);if(perfStats)perfStats.statusPrep=(perfStats.statusPrep||0)+now()-t;
+ t=now();const rows=Object.keys(OPEN_WORLD_FACTIONS).map(f=>[f,politicalPressure(locId,f)]);if(perfStats)perfStats.statusPressure=(perfStats.statusPressure||0)+now()-t;
+ t=now();const ranked=rows.filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]),top=ranked[0]||[control,0],second=ranked[1]||[null,0],out={control,leader:ps.leader,style:ps.style,autonomy:ps.autonomy,topFaction:top[0],topPressure:top[1],secondFaction:second[0],secondPressure:second[1],contested:second[0]&&top[1]-second[1]<=2&&second[1]>=5,pending:ps.pending};if(perfStats)perfStats.statusRank=(perfStats.statusRank||0)+now()-t;return out
 }
 function politicalStatusLabel(locId){
  const s=politicalStatus(locId);if(s.pending)return SOSText("politics_control_incidents.politicalStatusLabel.001");if(s.contested)return SOSText("politics_control_incidents.politicalStatusLabel.002");if(s.topFaction!==s.control&&s.topPressure>=8)return SOSText("politics_control_incidents.politicalStatusLabel.003");if(s.autonomy>=8)return SOSText("politics_control_incidents.politicalStatusLabel.004");if(s.autonomy<=3)return SOSText("politics_control_incidents.politicalStatusLabel.005");return SOSText("politics_control_incidents.politicalStatusLabel.006")
@@ -52,12 +57,12 @@ function expireTreaties(){
  ensurePoliticalState();for(const t of Object.values(state.world.politics.treaties)){if(t.status==='active'&&state.world.day>t.expiresDay){t.status='expired';politicalHistory(SOSText("politics_control_incidents.expireTreaties.001",t.label,t.a,t.b),'info')}}
 }
 function factionsOpposedPolitically(a,b){const t=activeTreaty(a,b);if(t&&['nonaggression','road_access','trade'].includes(t.type))return false;return factionRelation(a,b)<=-4}
-function evaluatePoliticalShift(locId){
- const ps=politicalSettlement(locId),status=politicalStatus(locId);if(ps.pending||state.world.day<(ps.transitionUntilDay||0)||state.world.day-(ps.lastShiftDay||0)<8)return;
- if(status.topFaction===status.control)return;const challenger=status.topFaction,pressure=status.topPressure,defense=politicalPressure(locId,status.control)+Math.round(ps.autonomy/2),lean=settlementLeanScore(locId,challenger);
+function evaluatePoliticalShift(locId,perfStats=null){
+ const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now();let t=now(),ps=politicalSettlement(locId),status=politicalStatus(locId,perfStats);if(perfStats)perfStats.status+=now()-t;if(ps.pending||state.world.day<(ps.transitionUntilDay||0)||state.world.day-(ps.lastShiftDay||0)<8)return;
+ if(status.topFaction===status.control)return;const challenger=status.topFaction;t=now();const pressure=status.topPressure,defense=politicalPressure(locId,status.control)+Math.round(ps.autonomy/2);if(perfStats)perfStats.pressure+=now()-t;t=now();const lean=settlementLeanScore(locId,challenger);if(perfStats)perfStats.lean+=now()-t;
  if(pressure>=10&&lean>=7&&pressure>=defense+2){
-  ps.pending={id:uid(),challenger,current:status.control,createdDay:state.world.day,expiresDay:state.world.day+4,reason:SOSText("politics_control_incidents.evaluatePoliticalShift.001",majorFaction(challenger).name,settlementLeanTier(locId,challenger).toLowerCase())};
-  recordWorldNews(SOSText("politics_control_incidents.evaluatePoliticalShift.002",worldLocation(locId).name,majorFaction(challenger).short),'bad')
+  t=now();ps.pending={id:uid(),challenger,current:status.control,createdDay:state.world.day,expiresDay:state.world.day+4,reason:SOSText("politics_control_incidents.evaluatePoliticalShift.001",majorFaction(challenger).name,settlementLeanTier(locId,challenger).toLowerCase())};
+  recordWorldNews(SOSText("politics_control_incidents.evaluatePoliticalShift.002",worldLocation(locId).name,majorFaction(challenger).short),'bad');if(perfStats)perfStats.transition+=now()-t
  }
 }
 function resolvePoliticalShift(locId,choice){
@@ -115,7 +120,17 @@ function simulatePoliticalDay(){
  if(typeof beginFactionPresenceReadCache==='function')beginFactionPresenceReadCache();
  try{
   perf('Politics Simulation — Local Maintenance',()=>{
-   for(const loc of locs){const P=politicalProtectionState(loc.id),oldControl=P.lastControl,currentControl=settlementControl(loc.id);if(oldControl&&oldControl!==currentControl)reopenProtectedPoliticalCases(loc.id,oldControl,currentControl);P.lastControl=currentControl;decayLocalPoliticalCivic(loc.id);simulateLocalPoliticalCampaignDay(loc.id);simulateInternalFactionPoliticsDay(loc.id);politicalLongCampaignMaintenance(loc.id)}
+   const sub={protection:0,campaigns:0,internal:0,long:0};
+   for(const loc of locs){
+    let t=sosPerfNow();const P=politicalProtectionState(loc.id),oldControl=P.lastControl,currentControl=settlementControl(loc.id);if(oldControl&&oldControl!==currentControl)reopenProtectedPoliticalCases(loc.id,oldControl,currentControl);P.lastControl=currentControl;decayLocalPoliticalCivic(loc.id);sub.protection+=sosPerfNow()-t;
+    t=sosPerfNow();simulateLocalPoliticalCampaignDay(loc.id);sub.campaigns+=sosPerfNow()-t;
+    t=sosPerfNow();simulateInternalFactionPoliticsDay(loc.id);sub.internal+=sosPerfNow()-t;
+    t=sosPerfNow();politicalLongCampaignMaintenance(loc.id);sub.long+=sosPerfNow()-t
+   }
+   sosPerfRecordDuration('Politics Local — Protection & Civic',sub.protection);
+   sosPerfRecordDuration('Politics Local — Campaigns',sub.campaigns);
+   sosPerfRecordDuration('Politics Local — Internal Factions',sub.internal);
+   sosPerfRecordDuration('Politics Local — Long Maintenance',sub.long)
   });
   perf('Politics Simulation — Presence & Pressure',()=>{
    for(const loc of locs){const ps=politicalSettlement(loc.id),presence=factionPresenceAt(loc.id),control=settlementControl(loc.id);

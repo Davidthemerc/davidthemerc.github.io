@@ -376,18 +376,62 @@ function regionTravelFlavor(c){
  if(c.id==='crownpass_exium')return {summary:'The High Crown–Exium Ice Road crosses a severe mountain approach where snow, ice, and wind make every mile expensive.',events:['Ice coats the high road beyond Crown Pass, forcing the party to pick a slow line between exposed stone and deep snow.','A hard northern wind tears across the pass while the party follows Bluestone cairns toward Exium.']};
  return {summary:SOSText("world_road_travel.regionTravelFlavor.011"),events:[SOSText("world_road_travel.regionTravelFlavor.012")]}
 }
+function commitInterRegionJourney(connection,from,dest){
+ ensureWorldState();if(!connection||!from||!dest||!worldLocation(from)||!worldLocation(dest))return actionResult('Regional Travel Error','The regional road connection could not be resolved.','bad',renderOpenWorld);
+ const valid=(connection.a===from&&connection.b===dest)||(connection.b===from&&connection.a===dest);if(!valid)return actionResult('Regional Travel Error','This crossing does not connect the current location to that destination.','bad',renderOpenWorld);
+ try{if(typeof playerPartyClearFieldPosition==='function')playerPartyClearFieldPosition();if(typeof playerPartyBeginFieldTravel==='function')playerPartyBeginFieldTravel()}catch(err){console.error('[Regional Travel] field departure failed',err)}
+ state.world.travelPlan={mode:'regional',from,to:dest,connectionId:connection.id,startedDay:state.world.day};save();closeOverlay();return beginInterRegionJourney(connection,from,dest,Math.max(0,Number(connection.days)||0))
+}
 function showRegionTravel(){modalRouteEnter(SOSText("world_road_travel.showRegionTravel.001"),Array.from(arguments));
  const connections=regionConnectionsAt();if(!connections.length)return actionResult(SOSText("world_road_travel.showRegionTravel.002"),SOSText("world_road_travel.showRegionTravel.003"),'info',renderOpenWorld);
- if(connections.length===1){const c=connections[0],dest=regionConnectionOther(c,state.world.location),to=worldLocation(dest),toRegion=regionDef(locationRegion(dest)),flavor=regionTravelFlavor(c);overlay(SOSText("world_road_travel.showRegionTravel.004",esc(c.name),esc(c.desc),esc(toRegion.name),c.days,esc(flavor.summary),esc(to.name)));$('#crossRegion').onclick=()=>{closeOverlay();beginInterRegionJourney(c,state.world.location,dest,c.days)};$('#regionTravelStay').onclick=()=>{if(worldLifePendingTravel())clearWorldLifePendingTravel();save();closeOverlay();renderOpenWorld()};return}
+ if(connections.length===1){const c=connections[0],dest=regionConnectionOther(c,state.world.location),to=worldLocation(dest),toRegion=regionDef(locationRegion(dest)),flavor=regionTravelFlavor(c);overlay(SOSText("world_road_travel.showRegionTravel.004",esc(c.name),esc(c.desc),esc(toRegion.name),c.days,esc(flavor.summary),esc(to.name)));$('#crossRegion').onclick=()=>commitInterRegionJourney(c,state.world.location,dest);$('#regionTravelStay').onclick=()=>{if(worldLifePendingTravel())clearWorldLifePendingTravel();save();closeOverlay();renderOpenWorld()};return}
  const here=state.world.location;
  const cards=connections.map(c=>{const dest=regionConnectionOther(c,here),to=worldLocation(dest),toRegion=regionDef(locationRegion(dest)),flavor=regionTravelFlavor(c);return `<div class="card compact regional-crossing-choice"><b>${esc(c.name)}</b><br><span>${esc(c.desc)}</span><div class="stat-row"><span>Destination</span><b>${esc(to.name)} — ${esc(toRegion.name)}</b></div><div class="stat-row"><span>Travel time</span><b>${c.days} days</b></div><small>${esc(flavor.summary)}</small><br><button data-crossregion="${esc(c.id)}">Travel to ${esc(to.name)}</button></div>`}).join('');
  overlay(`<h2>Regional Travel</h2><p>${esc(worldLocation(here).name)} connects to more than one neighboring region. Choose the crossing the Player Party will take.</p>${cards}<button id="regionTravelStay">Stay Here</button>`,true);
- document.querySelectorAll('[data-crossregion]').forEach(b=>b.onclick=()=>{const c=REGION_CONNECTIONS.find(x=>x.id===b.dataset.crossregion);if(!c)return;const dest=regionConnectionOther(c,here);closeOverlay();beginInterRegionJourney(c,here,dest,c.days)});
+ document.querySelectorAll('[data-crossregion]').forEach(b=>b.onclick=()=>{const c=REGION_CONNECTIONS.find(x=>x.id===b.dataset.crossregion);if(!c)return;const dest=regionConnectionOther(c,here);commitInterRegionJourney(c,here,dest)});
  $('#regionTravelStay').onclick=()=>{if(worldLifePendingTravel())clearWorldLifePendingTravel();save();closeOverlay();renderOpenWorld()};wireClose()
 }
+function finalizeInterRegionJourney(connection,from,dest){
+ ensureWorldState();if(!connection||!dest||!worldLocation(dest))return false;
+ const newRegion=locationRegion(dest),scoutShift=reduceScoutingForRegionChange();unlockRegion(newRegion);
+ relocatePlayerParty(dest,{inside:!!state.world.settlements?.[dest],field:!state.world.settlements?.[dest],clearTravel:true});
+ if(scoutShift.before!==scoutShift.after)recordWorldHistory(`Regional scouting reset: ${scoutShift.before} → ${scoutShift.after}. Fresh reconnaissance is needed in ${regionDef(newRegion).name}.`,'info','travel');
+ const last=state.world.regionHistory?.[state.world.regionHistory.length-1],duplicate=last&&last.day===state.world.day&&last.from===locationRegion(from)&&last.to===newRegion&&last.via===connection.name;
+ if(!duplicate){state.world.regionHistory.push({day:state.world.day,from:locationRegion(from),to:newRegion,via:connection.name});state.world.regionHistory=state.world.regionHistory.slice(-30)}
+ ensureMapView().lastLocation=null;
+ SOSServices.companions.noteSharedEvent('region',SOSText("world_road_travel.beginInterRegionJourney.001",connection.name,regionDef(newRegion).name));
+ recordWorldHistory(SOSText("world_road_travel.beginInterRegionJourney.002",connection.name,regionDef(newRegion).name),'good',SOSText("world_road_travel.beginInterRegionJourney.003"));
+ save();if(worldLifePendingTravel()){if(continueWorldLifeTravel())return true}renderOpenWorld();return true
+}
+function recoverPendingRegionalJourney(){
+ ensureWorldState();const plan=state.world.travelPlan;if(!plan||plan.mode!=='regional'||!plan.connectionId)return false;
+ const connection=REGION_CONNECTIONS.find(x=>x.id===plan.connectionId);if(!connection||!worldLocation(plan.from)||!worldLocation(plan.to)){state.world.travelPlan=null;save();return false}
+ if(state.world.location===plan.to){state.world.travelPlan=null;save();return false}
+ if(state.world.location!==plan.from)return false;
+ const elapsed=Math.max(0,(state.world.day||0)-(plan.startedDay||state.world.day)),needed=Math.max(1,Number(connection.days)||1);
+ if(elapsed>=needed){console.warn('[Regional Travel] recovering completed but unfinalized journey',plan);return finalizeInterRegionJourney(connection,plan.from,plan.to)}
+ return false
+}
 function beginInterRegionJourney(connection,from,dest,remaining){
- if(remaining<=0){const newRegion=locationRegion(dest),scoutShift=reduceScoutingForRegionChange();unlockRegion(newRegion);state.world.location=dest;state.world.region=newRegion;ensureMapView(newRegion).lastLocation=null;if(scoutShift.before!==scoutShift.after)recordWorldHistory(`Regional scouting reset: ${scoutShift.before} → ${scoutShift.after}. Fresh reconnaissance is needed in ${regionDef(newRegion).name}.`,'info','travel');state.world.regionHistory.push({day:state.world.day,from:locationRegion(from),to:newRegion,via:connection.name});state.world.regionHistory=state.world.regionHistory.slice(-30);ensureMapView().lastLocation=null;SOSServices.companions.noteSharedEvent('region',SOSText("world_road_travel.beginInterRegionJourney.001",connection.name,regionDef(newRegion).name));recordWorldHistory(SOSText("world_road_travel.beginInterRegionJourney.002",connection.name,regionDef(newRegion).name),'good',SOSText("world_road_travel.beginInterRegionJourney.003"));save();if(worldLifePendingTravel()){if(continueWorldLifeTravel())return}return renderOpenWorld()}
- advanceWorldDays(1,SOSText("world_road_travel.beginInterRegionJourney.004",connection.name));if(typeof recoveryTravelStrainTick==='function')recoveryTravelStrainTick(connection.name);const flavor=regionTravelFlavor(connection);if(chance(.28))log(pick(flavor.events),'info');beginInterRegionJourney(connection,from,dest,remaining-1)
+ if(!connection||!dest||!worldLocation(dest))return actionResult('Regional Travel Error','The regional road connection could not be resolved.','bad',renderOpenWorld);
+ if(remaining<=0)return finalizeInterRegionJourney(connection,from,dest);
+ try{advanceWorldDays(1,SOSText("world_road_travel.beginInterRegionJourney.004",connection.name))}catch(err){console.error('[Regional Travel] daily simulation failed during crossing; continuing journey',err)}
+ try{if(typeof recoveryTravelStrainTick==='function')recoveryTravelStrainTick(connection.name)}catch(err){console.error('[Regional Travel] strain tick failed',err)}
+ try{const flavor=regionTravelFlavor(connection);if(chance(.28))log(pick(flavor.events),'info')}catch(err){console.error('[Regional Travel] flavor event failed',err)}
+ return beginInterRegionJourney(connection,from,dest,remaining-1)
+}
+function recoverStaleDirectTravelPlan(){
+ ensureWorldState();const plan=state.world.travelPlan;if(!plan||plan.mode==='regional')return false;
+ const invalid=!plan.from||!plan.to||!worldLocation(plan.from)||!worldLocation(plan.to),atDestination=state.world.location===plan.to;
+ if(invalid||atDestination){console.warn('[Road Travel] clearing stale direct travel plan',plan);state.world.travelPlan=null;save();return false}
+ // A committed settlement departure that survived an interrupted render/day tick must remain a journey,
+ // not strand the Player Party just outside its origin settlement.
+ if(state.world.location===plan.from&&playerPartyInField()&&Number.isFinite(Number(plan.remainingDays))&&Number(plan.remainingDays)>=0){
+   console.warn('[Road Travel] resuming interrupted direct journey',plan);beginWorldJourney(plan.from,plan.to,Number(plan.remainingDays));return true
+ }
+ const notTraveling=!playerPartyInField()&&!state.world.pursuit?.active;
+ if(notTraveling){console.warn('[Road Travel] clearing stale direct travel plan',plan);state.world.travelPlan=null;save()}
+ return false
 }
 function attemptPlayerPartySettlementReentry(dest=state.world.location){
  if(!playerPartyInField()||dest!==state.world.location||!state.world.settlements?.[dest])return renderOpenWorld();
@@ -413,20 +457,25 @@ function commitWorldTravelChoice(from,dest,mode,days,profile=null){
  safe('law departure state',()=>{if(typeof clearLawEntryState==='function')clearLawEntryState(from)});
  // playerPartyBeginFieldTravel already records a Shantium Hall departure through
  // playerPartyMarkFieldPosition; do not invoke homeMarkDeparture a second time here.
- state.world.travelPlan={mode,from,to:dest,startedDay:state.world.day};
+ const totalDays=Math.max(0,Number(days)||0);
+ state.world.travelPlan={mode,from,to:dest,startedDay:state.world.day,totalDays,remainingDays:totalDays};
  if(!Array.isArray(state.world.routeTravelHistory))state.world.routeTravelHistory=[];
  state.world.routeTravelHistory.push({day:state.world.day,from,to:dest,mode,status:profile?.status||'open',pressure:Number(profile?.pressure)||0});
  state.world.routeTravelHistory=state.world.routeTravelHistory.slice(-40);
  safe('departure sound',()=>{if(typeof sfxWorld==='function')sfxWorld('depart')});
  safe('close travel dialog',()=>closeOverlay());
- return beginWorldJourney(from,dest,Math.max(0,Number(days)||0))
+ return beginWorldJourney(from,dest,totalDays)
 }
 
 function beginWorldJourney(from,dest,remaining){
- ensureWorldState();if(remaining<=0){ensureMapView().lastLocation=null;state.world.location=dest;state.world.region=locationRegion(dest);{const dl=worldLocation(dest),F=playerPartyFieldState();if(!state.world.settlements[dest]){F.active=true;F.region=locationRegion(dest);F.x=dl.x;F.y=dl.y;F.anchorLocation=dest;F.targetPartyId=null}else{F.x=dl.x;F.y=dl.y;F.region=locationRegion(dest)}}if(dest==='shantium'&&from!=='shantium')homePrepareHomecomingBriefing();state.world.travelPlan={mode:'direct',from:null,to:null,startedDay:null};state.world.settlementVisits[dest]=(state.world.settlementVisits[dest]||0)+1;if(worldLocation(dest).hidden){const XS=explorationSiteState(dest);XS.visits++;XS.lastVisit=state.world.day}if(state.world.settlements[dest])createSettlementEvent(dest,false);log(SOSText("world_road_travel.beginWorldJourney.001",state.world.day,worldLocation(dest).name),'info');if(state.world.settlements[dest])SOSServices.companions.noteSharedEvent('settlement',SOSText("world_road_travel.beginWorldJourney.002",worldLocation(dest).name));checkWorldQuestArrival();checkAdventureStoryArrival();checkFactionQuestProgress();checkPersonalRequests();save();const finishArrival=()=>{if(state.world.settlements[dest])playerPartyClearFieldPosition();if(worldLifePendingTravel()){if(continueWorldLifeTravel())return}if(checkCompanionStories()){save();return}renderOpenWorld();return handleFactionArrival(dest,renderOpenWorld)};if(state.world.settlements[dest]&&typeof showSettlementLawArrival==='function'&&lawArrivalNeedsDecision(dest)){showSettlementLawArrival(dest,finishArrival);return}return finishArrival()}
- advanceWorldDays(1,SOSText("world_road_travel.beginWorldJourney.003",worldLocation(from).name,worldLocation(dest).name));if(typeof recoveryTravelStrainTick==='function')recoveryTravelStrainTick(`${worldLocation(from).name} → ${worldLocation(dest).name}`);
+ ensureWorldState();
+ if(state.world.travelPlan&&state.world.travelPlan.mode!=='regional'){state.world.travelPlan.remainingDays=Math.max(0,Number(remaining)||0);save()}
+ if(remaining<=0){relocatePlayerParty(dest,{inside:!!state.world.settlements?.[dest],field:!state.world.settlements?.[dest],clearTravel:true});if(dest==='shantium'&&from!=='shantium')homePrepareHomecomingBriefing();state.world.travelPlan=null;state.world.settlementVisits[dest]=(state.world.settlementVisits[dest]||0)+1;if(worldLocation(dest).hidden){const XS=explorationSiteState(dest);XS.visits++;XS.lastVisit=state.world.day}if(state.world.settlements[dest])createSettlementEvent(dest,false);log(SOSText("world_road_travel.beginWorldJourney.001",state.world.day,worldLocation(dest).name),'info');if(state.world.settlements[dest])SOSServices.companions.noteSharedEvent('settlement',SOSText("world_road_travel.beginWorldJourney.002",worldLocation(dest).name));checkWorldQuestArrival();checkAdventureStoryArrival();checkFactionQuestProgress();checkPersonalRequests();save();const finishArrival=()=>{if(state.world.settlements[dest])playerPartyClearFieldPosition();if(worldLifePendingTravel()){if(continueWorldLifeTravel())return}if(checkCompanionStories()){save();return}renderOpenWorld();return handleFactionArrival(dest,renderOpenWorld)};if(state.world.settlements[dest]&&typeof showSettlementLawArrival==='function'&&lawArrivalNeedsDecision(dest)){showSettlementLawArrival(dest,finishArrival);return}return finishArrival()}
+ try{advanceWorldDays(1,SOSText("world_road_travel.beginWorldJourney.003",worldLocation(from).name,worldLocation(dest).name))}catch(err){console.error('[Road Travel] daily simulation failed during journey; preserving travel transaction',err)}
+ try{if(typeof recoveryTravelStrainTick==='function')recoveryTravelStrainTick(`${worldLocation(from).name} → ${worldLocation(dest).name}`)}catch(err){console.error('[Road Travel] strain tick failed',err)}
+ if(state.world.travelPlan&&state.world.travelPlan.mode!=='regional'){state.world.travelPlan.remainingDays=Math.max(0,remaining-1);save()}
  const next=()=>beginWorldJourney(from,dest,remaining-1);
- maybeRoadEvent(from,dest,false,next)
+ try{maybeRoadEvent(from,dest,false,next)}catch(err){console.error('[Road Travel] road event failed; continuing journey',err);next()}
 }
 
 

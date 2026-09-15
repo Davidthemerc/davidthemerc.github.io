@@ -19,7 +19,6 @@ prisonerCardHTML=function(p,scope='party'){
  if(p.world&&prisonerRansomEligibleIII(p))actions.push(`<button data-ransom="${p.id}" ${!authority?'disabled':''} title="Ransom prisoners with a plausible payer">Ransom</button>`);
  if(p.world)actions.push(`<button data-handover="${p.id}" ${!authority?'disabled':''} title="Transfer custody to the local authority">Hand Over</button>`);
  if(!hall&&ow&&canAccessGuardianHall())actions.push(`<button data-deposit="${p.id}" title="Transfer to Guardian Hall custody">To Hall</button>`);
- if(hall)actions.push(`<button data-labor="${p.id}" title="Toggle supervised Hall work assignment">${p.hallLabor?'End Work':'Work Crew'}</button>`);
 
  return `<div class="prisoner-card">
    <div class="prisoner-card-head">

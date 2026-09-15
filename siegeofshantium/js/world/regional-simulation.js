@@ -75,8 +75,14 @@ function simulateTradeEconomyDay(){
  const T=tradeEconomyState();for(const id of Object.keys(T.intel)){if(state.world.day-(T.intel[id]?.day||0)>12)delete T.intel[id]}
 }
 function simulateRegionalConsequencesII(){
- clearExpiredRegionalEvidence();decayRegionalMarketShock();capitalSecurityDailyTick();simulateEconomyIIIDay();simulateRegionalRaidDamage();simulateRefugeeIntegration();simulateFactionPersonnelShift();
- const E=regionalEvidenceState();for(const [k,v] of Object.entries(ensureRegionalSimulation().routePressure)){const [a,b]=k.split('|');updateRouteEvidence(a,b,SOSText("world_regional_simulation.simulateRegionalConsequencesII.001"))}
+ const perf=(name,fn)=>typeof sosPerfRun==='function'?sosPerfRun(name,fn):fn();
+ perf('Regional Consequences — Evidence & Market',()=>{clearExpiredRegionalEvidence();decayRegionalMarketShock()});
+ perf('Regional Consequences — Capital Security',()=>capitalSecurityDailyTick());
+ perf('Regional Consequences — Economy III',()=>simulateEconomyIIIDay());
+ perf('Regional Consequences — Raid Damage',()=>simulateRegionalRaidDamage());
+ perf('Regional Consequences — Refugee Integration',()=>simulateRefugeeIntegration());
+ perf('Regional Consequences — Personnel Shifts',()=>simulateFactionPersonnelShift());
+ perf('Regional Consequences — Route Evidence',()=>{regionalEvidenceState();for(const [k,v] of Object.entries(ensureRegionalSimulation().routePressure)){const [a,b]=k.split('|');updateRouteEvidence(a,b,SOSText("world_regional_simulation.simulateRegionalConsequencesII.001"),v)}})
 }
 function regionalFlow(type,from,to,text,partyId=null){
  const r=ensureRegionalSimulation(),flow={id:uid(),day:state.world.day,type,from,to,text,partyId};r.flows.push(flow);r.flows=r.flows.slice(-40);return flow
@@ -148,9 +154,17 @@ function regionalNpcResponse(){
  }
 }
 function simulateRegionalNetworkDay(){
- if(!isOpenWorld())return;ensureRegionalSimulation();maybeRegionalResponse();regionalNpcResponse();simulateRegionalConsequencesII();
- for(const [k,v] of Object.entries(state.world.regionalSimulation.routePressure)){if(v>0&&chance(.22)){state.world.regionalSimulation.routePressure[k]=Math.max(0,v-1);const [a,b]=k.split('|');updateRouteEvidence(a,b,SOSText("world_regional_simulation.simulateRegionalNetworkDay.001"))}}
- regionalThreadCleanup();syncRegionalOpportunities()
+ if(!isOpenWorld())return;const perf=(name,fn)=>typeof sosPerfRun==='function'?sosPerfRun(name,fn):fn();ensureRegionalSimulation();
+ if(typeof beginRegionalDailyReadCache==='function')beginRegionalDailyReadCache();
+ try{
+  perf('Regional Network — Responses & Consequences',()=>{
+   perf('Regional Responses — Parties',()=>maybeRegionalResponse());
+   perf('Regional Responses — NPCs',()=>regionalNpcResponse());
+   perf('Regional Responses — Consequences',()=>simulateRegionalConsequencesII())
+  });
+  perf('Regional Network — Route Pressure',()=>{for(const [k,v] of Object.entries(state.world.regionalSimulation.routePressure)){if(v>0&&chance(.22)){state.world.regionalSimulation.routePressure[k]=Math.max(0,v-1);const [a,b]=k.split('|');updateRouteEvidence(a,b,SOSText("world_regional_simulation.simulateRegionalNetworkDay.001"))}}});
+  perf('Regional Network — Threads & Opportunities',()=>{regionalThreadCleanup();syncRegionalOpportunities()})
+ }finally{if(typeof endRegionalDailyReadCache==='function')endRegionalDailyReadCache()}
 }
 
 function partyArrivalObservationMode(locId){

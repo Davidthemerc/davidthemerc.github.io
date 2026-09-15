@@ -24,7 +24,10 @@ const SOS_IDB_NAME='siegeOfShantium.campaigns';
 const SOS_IDB_VERSION=1;
 const SOS_IDB_STORE='campaignSlots';
 const SOS_IDB_MIGRATION_KEY='siegeOfShantium.indexedDbMigrated.v16551';
-const SOSIndexedDBRuntime={db:null,ready:false,failed:false,promise:null,cache:new Map(),writeChain:Promise.resolve(),stats:{reads:0,writes:0,migrations:0,failures:0}};
+const SOSIndexedDBRuntime={db:null,ready:false,failed:false,promise:null,cache:new Map(),writeChain:Promise.resolve(),retryAfter:0,lastFailure:null,stats:{reads:0,writes:0,migrations:0,failures:0,recoveries:0,legacyWrites:0}};
+function sosResetIDBConnection(){try{SOSIndexedDBRuntime.db?.close?.()}catch(e){}SOSIndexedDBRuntime.db=null;SOSIndexedDBRuntime.ready=false;SOSIndexedDBRuntime.promise=null}
+function sosMarkIDBFailure(err){SOSIndexedDBRuntime.failed=true;SOSIndexedDBRuntime.lastFailure=String(err?.message||err||'IndexedDB failure');SOSIndexedDBRuntime.retryAfter=Date.now()+1500;sosResetIDBConnection()}
+function sosMarkIDBRecovered(){if(SOSIndexedDBRuntime.failed)SOSIndexedDBRuntime.stats.recoveries++;SOSIndexedDBRuntime.failed=false;SOSIndexedDBRuntime.retryAfter=0;SOSIndexedDBRuntime.lastFailure=null}
 function sosPerfRecordDuration(name,ms){
  if(typeof SOSRenderPerf==='undefined'||!SOSRenderPerf.enabled)return ms;
  const n=name||'operation',st=SOSRenderPerf.screenStats[n]||(SOSRenderPerf.screenStats[n]={count:0,total:0,max:0,last:0});
@@ -38,8 +41,8 @@ function sosIDBOpen(){
   if(typeof indexedDB==='undefined'){SOSIndexedDBRuntime.failed=true;resolve(null);return}
   let req;try{req=indexedDB.open(SOS_IDB_NAME,SOS_IDB_VERSION)}catch(e){console.warn('IndexedDB unavailable; using legacy save storage.',e);SOSIndexedDBRuntime.failed=true;resolve(null);return}
   req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(SOS_IDB_STORE))db.createObjectStore(SOS_IDB_STORE,{keyPath:'key'})};
-  req.onsuccess=()=>{SOSIndexedDBRuntime.db=req.result;SOSIndexedDBRuntime.db.onversionchange=()=>{try{SOSIndexedDBRuntime.db.close()}catch(e){}SOSIndexedDBRuntime.db=null;SOSIndexedDBRuntime.ready=false};resolve(req.result)};
-  req.onerror=()=>{console.warn('IndexedDB open failed; using legacy save storage.',req.error);SOSIndexedDBRuntime.failed=true;SOSIndexedDBRuntime.stats.failures++;resolve(null)}
+  req.onsuccess=()=>{SOSIndexedDBRuntime.db=req.result;sosMarkIDBRecovered();SOSIndexedDBRuntime.db.onversionchange=()=>{try{SOSIndexedDBRuntime.db.close()}catch(e){}SOSIndexedDBRuntime.db=null;SOSIndexedDBRuntime.ready=false;SOSIndexedDBRuntime.promise=null};resolve(req.result)};
+  req.onerror=()=>{console.warn('IndexedDB open failed; browser save recovery will retry.',req.error);SOSIndexedDBRuntime.stats.failures++;sosMarkIDBFailure(req.error);resolve(null)}
  });return SOSIndexedDBRuntime.promise
 }
 function sosIDBRequest(mode,fn){
@@ -75,17 +78,28 @@ async function sosStorageReady(){
 }
 function sosStorageRaw(key){return SOSIndexedDBRuntime.cache.get(key)||sosLegacyRawForKey(key)||null}
 function writeLegacyCampaignStorage(mode,data){
- const key=saveKeyForMode(mode),backup=backupKeyForMode(mode),encoded=storageEncodeCampaign(data),previous=localStorage.getItem(key);
+ const t=typeof sosPerfNow==='function'?sosPerfNow():Date.now(),key=saveKeyForMode(mode),backup=backupKeyForMode(mode),encoded=storageEncodeCampaign(data),previous=localStorage.getItem(key);
  if(previous&&previous!==encoded&&(SOSStorageRuntime.validKeys.has(key)||parseStoredCampaignRaw(previous))){try{localStorage.setItem(backup,previous);SOSStorageRuntime.validKeys.add(backup)}catch(e){}}
- try{localStorage.setItem(key,encoded);SOSStorageRuntime.validKeys.add(key);return true}catch(e){console.error('Legacy save fallback failed.',e);return false}
+ try{localStorage.setItem(key,encoded);SOSStorageRuntime.validKeys.add(key);SOSIndexedDBRuntime.stats.legacyWrites++;sosPerfRecordDuration('Legacy Storage — Write',(typeof sosPerfNow==='function'?sosPerfNow():Date.now())-t);return true}catch(e){console.error('Legacy save fallback failed.',e);sosPerfRecordDuration('Legacy Storage — Write',(typeof sosPerfNow==='function'?sosPerfNow():Date.now())-t);return false}
+}
+async function sosTryIndexedDBCampaignWrite(key,backup,previous,raw){
+ if(previous&&previous!==raw){const bok=await sosIDBPut(backup,previous);if(!bok)throw new Error('IndexedDB backup write failed.')}
+ const ok=await sosIDBPut(key,raw);if(!ok)throw new Error('IndexedDB campaign write failed.');sosMarkIDBRecovered();return true
 }
 function sosQueueIndexedDBWrite(mode,raw){
  const key=saveKeyForMode(mode),backup=backupKeyForMode(mode),previous=SOSIndexedDBRuntime.cache.get(key)||null;
  SOSIndexedDBRuntime.cache.set(key,raw);if(previous&&previous!==raw)SOSIndexedDBRuntime.cache.set(backup,previous);
  SOSIndexedDBRuntime.writeChain=SOSIndexedDBRuntime.writeChain.then(async()=>{
-  if(previous&&previous!==raw)await sosIDBPut(backup,previous);
-  const ok=await sosIDBPut(key,raw);if(!ok)throw new Error('IndexedDB campaign write failed.');return true
- }).catch(e=>{console.error('IndexedDB save failed; using legacy browser storage fallback.',e);SOSIndexedDBRuntime.stats.failures++;SOSIndexedDBRuntime.failed=true;return writeLegacyCampaignStorage(mode,raw)});
+  try{
+   if(SOSIndexedDBRuntime.failed&&Date.now()<SOSIndexedDBRuntime.retryAfter)return writeLegacyCampaignStorage(mode,raw);
+   if(SOSIndexedDBRuntime.failed)sosResetIDBConnection();
+   return await sosTryIndexedDBCampaignWrite(key,backup,previous,raw)
+  }catch(e){
+   console.warn('IndexedDB save failed; retrying once before browser-storage fallback.',e);SOSIndexedDBRuntime.stats.failures++;sosMarkIDBFailure(e);
+   try{sosResetIDBConnection();const db=await sosIDBOpen();if(db)return await sosTryIndexedDBCampaignWrite(key,backup,previous,raw)}catch(retryErr){console.warn('IndexedDB retry failed; using browser save fallback for this write.',retryErr);SOSIndexedDBRuntime.stats.failures++;sosMarkIDBFailure(retryErr)}
+   return writeLegacyCampaignStorage(mode,raw)
+  }
+ });
  return true
 }
 function storageCompressText(input){
@@ -184,12 +198,10 @@ function worldLocationSafeName(id){const x=typeof WORLD_LOCATIONS!=='undefined'&
 let lastLoadFailure=null;
 
 function writeCampaignStorage(mode,data){
- // v1.6.55.1: data is ordinary serialized JSON. Queue an asynchronous IndexedDB write
- // and return immediately so gameplay never waits for browser persistence I/O.
- if(typeof indexedDB!=='undefined'&&!SOSIndexedDBRuntime.failed){sosQueueIndexedDBWrite(mode,data);return true}
- SOSIndexedDBRuntime.failed=true;
- // Conservative fallback if IndexedDB is unavailable: retain the legacy compressed localStorage path.
- return writeLegacyCampaignStorage(mode,data)
+ // Routine saves always enqueue persistence work. A transient IndexedDB failure is retried and may
+ // fall back for that write without permanently forcing future saves onto synchronous localStorage.
+ if(typeof indexedDB!=='undefined'){sosQueueIndexedDBWrite(mode,data);return true}
+ SOSIndexedDBRuntime.failed=true;return writeLegacyCampaignStorage(mode,data)
 }
 
 function saveOptimizationState(){
@@ -250,8 +262,8 @@ function saveOptimizationCollectActorRefs(root,actors,out=new Set(),depth=0,seen
  for(const v of Object.values(root))saveOptimizationCollectActorRefs(v,actors,out,depth+1,seen);return out
 }
 function compactWorldActorRegistrySaveData(report){
- const W=worldIntegrationState(),actors=W.actors||{},now=state.world.day,refs=saveOptimizationCollectActorRefs(state,actors),transient=new Set(['world_party','party_member','reinforcement']);let removed=0;
- for(const [key,a] of Object.entries(actors)){if(!transient.has(a?.kind)||refs.has(key))continue;const age=now-(Number(a.lastSeenDay)||Number(a.createdDay)||now);if(age<60)continue;delete actors[key];removed++}
+ const W=worldIntegrationState(),actors=W.actors||{},now=state.world.day,refs=saveOptimizationCollectActorRefs(state,actors),transient=new Set(['world_party','traveler_group','traveler_person','party_member','reinforcement']);let removed=0;
+ for(const [key,a] of Object.entries(actors)){if(!transient.has(a?.kind)||refs.has(key))continue;const age=now-(Number(a.retiredDay)||Number(a.lastSeenDay)||Number(a.createdDay)||now);if(a.active!==false&&age<90)continue;if(age<45)continue;if(typeof archiveWorldActorRecord==='function')archiveWorldActorRecord(a);delete actors[key];removed++}
  report.actorRecords=(report.actorRecords||0)+removed
 }
 function compactTravelerRegistrySaveData(report){
@@ -270,13 +282,13 @@ function compactGeneralWorldHistory(report){
 function optimizeSaveData(force=false){
  if(!state?.world||!isOpenWorld())return {total:0,skipped:true};const O=saveOptimizationState(),now=state.world.day;
  const doLight=force||now-(O.lastLightDay||0)>=10,doDeep=force||now-(O.lastDeepDay||0)>=30;if(!doLight&&!doDeep)return O.lastReport||{total:0,skipped:true};
- const report={day:now,correspondence:0,referrals:0,worldRecords:0,actorRecords:0,travelerHistory:0,histories:0,total:0,manual:!!force};
- compactGuardianHallSaveData(report);compactRelationshipBridgeSaveData(report);compactGeneralWorldHistory(report);if(doDeep){compactWorldIntegrationSaveData(report);compactWorldActorRegistrySaveData(report);compactTravelerRegistrySaveData(report)};
- report.total=report.correspondence+report.referrals+report.worldRecords+report.actorRecords+report.travelerHistory+report.histories;O.lastLightDay=now;if(doDeep)O.lastDeepDay=now;if(force)O.lastManualDay=now;O.totalRemoved=(O.totalRemoved||0)+report.total;O.lastReport=report;return report
+ const report={day:now,correspondence:0,referrals:0,worldRecords:0,actorRecords:0,travelerHistory:0,histories:0,lifecycle:0,total:0,manual:!!force};
+ compactGuardianHallSaveData(report);compactRelationshipBridgeSaveData(report);compactGeneralWorldHistory(report);if(doDeep){if(typeof worldIntegrationLifecycleMaintenance==='function'){const lr=worldIntegrationLifecycleMaintenance(true);report.lifecycle=lr?.total||0}compactWorldIntegrationSaveData(report);compactWorldActorRegistrySaveData(report);compactTravelerRegistrySaveData(report)};
+ report.total=report.correspondence+report.referrals+report.worldRecords+report.actorRecords+report.travelerHistory+report.histories+report.lifecycle;O.lastLightDay=now;if(doDeep)O.lastDeepDay=now;if(force)O.lastManualDay=now;O.totalRemoved=(O.totalRemoved||0)+report.total;O.lastReport=report;return report
 }
 function showSaveOptimizationResult(){
  const before=JSON.stringify(state).length,r=optimizeSaveData(true),after=JSON.stringify(state).length,saved=Math.max(0,before-after),pct=before?Math.round(saved/before*100):0;save();
- overlay(`<h2>Save Data Optimized</h2><div class="good notice"><b>${r.total.toLocaleString()} stale records compacted or removed</b><br>Approx. ${(saved/1024).toFixed(0)} KB removed from the uncompressed campaign state (${pct}%).</div><div class="card"><div class="stat-row"><span>Old Hall correspondence / requests</span><b>${r.correspondence}</b></div><div class="stat-row"><span>Redundant referral/day markers</span><b>${r.referrals}</b></div><div class="stat-row"><span>Resolved world-integration records</span><b>${r.worldRecords}</b></div><div class="stat-row"><span>Unreferenced transient actor records</span><b>${r.actorRecords||0}</b></div><div class="stat-row"><span>Compacted traveler-history rows</span><b>${r.travelerHistory||0}</b></div><div class="stat-row"><span>Old ledger / travel / history rows</span><b>${r.histories}</b></div></div><p class="muted compact">Living named people and recurring traveler groups are never removed by actor cleanup. Active contracts, unresolved correspondence, current Parties/world matters, custody, settlement/economy state, exploration progress, relationships, and current simulation state are preserved.</p><div class="dialog-footer"><button id="saveOptBack">Back</button></div>`);$('#saveOptBack').onclick=gameMenu
+ overlay(`<h2>Save Data Optimized</h2><div class="good notice"><b>${r.total.toLocaleString()} stale records compacted, reconciled, or removed</b><br>Approx. ${(saved/1024).toFixed(0)} KB removed from the uncompressed campaign state (${pct}%).</div><div class="card"><div class="stat-row"><span>Lifecycle reconciliation / retirement</span><b>${r.lifecycle||0}</b></div><div class="stat-row"><span>Old Hall correspondence / requests</span><b>${r.correspondence}</b></div><div class="stat-row"><span>Redundant referral/day markers</span><b>${r.referrals}</b></div><div class="stat-row"><span>Resolved world-integration records</span><b>${r.worldRecords}</b></div><div class="stat-row"><span>Unreferenced transient actor records</span><b>${r.actorRecords||0}</b></div><div class="stat-row"><span>Compacted traveler-history rows</span><b>${r.travelerHistory||0}</b></div><div class="stat-row"><span>Old ledger / travel / history rows</span><b>${r.histories}</b></div></div><p class="muted compact">Active contracts, unresolved correspondence, living traveler records, current Parties/world matters, custody, settlement/economy state, exploration progress, and relationships are preserved. Retired temporary actor identities are reduced to bounded archival tombstones so historical references can still resolve names.</p><div class="dialog-footer"><button id="saveOptBack">Back</button></div>`);$('#saveOptBack').onclick=gameMenu
 }
 
 // ===== v1.6.22.6 — Runtime Performance & Input Responsiveness =====
@@ -325,7 +337,7 @@ function flushCampaignSaveNow(){
     let raw='',mode='';
     perf('Save — Serialize',()=>{raw=JSON.stringify(state)});
     mode=campaignModeOf(state);
-    const ok=perf('Save — Queue IndexedDB',()=>writeCampaignStorage(mode,raw));
+    const ok=perf('Save — Queue Storage',()=>writeCampaignStorage(mode,raw));
     SOSPerfRuntime.lastSaveResult=ok;SOSPerfRuntime.lastFlushAt=Date.now();SOSPerfRuntime.saveQueued=false;
     if(!ok&&state?.log)log(SOSText("core_town_save_load.save.001"),'bad');
     return ok;
@@ -518,7 +530,7 @@ function sosPerformanceDiagnosticsText(){
   lines.push(`Profiler hooks: ${hooks.profile||0} timed operations • ${hooks.memo||0} memoized helpers`,`Current render memoization: ${SOSRenderPerf.helperHits} cache hits / ${SOSRenderPerf.helperMisses} misses${cacheTotal?` • ${cacheRate}% hit rate`:''}`,'Recent slow operations');
   if(SOSRenderPerf.lastSlow.length)for(const x of SOSRenderPerf.lastSlow)lines.push(`${x.name} — ${x.ms} ms\nDay ${x.day}`);else lines.push('No 40 ms+ screen builds recorded in this session.');
   lines.push('Save scheduler','Queued requests',String(saveStats.queued||0),'Important checkpoints',String(saveStats.important||0),'Critical checkpoints',String(saveStats.critical||0),'Actual storage flushes',String(saveStats.flushes||0));
-  lines.push('Campaign storage',SOSIndexedDBRuntime.failed?'Legacy localStorage fallback':'IndexedDB (uncompressed routine saves)',`IndexedDB reads: ${SOSIndexedDBRuntime.stats.reads} • writes: ${SOSIndexedDBRuntime.stats.writes} • migrated slots: ${SOSIndexedDBRuntime.stats.migrations} • failures: ${SOSIndexedDBRuntime.stats.failures}`);
+  lines.push('Campaign storage',typeof indexedDB==='undefined'?'Browser storage fallback':SOSIndexedDBRuntime.failed?'IndexedDB recovery pending':'IndexedDB (uncompressed routine saves)',`IndexedDB reads: ${SOSIndexedDBRuntime.stats.reads} • writes: ${SOSIndexedDBRuntime.stats.writes} • migrated slots: ${SOSIndexedDBRuntime.stats.migrations} • failures: ${SOSIndexedDBRuntime.stats.failures} • recoveries: ${SOSIndexedDBRuntime.stats.recoveries} • fallback writes: ${SOSIndexedDBRuntime.stats.legacyWrites}`);
   if(typeof SOSNavigationLoopGuard!=='undefined'&&SOSNavigationLoopGuard.lastRecovery)lines.push('Last navigation-loop recovery',`Day ${SOSNavigationLoopGuard.lastRecovery.day} • ${SOSNavigationLoopGuard.lastRecovery.a} ↔ ${SOSNavigationLoopGuard.lastRecovery.b}`);
   return lines.join('\n')
 }
@@ -532,11 +544,50 @@ function showPerformanceDiagnostics(){
   overlay(`<h2>Performance Diagnostics</h2><div class="notice compact"><b>Session-only profiler</b><br><small>Timings are not written into the campaign save. A screen or day-tick phase consistently above ~50 ms is a useful optimization target.</small></div><h3>Screen & simulation timings</h3><div class="card">${sosPerfRowsHTML()}</div><div class="card compact"><b>Profiler hooks:</b> ${hooks.profile||0} timed operations • ${hooks.memo||0} memoized helpers<br><b>Current render memoization:</b> ${SOSRenderPerf.helperHits} cache hits / ${SOSRenderPerf.helperMisses} misses${cacheTotal?` • ${cacheRate}% hit rate`:''}</div><h3>Recent slow operations</h3>${slow}<h3>Save scheduler</h3><div class="card"><div class="stat-row"><span>Queued requests</span><b>${saveStats.queued||0}</b></div><div class="stat-row"><span>Important checkpoints</span><b>${saveStats.important||0}</b></div><div class="stat-row"><span>Critical checkpoints</span><b>${saveStats.critical||0}</b></div><div class="stat-row"><span>Actual storage flushes</span><b>${saveStats.flushes||0}</b></div></div><div class="dialog-footer"><button id="perfDiagCopy">Quick Copy</button><button id="perfDiagReset">Reset Session Timings</button><button id="perfDiagBack">Back</button></div>`,true);
   $('#perfDiagCopy').onclick=async()=>{const b=$('#perfDiagCopy'),ok=await sosCopyText(sosPerformanceDiagnosticsText());if(b){b.textContent=ok?'Copied!':'Copy Failed';setTimeout(()=>{if(b.isConnected)b.textContent='Quick Copy'},1200)}};$('#perfDiagReset').onclick=()=>{SOSRenderPerf.screenStats={};SOSRenderPerf.lastSlow=[];showPerformanceDiagnostics()};$('#perfDiagBack').onclick=gameMenu
 }
+
+function sosPersistentStateSnapshot(){
+ const W=typeof worldIntegrationState==='function'?worldIntegrationState():state.world?.worldIntegration||{},R=state.world?.travelerRegistry?.records||{},F=state.world?.factionSocial?.travelerInfluence||{},actors=W.actors||{},offers=W.workOffers||{},matters=W.matters||{},intel=W.intel||{},day=state.world?.day||0;
+ const backing=typeof worldActorLiveBackingSets==='function'?worldActorLiveBackingSets():{parties:new Set((state.world?.parties||[]).map(p=>p.id)),travelers:new Set(Object.keys(R)),travelerPeople:new Set()},temporary=new Set(['world_party','traveler_group','traveler_person','party_member','reinforcement']);
+ const actorRows=Object.values(actors),candidateRows=actorRows.filter(a=>{if(!a||!temporary.has(a.kind))return false;if(a.active===false)return true;if(a.kind==='world_party')return!backing.parties.has(a.id);if(a.kind==='traveler_group')return!backing.travelers.has(a.id);if(a.kind==='traveler_person')return!backing.travelerPeople.has(a.id);return false}),actorCandidateByType={},actorCandidateByAge={'0-6d':0,'7-29d':0,'30-44d':0,'45d+':0},actor45ByType={},actor45Retention={};
+ const actorHasBacking=a=>a?.kind==='world_party'?backing.parties.has(a.id):a?.kind==='traveler_group'?backing.travelers.has(a.id):a?.kind==='traveler_person'?backing.travelerPeople.has(a.id):false;
+ for(const a of candidateRows){actorCandidateByType[a.kind]=(actorCandidateByType[a.kind]||0)+1;const age=Math.max(0,day-(a.retiredDay||a.lastSeenDay||day)),bucket=age<7?'0-6d':age<30?'7-29d':age<45?'30-44d':'45d+';actorCandidateByAge[bucket]++;if(age>=45){actor45ByType[a.kind]=(actor45ByType[a.kind]||0)+1;let reason='other';if(a.active===false&&!actorHasBacking(a))reason='retired — awaiting lifecycle archive';else if(a.active===false&&actorHasBacking(a))reason='retired flag — live backing still present';else if(a.active!==false&&!actorHasBacking(a))reason='missing source — awaiting retirement';else reason='live backing / reference';actor45Retention[reason]=(actor45Retention[reason]||0)+1}}
+ const influenceRows=Object.entries(F),orphanInfluence=influenceRows.filter(([id])=>!R[id]||R[id]?.locationStatus==='disbanded').length,offerRows=Object.values(offers),openOffers=offerRows.filter(w=>w.status==='open'),orphanOpenOffers=openOffers.filter(w=>typeof worldWorkOfferSourceStatus==='function'&&!worldWorkOfferSourceStatus(w).exists&&day-(w.createdDay||day)>14).length,matterRows=Object.values(matters),activeMatters=matterRows.filter(m=>m.status==='active'),oldActiveMatters=activeMatters.filter(m=>day-(m.createdDay||day)>90).length,intelRows=Object.values(intel),staleRows=intelRows.filter(i=>i.status==='stale'),intelBuckets={staleUnder30:0,stale30Persistent:0,stale30Referenced:0,stale30Eligible:0},refText=JSON.stringify({matters,offers,incidents:W.incidents||{},attention:W.attention||{},dispatches:W.dispatches||{}});
+ for(const i of staleRows){const age=typeof worldIntelLifecycleAge==='function'?worldIntelLifecycleAge(i,day):day-(i.staleDay??i.updatedDay??i.createdDay??day),referenced=!!(i.id&&refText.includes(i.id));if(age<30)intelBuckets.staleUnder30++;else if(i.meta?.persistent)intelBuckets.stale30Persistent++;else if(referenced)intelBuckets.stale30Referenced++;else if(typeof worldIntelPruneEligible==='function'?worldIntelPruneEligible(i,day):age>=30)intelBuckets.stale30Eligible++}
+ let approxBytes=0;try{approxBytes=JSON.stringify(state).length}catch(e){}
+ return {day,travelers:Object.keys(R).length,parties:(state.world?.parties||[]).length,actors:actorRows.length,actorArchive:Object.keys(W.actorArchive||{}).length,orphanActors:candidateRows.length,actorCandidateByType,actorCandidateByAge,actor45ByType,actor45Retention,influence:influenceRows.length,orphanInfluence,matters:matterRows.length,activeMatters:activeMatters.length,oldActiveMatters,offers:offerRows.length,openOffers:openOffers.length,orphanOpenOffers,intel:intelRows.length,staleIntel:staleRows.length,intelBuckets,approxBytes,lastLifecycle:W.lifecycle?.lastReport||null}
+}
+function sosPersistentStateDiagnosticsText(){
+ const s=sosPersistentStateSnapshot(),L=s.lastLifecycle||{};return [
+  `Day ${s.day}`,'Persistent State Diagnostics',
+  `Live travelers: ${s.travelers} • live world parties: ${s.parties}`,
+  `World Integration actors: ${s.actors} • archived tombstones: ${s.actorArchive} • orphan/retired candidates: ${s.orphanActors}`,
+  `Actor candidates by type: ${Object.entries(s.actorCandidateByType||{}).map(([k,v])=>`${k} ${v}`).join(' • ')||'none'}`,
+  `Actor candidate ages: ${Object.entries(s.actorCandidateByAge||{}).map(([k,v])=>`${k} ${v}`).join(' • ')}`,
+  `45d+ candidates by type: ${Object.entries(s.actor45ByType||{}).map(([k,v])=>`${k} ${v}`).join(' • ')||'none'}`,
+  `45d+ retention: ${Object.entries(s.actor45Retention||{}).map(([k,v])=>`${k} ${v}`).join(' • ')||'none'}`,
+  `Traveler political influence: ${s.influence} • orphan entries: ${s.orphanInfluence}`,
+  `Matters: ${s.matters} • active: ${s.activeMatters} • active older than 90 days: ${s.oldActiveMatters}`,
+  `Work offers: ${s.offers} • open: ${s.openOffers} • open with missing source (>14d): ${s.orphanOpenOffers}`,
+  `Intel: ${s.intel} • stale: ${s.staleIntel}`,
+  `Intel stale buckets: <30d ${s.intelBuckets?.staleUnder30||0} • ≥30d referenced ${s.intelBuckets?.stale30Referenced||0} • persistent ${s.intelBuckets?.stale30Persistent||0} • eligible ${s.intelBuckets?.stale30Eligible||0}`,
+  `Approx. uncompressed state: ${(s.approxBytes/1024/1024).toFixed(2)} MB`,
+  'Last lifecycle maintenance',
+  L.day?`Day ${L.day} • ${L.total||0} changes • ${L.travelerInfluenceRemoved||0} traveler influence removed • ${L.actorsRetired||0} actors retired • ${L.offersReconciled||0} offers reconciled • ${L.mattersReconciled||0} matters reconciled • ${L.intelPruned||0} intel pruned`:'Not yet run in this campaign session.'
+ ].join('\n')
+}
+function showPersistentStateDiagnostics(){
+ const s=sosPersistentStateSnapshot(),L=s.lastLifecycle||{};
+ overlay(`<h2>Persistent State Diagnostics</h2><div class="notice compact"><b>Long-campaign state health</b><br><small>These counts identify registries that can grow as the campaign ages. Lifecycle maintenance preserves live gameplay state while retiring obsolete mirrors and short-lived records.</small></div><div class="card"><div class="stat-row"><span>Live traveler groups</span><b>${s.travelers}</b></div><div class="stat-row"><span>Live world parties</span><b>${s.parties}</b></div><div class="stat-row"><span>World Integration actors</span><b>${s.actors}</b></div><div class="stat-row"><span>Archived actor tombstones</span><b>${s.actorArchive}</b></div><div class="stat-row"><span>Orphan / retired actor candidates</span><b>${s.orphanActors}</b></div><div class="stat-row"><span>Actor candidates by type</span><b>${esc(Object.entries(s.actorCandidateByType||{}).map(([k,v])=>`${k} ${v}`).join(' • ')||'none')}</b></div><div class="stat-row"><span>Actor candidate ages</span><b>${esc(Object.entries(s.actorCandidateByAge||{}).map(([k,v])=>`${k} ${v}`).join(' • '))}</b></div><div class="stat-row"><span>45d+ candidates by type</span><b>${esc(Object.entries(s.actor45ByType||{}).map(([k,v])=>`${k} ${v}`).join(' • ')||'none')}</b></div><div class="stat-row"><span>45d+ retention reasons</span><b>${esc(Object.entries(s.actor45Retention||{}).map(([k,v])=>`${k} ${v}`).join(' • ')||'none')}</b></div><div class="stat-row"><span>Traveler political influence</span><b>${s.influence}</b></div><div class="stat-row"><span>Orphan influence entries</span><b>${s.orphanInfluence}</b></div><div class="stat-row"><span>World matters</span><b>${s.matters} • ${s.activeMatters} active</b></div><div class="stat-row"><span>Active matters older than 90 days</span><b>${s.oldActiveMatters}</b></div><div class="stat-row"><span>World work offers</span><b>${s.offers} • ${s.openOffers} open</b></div><div class="stat-row"><span>Open offers missing source (&gt;14 days)</span><b>${s.orphanOpenOffers}</b></div><div class="stat-row"><span>World intel</span><b>${s.intel} • ${s.staleIntel} stale</b></div><div class="stat-row"><span>Stale intel &lt;30 days</span><b>${s.intelBuckets?.staleUnder30||0}</b></div><div class="stat-row"><span>Stale intel ≥30d referenced / persistent / eligible</span><b>${s.intelBuckets?.stale30Referenced||0} / ${s.intelBuckets?.stale30Persistent||0} / ${s.intelBuckets?.stale30Eligible||0}</b></div><div class="stat-row"><span>Approx. uncompressed campaign state</span><b>${(s.approxBytes/1024/1024).toFixed(2)} MB</b></div></div><h3>Last lifecycle maintenance</h3><div class="card compact">${L.day?`Day ${L.day} • <b>${L.total||0}</b> changes<br>${L.travelerInfluenceRemoved||0} orphan traveler influence • ${L.actorsRetired||0} retired actors • ${L.offersReconciled||0} work offers reconciled • ${L.mattersReconciled||0} matters reconciled • ${L.offersPruned||0} archived offers pruned • ${L.mattersPruned||0} archived matters pruned • ${L.intelPruned||0} stale intel pruned`:'Lifecycle maintenance has not run yet in this campaign session.'}</div><div class="dialog-footer"><button id="persistentDiagRun">Run Maintenance Now</button><button id="persistentDiagCopy">Quick Copy</button><button id="persistentDiagBack">Back</button></div>`,true);
+ $('#persistentDiagRun').onclick=()=>{if(typeof worldIntegrationLifecycleMaintenance==='function')worldIntegrationLifecycleMaintenance(true);showPersistentStateDiagnostics()};
+ $('#persistentDiagCopy').onclick=async()=>{const b=$('#persistentDiagCopy'),ok=await sosCopyText(sosPersistentStateDiagnosticsText());if(b){b.textContent=ok?'Copied!':'Copy Failed';setTimeout(()=>{if(b.isConnected)b.textContent='Quick Copy'},1200)}};
+ $('#persistentDiagBack').onclick=gameMenu
+}
 // Add diagnostics without changing ordinary screen layout or generating save activity.
 const _sosGameMenu16227=window.gameMenu;
 if(typeof _sosGameMenu16227==='function')window.gameMenu=function(...args){
   const out=_sosGameMenu16227.apply(this,args),settings=document.querySelector('#settings');
   if(settings&&!document.querySelector('#perfDiag')){const b=document.createElement('button');b.id='perfDiag';b.textContent='Performance Diagnostics';settings.parentNode.insertBefore(b,settings);b.onclick=showPerformanceDiagnostics}
+  if(settings&&!document.querySelector('#persistentDiag')){const b=document.createElement('button');b.id='persistentDiag';b.textContent='Persistent State Diagnostics';settings.parentNode.insertBefore(b,settings);b.onclick=showPersistentStateDiagnostics}
   return out
 };
 
