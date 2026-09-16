@@ -552,6 +552,7 @@ function navigationRouteFunction(name){
   case 'showSettlementSpecial':return showSettlementSpecial;
   case 'showShantiumCommunity':return showShantiumCommunity;
   case 'showShop':return showShop;
+  case 'showSiegeIIHelp':return showSiegeIIHelp;
   case 'showSiegeHelp':return showSiegeHelp;
   case 'showSocialChain':return showSocialChain;
   case 'showSocialLifeEvent':return showSocialLifeEvent;

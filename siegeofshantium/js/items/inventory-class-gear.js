@@ -21,7 +21,7 @@ function useItemOutside(id,ownerId='guardian'){
 function showClassGuide(back='class'){modalRouteEnter(SOSText("items_inventory_class_gear.showClassGuide.001"),Array.from(arguments));
  const dlg=overlay(SOSText("items_inventory_class_gear.showClassGuide.002",Object.entries(ATTRIBUTES).map(([k,a])=>`<div class="card"><h4>${esc(a.name)}</h4><p>${esc(a.desc)}</p><small><b>Strong synergy:</b> ${esc(a.classes)}</small></div>`).join(''),Object.values(CLASSES).map(c=>`<div class="class-card"><h4>${esc(c.name)}</h4><p>${esc(c.desc)}</p><small>${esc(c.core)}</small></div>`).join('')),true);
  const backBtn=dlg.querySelector('#guideBack');
- if(backBtn)backBtn.onclick=()=>back==='level'?showLevelUpPrompt():back==='training'?showTraining():back==='help'?showHelp():showClassChoice();
+ if(backBtn)backBtn.onclick=()=>back==='level'?showLevelUpPrompt():back==='training'?showTraining():back==='help'?(typeof returnToHelpIndex==='function'?returnToHelpIndex():showHelp()):showClassChoice();
 }
 function boundWeaponClassFit(className){
  const id=state?.guardian?.equipment?.weapon;

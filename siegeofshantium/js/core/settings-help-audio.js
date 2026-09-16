@@ -22,10 +22,12 @@ function showStats(){modalRouteEnter(SOSText("core_settings_help_audio.showStats
 function showHelp(){modalRouteEnter(SOSText("core_settings_help_audio.showHelp.001"),Array.from(arguments));
  const mode=state?.mode;
  overlay(SOSText("core_settings_help_audio.showHelp.002",mode?`<div class="notice compact"><b>Current campaign:</b> ${mode==='openworld'?'Open World':mode==='siege2'?'Siege Mode II':'Legacy Siege Mode'}</div>`:'',footer()),true);
- $('#helpOpenWorld').onclick=showOpenWorldHelp;$('#helpSiege').onclick=showSiegeHelp;$('#helpStatsGuide').onclick=()=>showClassGuide('help');wireClose()
+ $('#helpOpenWorld').onclick=showOpenWorldHelp;$('#helpSiegeII').onclick=showSiegeIIHelp;$('#helpLegacySiege').onclick=showSiegeHelp;$('#helpStatsGuide').onclick=()=>showClassGuide('help');wireClose()
 }
-function showOpenWorldHelp(){modalRouteEnter(SOSText("core_settings_help_audio.showOpenWorldHelp.001"),Array.from(arguments));overlay(SOSText("core_settings_help_audio.showOpenWorldHelp.002"),true);$('#openHelpStats').onclick=()=>showClassGuide('help');$('#openHelpSiege').onclick=showSiegeHelp;$('#openHelpBack').onclick=()=>SOSServices.navigation.back(showHelp)}
-function showSiegeHelp(){modalRouteEnter(SOSText("core_settings_help_audio.showSiegeHelp.001"),Array.from(arguments));overlay(SOSText("core_settings_help_audio.showSiegeHelp.002",PARTY_UNLOCK_ROUND),true);$('#siegeHelpStats').onclick=()=>showClassGuide('help');$('#siegeHelpOpen').onclick=showOpenWorldHelp;$('#siegeHelpBack').onclick=()=>SOSServices.navigation.back(showHelp)}
+function returnToHelpIndex(){if(typeof resetModalNavigation==='function')resetModalNavigation();showHelp()}
+function showOpenWorldHelp(){modalRouteEnter(SOSText("core_settings_help_audio.showOpenWorldHelp.001"),Array.from(arguments));overlay(SOSText("core_settings_help_audio.showOpenWorldHelp.002"),true);$('#openHelpStats').onclick=()=>showClassGuide('help');$('#openHelpSiegeII').onclick=showSiegeIIHelp;$('#openHelpLegacySiege').onclick=showSiegeHelp;$('#openHelpBack').onclick=returnToHelpIndex}
+function showSiegeIIHelp(){modalRouteEnter('showSiegeIIHelp',Array.from(arguments));overlay(SOSText('core_settings_help_audio.showSiegeIIHelp.002'),true);$('#siegeIIHelpStats').onclick=()=>showClassGuide('help');$('#siegeIIHelpOpen').onclick=showOpenWorldHelp;$('#siegeIIHelpLegacy').onclick=showSiegeHelp;$('#siegeIIHelpBack').onclick=returnToHelpIndex}
+function showSiegeHelp(){modalRouteEnter(SOSText("core_settings_help_audio.showSiegeHelp.001"),Array.from(arguments));overlay(SOSText("core_settings_help_audio.showSiegeHelp.002",PARTY_UNLOCK_ROUND),true);$('#siegeHelpStats').onclick=()=>showClassGuide('help');$('#siegeHelpOpen').onclick=showOpenWorldHelp;$('#siegeHelpII').onclick=showSiegeIIHelp;$('#siegeHelpBack').onclick=returnToHelpIndex}
 
 let audioCtx=null;let soundOn=true;
 function toggleSound(){soundOn=!soundOn;if(typeof saveAudioPrefs==='function')saveAudioPrefs()}
