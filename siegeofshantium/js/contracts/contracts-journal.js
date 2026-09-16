@@ -178,7 +178,7 @@ function regionalContractImpactText(q){
  if(e.security)bits.push(SOSText("contracts_contracts_journal.regionalContractImpactText.002",e.security>0?'+':'',e.security));
  if(e.prosperity)bits.push(SOSText("contracts_contracts_journal.regionalContractImpactText.003",e.prosperity>0?'+':'',e.prosperity));
  if(e.routeRelief)bits.push(SOSText("contracts_contracts_journal.regionalContractImpactText.004",e.routeRelief));
- if(e.factionPressure)bits.push(`${q.faction} influence ${e.factionPressure>0?'+':''}${e.factionPressure}`);
+ if(e.factionPressure)bits.push(`${q.faction} influence ${e.factionPressure>0?'+':''}${fmtStat(e.factionPressure)}`);
  return bits.join(' • ')
 }
 function configureRegionalContract(q,source,opts={}){
@@ -282,6 +282,8 @@ function generateFactionRegionalContract(locId,faction){
 let SOSContractRefreshReadCache=null;
 function beginContractRefreshReadCache(){
  const partiesById=new Map(),partiesByLoc=new Map(),presentNpcsByLoc=new Map(),issuerByLoc=new Map();
+ // .9.40: build resident presence once for the entire refresh. The .9.39 lazy path called
+ // settlementNpcsPresent() downstream and moved the same work into World Linked repeatedly.
  for(const p of state.world.parties||[]){if(!p)continue;partiesById.set(p.id,p);if(!partiesByLoc.has(p.location))partiesByLoc.set(p.location,[]);partiesByLoc.get(p.location).push(p)}
  for(const [home,list] of Object.entries(SETTLEMENT_NPCS||{}))for(const n of list||[]){if(politicalNpcDead(n.id))continue;const loc=currentNpcLocation(n.id,home);if(!presentNpcsByLoc.has(loc))presentNpcsByLoc.set(loc,[]);presentNpcsByLoc.get(loc).push({...n,home})}
  SOSContractRefreshReadCache={state,day:state.world.day,partiesById,partiesByLoc,presentNpcsByLoc,issuerByLoc};return SOSContractRefreshReadCache
@@ -295,7 +297,7 @@ function contractWorldLinkedValid(q){
  return true
 }
 function contractIssuerFromSettlement(locId){
- try{const c=contractRefreshReadCache();if(c?.issuerByLoc?.has(locId))return c.issuerByLoc.get(locId);const present=c?.presentNpcsByLoc?.get(locId)||settlementNpcsPresent(locId),rows=present.map(n=>({n,r:npcRelationshipState(n.id)})).filter(x=>(x.r?.familiarity||0)>=2).sort((a,b)=>(b.r?.familiarity||0)-(a.r?.familiarity||0)),issuer=rows[0]?.n||null;if(c)c.issuerByLoc.set(locId,issuer);return issuer}catch(e){return null}
+ try{const c=contractRefreshReadCache();if(c?.issuerByLoc?.has(locId))return c.issuerByLoc.get(locId);let present=c?.presentNpcsByLoc?.get(locId);if(!present){present=settlementNpcsPresent(locId);if(c)c.presentNpcsByLoc.set(locId,present)}const rows=present.map(n=>({n,r:npcRelationshipState(n.id)})).filter(x=>(x.r?.familiarity||0)>=2).sort((a,b)=>(b.r?.familiarity||0)-(a.r?.familiarity||0)),issuer=rows[0]?.n||null;if(c)c.issuerByLoc.set(locId,issuer);return issuer}catch(e){return null}
 }
 function worldContractCandidateParties(locId){
  const region=locationRegion(locId),c=contractRefreshReadCache(),rows=c?.partiesByLoc?.get(locId)||(state.world.parties||[]).filter(p=>p&&p.location===locId);return rows.filter(p=>p&&locationRegion(p.location)===region&&!p.questId&&!p.contractProtected&&!p.defeated&&!p.archived)
@@ -353,8 +355,8 @@ function maybeSeedContractVariety(locId){
 }
 function refreshContracts(){
  ensureWorldState();if(state.world.contractDay===state.world.day)return;state.world.contractDay=state.world.day;
- const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now(),sub={cachePrep:0,validate:0,linked:0,worldLinked:0,regionalLinked:0,cross:0,fill:0,relationships:0,referrals:0,relationshipGen:0};
- const locs=availableQuestLocations();let cacheT=now();beginContractRefreshReadCache();if(typeof beginRelationshipContractReadCache==='function')beginRelationshipContractReadCache();sub.cachePrep+=now()-cacheT;
+ const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now(),sub={cachePrep:0,contractCachePrep:0,relationshipCachePrep:0,validate:0,linked:0,worldLinked:0,regionalLinked:0,cross:0,fill:0,relationships:0,referrals:0,relationshipGen:0};
+ const locs=availableQuestLocations();let cacheT=now();beginContractRefreshReadCache();sub.contractCachePrep+=now()-cacheT;cacheT=now();if(typeof beginRelationshipContractReadCache==='function')beginRelationshipContractReadCache();sub.relationshipCachePrep+=now()-cacheT;sub.cachePrep=sub.contractCachePrep+sub.relationshipCachePrep;
  try{for(const loc of locs){
    let t=now(),arr=state.world.contracts[loc.id]||[];
    state.world.contracts[loc.id]=arr.filter(q=>q.status==='offered'&&(!q.regional||regionalContractValid(q))&&contractWorldLinkedValid(q)).sort((a,b)=>((b.politicalCampaign?5:0)+(b.worldLinked?4:0)+(b.regional?3:0)+(b.referral?1:0))-((a.politicalCampaign?5:0)+(a.worldLinked?4:0)+(a.regional?3:0)+(a.referral?1:0))).slice(0,3);sub.validate+=now()-t;
@@ -365,7 +367,7 @@ function refreshContracts(){
    state.world.contracts[loc.id]=state.world.contracts[loc.id].slice(0,desired);maybeSeedContractVariety(loc.id);sub.fill+=now()-t;
    t=now();const referred=ensureTravelerReferralContract(loc.id);let dt2=now()-t;sub.referrals+=dt2;sub.relationships+=dt2;if(referred)state.world.contracts[loc.id]=state.world.contracts[loc.id].slice(0,Math.min(4,desired+1));t=now();const relq=maybeGenerateRelationshipContract(loc.id);dt2=now()-t;sub.relationshipGen+=dt2;sub.relationships+=dt2;if(relq)state.world.contracts[loc.id]=state.world.contracts[loc.id].slice(0,Math.min(4,desired+1));
  }}finally{endContractRefreshReadCache();if(typeof endRelationshipContractReadCache==='function')endRelationshipContractReadCache()}
- if(typeof sosPerfRecordDuration==='function'){sosPerfRecordDuration('Contracts — Refresh Cache Prep',sub.cachePrep);sosPerfRecordDuration('Contracts — Validate & Rank Offers',sub.validate);sosPerfRecordDuration('Contracts — World & Regional Links',sub.linked);sosPerfRecordDuration('Contracts Links — World Linked',sub.worldLinked);sosPerfRecordDuration('Contracts Links — Regional',sub.regionalLinked);sosPerfRecordDuration('Contracts — Cross-Region Offers',sub.cross);sosPerfRecordDuration('Contracts — Fill & Variety',sub.fill);sosPerfRecordDuration('Contracts — Referrals & Relationships',sub.relationships);sosPerfRecordDuration('Contracts Relationships — Traveler Referrals',sub.referrals);sosPerfRecordDuration('Contracts Relationships — Relationship Generation',sub.relationshipGen)}
+ if(typeof sosPerfRecordDuration==='function'){sosPerfRecordDuration('Contracts — Refresh Cache Prep',sub.cachePrep);sosPerfRecordDuration('Contracts Cache Prep — World Reads',sub.contractCachePrep);sosPerfRecordDuration('Contracts Cache Prep — Relationship Reads',sub.relationshipCachePrep);sosPerfRecordDuration('Contracts — Validate & Rank Offers',sub.validate);sosPerfRecordDuration('Contracts — World & Regional Links',sub.linked);sosPerfRecordDuration('Contracts Links — World Linked',sub.worldLinked);sosPerfRecordDuration('Contracts Links — Regional',sub.regionalLinked);sosPerfRecordDuration('Contracts — Cross-Region Offers',sub.cross);sosPerfRecordDuration('Contracts — Fill & Variety',sub.fill);sosPerfRecordDuration('Contracts — Referrals & Relationships',sub.relationships);sosPerfRecordDuration('Contracts Relationships — Traveler Referrals',sub.referrals);sosPerfRecordDuration('Contracts Relationships — Relationship Generation',sub.relationshipGen)}
 }
 function contractObjective(q){
  const p=contractParty(q);

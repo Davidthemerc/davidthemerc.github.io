@@ -14,7 +14,7 @@ function warTerritorialAttackingForces(C){const W=ensureWarFoundation();return (
 function warTerritorialAttackPower(forces){return forces.reduce((n,F)=>n+(F.strength||0)*(.55+(F.morale||50)/200)*(.65+(F.equipment||60)/180)*(.7+(F.readiness||50)/200),0)}
 function warTerritorialShouldSiege(locId){const L=worldLocation(locId),S=settlementState(locId);return L?.type==='fort'||['city','metropolis'].includes(L?.settlementTier)||(S.security||0)>=68}
 function warTerritorialBeginOperation(w,C){
- if(!w||!C||C.objective!=='capture'||!C.target)return null;
+ if(!w||!C||!['capture','recapture','liberate'].includes(C.objective)||!C.target)return null;
  const existing=warTerritorialOperationAt(C.target,w.id);if(existing)return existing;
  const control=settlementControl(C.target);if(control===C.faction||!warEnemiesForFaction(w,C.faction).includes(control))return null;
  const forces=warTerritorialAttackingForces(C);if(!forces.length||activeWarBattles().some(B=>B.status==='active'&&B.location===C.target))return null;
@@ -60,7 +60,7 @@ function warTerritorialResolveOperation(O){
  C.progress=clamp(78+O.progress*.12,78,90);C.lastProgressDay=state.world.day;
  if(O.progress>=100||O.defense<=8)warTerritorialCapture(O,w,C,forces)
 }
-function warTerritorialBeginEligibleOperations(){for(const w of activeWars())for(const C of warCampaigns(w).filter(c=>c.status==='active'&&c.objective==='capture'&&['at_objective','post_battle','approach','siege','assault'].includes(c.phase))){if(settlementControl(C.target)===C.faction)continue;warTerritorialBeginOperation(w,C)}}
+function warTerritorialBeginEligibleOperations(){for(const w of activeWars())for(const C of warCampaigns(w).filter(c=>c.status==='active'&&['capture','recapture','liberate'].includes(c.objective)&&['at_objective','post_battle','approach','siege','assault'].includes(c.phase))){if(settlementControl(C.target)===C.faction)continue;warTerritorialBeginOperation(w,C)}}
 function warOccupationDailyTick(O){
  if(!['occupying','consolidating'].includes(O.status)||O.lastTickDay===state.world.day)return;O.lastTickDay=state.world.day;
  const W=ensureWarFoundation(),w=W.wars.find(x=>x.id===O.warId),C=w?.campaigns?.find(x=>x.id===O.campaignId),S=settlementState(O.location),ps=politicalSettlement(O.location);

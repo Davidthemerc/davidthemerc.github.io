@@ -82,7 +82,7 @@ function simulateRegionalConsequencesII(){
  perf('Regional Consequences — Raid Damage',()=>simulateRegionalRaidDamage());
  perf('Regional Consequences — Refugee Integration',()=>simulateRefugeeIntegration());
  perf('Regional Consequences — Personnel Shifts',()=>simulateFactionPersonnelShift());
- perf('Regional Consequences — Route Evidence',()=>{regionalEvidenceState();for(const [k,v] of Object.entries(ensureRegionalSimulation().routePressure)){const [a,b]=k.split('|');updateRouteEvidence(a,b,SOSText("world_regional_simulation.simulateRegionalConsequencesII.001"),v)}})
+ perf('Regional Consequences — Route Evidence',()=>{const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now();let t=now(),R=ensureRegionalSimulation(),E=regionalEvidenceState(),rows=Object.entries(R.routePressure);if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration('Route Evidence — Snapshot',now()-t);t=now();for(const [k,v] of rows){const [a,b]=k.split('|');if(!a||!b||a===b)continue;const ek=routeEvidenceKey(a,b),p=Number(v)||0,status=p>=7?'dangerous':p>=4?'risky':p>=1?'watched':'open';E.routes[ek]={a,b,status,pressure:p,lastDay:state.world.day,reason:SOSText("world_regional_simulation.simulateRegionalConsequencesII.001")}}if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration('Route Evidence — Updates',now()-t)})
 }
 function regionalFlow(type,from,to,text,partyId=null){
  const r=ensureRegionalSimulation(),flow={id:uid(),day:state.world.day,type,from,to,text,partyId};r.flows.push(flow);r.flows=r.flows.slice(-40);return flow
@@ -186,20 +186,27 @@ function recordPartyArrivalIntelligence(p,locId){
 }
 
 function regionalArrivalConsequences(p,locId){
- const loc=worldLocation(locId),origin=p.origin&&state.world.settlements[p.origin]?p.origin:null,problem=settlementProblem(locId);
+ const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now(),sub={setup:0,flow:0,effects:0,problems:0,route:0,intel:0};let t=now();
+ const loc=worldLocation(locId),origin=p.origin&&state.world.settlements[p.origin]?p.origin:null,problem=settlementProblem(locId);sub.setup+=now()-t;
  if(p.kind==='merchant'){
-   regionalFlow('trade',origin||p.location,locId,SOSText("world_regional_simulation.regionalArrivalConsequences.001",p.name,loc.name),p.id);merchantDeliveryEffect(p,locId,origin);if(origin&&origin!==locId)settlementState(origin).prosperity=Math.min(100,settlementState(origin).prosperity+1);
-   if(problem&&problem.type==='trade_slump'){progressSettlementProblem(locId,1,SOSText("world_regional_simulation.regionalArrivalConsequences.002",p.name));regionalThreadAdvance('supply',locId,SOSText("world_regional_simulation.regionalArrivalConsequences.003",p.name,loc.name),!settlementProblem(locId),origin)}
-   if(origin)reduceRoutePressure(origin,locId,1)
+   t=now();regionalFlow('trade',origin||p.location,locId,SOSText("world_regional_simulation.regionalArrivalConsequences.001",p.name,loc.name),p.id);sub.flow+=now()-t;
+   t=now();merchantDeliveryEffect(p,locId,origin);if(origin&&origin!==locId)settlementState(origin).prosperity=Math.min(100,settlementState(origin).prosperity+1);sub.effects+=now()-t;
+   t=now();if(problem&&problem.type==='trade_slump'){progressSettlementProblem(locId,1,SOSText("world_regional_simulation.regionalArrivalConsequences.002",p.name));regionalThreadAdvance('supply',locId,SOSText("world_regional_simulation.regionalArrivalConsequences.003",p.name,loc.name),!settlementProblem(locId),origin)}sub.problems+=now()-t;
+   t=now();if(origin)reduceRoutePressure(origin,locId,1);sub.route+=now()-t
  }
  if(p.kind==='refugees'){
-   regionalFlow('people',origin||p.location,locId,SOSText("world_regional_simulation.regionalArrivalConsequences.004",p.name,loc.name),p.id);refugeeArrivalEffect(p,locId,origin);if(!settlementProblem(locId)&&settlementState(locId).prosperity<62)createSettlementProblem(locId,'refugee_load');regionalThreadAdvance('displacement',locId,SOSText("world_regional_simulation.regionalArrivalConsequences.005",origin?worldLocation(origin).name:'the roads',loc.name),false,origin)
+   t=now();regionalFlow('people',origin||p.location,locId,SOSText("world_regional_simulation.regionalArrivalConsequences.004",p.name,loc.name),p.id);sub.flow+=now()-t;
+   t=now();refugeeArrivalEffect(p,locId,origin);sub.effects+=now()-t;
+   t=now();if(!settlementProblem(locId)&&settlementState(locId).prosperity<62)createSettlementProblem(locId,'refugee_load');regionalThreadAdvance('displacement',locId,SOSText("world_regional_simulation.regionalArrivalConsequences.005",origin?worldLocation(origin).name:'the roads',loc.name),false,origin);sub.problems+=now()-t
  }
  if(['coalition','redstone','bluestone'].includes(p.kind)){
-   regionalFlow('security',origin||p.location,locId,SOSText("world_regional_simulation.regionalArrivalConsequences.006",p.name,loc.name),p.id);patrolArrivalEffect(p,locId,origin);if(OPEN_WORLD_FACTIONS[p.faction])addPoliticalPressure(locId,p.faction,.5,SOSText("world_regional_simulation.regionalArrivalConsequences.007"));if(problem&&['raider_pressure','watch_shortage'].includes(problem.type)){progressSettlementProblem(locId,1,SOSText("world_regional_simulation.regionalArrivalConsequences.008",p.name));settlementState(locId).security=Math.min(100,settlementState(locId).security+2);regionalThreadAdvance('security',locId,SOSText("world_regional_simulation.regionalArrivalConsequences.009",p.name),!settlementProblem(locId),origin)}
+   t=now();regionalFlow('security',origin||p.location,locId,SOSText("world_regional_simulation.regionalArrivalConsequences.006",p.name,loc.name),p.id);sub.flow+=now()-t;
+   t=now();patrolArrivalEffect(p,locId,origin);if(OPEN_WORLD_FACTIONS[p.faction])addPoliticalPressure(locId,p.faction,.5,SOSText("world_regional_simulation.regionalArrivalConsequences.007"));sub.effects+=now()-t;
+   t=now();if(problem&&['raider_pressure','watch_shortage'].includes(problem.type)){progressSettlementProblem(locId,1,SOSText("world_regional_simulation.regionalArrivalConsequences.008",p.name));settlementState(locId).security=Math.min(100,settlementState(locId).security+2);regionalThreadAdvance('security',locId,SOSText("world_regional_simulation.regionalArrivalConsequences.009",p.name),!settlementProblem(locId),origin)}sub.problems+=now()-t
  }
- if(p.kind==='mercenary'&&problem?.type==='watch_shortage'&&settlementState(locId).prosperity>=45){progressSettlementProblem(locId,1,SOSText("world_regional_simulation.regionalArrivalConsequences.010",p.name));settlementState(locId).prosperity=Math.max(0,settlementState(locId).prosperity-1);settlementState(locId).security=Math.min(100,settlementState(locId).security+2)}
- recordPartyArrivalIntelligence(p,locId)
+ if(p.kind==='mercenary'&&problem?.type==='watch_shortage'&&settlementState(locId).prosperity>=45){t=now();progressSettlementProblem(locId,1,SOSText("world_regional_simulation.regionalArrivalConsequences.010",p.name));settlementState(locId).prosperity=Math.max(0,settlementState(locId).prosperity-1);settlementState(locId).security=Math.min(100,settlementState(locId).security+2);sub.problems+=now()-t}
+ t=now();recordPartyArrivalIntelligence(p,locId);sub.intel+=now()-t;
+ return sub
 }
 
 const REGIONAL_OPPORTUNITY_LIFETIME=6;
@@ -297,7 +304,7 @@ function showEncounterRecord(){modalRouteEnter(SOSText("world_regional_simulatio
 
 function showRegionalEvidence(){modalRouteEnter(SOSText("world_regional_simulation.showRegionalEvidence.001"),Array.from(arguments));
  const region=currentWorldRegion(),ev=recentRegionalEvidence(40).filter(e=>locationRegion(e.locId)===region).slice(0,18),routes=Object.values(regionalEvidenceState().routes).filter(r=>locationRegion(r.a)===region&&locationRegion(r.b)===region).sort((a,b)=>b.pressure-a.pressure);
- overlay(SOSText("world_regional_simulation.showRegionalEvidence.002",esc(regionDef(region).name),ev.map(e=>`<div class="regional-evidence ${esc(e.type||'info')}"><b>Day ${e.day} — ${esc(worldLocation(e.locId)?.name||e.locId)}</b><br>${esc(e.text)}</div>`).join('')||'<p class="muted">No recent visible consequence is recorded.</p>',routes.map(r=>`<div class="route-condition ${esc(r.status)}"><b>${esc(worldLocation(r.a)?.name||r.a)} ↔ ${esc(worldLocation(r.b)?.name||r.b)}</b><br><small>${esc(r.status)} • pressure ${r.pressure}/10</small><p>${esc(routeConditionText(r.a,r.b))}</p></div>`).join('')||'<p class="muted">No route pressure is currently recorded.</p>'),true);$('#regionalEvidenceBack').onclick=()=>SOSServices.navigation.back(showWorldJournal)
+ overlay(SOSText("world_regional_simulation.showRegionalEvidence.002",esc(regionDef(region).name),ev.map(e=>`<div class="regional-evidence ${esc(e.type||'info')}"><b>Day ${e.day} — ${esc(worldLocation(e.locId)?.name||e.locId)}</b><br>${esc(e.text)}</div>`).join('')||'<p class="muted">No recent visible consequence is recorded.</p>',routes.map(r=>`<div class="route-condition ${esc(r.status)}"><b>${esc(worldLocation(r.a)?.name||r.a)} ↔ ${esc(worldLocation(r.b)?.name||r.b)}</b><br><small>${esc(r.status)} • pressure ${fmtStat(r.pressure)}/10</small><p>${esc(routeConditionText(r.a,r.b))}</p></div>`).join('')||'<p class="muted">No route pressure is currently recorded.</p>'),true);$('#regionalEvidenceBack').onclick=()=>SOSServices.navigation.back(showWorldJournal)
 }
 function showRegionalSimulation(){modalRouteEnter(SOSText("world_regional_simulation.showRegionalSimulation.001"),Array.from(arguments));return showOpenWorldRegionMenu()}
 

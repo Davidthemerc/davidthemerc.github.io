@@ -132,9 +132,9 @@ document.addEventListener('pointerdown',()=>ensureMusicStarted(),{once:true,capt
 document.addEventListener('keydown',()=>ensureMusicStarted(),{once:true,capture:true});
 
 
-/* v1.6.66.8.2 — MP3 soundtrack with embedded MIDI fallback.
-   Modular/GitHub Pages builds use assets/music/*.mp3. A standalone may set
-   localStorage.sos_remote_music_base to a public GitHub Pages music folder. */
+/* v1.6.66.9.5.1 — streamed MP3 soundtrack with embedded MIDI fallback.
+   Both modular and standalone builds stream MP3s from the public GitHub Pages
+   music directory. No MP3 soundtrack files are shipped in release packages. */
 const SOS_MP3_TRACKS=[
  {title:'Shantium at Dusk',file:'01_shantium_at_dusk.mp3',fallbackMidi:0,tags:['general','shantium']},
  {title:'Road Beyond the Gate',file:'02_road_beyond_the_gate.mp3',fallbackMidi:1,tags:['general','travel']},
@@ -151,10 +151,9 @@ let soundtrackTrackIndex=0,soundtrackAudio=null,soundtrackSourceAttempt=0,soundt
 const __sosMidiPlayTrack=playMidiTrack,__sosStopMusic=stopMusic,__sosSetMusicVolume=setMusicVolume;
 function sosMusicRemoteBase(){
  let v='';try{v=localStorage.getItem('sos_remote_music_base')||''}catch(e){}
- return String(globalThis.SOS_REMOTE_MUSIC_BASE||v||'').trim().replace(/\/+$/,'')
+ return String(globalThis.SOS_REMOTE_MUSIC_BASE||v||'https://davidthemerc.github.io/siegeofshantium/assets/music').trim().replace(/\/+$/,'')
 }
 function setRemoteMusicBase(url){try{localStorage.setItem('sos_remote_music_base',String(url||'').trim().replace(/\/+$/,''))}catch(e){}return sosMusicRemoteBase()}
-function sosLocalMp3Url(track){return 'assets/music/'+encodeURIComponent(track.file).replace(/%2F/g,'/')}
 function sosRemoteMp3Url(track){const b=sosMusicRemoteBase();return b?b+'/'+encodeURIComponent(track.file).replace(/%2F/g,'/'):''}
 function sosWarActive(){try{return ensureWarFoundation().wars.some(w=>w.status==='active')}catch(e){return false}}
 function sosInSpawn(){const l=String(state?.world?.location||'').toLowerCase();return l.includes('spawn')}
@@ -169,12 +168,12 @@ function sosFallbackToMidi(track){
 async function playMp3Track(index=soundtrackTrackIndex,opts={}){
  if(!musicEnabled)return false;stopMusicVoices();stopSoundtrackAudio();
  soundtrackTrackIndex=(index+SOS_MP3_TRACKS.length)%SOS_MP3_TRACKS.length;soundtrackReturnToRotation=opts.returnToRotation!==false;
- const track=SOS_MP3_TRACKS[soundtrackTrackIndex],sources=[sosLocalMp3Url(track)];const remote=sosRemoteMp3Url(track);if(remote&&remote!==sources[0])sources.push(remote);soundtrackSourceAttempt=0;
+ const track=SOS_MP3_TRACKS[soundtrackTrackIndex],remote=sosRemoteMp3Url(track),sources=remote?[remote]:[];soundtrackSourceAttempt=0;
  return await new Promise(resolve=>{
   const trySource=()=>{
    if(soundtrackSourceAttempt>=sources.length){sosFallbackToMidi(track);resolve(false);return}
    const a=new Audio();soundtrackAudio=a;a.preload='auto';a.volume=Math.max(0,Math.min(1,musicVolume));a.src=sources[soundtrackSourceAttempt++];
-   a.oncanplay=()=>{musicPlaybackEngine=soundtrackSourceAttempt===1?'MP3 local':'MP3 remote';musicStarted=true;a.play().then(()=>resolve(true)).catch(()=>{if(soundtrackAudio===a){a.onerror=null;trySource()}})};
+   a.oncanplay=()=>{musicPlaybackEngine='MP3 remote';musicStarted=true;a.play().then(()=>resolve(true)).catch(()=>{if(soundtrackAudio===a){a.onerror=null;trySource()}})};
    a.onerror=()=>{if(soundtrackAudio===a)trySource()};
    a.onended=()=>{if(soundtrackAudio!==a)return;musicStarted=false;const next=soundtrackReturnToRotation?sosNextSoundtrackIndex():(soundtrackTrackIndex+1)%SOS_MP3_TRACKS.length;playMp3Track(next,{returnToRotation:true})};
   };trySource()
@@ -186,5 +185,5 @@ stopMusic=async function(){stopSoundtrackAudio();musicStarted=false;await __sosS
 setMusicVolume=function(v){musicVolume=Math.max(0,Math.min(1,Number(v)||0));saveAudioPrefs();if(soundtrackAudio)soundtrackAudio.volume=musicVolume;else __sosSetMusicVolume(musicVolume)};
 nextMusicTrack=function(){soundtrackTrackIndex=sosNextSoundtrackIndex();if(musicEnabled)playMp3Track(soundtrackTrackIndex,{returnToRotation:true});saveAudioPrefs()};
 currentMusicTrack=function(){return SOS_MP3_TRACKS[soundtrackTrackIndex]?.title||'—'};
-currentMusicEngine=function(){return musicPlaybackEngine==='MP3 local'?'MP3 (packaged)':musicPlaybackEngine==='MP3 remote'?'MP3 (online)':musicPlaybackEngine==='midi-fallback'?'MIDI fallback':musicPlaybackEngine==='tone'?'Tone.js MIDI':'Native MIDI fallback'};
+currentMusicEngine=function(){return musicPlaybackEngine==='MP3 remote'?'MP3 (online)':musicPlaybackEngine==='midi-fallback'?'MIDI fallback':musicPlaybackEngine==='tone'?'Tone.js MIDI':'Native MIDI fallback'};
 function playSoundtrackTrackByTitle(title,opts={}){const i=SOS_MP3_TRACKS.findIndex(t=>t.title===title);return i<0?false:(playMp3Track(i,opts),true)}

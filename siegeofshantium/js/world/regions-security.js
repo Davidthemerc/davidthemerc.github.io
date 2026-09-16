@@ -131,7 +131,7 @@ function settlementPoliticalPersistence(locOrId){return {outpost:.9,village:1,to
 function worldLocation(id){return WORLD_LOCATIONS.find(x=>x.id===id)||WORLD_LOCATIONS[0]}
 function locationRegion(locOrId){const loc=typeof locOrId==='string'?worldLocation(locOrId):locOrId;return loc?.region||'shantium'}
 function regionDef(id=currentWorldRegion()){return WORLD_REGIONS[id]||WORLD_REGIONS.shantium}
-function currentWorldRegion(){return state?.world?.region||locationRegion(state?.world?.location||'shantium')}
+function currentWorldRegion(){const F=state?.world?.playerPartyField;if(F?.active&&F.region&&WORLD_REGIONS[F.region])return F.region;return state?.world?.region||locationRegion(state?.world?.location||'shantium')}
 function locationsInRegion(region=currentWorldRegion()){return WORLD_LOCATIONS.filter(x=>locationRegion(x)===region)}
 function discoveredRegionLocations(region=currentWorldRegion()){return locationsInRegion(region).filter(x=>state.world.discovered.includes(x.id))}
 function regionConnectionsAt(locId=state.world.location){return REGION_CONNECTIONS.filter(r=>r.a===locId||r.b===locId)}

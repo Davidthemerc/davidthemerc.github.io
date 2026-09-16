@@ -50,9 +50,14 @@ function deliverDueMessengerContracts(){
   R.history.push({day:state.world.day,type:'messenger_arrived',text,contractId:q?.id});recordWorldHistory(text,q?'good':'info',SOSText("social_relationship_contracts.deliverDueMessengerContracts.003"))
  }}
 function relationshipContractDailyTick(){
- if(!isOpenWorld())return;const ids=Object.keys(state.world.settlements||{}),R=relationshipContractState(),offered=Object.values(state.world.contracts||{}).flat().filter(q=>q.relationshipGenerated&&q.status==='offered').length;
- if(offered<10&&state.world.day%2===0)maybeGenerateRelationshipContract(state.world.location);if(offered<10&&state.world.day%3===0){const remote=pick(ids.filter(x=>x!==state.world.location));if(remote&&chance(.35))maybeGenerateRelationshipContract(remote)}
- if(state.world.day%3===0)queueMessengerContract(false);deliverDueMessengerContracts();R.messengers=R.messengers.filter(m=>m.status==='traveling'||state.world.day-(m.deliveredDay||m.createdDay)<25).slice(-30);R.history=R.history.slice(-100)
+ if(!isOpenWorld())return;const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now(),sub={scan:0,local:0,remote:0,messenger:0,delivery:0,trim:0};let t=now();
+ const ids=Object.keys(state.world.settlements||{}),R=relationshipContractState(),offered=Object.values(state.world.contracts||{}).flat().filter(q=>q.relationshipGenerated&&q.status==='offered').length;sub.scan+=now()-t;
+ t=now();if(offered<10&&state.world.day%2===0)maybeGenerateRelationshipContract(state.world.location);sub.local+=now()-t;
+ t=now();if(offered<10&&state.world.day%3===0){const remote=pick(ids.filter(x=>x!==state.world.location));if(remote&&chance(.35))maybeGenerateRelationshipContract(remote)}sub.remote+=now()-t;
+ t=now();if(state.world.day%3===0)queueMessengerContract(false);sub.messenger+=now()-t;
+ t=now();deliverDueMessengerContracts();sub.delivery+=now()-t;
+ t=now();R.messengers=R.messengers.filter(m=>m.status==='traveling'||state.world.day-(m.deliveredDay||m.createdDay)<25).slice(-30);R.history=R.history.slice(-100);sub.trim+=now()-t;
+ if(typeof sosPerfRecordDuration==='function'){sosPerfRecordDuration('Relationship Contracts — Offer Scan',sub.scan);sosPerfRecordDuration('Relationship Contracts — Local Generation',sub.local);sosPerfRecordDuration('Relationship Contracts — Remote Generation',sub.remote);sosPerfRecordDuration('Relationship Contracts — Messenger Queue',sub.messenger);sosPerfRecordDuration('Relationship Contracts — Messenger Delivery',sub.delivery);sosPerfRecordDuration('Relationship Contracts — Retention Trim',sub.trim)}
 }
 function relationshipContractSourceHTML(q){
  if(!q?.relationshipGenerated)return'';let extra='';

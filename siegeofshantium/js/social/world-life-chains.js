@@ -5,8 +5,12 @@ function activeSocialEvent(locId){
  return null
 }
 function socialEventActors(locId){
- const people=settlementNpcsPresent(locId).filter(n=>n.home===locId),trav=knownTravelerAtSettlement(locId),companions=activeRoadCompanions();
- return {npc:people.length?pick(people):null,trav,companion:companions.length?pick(companions):null}
+ // v1.6.66.9.41 — Event generation only needs one eligible local NPC and the best known traveler.
+ // Avoid building/sorting full intermediate collections while preserving the same eligibility and random NPC choice.
+ const people=[];for(const [home,list] of Object.entries(SETTLEMENT_NPCS))for(const n of list)if(home===locId&&!politicalNpcDead(n.id)&&currentNpcLocation(n.id,home)===locId)people.push({...n,home});
+ const R=travelerRegistryState(),active=new Set((state.world.parties||[]).map(p=>p.travelerId).filter(Boolean));let trav=null,best=-Infinity;
+ for(const r of Object.values(R.records)){if(active.has(r.id)||(r.social?.familiarity||0)<2||travelerAllMembersDead(r))continue;const here=r.settledAt===locId||travelerWhereabouts(r).location===locId;if(!here)continue;const score=r.social?.familiarity||0;if(score>best){best=score;trav=r}}
+ const companions=activeRoadCompanions();return {npc:people.length?pick(people):null,trav,companion:companions.length?pick(companions):null}
 }
 function socialEventTypeFor(locId,a){
  if(a.trav&&a.companion&&travelerAttitudeScore(a.trav)>=4)return pick(['reunion','hiring','market_meet']);
@@ -30,11 +34,13 @@ function socialEventDefinition(type,locId,a){
  return defs[type]||defs.market_day
 }
 function createSocialLifeEvent(locId,force=false,type=null){
- const S=socialLifeState(),existing=activeSocialEvent(locId);if(existing&&!force)return existing;
- if(!force&&(state.world.day-(S.lastGenDay[locId]||-99)<3||!chance(.24)))return null;
- const a=socialEventActors(locId),kind=type||socialEventTypeFor(locId,a),d=socialEventDefinition(kind,locId,a);
+ const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now(),sub={gate:0,actors:0,definition:0,history:0};let t=now();
+ const S=socialLifeState(),existing=activeSocialEvent(locId);if(existing&&!force){sub.gate+=now()-t;if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration('Social Event Generation — Gate',sub.gate);return existing}
+ if(!force&&(state.world.day-(S.lastGenDay[locId]||-99)<3||!chance(.24))){sub.gate+=now()-t;if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration('Social Event Generation — Gate',sub.gate);return null}sub.gate+=now()-t;
+ t=now();const a=socialEventActors(locId);sub.actors+=now()-t;t=now();const kind=type||socialEventTypeFor(locId,a),d=socialEventDefinition(kind,locId,a);sub.definition+=now()-t;
  const e={id:uid(),locId,type:kind,title:d.title,text:d.text,stage2:d.stage2,stage:0,status:'active',createdDay:state.world.day,expiresDay:state.world.day+5,npcId:a.npc?.id||null,travelerId:a.trav?.id||null,companionId:a.companion?.id||null,choices:[],result:null};
- S.events[locId]=e;S.lastGenDay[locId]=state.world.day;recordWorldHistory(SOSText("social_world_life_chains.createSocialLifeEvent.001",worldLocation(locId).name,e.title),'info',SOSText("social_world_life_chains.createSocialLifeEvent.002"));return e
+ t=now();S.events[locId]=e;S.lastGenDay[locId]=state.world.day;recordWorldHistory(SOSText("social_world_life_chains.createSocialLifeEvent.001",worldLocation(locId).name,e.title),'info',SOSText("social_world_life_chains.createSocialLifeEvent.002"));sub.history+=now()-t;
+ if(typeof sosPerfRecordDuration==='function'){sosPerfRecordDuration('Social Event Generation — Gate',sub.gate);sosPerfRecordDuration('Social Event Generation — Actor Reads',sub.actors);sosPerfRecordDuration('Social Event Generation — Definition',sub.definition);sosPerfRecordDuration('Social Event Generation — History',sub.history)}return e
 }
 function socialEventActorNames(e){
  const npc=e.npcId?settlementNpc(e.locId,e.npcId):null,r=e.travelerId?travelerRegistryState().records[e.travelerId]:null,c=e.companionId?state.party.members[e.companionId]:null;
@@ -95,9 +101,9 @@ function resolveSocialLifeEvent(locId,choice){
  save();actionResult(e.title,text,tone,()=>showTownLife(locId))
 }
 function socialLifeDailyTick(){
- if(!isOpenWorld())return;const S=socialLifeState(),ids=Object.keys(state.world.settlements||{});for(const id of ids)activeSocialEvent(id);let active=Object.values(S.events).filter(e=>e.status==='active'&&e.expiresDay>=state.world.day).length;
- if(active<4){const pool=ids.filter(id=>id!==state.world.location).sort(()=>Math.random()-.5),targets=[state.world.location,...pool.slice(0,2)];for(const id of targets){if(active>=4)break;if((!S.events[id]||S.events[id].status!=='active')&&createSocialLifeEvent(id,false))active++}}
- if(S.history.length>60)S.history=S.history.slice(-60)
+ if(!isOpenWorld())return;const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now(),sub={expiry:0,selection:0,generation:0,history:0},S=socialLifeState(),ids=Object.keys(state.world.settlements||{});let t=now();for(const id of ids)activeSocialEvent(id);let active=Object.values(S.events).filter(e=>e.status==='active'&&e.expiresDay>=state.world.day).length;sub.expiry+=now()-t;
+ if(active<4){t=now();const pool=ids.filter(id=>id!==state.world.location).sort(()=>Math.random()-.5),targets=[state.world.location,...pool.slice(0,2)];sub.selection+=now()-t;for(const id of targets){if(active>=4)break;t=now();if((!S.events[id]||S.events[id].status!=='active')&&createSocialLifeEvent(id,false))active++;sub.generation+=now()-t}}
+ t=now();if(S.history.length>60)S.history=S.history.slice(-60);sub.history+=now()-t;if(typeof sosPerfRecordDuration==='function'){sosPerfRecordDuration('Social Life — Active Event Sweep',sub.expiry);sosPerfRecordDuration('Social Life — Target Selection',sub.selection);sosPerfRecordDuration('Social Life — Event Generation',sub.generation);sosPerfRecordDuration('Social Life — History Trim',sub.history)}
 }
 function socialLifeHistoryHTML(locId){
  const rows=socialLifeState().history.filter(x=>x.locId===locId).slice(-4).reverse();return rows.length?SOSText("social_world_life_chains.socialLifeHistoryHTML.001",rows.map(x=>`<div class="card compact"><b>Day ${x.day}: ${esc(x.title)}</b><br>${esc(x.result)}</div>`).join('')):''

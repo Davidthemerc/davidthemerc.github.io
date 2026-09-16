@@ -526,7 +526,13 @@ button:disabled{color:#777;cursor:not-allowed;background:#c8c8c8}
 .map-paper-grain{position:absolute;inset:0;pointer-events:none;opacity:.2;background-image:repeating-linear-gradient(7deg,rgba(70,54,31,.08) 0 1px,transparent 1px 8px),repeating-linear-gradient(97deg,rgba(255,255,220,.08) 0 1px,transparent 1px 13px)}
 .map-region-name{position:absolute;color:rgba(78,63,37,.25);font-family:Georgia,serif;font-weight:bold;font-size:18px;letter-spacing:3px;line-height:1.05;text-align:center;pointer-events:none;transform:rotate(-5deg)}
 .region-west{left:5%;top:42%}.region-north{left:39%;top:4%;transform:rotate(2deg)}.region-east{right:3%;top:37%;transform:rotate(5deg)}.region-south{left:39%;bottom:5%;transform:rotate(-2deg)}
-.map-river{position:absolute;height:16px;background:repeating-linear-gradient(0deg,rgba(74,111,117,.28) 0 3px,rgba(92,132,134,.12) 3px 6px);border-top:2px solid rgba(61,91,97,.35);border-bottom:2px solid rgba(61,91,97,.3);border-radius:50%;pointer-events:none;z-index:0}.river-a{width:440px;left:-55px;top:210px;transform:rotate(-19deg)}.river-b{width:330px;left:215px;top:138px;transform:rotate(55deg);opacity:.7}
+.shantium-river-network{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+.shantium-river-network path{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.shantium-river-network .river-bank{stroke:rgba(49,78,84,.38);stroke-width:15}
+.shantium-river-network .river-water{stroke:rgba(76,120,127,.58);stroke-width:11}
+.shantium-river-network .river-light{stroke:rgba(154,190,187,.42);stroke-width:3.2;stroke-dasharray:28 18}
+.shantium-river-network .river-crossing-narrow{stroke:rgba(85,130,135,.76);stroke-width:7.2}
+
 .map-road{position:absolute;height:4px;background:#92774e;border-top:1px dashed rgba(62,49,31,.65);border-bottom:1px solid rgba(235,220,168,.45);transform-origin:left center;pointer-events:none;z-index:1;opacity:.78}.road-north{width:265px;left:443px;top:338px;transform:rotate(-88deg)}.road-west{width:345px;left:440px;top:344px;transform:rotate(-148deg)}.road-east{width:365px;left:445px;top:343px;transform:rotate(-21deg)}.road-south{width:225px;left:446px;top:349px;transform:rotate(72deg)}.road-se{width:315px;left:532px;top:520px;transform:rotate(3deg)}
 .map-forest,.map-hills,.map-marsh{position:absolute;pointer-events:none;white-space:pre;text-align:center;line-height:1.15;z-index:0}.map-forest{color:rgba(45,78,47,.46);font-size:28px;letter-spacing:5px}.forest-west{left:2%;top:43%;transform:rotate(-8deg)}.forest-mid{left:32%;top:34%;font-size:21px;opacity:.55}.map-hills{color:rgba(91,70,46,.42);font:26px Georgia,serif;letter-spacing:8px}.hills-ne{right:7%;top:8%;transform:rotate(-8deg)}.hills-east{right:1%;top:49%;transform:rotate(7deg)}.map-marsh{color:rgba(57,93,83,.46);font:25px Georgia,serif;letter-spacing:7px}.marsh-sw{left:17%;bottom:4%;transform:rotate(5deg)}
 .map-compass{position:absolute;right:22px;bottom:24px;width:62px;height:62px;border:1px solid rgba(65,50,29,.4);border-radius:50%;display:grid;place-items:center;color:rgba(61,47,27,.62);font-family:Georgia,serif;z-index:2;pointer-events:none}.map-compass b{position:absolute;top:-16px;font-size:11px}.map-compass span{font-size:36px;line-height:1}
@@ -801,7 +807,7 @@ html,body{max-width:100%;overflow-x:hidden}
 .shantium-road-network .road-highlight{fill:none;stroke:rgba(244,236,205,.68);stroke-width:.18;stroke-linecap:round;stroke-linejoin:round}
 .shantium-road-network .minor .road-shadow{stroke-width:1.05}.shantium-road-network .minor .road-line{stroke-width:.58}.shantium-road-network .minor .road-highlight{stroke-width:.13}
 .shantium-road-network .trail .road-line{stroke-dasharray:1.15 1.1;opacity:.82}.shantium-road-network .trail .road-highlight{opacity:.5}
-.region-map-shantium .map-region-name{z-index:2}.region-map-shantium .map-river,.region-map-shantium .map-forest,.region-map-shantium .map-hills,.region-map-shantium .map-marsh{z-index:0}
+.region-map-shantium .map-region-name{z-index:2}.region-map-shantium .shantium-river-network,.region-map-shantium .map-forest,.region-map-shantium .map-hills,.region-map-shantium .map-marsh{z-index:0}
 .blue-road-network{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible}
 .blue-road-network .road-shadow{fill:none;stroke:rgba(62,53,43,.36);stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
 .blue-road-network .road-line{fill:none;stroke:#887456;stroke-width:.78;stroke-linecap:round;stroke-linejoin:round}
@@ -2550,15 +2556,8 @@ button.interior-node:hover,button.interior-node:focus-visible{background:linear-
 /* v1.6.22.6 — input responsiveness / performance */
 button, [role="button"], .world-location, .world-party { touch-action: manipulation; }
 button:active, [role="button"]:active, .world-location:active, .world-party:active { filter:brightness(.9); }
-button.sos-pressed:not(.world-location):not(.world-party), [role="button"].sos-pressed:not(.world-location):not(.world-party) {
-  transform: translateY(1px) scale(.985) !important;
-  filter: brightness(.88) contrast(1.04);
-  transition: transform 35ms linear, filter 35ms linear !important;
-}
-.world-location.sos-pressed, .world-party.sos-pressed {
-  filter: brightness(.84) contrast(1.08);
-  transition: filter 35ms linear !important;
-}
+button.sos-pressed:not(.world-location):not(.world-party):not(.enemy-marker):not(.field-marker):not(.live-conflict-marker):not(.map-positioned-marker):not(.army-intel-marker), [role="button"].sos-pressed:not(.world-location):not(.world-party):not(.enemy-marker):not(.field-marker):not(.live-conflict-marker):not(.map-positioned-marker):not(.army-intel-marker) { transform: translateY(1px) scale(.985) !important; filter: brightness(.88) contrast(1.04); transition: transform 35ms linear, filter 35ms linear !important; }
+.world-location.sos-pressed,.world-party.sos-pressed,.enemy-marker.sos-pressed,.field-marker.sos-pressed,.live-conflict-marker.sos-pressed { filter: brightness(.84) contrast(1.08); transition: filter 35ms linear !important; }
 .sos-busy-hint { opacity:.78; cursor:progress !important; }
 
 /* v1.6.24 — Guardian Hall Economy & Workforce II */
@@ -2686,3 +2685,185 @@ button.sos-pressed:not(.world-location):not(.world-party), [role="button"].sos-p
 .crystal-status-lost{opacity:.72}
 @media(max-width:700px){.crystal-ward-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.crystal-inventory-heading{align-items:stretch;flex-direction:column}.crystal-inventory-controls{justify-content:stretch}.crystal-inventory-controls label{flex:1 1 130px;flex-direction:column;align-items:stretch}.crystal-inventory-controls select{width:100%;font-size:16px;min-height:40px}.crystal-inventory-list{grid-template-columns:1fr;max-height:430px}}
 @media(max-width:430px){.crystal-ward-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* v1.6.66.9.3 — natural regional hydrography and woodland */
+.natural-forest{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+.natural-forest .forest-canopy path{fill:rgba(55,88,52,.20);stroke:rgba(44,72,43,.40);stroke-width:.75;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.natural-forest .forest-tree-detail path{fill:rgba(39,72,40,.48);stroke:none;vector-effect:non-scaling-stroke}
+.shantium-forest .forest-canopy path:nth-child(2),.shantium-forest .forest-canopy path:nth-child(3){fill:rgba(58,91,54,.15)}
+.redstone-forest .forest-canopy path{fill:rgba(63,79,50,.25);stroke:rgba(55,68,45,.48)}
+.redstone-forest .forest-tree-detail path{fill:rgba(58,72,46,.55)}
+.bluestone-creek-network{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+.bluestone-creek-network path{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.bluestone-creek-network .creek-bank{stroke:rgba(55,80,96,.40);stroke-width:7}
+.bluestone-creek-network .creek-water{stroke:rgba(74,108,125,.62);stroke-width:4.8}
+.bluestone-creek-network .creek-light{stroke:rgba(173,197,201,.42);stroke-width:1.25;stroke-dasharray:18 14}
+.region-map-shantium .shantium-forest,.region-map-redstone .redstone-forest,.region-map-bluestone .bluestone-creek-network{z-index:0}
+/* v1.6.66.9.4 — Guardian field movement continuity */
+.guardian-field-trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:13;overflow:visible}
+.guardian-field-trail path{fill:none;stroke:rgba(58,76,57,.62);stroke-width:.75;stroke-dasharray:1.6 1.15;stroke-linecap:round;vector-effect:non-scaling-stroke}
+
+/* v1.6.66.9.5 — mount markets */
+.mount-market-grid{align-items:stretch}.mount-market-card{display:flex;flex-direction:column;gap:7px}.mount-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.mount-card-head h3{margin:0}.mount-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(74px,1fr));gap:5px}.mount-stat-grid span{display:grid;grid-template-columns:1fr auto;gap:2px 6px;padding:5px 7px;border:1px solid rgba(80,65,45,.28);background:rgba(255,255,255,.18)}.mount-stat-grid small{grid-column:1/-1}.mount-stat-grid em{font-style:normal;font-size:.78em;font-weight:bold}.mount-stat-up{color:#2f6c39}.mount-stat-down{color:#8a3f36}#settlementMountMarket{width:100%;margin:8px 0}#settlementMountMarket small{display:block;opacity:.75}@media(max-width:600px){.mount-stat-grid{grid-template-columns:repeat(2,minmax(74px,1fr))}}
+
+/* v1.6.66.9.13 — woodland silhouettes and imperfect army map intelligence */
+.natural-forest .forest-grove .tree-crown{fill:rgba(48,82,47,.54);stroke:rgba(40,67,40,.58);stroke-width:.45;vector-effect:non-scaling-stroke}
+.natural-forest .forest-grove .tree-trunk{fill:rgba(91,70,48,.66);stroke:none}
+.redstone-forest .forest-grove .tree-crown{fill:rgba(61,77,48,.58);stroke:rgba(52,65,43,.62)}
+/* Old translucent canopy blobs are intentionally retired. */
+.natural-forest .forest-canopy,.natural-forest .forest-tree-detail{display:none!important}
+.army-intel-route{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;overflow:visible}
+.army-intel-route line{stroke:rgba(132,54,45,.58);stroke-width:.7;stroke-dasharray:2.2 1.6;vector-effect:non-scaling-stroke}
+.army-intel-route.friendly line{stroke:rgba(55,89,118,.62)}
+.army-intel-route marker path{fill:rgba(132,54,45,.68)}.army-intel-route.friendly marker path{fill:rgba(55,89,118,.72)}
+.army-intel-marker{position:absolute;transform:translate(-50%,-50%);z-index:7;min-width:42px!important;width:auto!important;height:31px!important;padding:2px 5px!important;border:2px solid #84483f!important;background:#eee0c5!important;display:grid!important;grid-template-columns:auto auto!important;gap:3px!important;align-items:center!important;font:700 9px Georgia,serif!important}
+.army-intel-marker.friendly{border-color:#4d6c85!important;background:#dde5e5!important}.army-intel-marker.quality-uncertain{opacity:.62}.army-intel-marker.quality-credible{opacity:.82}.army-intel-marker.quality-strong{opacity:.96}
+.army-intel-marker span{font-size:15px}.army-intel-marker small{font-size:7px;white-space:nowrap}
+
+/* v1.6.66.9.16 — consolidated Crystal Ward inventory */
+.crystal-inventory-group{margin-bottom:7px}
+.crystal-inventory-group-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.crystal-inventory-group-head span{display:flex;flex-direction:column;gap:2px}
+.crystal-inventory-group-head strong{font-size:20px;min-width:32px;text-align:right}
+.crystal-inventory-group>button{margin-top:6px;width:100%}
+.crystal-inventory-drilldown{margin-top:7px;max-height:310px;overflow:auto;border-top:1px solid rgba(80,65,45,.25);padding-top:5px}
+.crystal-records-request .stat-row{align-items:flex-start}
+.crystal-records-request .stat-row b{max-width:64%;text-align:right}
+
+/* v1.6.66.9.18 Crystal Ward touch-target and disclosure pass */
+.crystal-operation-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.crystal-operation-grid button,.crystal-contract-actions button{min-height:58px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;width:100%}
+.crystal-operation-grid button b,.crystal-contract-actions button b{font-size:13px}
+.crystal-operation-grid button small,.crystal-contract-actions button small{font-size:10px;line-height:1.3;opacity:.8;white-space:normal}
+.crystal-operation-grid .crystal-attention{outline:2px solid currentColor;outline-offset:1px}
+.crystal-collapsible{margin:10px 0;border:1px solid #aaa08a;background:rgba(255,255,255,.34)}
+.crystal-collapsible>summary{cursor:pointer;list-style:none;padding:11px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px}
+.crystal-collapsible>summary::-webkit-details-marker{display:none}
+.crystal-collapsible>summary>span:first-child{display:flex;flex-direction:column;gap:2px;min-width:0}
+.crystal-collapsible>summary small{font-size:10px;opacity:.75;font-weight:400}
+.crystal-disclosure{font-size:10px;font-weight:700;white-space:nowrap}
+.crystal-collapsible[open] .crystal-disclosure{font-size:0}
+.crystal-collapsible[open] .crystal-disclosure:after{content:"Hide";font-size:10px}
+.crystal-collapsible-body{padding:4px 10px 10px;border-top:1px solid rgba(80,65,45,.22)}
+.crystal-collapsible-body>h3:first-child{margin-top:8px}
+.crystal-section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+.crystal-section-title h3{margin:0}
+.crystal-section-title span{font-weight:700;font-size:13px}
+.crystal-contract-card{margin:8px 0;padding:11px}
+.crystal-contract-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.crystal-contract-head>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.crystal-contract-head small{opacity:.75}
+.crystal-contract-status{font-size:10px;font-weight:700;border:1px solid rgba(80,65,45,.35);padding:3px 6px;white-space:nowrap}
+.crystal-contract-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:9px 0}
+.crystal-contract-facts>span{display:flex;flex-direction:column;gap:2px;padding:6px;border:1px solid rgba(80,65,45,.22);min-width:0}
+.crystal-contract-facts small{font-size:9px;text-transform:uppercase;opacity:.65}
+.crystal-contract-facts b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crystal-contract-meta{display:block;line-height:1.4;opacity:.76}
+.crystal-contract-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(80,65,45,.22)}
+.crystal-access-policy{display:flex;flex-direction:column;gap:7px}
+.crystal-policy-list{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:6px}
+.crystal-policy-list span{display:inline-flex;align-items:center;gap:6px}
+@media(max-width:700px){.crystal-contract-actions{grid-template-columns:1fr}.crystal-contract-facts{grid-template-columns:1fr 1fr}.crystal-operation-grid button,.crystal-contract-actions button{min-height:64px}.crystal-contract-head{flex-direction:column}.crystal-contract-status{align-self:flex-start}}
+
+/* v1.6.66.9.20 — positioned map controls must never jump under pointer/touch. */
+.map-positioned-marker.sos-pressed,.army-intel-marker.sos-pressed { transform:translate(-50%,-50%) !important;filter:brightness(.84) contrast(1.08);transition:filter 35ms linear !important; }
+
+/* v1.6.66.9.22 — Hall action-card spacing and procurement history */
+.hall-action-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left}
+.hall-action-card>b,.hall-action-card>small{display:block}
+.proc-history-collapsible{margin-top:14px}
+.proc-history-collapsible>summary{cursor:pointer;padding:10px 12px}
+.proc-history-collapsible>summary small{margin-left:6px}
+.proc-history-body{padding-top:8px}
+
+
+/* v1.6.66.9.24 — High-resolution desktop layout
+   Wide displays use horizontal room before introducing nested menu scrolling. */
+@media(min-width:2000px) and (min-height:1050px){
+  .app-shell{
+    width:calc(100vw - 24px)!important;
+    max-width:2520px!important;
+    margin:0 auto!important;
+  }
+  .game-grid{
+    grid-template-columns:minmax(340px,390px) minmax(900px,1fr) minmax(390px,450px) minmax(330px,390px)!important;
+    grid-template-rows:minmax(0,calc(100vh - 50px))!important;
+    gap:8px!important;
+  }
+  /* One scroll surface per sidebar is preferable to tiny scroll boxes inside
+     individual Guardian/Open World/Town panels. */
+  .game-grid>.sidebar:first-child,
+  .game-grid>.sidebar:nth-child(3){overflow:auto!important;min-height:0!important}
+  .game-grid>.sidebar>.panel{overflow:visible!important;flex:0 0 auto!important}
+
+  /* Spend extra width on choices: fewer rows, less vertical travel. */
+  .player-action-grid,
+  .openworld-group-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+  .openworld-group-grid>button:last-child:nth-child(odd){grid-column:auto!important}
+  .player-action-grid button,
+  .openworld-group-grid button{min-height:50px!important;padding:7px 8px!important}
+
+  .local-action-buttons.choice-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+  .local-action-buttons button{min-height:48px!important;margin:0!important;padding:7px 8px!important}
+
+  /* Give nearby-party rows enough width for names, tags and the action label. */
+  .nearby-party-button{grid-template-columns:30px minmax(0,1fr) auto!important;padding:7px 9px!important}
+  .nearby-party-copy>b{white-space:normal!important;line-height:1.15!important}
+
+  /* The journal gets a genuine reading column rather than a narrow ticker. */
+  .game-grid>.log-panel{padding:9px!important}
+  .game-grid>.log-panel .log{height:calc(100vh - 112px)!important;font-size:12px!important;line-height:1.28!important}
+
+  .world-map-viewport{height:min(820px,calc(100vh - 118px))!important}
+}
+
+/* Ultra-wide monitors can support four compact Open World/Company choices per row. */
+@media(min-width:2400px) and (min-height:1200px){
+  .game-grid{grid-template-columns:minmax(390px,430px) minmax(980px,1fr) minmax(430px,480px) minmax(350px,410px)!important}
+  .player-action-grid,
+  .openworld-group-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .player-action-grid button,
+  .openworld-group-grid button{min-height:48px!important}
+  .world-map-viewport{height:min(900px,calc(100vh - 118px))!important}
+}
+
+
+/* v1.6.66.9.26 — semantic text separation audit
+   Independently-rendered titles/labels and their secondary text must never
+   rely on source whitespace to remain visually distinct. */
+.traveler-member{gap:3px}
+.traveler-member>span{display:block;line-height:1.2}
+.traveler-member>small{display:block;line-height:1.25;margin-top:1px}
+button>b+small,
+button>span>b+small,
+.card>b+small,
+.notice>b+small,
+.choice>b+small,
+.artifact-card>b+small,
+.exploration-legend>b+small{
+  display:block;
+  margin-top:3px;
+  line-height:1.25;
+}
+/* Some compact records intentionally use a wrapper around the primary label. */
+.card>span+small,
+.notice>span+small{
+  display:block;
+  margin-top:3px;
+}
+
+/* v1.6.66.9.28 — mount/cargo navigation and responsive high-resolution map */
+.inventory-cargo{margin-top:12px;border:1px solid rgba(80,65,45,.28);background:rgba(255,255,255,.22)}
+.inventory-cargo>summary{cursor:pointer;padding:9px 10px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.inventory-cargo>summary small{opacity:.72;font-weight:400}.inventory-cargo-body{padding:8px 10px 10px;border-top:1px solid rgba(80,65,45,.2)}
+.mount-rider-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin:7px 0}.mount-rider-controls select{min-width:0}
+/* The regional canvas is authored in a 920x700 coordinate space. On large displays,
+   scale that coordinate space uniformly to the viewport instead of enlarging only
+   the viewport and exposing empty panel space. */
+@media(min-width:2000px) and (min-height:1050px){
+ .world-map-viewport{height:auto!important;aspect-ratio:920/700!important;max-height:calc(100vh - 118px)!important}
+ .world-map-viewport .world-map-canvas{width:100%!important;height:100%!important;min-height:0!important}
+}
+
+/* v1.6.66.9.29 — bounded collapsible recovery subsections */
+.caravan-missing-mounts{margin-top:12px}.caravan-missing-mounts>summary{cursor:pointer;padding:7px 4px;list-style-position:inside}.caravan-missing-mounts>.details-body{margin-top:8px;padding-top:8px;border-top:1px solid rgba(80,65,45,.25)}

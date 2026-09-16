@@ -57,21 +57,58 @@ function expireTreaties(){
  ensurePoliticalState();for(const t of Object.values(state.world.politics.treaties)){if(t.status==='active'&&state.world.day>t.expiresDay){t.status='expired';politicalHistory(SOSText("politics_control_incidents.expireTreaties.001",t.label,t.a,t.b),'info')}}
 }
 function factionsOpposedPolitically(a,b){const t=activeTreaty(a,b);if(t&&['nonaggression','road_access','trade'].includes(t.type))return false;return factionRelation(a,b)<=-4}
+function politicalHandoverQualification(locId,q){
+ const ps=politicalSettlement(locId),status=politicalStatus(locId),current=settlementControl(locId),challenger=q?.challenger,expected=q?.current;
+ if(!q||!challenger||!expected)return{qualified:false,status,reason:'missing handover state'};
+ if(current!==expected)return{qualified:false,status,reason:'formal control changed'};
+ const visibleLead=localPoliticalLeader(locId),visibleChallenger=visibleLead?.faction||null;
+ if(status.topFaction!==challenger)return{qualified:false,status,reason:'challenger no longer leads political pressure'};
+ if(visibleChallenger!==challenger)return{qualified:false,status,reason:'challenger no longer leads the visible political picture'};
+ const defense=politicalPressure(locId,expected)+Math.round(ps.autonomy/2),lean=settlementLeanScore(locId,challenger);
+ const qualified=status.topPressure>=10&&lean>=7&&status.topPressure>=defense+2;
+ return{qualified,status,defense,lean,visibleLead,reason:qualified?'qualified':'handover thresholds no longer met'}
+}
+function cancelStalePoliticalHandover(locId,q,reason='the political lead no longer holds'){
+ const ps=politicalSettlement(locId);if(!q||ps.pending?.id!==q.id)return false;
+ politicalHistory(`${worldLocation(locId).name}: ${majorFaction(q.challenger).short} loses the sustained political lead; the threatened handover recedes (${reason}).`,'info');ps.pending=null;return true
+}
+function guardianPoliticalLastStandEligible(locId,current){
+ const e=typeof guardianPublicEndorsement==='function'?guardianPublicEndorsement():null;
+ return !!(e?.faction===current&&state.world.location===locId);
+}
+function completeAutomaticPoliticalTransfer(locId,q,reason='sustained political lead'){
+ const ps=politicalSettlement(locId),ss=settlementState(locId),challenger=q.challenger,current=q.current;
+ ss.control=challenger;ps.alignmentHistory.push({day:state.world.day,from:current,to:challenger,reason});ps.alignment=challenger;ps.autonomy=Math.max(1,ps.autonomy-2);ps.lastShiftDay=state.world.day;ps.transitionUntilDay=state.world.day+8;
+ const rr=roadRights(locId);rr.controller=challenger;rr.openness=Math.max(3,rr.openness-1);
+ stabilizePoliticalTransfer(locId,current,challenger);const reopened=reopenProtectedPoliticalCases(locId,current,challenger);
+ const text=`${worldLocation(locId).name} passes into ${majorFaction(challenger).short} political control after the faction sustains its local lead.${reopened.length?` ${reopened.length} protected case${reopened.length===1?' is':'s are'} reopened by the new administration.`:''}`;
+ politicalHistory(text,'bad');recordWorldNews(text,'bad');ps.pending=null;return text;
+}
+function showGuardianPoliticalLastStand(locId){
+ const ps=politicalSettlement(locId),q=ps.pending;if(!q?.guardianLastStand)return;const check=politicalHandoverQualification(locId,q);if(!check.qualified){cancelStalePoliticalHandover(locId,q,check.reason);if(state.world.location===locId)showSettlementPolitics(locId);return}
+ const current=q.current,challenger=q.challenger,loc=worldLocation(locId);
+ overlay(`<h2>${esc(loc.name)} — Control at the Brink</h2><div class="warning notice"><b>${esc(majorFaction(challenger).name)} is poised to take political control.</b><br>${esc(majorFaction(current).name)}, the faction you publicly endorse, has failed to recover its lead during the handover period.</div><p>Because you are here and have publicly committed yourself to the incumbent, you have one last opportunity to rally its supporters. Success is not guaranteed, and a strong opposing lead will be difficult to reverse.</p><div class="choice-list"><button id="politicalLastStand"><b>Make a Last-Ditch Intervention</b><br><small>Use your local reputation, political relationships, and personal influence to try to restore the incumbent's position.</small></button><button id="politicalStandAside"><b>Stand Aside</b><br><small>Allow the political handover to proceed.</small></button></div>`,true);
+ $('#politicalLastStand').onclick=()=>resolveGuardianPoliticalLastStand(locId,true);$('#politicalStandAside').onclick=()=>resolveGuardianPoliticalLastStand(locId,false);
+}
+function resolveGuardianPoliticalLastStand(locId,intervene){
+ const ps=politicalSettlement(locId),q=ps.pending;if(!q?.guardianLastStand)return render();const check=politicalHandoverQualification(locId,q);if(!check.qualified){cancelStalePoliticalHandover(locId,q,check.reason);return showSettlementPolitics(locId)}const current=q.current,challenger=q.challenger,before=politicalOutcomeSnapshot(locId,[current,challenger]);let text,tone='bad';
+ if(intervene){const status=politicalStatus(locId),lead=Math.max(0,(status.topPressure||0)-politicalPressure(locId,current)),rep=localReputation(locId),standing=state.world.factionStanding[current]||0,roll=rnd(1,20)+stat(state,'cha')+Math.floor(rep/2)+Math.floor(Math.max(0,standing)/3)-Math.floor(lead/2);if(roll>=18){ps.pressure[current]=Math.min(12,(ps.pressure[current]||0)+2);ps.pressure[challenger]=Math.max(0,(ps.pressure[challenger]||0)-2);ps.lean[current]=clamp((ps.lean[current]||0)+1.5,-6,12);ps.pending=null;ps.lastShiftDay=state.world.day;text=`Your intervention gives ${majorFaction(current).short} enough political ground to halt the immediate handover in ${worldLocation(locId).name}. The contest remains alive.`;tone='good';politicalHistory(text,'good');recordWorldNews(text,'info')}else{text=`Your intervention fails to overturn ${majorFaction(challenger).short}'s sustained political lead. ${completeAutomaticPoliticalTransfer(locId,q,'sustained political lead despite Guardian intervention')}`}}
+ else{text=completeAutomaticPoliticalTransfer(locId,q,'sustained political lead; Guardian stood aside')}
+ const after=politicalOutcomeSnapshot(locId,[current,challenger]);save();showPoliticalOutcome('Political Control',text,before,after,{tone,back:()=>showSettlementPolitics(locId)});
+}
+function queueGuardianPoliticalLastStand(locId,q){const check=politicalHandoverQualification(locId,q);if(!check.qualified){cancelStalePoliticalHandover(locId,q,check.reason);return false}q.guardianLastStand=true;q.guardianLastStandDay=state.world.day;setTimeout(()=>{const ps=politicalSettlement(locId);if(ps.pending?.id!==q.id||!ps.pending.guardianLastStand)return;const live=politicalHandoverQualification(locId,ps.pending);if(!live.qualified){cancelStalePoliticalHandover(locId,ps.pending,live.reason);return}showGuardianPoliticalLastStand(locId)},0);return true}
 function evaluatePoliticalShift(locId,perfStats=null){
- const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now();let t=now(),ps=politicalSettlement(locId),status=politicalStatus(locId,perfStats);if(perfStats)perfStats.status+=now()-t;if(ps.pending||state.world.day<(ps.transitionUntilDay||0)||state.world.day-(ps.lastShiftDay||0)<8)return;
- if(status.topFaction===status.control)return;const challenger=status.topFaction;t=now();const pressure=status.topPressure,defense=politicalPressure(locId,status.control)+Math.round(ps.autonomy/2);if(perfStats)perfStats.pressure+=now()-t;t=now();const lean=settlementLeanScore(locId,challenger);if(perfStats)perfStats.lean+=now()-t;
- if(pressure>=10&&lean>=7&&pressure>=defense+2){
-  t=now();ps.pending={id:uid(),challenger,current:status.control,createdDay:state.world.day,expiresDay:state.world.day+4,reason:SOSText("politics_control_incidents.evaluatePoliticalShift.001",majorFaction(challenger).name,settlementLeanTier(locId,challenger).toLowerCase())};
-  recordWorldNews(SOSText("politics_control_incidents.evaluatePoliticalShift.002",worldLocation(locId).name,majorFaction(challenger).short),'bad');if(perfStats)perfStats.transition+=now()-t
- }
+ const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now();let t=now(),ps=politicalSettlement(locId),status=politicalStatus(locId,perfStats);if(perfStats)perfStats.status+=now()-t;
+ t=now();const blocked=!!ps.pending||state.world.day<(ps.transitionUntilDay||0)||state.world.day-(ps.lastShiftDay||0)<8||status.topFaction===status.control;if(perfStats)perfStats.eligibility=(perfStats.eligibility||0)+now()-t;if(blocked)return;
+ const challenger=status.topFaction;t=now();const pressure=status.topPressure,defense=politicalPressure(locId,status.control)+Math.round(ps.autonomy/2);if(perfStats)perfStats.pressure+=now()-t;if(pressure<10||pressure<defense+2)return;
+ t=now();const lean=settlementLeanScore(locId,challenger);if(perfStats)perfStats.lean+=now()-t;if(lean<7)return;
+ // The visible Political Lead is expensive to calculate. It is only relevant once the
+ // cheaper takeover thresholds have qualified, so defer it until a handover could actually begin.
+ t=now();const visibleLead=localPoliticalLeader(locId);if(perfStats)perfStats.visibleLead=(perfStats.visibleLead||0)+now()-t;if(visibleLead?.faction!==challenger)return;
+ t=now();ps.pending={id:uid(),kind:'automatic_handover',challenger,current:status.control,createdDay:state.world.day,sustainDays:1,requiredDays:4,lastQualifiedDay:state.world.day,reason:`${majorFaction(challenger).name} has established a political lead. If it holds for four consecutive days, control will pass automatically.`};recordWorldNews(`${worldLocation(locId).name}: ${majorFaction(challenger).short} has established a political lead; the local government faces a possible handover if that lead holds.`,'info');if(perfStats)perfStats.transition+=now()-t
 }
-function resolvePoliticalShift(locId,choice){
- const ps=politicalSettlement(locId),q=ps.pending;if(!q)return showSettlementPolitics(locId);const ss=settlementState(locId),challenger=q.challenger,current=q.current,before=politicalOutcomeSnapshot(locId,[challenger,current]);let text='',tone='info';
- if(choice==='accept'){ss.control=challenger;ps.alignment=challenger;ps.alignmentHistory.push({day:state.world.day,from:current,to:challenger,reason:SOSText("politics_control_incidents.resolvePoliticalShift.001")});ps.lean[challenger]=Math.max(ps.lean[challenger]||0,8);ps.autonomy=Math.max(1,ps.autonomy-2);ps.lastShiftDay=state.world.day;roadRights(locId).controller=challenger;roadRights(locId).openness=Math.max(3,roadRights(locId).openness-1);adjustFactionStanding(challenger,1,SOSText("politics_control_incidents.resolvePoliticalShift.002"));stabilizePoliticalTransfer(locId,current,challenger);const reopened=reopenProtectedPoliticalCases(locId,current,challenger);text=SOSText("politics_control_incidents.resolvePoliticalShift.003",worldLocation(locId).name,majorFaction(challenger).short,reopened.length?` ${reopened.length} politically protected case${reopened.length===1?' is':'s are'} reopened by the new administration.`:'');tone='bad'}
- else if(choice==='resist'){const roll=rnd(1,20)+stat(state,'cha')+Math.floor(localReputation(locId)/2)+Math.round(ps.autonomy/2);if(roll>=18){ps.pressure[challenger]=Math.max(0,(ps.pressure[challenger]||0)-3);ps.autonomy=Math.min(10,ps.autonomy+1);adjustFactionStanding(challenger,-1,SOSText("politics_control_incidents.resolvePoliticalShift.004"));text=SOSText("politics_control_incidents.resolvePoliticalShift.005",majorFaction(challenger).short);tone='good'}else{ss.security=Math.max(20,ss.security-4);ps.pressure[challenger]=Math.min(12,(ps.pressure[challenger]||0)+1);text=SOSText("politics_control_incidents.resolvePoliticalShift.006");tone='bad'}}
- else if(choice==='mediate'){const roll=rnd(1,20)+stat(state,'cha')+Math.floor((state.world.factionStanding[challenger]||0)/3)+Math.floor(localReputation(locId)/3);if(roll>=17){createTreaty(challenger,current,'road_access',10);ps.pressure[challenger]=Math.max(0,(ps.pressure[challenger]||0)-2);ps.autonomy=Math.max(3,ps.autonomy-1);roadRights(locId).controller=current;roadRights(locId).openness=Math.min(10,roadRights(locId).openness+1);text=SOSText("politics_control_incidents.resolvePoliticalShift.007");tone='good'}else{text=SOSText("politics_control_incidents.resolvePoliticalShift.008");q.expiresDay+=2;const after=politicalOutcomeSnapshot(locId,[challenger,current]);save();return showPoliticalOutcome(SOSText("politics_control_incidents.resolvePoliticalShift.009"),text,before,after,{tone:'bad',notes:[SOSText("politics_control_incidents.resolvePoliticalShift.010")],back:()=>showSettlementPolitics(locId)})}}
- q.status='resolved';q.resolvedDay=state.world.day;q.choice=choice;ps.pending=null;politicalHistory(`${worldLocation(locId).name}: ${text}`,tone);const after=politicalOutcomeSnapshot(locId,[challenger,current]);save();showPoliticalOutcome(SOSText("politics_control_incidents.resolvePoliticalShift.011"),text,before,after,{tone,back:()=>showSettlementPolitics(locId)})
-}
+function resolvePoliticalShift(locId,choice){return showSettlementPolitics(locId)}
+
 
 function localPoliticalProfilesSorted(locId){
  return localPoliticalFactions(locId).map(f=>localPoliticalProfile(locId,f)).sort((a,b)=>b.overall-a.overall)
@@ -98,9 +135,13 @@ function politicalSituationFactionHTML(locId,p,focusFaction=null){
 }
 
 function showSettlementPolitics(locId=state.world.location){modalRouteEnter(SOSText("politics_control_incidents.showSettlementPolitics.001"),Array.from(arguments));
- const loc=worldLocation(locId),s=politicalStatus(locId),ps=politicalSettlement(locId),rr=roadRights(locId),lead=localPoliticalLeader(locId);
- overlay(SOSText("politics_control_incidents.showSettlementPolitics.002",esc(loc.name),locationRegion(locId)==='redstone'?redstonePolicyNoticeHTML(locId):'',locationRegion(locId)==='redstone'?`<div class="notice compact"><b>Authority precedent:</b> ${esc(sengiaPrecedentLabel(locId))}<br><button id="politicsAuthority">Orders & Jurisdiction</button><button id="politicsSecurity">Military & Security</button></div>`:'',esc(politicalStatusLabel(locId)),esc(ps.leader),esc(ps.style),esc(s.control),lead?` • Political lead: <b>${esc(majorFaction(lead.faction).short)}</b> (${lead.overall})`:'',ps.autonomy,esc(rr.controller),rr.openness,rr.toll?` • Toll ${rr.toll}g`:'',esc(politicalProtectionLabel(politicalProtectionScore(locId,s.control))),politicalProtectionScore(locId,s.control),politicalCapital(locId,s.control).toFixed(1),politicalDebt(locId,s.control).toFixed(1),localPoliticalGlanceRowsHTML(locId,'situation'),politicalTransitionStatus(locId)?`<div class="notice compact"><b>${esc(politicalTransitionStatus(locId))}</b><br>A new control challenge cannot begin until the transition period ends.</div>`:'',s.pending?`<div class="warning notice"><b>${esc(majorFaction(s.pending.challenger).name)} Demand</b><br>${esc(s.pending.reason)}<div class="choice-list compact"><button data-polchoice="accept">Accept Greater ${esc(majorFaction(s.pending.challenger).short)} Authority</button><button data-polchoice="resist">Back Local Resistance</button><button data-polchoice="mediate">Negotiate a Compromise</button></div></div>`:''),true);
- document.querySelectorAll('[data-polchoice]').forEach(b=>b.onclick=()=>resolvePoliticalShift(locId,b.dataset.polchoice));
+ const now=()=>typeof performance!=='undefined'&&performance.now?performance.now():Date.now();let t=now();
+ const loc=worldLocation(locId),s=politicalStatus(locId),ps=politicalSettlement(locId),rr=roadRights(locId),lead=localPoliticalLeader(locId),protection=politicalProtectionScore(locId,s.control);
+ if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration('Settlement Politics — State & Leadership',now()-t);
+ t=now();const glance=localPoliticalGlanceRowsHTML(locId,'situation');if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration('Settlement Politics — Faction Glance',now()-t);
+ t=now();
+ overlay(SOSText("politics_control_incidents.showSettlementPolitics.002",esc(loc.name),locationRegion(locId)==='redstone'?redstonePolicyNoticeHTML(locId):'',locationRegion(locId)==='redstone'?`<div class="notice compact"><b>Authority precedent:</b> ${esc(sengiaPrecedentLabel(locId))}<br><button id="politicsAuthority">Orders & Jurisdiction</button><button id="politicsSecurity">Military & Security</button></div>`:'',esc(politicalStatusLabel(locId)),esc(ps.leader),esc(ps.style),esc(s.control),lead?` • Political lead: <b>${esc(majorFaction(lead.faction).short)}</b> (${lead.overall})`:'',ps.autonomy,esc(rr.controller),rr.openness,rr.toll?` • Toll ${rr.toll}g`:'',esc(politicalProtectionLabel(protection)),protection,politicalCapital(locId,s.control).toFixed(1),politicalDebt(locId,s.control).toFixed(1),glance,politicalTransitionStatus(locId)?`<div class="notice compact"><b>${esc(politicalTransitionStatus(locId))}</b><br>A new control challenge cannot begin until the transition period ends.</div>`:'',s.pending?`<div class="warning notice"><b>Political Handover Developing</b><br>${esc(s.pending.reason||`${majorFaction(s.pending.challenger).name} is sustaining a political lead.`)}<br><small>${s.pending.guardianLastStand?'The Guardian has an immediate opportunity to intervene.':`Lead held ${s.pending.sustainDays||1}/${s.pending.requiredDays||4} days.`}</small></div>`:'') ,true);
+ if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration('Settlement Politics — Render',now()-t);
  document.querySelectorAll('[data-politicalsituationfaction]').forEach(b=>b.onclick=()=>navigateTownMenu(SOSText("politics_control_incidents.showSettlementPolitics.003"),{locId,focusFaction:b.dataset.politicalsituationfaction}));
  $('#politicalActivities').onclick=()=>navigateTownMenu(SOSText("politics_control_incidents.showSettlementPolitics.004"),{locId});
  $('#politicalSituation').onclick=()=>navigateTownMenu(SOSText("politics_control_incidents.showSettlementPolitics.005"),{locId});
@@ -134,14 +175,21 @@ function simulatePoliticalDay(){
   });
   perf('Politics Simulation — Presence & Pressure',()=>{
    for(const loc of locs){const ps=politicalSettlement(loc.id),presence=factionPresenceAt(loc.id),control=settlementControl(loc.id);
-    for(const [f,v] of Object.entries(presence)){if(!OPEN_WORLD_FACTIONS[f])continue;const fit=factionAgendaFit(f,loc.id);if(v>=5&&chance(.24)){recordFactionPower(loc.id,f,'personnel',v>=8?1:.5,SOSText("politics_control_incidents.simulatePoliticalDay.001",factionPresenceTier(v),currentFactionPriority(f).label.toLowerCase()),5);ps.lean[f]=clamp((ps.lean[f]||0)+(f===control?.08:.04)+fit*.03,-6,12)}if(v>=7&&f!==control&&chance(.18))addPoliticalPressure(loc.id,f,.5,SOSText("politics_control_incidents.simulatePoliticalDay.002"));if(v<=2&&(ps.pressure[f]||0)>0&&chance(.18))ps.pressure[f]=Math.max(0,ps.pressure[f]-1)}
+    for(const [f,v] of Object.entries(presence)){if(!OPEN_WORLD_FACTIONS[f])continue;if(v>=5&&chance(.24)){const fit=factionAgendaFit(f,loc.id);recordFactionPower(loc.id,f,'personnel',v>=8?1:.5,SOSText("politics_control_incidents.simulatePoliticalDay.001",factionPresenceTier(v),currentFactionPriority(f).label.toLowerCase()),5);ps.lean[f]=clamp((ps.lean[f]||0)+(f===control?.08:.04)+fit*.03,-6,12)}if(v>=7&&f!==control&&chance(.18))addPoliticalPressure(loc.id,f,.5,SOSText("politics_control_incidents.simulatePoliticalDay.002"));if(v<=2&&(ps.pressure[f]||0)>0&&chance(.18))ps.pressure[f]=Math.max(0,ps.pressure[f]-1)}
     const incident=activeFactionIncident(loc.id);if(incident)for(const f of incident.factions)if(f!==control)ps.pressure[f]=Math.min(12,(ps.pressure[f]||0)+.25)
    }
   });
   perf('Politics Simulation — Control Shifts',()=>{
-   for(const loc of locs){const ps=politicalSettlement(loc.id);evaluatePoliticalShift(loc.id);
-    if(ps.pending&&state.world.day>ps.pending.expiresDay){const q=ps.pending,challenger=q.challenger,ss=settlementState(loc.id);if(politicalPressure(loc.id,challenger)>=11&&settlementLeanScore(loc.id,challenger)>=8&&ss.security<55){ss.control=challenger;ps.alignmentHistory.push({day:state.world.day,from:q.current,to:challenger,reason:SOSText("politics_control_incidents.simulatePoliticalDay.003")});ps.alignment=challenger;ps.autonomy=Math.max(1,ps.autonomy-2);roadRights(loc.id).controller=challenger;stabilizePoliticalTransfer(loc.id,q.current,challenger);const reopened=reopenProtectedPoliticalCases(loc.id,q.current,challenger);politicalHistory(SOSText("politics_control_incidents.simulatePoliticalDay.004",loc.name,majorFaction(challenger).short,reopened.length?` ${reopened.length} protected case${reopened.length===1?' is':'s are'} reopened.`:''),'bad');recordWorldNews(SOSText("politics_control_incidents.simulatePoliticalDay.005",loc.name,majorFaction(challenger).short,reopened.length?` The new administration immediately reopens politically sensitive cases.`:''),'bad')}ps.pending=null;ps.lastShiftDay=state.world.day}
-   }
+   const now=()=>typeof performance!=='undefined'&&performance.now?performance.now():Date.now();let evalMs=0,sustainMs=0,pressureProfile=null;
+   if(typeof beginPoliticalPressureReadCache==='function')beginPoliticalPressureReadCache();
+   try{for(const loc of locs){const ps=politicalSettlement(loc.id),te=now();evaluatePoliticalShift(loc.id);evalMs+=now()-te;const q=ps.pending;if(!q)continue;const ts=now(),check=politicalHandoverQualification(loc.id,q);
+    if(!check.qualified){cancelStalePoliticalHandover(loc.id,q,check.reason);sustainMs+=now()-ts;continue}
+    if(q.guardianLastStand){sustainMs+=now()-ts;continue}
+    if(q.lastQualifiedDay!==state.world.day){q.sustainDays=(q.sustainDays||1)+1;q.lastQualifiedDay=state.world.day}
+    if((q.sustainDays||1)>=(q.requiredDays||4)){if(guardianPoliticalLastStandEligible(loc.id,q.current))queueGuardianPoliticalLastStand(loc.id,q);else completeAutomaticPoliticalTransfer(loc.id,q)}
+    sustainMs+=now()-ts;
+   }}finally{if(typeof endPoliticalPressureReadCache==='function')pressureProfile=endPoliticalPressureReadCache()}
+   if(typeof sosPerfRecordDuration==='function'){sosPerfRecordDuration('Control Shifts — Candidate Evaluation',evalMs);sosPerfRecordDuration('Control Shifts — Sustained Lead',sustainMs);if(pressureProfile){sosPerfRecordDuration('Control Shifts — Pressure Evidence',pressureProfile.evidence);sosPerfRecordDuration('Control Shifts — Pressure Shared Reads',pressureProfile.shared)}}
   });
  }finally{if(typeof endFactionPresenceReadCache==='function')endFactionPresenceReadCache()}
 }

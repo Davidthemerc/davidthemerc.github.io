@@ -422,15 +422,17 @@ function beginInterRegionJourney(connection,from,dest,remaining){
 }
 function recoverStaleDirectTravelPlan(){
  ensureWorldState();const plan=state.world.travelPlan;if(!plan||plan.mode==='regional')return false;
+ // The world-state initializer keeps an empty direct-plan sentinel. It is not stale travel and needs no repair.
+ if(!plan.from&&!plan.to&&!plan.startedDay)return false;
  const invalid=!plan.from||!plan.to||!worldLocation(plan.from)||!worldLocation(plan.to),atDestination=state.world.location===plan.to;
- if(invalid||atDestination){console.warn('[Road Travel] clearing stale direct travel plan',plan);state.world.travelPlan=null;save();return false}
+ if(invalid||atDestination){state.world.travelPlan=null;save();return false}
  // A committed settlement departure that survived an interrupted render/day tick must remain a journey,
  // not strand the Player Party just outside its origin settlement.
  if(state.world.location===plan.from&&playerPartyInField()&&Number.isFinite(Number(plan.remainingDays))&&Number(plan.remainingDays)>=0){
    console.warn('[Road Travel] resuming interrupted direct journey',plan);beginWorldJourney(plan.from,plan.to,Number(plan.remainingDays));return true
  }
  const notTraveling=!playerPartyInField()&&!state.world.pursuit?.active;
- if(notTraveling){console.warn('[Road Travel] clearing stale direct travel plan',plan);state.world.travelPlan=null;save()}
+ if(notTraveling){state.world.travelPlan=null;save()}
  return false
 }
 function attemptPlayerPartySettlementReentry(dest=state.world.location){

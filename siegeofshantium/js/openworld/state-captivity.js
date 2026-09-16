@@ -229,7 +229,7 @@ function scoutingLevel(){return clamp(Math.round(Number(state.scouting)||0),0,7)
 function gainScouting(amount=1){state.scouting=clamp(scoutingLevel()+Math.max(0,Math.round(Number(amount)||0)),0,7);return state.scouting}
 function decayScoutingDaily(){const n=scoutingLevel();if(n<=0)return 0;state.scouting=Math.max(0,n-(n>=6?2:1));return state.scouting}
 function reduceScoutingForRegionChange(){const before=scoutingLevel();state.scouting=before<=1?0:Math.floor(before*.25);return {before,after:state.scouting}}
-function scoutingTravelDays(base){base=Math.max(0,Math.round(base||0));const s=scoutingLevel();if(base<=1||s<3)return base;const reduction=s>=7&&base>=5?2:s>=4?1:0;return Math.max(1,base-reduction)}
+function scoutingTravelDays(base){base=Math.max(0,Math.round(base||0));const s=scoutingLevel();let days=base;if(base>1&&s>=3){const reduction=s>=7&&base>=5?2:s>=4?1:0;days=Math.max(1,base-reduction)}if(typeof mountAdjustedTravelDays==='function')days=mountAdjustedTravelDays(days);return days}
 function worldTravelDays(from,to){
  if(from===to)return 0;const ra=locationRegion(from),rb=locationRegion(to);
  if(ra!==rb){const c=REGION_CONNECTIONS.find(x=>(x.a===from&&x.b===to)||(x.b===from&&x.a===to));return c?c.days:99}
@@ -257,7 +257,7 @@ function advanceWorldDays(days,reason=SOSText("openworld_state_captivity.advance
  ensureWorldState();
  const perf=(name,fn)=>typeof sosPerfRun==='function'?sosPerfRun(name,fn):fn();
  for(let d=0;d<days;d++){
-   state.world.day++;
+   state.world.day++;if(typeof mountDailyRecovery==='function')mountDailyRecovery();if(typeof hallStableDailyTick==='function')hallStableDailyTick();if(typeof caravanMasterDailyTick==='function')caravanMasterDailyTick();if(typeof mountBreedingDailyTick==='function')mountBreedingDailyTick();
    perf('Day Tick — Core & Companions',()=>{
      decayScoutingDaily();
      worldIntegrationStartDayTick();
@@ -273,7 +273,7 @@ function advanceWorldDays(days,reason=SOSText("openworld_state_captivity.advance
    });
    perf('Day Tick — Social & Regional Life',()=>{
      perf('Social — Town Life & Population',()=>{townLifeDailyTick();populationMovementDailyTick()});
-     perf('Social — Relationships & NPC Life',()=>{relationshipContractDailyTick();socialLifeDailyTick();socialChainDailyTick();companionNpcSocialDailyTick()});
+     perf('Social — Relationships & NPC Life',()=>{perf('Relationships & NPC Life — Relationship Contracts',()=>relationshipContractDailyTick());perf('Relationships & NPC Life — Social Life',()=>socialLifeDailyTick());perf('Relationships & NPC Life — Social Chains',()=>socialChainDailyTick());perf('Relationships & NPC Life — Companion Social',()=>companionNpcSocialDailyTick())});
      perf('Social — Regional Civic & Economy',()=>{redstoneCivicDailyTick();redstoneAuthorityDailyTick();sengiaEconomyDailyTick();sengiaSecurityDailyTick();sengiaRegionalConsequenceDailyTick();if(typeof spawnEconomyDailyTick==='function')spawnEconomyDailyTick()});
      perf('Social — Consolidation & Supply',()=>{perf('Social — World Consolidation',()=>consolidateWorldSystems());perf('Social — Regional Network',()=>simulateRegionalNetworkDay());perf('Social — Cross-Region Supply',()=>crossRegionSupplyPressure())});
    });

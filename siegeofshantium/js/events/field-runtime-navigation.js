@@ -478,7 +478,7 @@ function navigationRouteFunction(name){
   case 'showOpenWorldSettlementTownLife':return showOpenWorldSettlementTownLife;
   case 'showOpenWorldTravelMenu':return showOpenWorldTravelMenu;
   case 'showOpenWorldWorldLifeMenu':return showOpenWorldWorldLifeMenu;
-  case 'showWorldPolitics':return showWorldPolitics;
+  case 'showWorldPolitics':return showWorldPolitics; case 'showWarOverview':return typeof showWarOverview==='function'?showWarOverview:null; case 'showWarSupportCoordination':return typeof showWarSupportCoordination==='function'?showWarSupportCoordination:null; case 'showGuardianMilitaryAuthorization':return typeof showGuardianMilitaryAuthorization==='function'?showGuardianMilitaryAuthorization:null;
   case 'showOutfitter':return showOutfitter;
   case 'showPairRelationship':return showPairRelationship;
   case 'showParty':return showParty;

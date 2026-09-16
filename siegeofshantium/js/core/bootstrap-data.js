@@ -1,4 +1,4 @@
-const RELEASE_VERSION='1.6.66.8.4';
+const RELEASE_VERSION='1.6.66.10.3';
 const SAVE_SCHEMA_VERSION='1.6.41';
 const VERSION=SAVE_SCHEMA_VERSION;
 const SAVE_KEY='siegeOfShantium.save.v1'; // legacy/current mirror
@@ -21,6 +21,9 @@ const chance=p=>Math.random()<p;
 const uid=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
 const esc=s=>String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const fmt=n=>Math.round(n).toLocaleString();
+const fmtStat=(n,d=1)=>{n=Number(n);if(!Number.isFinite(n))return '0';const p=10**d,v=Math.round((n+Number.EPSILON)*p)/p;return v.toLocaleString(undefined,{maximumFractionDigits:d})};
+const fmtPct=(n,d=1)=>fmtStat(n,d);
+const fmtGold=(n,d=1)=>fmtStat(n,d);
 
 const DIFFICULTIES={
  Story:{enemy:.90,economy:1.18,town:1.2,advance:.82,label:SOSText("core_bootstrap_data.top.008"),aiNoise:18,moraleLoss:1.18,yield:1.32,injury:.55,retreat:.10,enemyCrit:.68,enemyHealing:.30,staminaRecovery:1.18,innRecovery:1.00,reinforcement:.72},
