@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.58 — build fragment: 40_event_reconciliation.js
+/* UCL GameDay v0.5.60 — build fragment: 40_event_reconciliation.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function gvTdCandidateKey(e){
@@ -886,19 +886,31 @@ function gvReconciliationState(rid,pid){
 function gvBuildStatFirstEvent(rid,pid,nextSnap,pointBefore,pointAfter,statDelta,expectedDelta){
   const p=playerInfo(pid),colors=nflTeamColors(p.team),scores=gvSessionScoreLine(nextSnap);
   const analysis=gvIntervalPlayAnalysis(pid,p.pos,statDelta,expectedDelta);
-  const total=Math.abs(Number(pointAfter-pointBefore))>=.01?Number(pointAfter):Number((pointBefore+expectedDelta).toFixed(2));
+  // A positive QB-hit counter can arrive in the same Sleeper interval as a separate
+  // negative defensive stat revision. Do not attach that unrelated negative aggregate
+  // to a play explicitly identified as a new quarterback hit.
+  let eventDelta=Number(expectedDelta||0);
+  const qbHits=Number(statDelta?.qb_hit||0),qbHitRate=uclScoringWeight('qb_hit',0);
+  if(analysis?.family==='def_qb_hit'&&qbHits>0&&qbHitRate>0&&eventDelta<0){
+    eventDelta=Number((qbHits*qbHitRate).toFixed(2));
+    analysis.pointDelta=eventDelta;
+    analysis.qbHitSignCorrected=true;
+  }
+  const observedPointDelta=Number(pointAfter-pointBefore);
+  const total=Math.abs(observedPointDelta)>=.01&&!(analysis?.qbHitSignCorrected)
+    ?Number(pointAfter):Number((pointBefore+eventDelta).toFixed(2));
   const base={
     id:`stat-${nextSnap.capturedAt}-${rid}-${pid}`,
     time:nextSnap.capturedAt,rosterId:rid,playerId:String(pid),name:p.name,pos:p.pos,nflTeam:p.team,
     opponentNflTeam:gameViewOpponentByPlayer?.[String(pid)]||gvOpponentFromWeeklyMap(p.team)||'',
     opponentSource:gameViewOpponentByPlayer?.[String(pid)]?'stats':(gvOpponentFromWeeklyMap(p.team)?'schedule':''),
-    teamPrimary:colors[0],teamSecondary:colors[1],delta:Number(expectedDelta.toFixed(2)),total,
+    teamPrimary:colors[0],teamSecondary:colors[1],delta:Number(eventDelta.toFixed(2)),total,
     authoritativeTotal:Number(pointAfter),leftScore:scores.leftScore,rightScore:scores.rightScore,
     detail:analysis.detail,intervalAnalysis:analysis,statFirst:true,likelyCorrection:false,played:false
   };
   const evidence=gvCorrectionEvidence(base);
-  base.likelyCorrection=evidence.correction||expectedDelta<0;
-  base.negativeScoringEvent=evidence.negativePlay||expectedDelta<0;
+  base.likelyCorrection=evidence.correction||eventDelta<0;
+  base.negativeScoringEvent=evidence.negativePlay||eventDelta<0;
   base.correctionReason=evidence.reason||'';
   if(!base.likelyCorrection&&gvSuppressMinorDefensiveEvent(base))return null;
   if(analysis.confidence==='single'){
@@ -1095,7 +1107,7 @@ function gvDeltaEvents(prevSnap,nextSnap,options={}){
         continue;
       }
 
-      // Live v0.5.58 path: stats construct the play immediately. players_points is
+      // Live v0.5.60 path: stats construct the play immediately. players_points is
       // supporting score data only and never creates a second/ghost GameView play.
       if(Math.abs(expectedDelta)<.01&&!gvIsDiscreteMajorStatPackage(statDelta,p.pos))continue;
 

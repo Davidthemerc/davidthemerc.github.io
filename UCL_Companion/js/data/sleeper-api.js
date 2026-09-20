@@ -524,7 +524,7 @@ let discoveredSleeperPlayers=readDiscoveredPlayersBounded();
 let apiCacheDbPromise=null,apiCacheAvailable=null;
 const apiCacheSourceByPath=new Map();
 
-const APP_VERSION='1.10.29';
+const APP_VERSION='1.11.0';
 const RELEASE_CHANNEL='Stable';
 const LIVE_SEASON_BUILD=true;
 const SLEEPER_POLL_MS=30000;

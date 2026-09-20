@@ -36,6 +36,7 @@ function fawWeakestByPosition(week=fawDisplayWeek()){
   if(!roster)return out;
   for(const id of roster.players||[]){
     const p=fawKnownPlayer(id);if(!p)continue;
+    if(playerWeekLockState(p,week).locked)continue;
     const pts=currentWeekProjectionForPlayer(id,week);if(pts==null)continue;
     const row={id:String(id),player:p,pts:Number(pts)};
     if(!out[p.pos]||row.pts<out[p.pos].pts)out[p.pos]=row;
@@ -50,6 +51,10 @@ function fawAvailablePlayers(week=fawDisplayWeek(),positions=FAW_POSITIONS){
   for(const [id,proj] of map.entries()){
     if(owned.has(String(id)))continue;
     const p=fawKnownPlayer(id);if(!p||!wanted.has(p.pos))continue;
+    // Player Acquisition is actionable advice. Once the player's NFL game for
+    // the selected week has started (live or final), that player can no longer
+    // be acquired for that week's lineup and must not appear in the rankings.
+    if(playerWeekLockState(p,week).locked)continue;
     const pts=Number(proj?.pts);
     if(!Number.isFinite(pts))continue;
     const bucket=buckets.get(p.pos);if(!bucket)continue;

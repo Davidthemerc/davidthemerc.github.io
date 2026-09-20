@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.58 — build fragment: 60_gameview_event_model.js
+/* UCL GameDay v0.5.60 — build fragment: 60_gameview_event_model.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function gvScheduleWeekOfGame(g){
@@ -565,11 +565,18 @@ function gvFeedDetail(e){
 
 function gvFeedEntriesForRender(){
   const canonical=(gameViewSession?.feed||[]).slice();
+  const selectedRosters=new Set(gvSelectedRosterIds().map(String));
+  const archived=gvPersistentArchiveEntries().filter(e=>{
+    const rid=String(e?.rosterId||'');
+    if(gvIsAllTeamsMode())return true;
+    if(rid&&selectedRosters.has(rid))return true;
+    return Array.isArray(e?.fantasyImpacts)&&e.fantasyImpacts.some(x=>selectedRosters.has(String(x?.rosterId||'')));
+  });
   const seen=new Set(canonical.map(e=>String(e?.id||'')));
+  for(const e of archived)if(e?.id&&!seen.has(String(e.id))){canonical.push(e);seen.add(String(e.id));}
   // Simulation events are intentionally session-volatile and therefore do not pass
   // through gvFeedAdd(). Include only those here; live events are never merged from
   // gameViewEvents because gvProcessLiveSnapshot() is the canonical live feed source.
-  const selectedRosters=new Set(gvSelectedRosterIds().map(String));
   const volatileSimulation=gameViewEvents.filter(e=>{
     if(gvNormalizeSourceValue(e?.source,e)!=='simulation'||seen.has(String(e?.id||'')))return false;
     const rid=String(e?.rosterId||'');
@@ -583,7 +590,7 @@ function gvFeedEntriesForRender(){
 }
 function gvFindReplayEvent(id){
   if(!id)return null;
-  return gvReplayArchivedEvent(id)||gameViewSession?.feed?.find(e=>e.id===id)||gameViewEvents.find(e=>e.id===id)||testingGameViewFeed.find(e=>e.id===id)||null;
+  return gvReplayArchivedEvent(id)||gvPersistentArchivedEvent(id)||gameViewSession?.feed?.find(e=>e.id===id)||gameViewEvents.find(e=>e.id===id)||testingGameViewFeed.find(e=>e.id===id)||null;
 }
 function gvYouTubeHighlightSearch(e){
   if(!e)return null;

@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.58 — build fragment: 00_bootstrap_session.js
+/* UCL GameDay v0.5.60 — build fragment: 00_bootstrap_session.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 
@@ -25,7 +25,7 @@ window.addEventListener('unhandledrejection',e=>{
 });
 
 'use strict';
-const VERSION='0.5.58',LEAGUE_ID='1386066375474180096',API='https://api.sleeper.app/v1',POLL_MS=15000;
+const VERSION='0.5.60',LEAGUE_ID='1386066375474180096',API='https://api.sleeper.app/v1',POLL_MS=15000;
 const THEMES={
  'UCL Blue':['#102a56','#2f65ad','#173d73','#eef3f9'],Forest:['#183d2b','#2e7653','#24563f','#eef5f0'],Purple:['#35265f','#7558b5','#513b86','#f2eff8'],Crimson:['#5b1f2b','#a53c50','#7d2939','#f8eff1'],Orange:['#5a3416','#c26b27','#84491e','#faf2eb'],Slate:['#273342','#5a6b7e','#3f4d5e','#f0f3f6'],Gold:['#4e3d13','#af861d','#735b19','#f8f4e8'],'Ice Blue':['#16465a','#2b95b8','#21738f','#edf7fa']
 };
@@ -143,7 +143,7 @@ const gvStatFirstReconciliation=new Map();
 const GV_FPTS_CONFIRM_WINDOW_MS=45000;
 const gvPendingStatCandidates=new Map();
 
-// v0.5.58: immediate stat-first play capture with a small-correction rejection layer.
+// v0.5.60: immediate stat-first play capture with a small-correction rejection layer.
 const GV_STAT_REJECTION_WINDOW_MS=15000;
 const GV_SMALL_YARDAGE_CORRECTION_MAX=4;
 const gvRecentAcceptedStatPlays=new Map();
@@ -574,6 +574,57 @@ function gvRestorePlaybackQueue(){
   }
   gameViewQueue=gameViewQueue.map(e=>gvNormalizeEventSource(e)).sort((a,b)=>(a.time||0)-(b.time||0));
 }
+const GAMEVIEW_PLAY_ARCHIVE_PREFIX='ucl-gameday-play-archive-v1';
+const GAMEVIEW_PLAY_ARCHIVE_MAX_PER_WEEK=300;
+function gvPlayArchiveWeekKey(){
+  const season=String(nflState?.season||new Date().getFullYear());
+  const type=String(nflState?.season_type||'regular');
+  const week=Number(nflState?.week||1);
+  return `${season}:${type}:week-${week}`;
+}
+function gvPlayArchiveStorageKey(weekKey=gvPlayArchiveWeekKey()){
+  return `${GAMEVIEW_PLAY_ARCHIVE_PREFIX}:${String(weekKey)}`;
+}
+function gvLoadPersistentPlayArchive(weekKey=gvPlayArchiveWeekKey()){
+  try{
+    const raw=storage.get(gvPlayArchiveStorageKey(weekKey),'');
+    if(!raw)return {};
+    const parsed=JSON.parse(raw);
+    return parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed:{};
+  }catch(e){return {}}
+}
+function gvPersistentArchiveEligible(evt){
+  if(!evt?.id||!['play','burst'].includes(String(evt.type||'')))return false;
+  const src=gvNormalizeSourceValue(evt?.source,evt||{});
+  return src!=='testing'&&src!=='simulation';
+}
+function gvPersistentArchiveDedupeKey(evt){
+  return String(evt?.semanticKey||evt?.dedupeKey||evt?.id||'');
+}
+function gvSavePersistentPlay(evt){
+  if(!gvPersistentArchiveEligible(evt))return null;
+  const snap=gvReplaySnapshot(evt);if(!snap)return null;
+  const weekKey=gvPlayArchiveWeekKey(),archive=gvLoadPersistentPlayArchive(weekKey);
+  const dedupe=gvPersistentArchiveDedupeKey(snap);
+  const duplicateId=Object.keys(archive).find(id=>id===String(snap.id)||(dedupe&&gvPersistentArchiveDedupeKey(archive[id])===dedupe));
+  if(duplicateId&&duplicateId!==String(snap.id))delete archive[duplicateId];
+  snap.archiveWeekKey=weekKey;snap.archiveCapturedAt=Date.now();
+  archive[String(snap.id)]=snap;
+  const ids=Object.keys(archive);
+  if(ids.length>GAMEVIEW_PLAY_ARCHIVE_MAX_PER_WEEK){
+    ids.sort((a,b)=>Number(archive[a]?.archiveCapturedAt||archive[a]?.replayCapturedAt||archive[a]?.time||0)-Number(archive[b]?.archiveCapturedAt||archive[b]?.replayCapturedAt||archive[b]?.time||0));
+    for(const id of ids.slice(0,ids.length-GAMEVIEW_PLAY_ARCHIVE_MAX_PER_WEEK))delete archive[id];
+  }
+  storage.set(gvPlayArchiveStorageKey(weekKey),JSON.stringify(archive));
+  return snap;
+}
+function gvPersistentArchivedEvent(id){
+  if(!id)return null;
+  const e=gvLoadPersistentPlayArchive()[String(id)];
+  return e?gvReplaySnapshot(e):null;
+}
+function gvPersistentArchiveEntries(){return Object.values(gvLoadPersistentPlayArchive())}
+
 function gvReplaySnapshot(evt){
   if(!evt||!evt.id)return null;
   try{
@@ -609,7 +660,7 @@ function gvReplayArchivedEvent(id){
   const e=gameViewSession?.replayArchive?.[String(id)];
   return e?gvReplaySnapshot(e):null;
 }
-function gvReplayAvailable(id){return !!gvReplayArchivedEvent(id)}
+function gvReplayAvailable(id){return !!(gvReplayArchivedEvent(id)||gvPersistentArchivedEvent(id))}
 
 function gvMarkPlayed(evt){
   const s=gameViewSession;if(!s||!evt?.id)return false;
@@ -631,11 +682,12 @@ function testingMarkGameViewPlayed(evt){
 function gvMarkEventPlayed(evt){
   const src=gvNormalizeSourceValue(evt?.source,evt||{});
   if(src==='testing')return testingMarkGameViewPlayed(evt);
-  gvArchiveReplayEvent(evt);
   if(src==='simulation'){
     const f=gameViewEvents.find(x=>x.id===evt?.id);if(f)f.played=true;
     return true;
   }
+  gvArchiveReplayEvent(evt);
+  gvSavePersistentPlay(evt);
   return gvMarkPlayed(evt);
 }
 const gvActiveMotionFrames=new Set();

@@ -153,6 +153,23 @@ async function _syncSeasonDataImpl(showStatus=false){
         else failures.push(r.label);
       }
     }
+
+    // A completed week may already be present in the runtime/API cache from
+    // while that week was still live. Refresh the most recently finalized week
+    // from Sleeper instead of treating "present" as "final". This also picks up
+    // official stat corrections and prevents News/median/history from freezing
+    // an old in-progress score indefinitely.
+    if(finalizedThrough>=1){
+      const finalizedWeek=finalizedThrough;
+      const finalizedRes=await sleeperGetSafe(`/league/${SLEEPER_LEAGUE_ID}/matchups/${finalizedWeek}`,{
+        ttlMs:0,force:true,fallback:seasonMatchupsByWeek[finalizedWeek]||[],label:`Week ${finalizedWeek} finalized matchups`
+      });
+      if(finalizedRes.ok){
+        seasonMatchupsByWeek[finalizedWeek]=dedupeMatchupList(finalizedRes.value);
+      }else{
+        failures.push(finalizedRes.label);
+      }
+    }
     seasonMatchupsByWeek[week]=dedupeMatchupList(currentMatchups);
 
 
