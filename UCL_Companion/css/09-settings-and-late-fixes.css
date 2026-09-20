@@ -2217,7 +2217,7 @@ body.live-season-build.post-draft-mode #teamView .strategy-history-box{display:n
 .matchup-pos-player.right .live-stat-line{text-align:right;}
 
 
-/* v1.10.28 — limited public Achievement standings */
+/* v1.10.29 — limited public Achievement standings */
 .public-achievements-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
 .public-achievements-head-actions>span{color:var(--muted);font-weight:700;text-align:right}
 .public-achievement-standings{display:grid;gap:7px;margin-top:8px}

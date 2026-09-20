@@ -824,7 +824,9 @@ function teamWeeklyResults(rosterId){
     if(!mine||mine.matchup_id==null)continue;
     const opp=(list||[]).find(m=>String(m.matchup_id)===String(mine.matchup_id)&&String(m.roster_id)!==String(rosterId));
     if(!opp)continue;
-    const myPts=Number(mine.points||0),oppPts=Number(opp.points||0);
+    const myScore=sleeperAuthoritativeMatchupScore(mine),oppScore=sleeperAuthoritativeMatchupScore(opp);
+    if(myScore.value==null||oppScore.value==null)continue;
+    const myPts=myScore.value,oppPts=oppScore.value;
     const result=myPts>oppPts?'win':myPts<oppPts?'loss':'tie';
     const oppRoster=leagueRosters.find(r=>String(r.roster_id)===String(opp.roster_id));
     rows.push({week,result,myPts,oppPts,oppName:rosterUserName(oppRoster)});

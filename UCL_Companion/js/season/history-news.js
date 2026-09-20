@@ -69,13 +69,21 @@ async function rivalryChampionshipForLeague(league){
 
 function sleeperAuthoritativeMatchupScore(matchup){
   if(!matchup)return {value:null,source:'missing'};
+  // Sleeper matchup `points` is the authoritative finalized fantasy score.
+  // `custom_points` can be stale/alternate data and must never override it.
+  const rawValue=matchup.points;
+  if(rawValue!==null&&rawValue!==undefined&&rawValue!==''){
+    const raw=Number(rawValue);
+    if(Number.isFinite(raw))return {value:raw,source:'points'};
+  }
+  // Retain custom_points only as a defensive fallback for legacy rows where
+  // Sleeper supplies no normal points value at all.
   const custom=matchup.custom_points;
   if(custom!==null&&custom!==undefined&&custom!==''){
     const n=Number(custom);
-    if(Number.isFinite(n))return {value:n,source:'custom'};
+    if(Number.isFinite(n))return {value:n,source:'custom-fallback'};
   }
-  const raw=Number(matchup.points);
-  return Number.isFinite(raw)?{value:raw,source:'points'}:{value:null,source:'missing'};
+  return {value:null,source:'missing'};
 }
 function sleeperMatchupPoints(matchup,fallback=0){
   const score=sleeperAuthoritativeMatchupScore(matchup);

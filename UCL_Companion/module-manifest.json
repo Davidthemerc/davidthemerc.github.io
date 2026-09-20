@@ -1,6 +1,6 @@
 {
   "app": "UCL Companion 2026",
-  "version": "1.10.28",
+  "version": "1.10.29",
   "channel": "Stable",
   "sourceOfTruth": "modular",
   "remotePlayerDatabaseFetch": false,
@@ -47,7 +47,7 @@
     "standalone": "build/build_standalone.py"
   },
   "notes": [
-    "v1.10.28 adds the limited public Achievements experience under Season: sanitized public AP/CP standings, selectable team unlock details, no locked/catalog exposure, and resilient Supabase cache/retry behavior.",
+    "v1.10.29 adds the limited public Achievements experience under Season: sanitized public AP/CP standings, selectable team unlock details, no locked/catalog exposure, and resilient Supabase cache/retry behavior.",
     "v1.10.24 replaces static in-game team projections with a live revised-final estimate: pregame players keep their weekly baseline, completed players contribute actual final points, and active players contribute actual points plus only the unplayed share of their pregame projection. Player-level live score parentheses use the same model.",
     "v1.10.8 fixes startup draft-utility visibility initialization by using the active LIVE_SEASON_BUILD flag instead of the removed FORCE_POST_DRAFT flag.",
     "v1.10.5 simplifies live score-plus-projection displays to compact `actual (projection)` formatting with no `proj` label.",
