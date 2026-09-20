@@ -124,4 +124,10 @@ function mountCompanyPaceProfile(){
  return {riding,pack,effective,coverage,normalMultiplier,limiting:pack!=null&&pack<riding?'pack':'riding'}
 }
 function mountOrdinaryTravelMultiplier(){return mountCompanyPaceProfile().normalMultiplier}
+function mountPartyFullyMounted(){
+ const people=mountPartyRiderChoices(),riders=mountRiding();if(!people.length||riders.length<people.length)return false;
+ const assigned=new Set();
+ for(const m of riders){mountConditionEnsure(m);if(!m.riderId||m.recoverUntilDay>state.world.day||m.condition==='exhausted')continue;assigned.add(m.riderId)}
+ return people.every(p=>assigned.has(p.id))
+}
 function mountAdjustedTravelDays(base){base=Math.max(0,Math.round(Number(base)||0));if(base<=1)return base;const mult=mountOrdinaryTravelMultiplier();return Math.max(1,Math.ceil(base/Math.max(.5,mult)))}

@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.51 — build fragment: 60_gameview_event_model.js
+/* UCL GameDay v0.5.58 — build fragment: 60_gameview_event_model.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function gvScheduleWeekOfGame(g){
@@ -124,7 +124,9 @@ function ctespnScheduleStateFromStatus(g){
 }
 function ctespnTeamGameState(team,now=gameNow()){
   team=gvScheduleTeamCode(team);if(!team||simulation.active)return null;
-  const g=(gameViewWeeklyScheduleGames||[]).find(x=>{const t=gvScheduleTeamsOfGame(x);return t.home===team||t.away===team});
+  const week=Number(n(nflState?.week)||1);
+  const teamGames=(gameViewWeeklyScheduleGames||[]).filter(x=>{const teams=gvScheduleTeamsOfGame(x);return teams.home===team||teams.away===team});
+  const g=teamGames.find(x=>gvScheduleWeekOfGame(x)===week)||null;
   if(!g)return null;
   const status=ctespnScheduleStateFromStatus(g),start=ctespnScheduleStartMs(g),nowMs=Number(now);
   let clockProgress=null;
@@ -438,6 +440,12 @@ function gvOpportunityUi(o){
   return {pct:`${pct}%`,main,sub,meter:pct};
 }
 function renderGameViewOpportunityBar(){
+  const bar=$('#gvEndgameBar');
+  if(gvIsAllTeamsMode()){
+    if(bar)bar.hidden=true;
+    return;
+  }
+  if(bar)bar.hidden=false;
   const pair=gameViewPair();if(!pair)return;const p=orientedPair(pair),left=p.rows[0],right=p.rows[1];
   const lu=gvOpportunityUi(ctespnRosterOpportunity(left,gameNow())),ru=gvOpportunityUi(ctespnRosterOpportunity(right,gameNow()));
   for(const [side,u] of [['Left',lu],['Right',ru]]){
@@ -446,6 +454,7 @@ function renderGameViewOpportunityBar(){
   }
 }
 function gvEventScoreContext(evt){
+  if(gvIsAllTeamsMode())return '';
   const pair=gameViewPair();if(!pair)return '';const p=orientedPair(pair),left=p.rows[0],right=p.rows[1];
   const afterL=Number(evt?.leftScore),afterR=Number(evt?.rightScore);if(!Number.isFinite(afterL)||!Number.isFinite(afterR))return '';
   const leftId=String(left.roster_id),rightId=String(right.roster_id);let dl=0,dr=0;
@@ -463,6 +472,16 @@ function gvEventScoreContext(evt){
   return '';
 }
 function renderGameViewScorebar(){
+  if(gvIsAllTeamsMode()){
+    $('#gvLeftName').textContent='ALL TEAMS';
+    $('#gvRightName').textContent='LEAGUE-WIDE GAMEVIEW';
+    $('#gvLeftScore').textContent='';
+    $('#gvRightScore').textContent='';
+    $('#gvHomeEndLabel').textContent='UCL';
+    $('#gvAwayEndLabel').textContent='ALL TEAMS';
+    renderGameViewOpportunityBar();
+    return;
+  }
   const pair=gameViewPair();if(!pair)return;
   const p=orientedPair(pair),left=p.rows[0],right=p.rows[1],lr=rosterFor(left.roster_id),rr=rosterFor(right.roster_id);
   $('#gvLeftName').textContent=teamName(lr);$('#gvRightName').textContent=teamName(rr);
@@ -639,6 +658,8 @@ function renderGameViewFeed(){
       continue;
     }
     const source=gvFeedSource(e),qualifier=gvFeedQualifier(e);
+    const fantasyRosterId=String(e?.rosterId||e?.fantasyImpacts?.find?.(x=>x?.rosterId)?.rosterId||'');
+    const fantasyTeamLabel=fantasyRosterId?teamName(rosterFor(fantasyRosterId)):'';
     const who=e.turnoverKind&&e.offensivePlayerName&&e.defensivePlayerName
       ?`${esc(e.offensivePlayerName)} → ${esc(e.defensivePlayerName)} <span>${esc(e.turnoverKind)} • ${esc(e.nflTeam||'')}</span>`
       :e.multiActor&&(e.passerName||e.qbName)&&e.receiverName
@@ -648,7 +669,7 @@ function renderGameViewFeed(){
       ?` • ${Number(e.leftScore||0).toFixed(2)}–${Number(e.rightScore||0).toFixed(2)}`:'';
     rows.push(`<div class="gv-feed-item">
       <div class="gv-feed-meta"><span class="gv-source-badge ${gvFeedSourceClass(e)}">${source}</span>${qualifier?`<span class="gv-event-kind ${gvIsLikelyStatCorrection(e)?'stat-correction':e?.trickPlay?`trick-${esc(e.trickConfidenceLevel||'possible')}`:''}">${esc(qualifier)}</span>`:''}<time>${new Date(e.time||Date.now()).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</time></div>
-      <b>${who}</b>
+      <b>${who}${fantasyTeamLabel?` <span class="gv-ucl-team">• ${esc(fantasyTeamLabel)}</span>`:''}</b>
       <small>${gvFeedDetailHtml(e,score)}</small>
       ${gvEventHasMultipleFantasyImpacts(e)?`<div class="gv-feed-impact-breakdown">${gvEventImpactBreakdownHtml(e)}</div>`:''}
       ${gvReplayAvailable(e.id)?`<button class="gv-replay" data-gv-replay="${esc(e.id)}">Replay</button>`:''}
@@ -683,6 +704,12 @@ function clearGameViewEffects(blank=true){
   if(banner){banner.getAnimations().forEach(a=>a.cancel());banner.hidden=true;banner.textContent='';banner.classList.remove('touchdown','sack','big-play')}
   if(conf)conf.innerHTML='';
   gvClearActors();
+  if(gvIsAllTeamsMode()){
+    const left=$('#gvHomeEndLabel'),right=$('#gvAwayEndLabel');
+    if(left)left.textContent='UCL';
+    if(right)right.textContent='ALL TEAMS';
+    for(const el of document.querySelectorAll('.gv-endzone')){el.style.background='';el.style.color='';}
+  }
   if(blank&&$('#gvStatus'))$('#gvStatus').textContent='Waiting for scoring';
 }
 function makeConfetti(count=30){

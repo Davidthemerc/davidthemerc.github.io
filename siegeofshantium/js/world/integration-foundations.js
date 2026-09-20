@@ -289,8 +289,12 @@ function createWorldIntel(type,opts={}){
  return i
 }
 function gainScoutingIntel(amount=1,opts={}){
- amount=Math.max(0,Math.round(Number(amount)||0));gainScouting(amount);
- return createWorldIntel(opts.type||'scouting',{...opts,reliability:opts.reliability??clamp(62+amount*9,1,100),summary:opts.summary||SOSText("world_integration_foundations.gainScoutingIntel.001"),source:opts.source||SOSText("world_integration_foundations.gainScoutingIntel.002")})
+ amount=Math.max(0,Math.round(Number(amount)||0));const location=opts.location||state.world.location,region=opts.region||locationRegion(location),here=currentWorldRegion();
+ const intel=createWorldIntel(opts.type||'scouting',{...opts,location,region,reliability:opts.reliability??clamp(62+amount*9,1,100),summary:opts.summary||SOSText("world_integration_foundations.gainScoutingIntel.001"),source:opts.source||SOSText("world_integration_foundations.gainScoutingIntel.002"),meta:{...(opts.meta||{}),scoutingValue:amount,receivedRegion:here}});
+ // Local intelligence is immediately usable. Remote intelligence waits under its own region
+ // and is applied when the Guardian reaches that region, preserving its first week of usefulness.
+ if(region===here){const r=regionalScoutingRecord(region),received=intel.updatedDay||intel.createdDay||state.world.day;if((r.appliedIntel[intel.id]||0)<received){r.appliedIntel[intel.id]=received;gainRegionalScouting(region,amount,true)}}
+ return intel
 }
 function activeWorldIntel(filter={}){
  return Object.values(worldIntegrationState().intel).filter(i=>i.status==='active'&&worldIntelReliability(i)>0&&(!filter.region||i.region===filter.region)&&(!filter.location||i.location===filter.location)&&(!filter.type||i.type===filter.type)).sort((a,b)=>worldIntelReliability(b)-worldIntelReliability(a)||(b.updatedDay||b.createdDay)-(a.updatedDay||a.createdDay))

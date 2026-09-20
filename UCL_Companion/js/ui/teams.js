@@ -436,7 +436,7 @@ function currentWeekProjectionForPlayer(playerId,week=currentWeekNumber()){
   return projectionMapForWeek(week)?.get(String(playerId))?.pts??null;
 }
 
-// v1.10.22: optional Sleeper weekly box-score stats used only for compact live stat lines.
+// v1.10.24: optional Sleeper weekly box-score stats used only for compact live stat lines.
 // Matchup fantasy points remain authoritative; this feed is additive and fails soft.
 const weeklyStatMaps=new Map(),weeklyStatSyncPromises=new Map();
 function normalizeWeeklyStatsPayload(payload){

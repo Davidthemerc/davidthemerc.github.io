@@ -79,9 +79,24 @@ function warLogisticsForceWithdrawal(F){
  const L=warEnsureLogisticsFormation(F);if(L.shortageDays<3||F.retreating||['engaged','recovering','destroyed','disbanded','mobilizing'].includes(F.status))return false;const source=warLogisticsSupplySource(F);if(!source)return false;const target=source.loc;if(target===F.location)return false;
  const oldCampaignId=F.campaignId;F.campaignId=null;F.destination=target;const step=warRegionRouteStep(F.location,target);if(!step){F.campaignId=oldCampaignId;return false;}F.routeStep=step.next;F.travelRemaining=Math.max(1,step.days);F.routeKind=step.kind;F.status='marching';F.retreating=true;F.retreatDestination=target;F.logisticsWithdrawal=true;const W=ensureWarFoundation(),w=W.wars.find(x=>x.id===F.warId),C=w?.campaigns?.find(x=>x.id===oldCampaignId);if(C){C.status='stalled';C.phase='supply_withdrawal'}warLogisticsState().history.push({day:state.world.day,type:'supply_withdrawal',formationId:F.id,text:`${F.name} withdraws toward ${worldLocation(target)?.name||target} after its supply line fails.`});W.history.push({day:state.world.day,type:'supply_withdrawal',warId:F.warId,formationId:F.id,text:`${F.name} abandons field operations because its supply situation is untenable.`});return true
 }
+function warLogisticsPeacetimeDestination(F){
+ const held=warFactionSettlements(F.faction);if(!held.length)return null;if(held.some(x=>x.id===F.location))return F.location;
+ return held.map(x=>({id:x.id,d:warLocationDistance(F.location,x.id),path:warLogisticsPath(F.location,x.id)})).filter(x=>x.path.length).sort((a,b)=>a.d-b.d)[0]?.id||warFactionBase(F.faction)
+}
+function warLogisticsPeacetimeDisposition(F){
+ if(warLogisticsAtWar(F.faction))return false;const target=warLogisticsPeacetimeDestination(F);if(!target)return false;
+ const W=ensureWarFoundation(),oldWar=F.warId&&W.wars.find(w=>w.id===F.warId);if(!oldWar||oldWar.status!=='active'){F.warId=null;F.campaignId=null;F.battleId=null;F.contactId=null}
+ if(F.location===target){const changed=F.status!=='garrison'||F.destination||F.routeStep||F.retreating;F.status='garrison';F.destination=null;F.routeStep=null;F.travelRemaining=0;F.retreating=false;F.retreatDestination=null;F.logisticsWithdrawal=false;F.peacetimeReturn=false;if(changed)F.lastActionDay=state.world.day;return changed}
+ if(F.status==='marching'&&F.peacetimeReturn&&F.destination===target&&F.routeStep)return false;
+ const step=warRegionRouteStep(F.location,target);if(!step)return false;F.campaignId=null;F.battleId=null;F.contactId=null;F.destination=target;F.routeStep=step.next;F.travelRemaining=Math.max(1,step.days);F.routeKind=step.kind;F.status='marching';F.retreating=true;F.retreatDestination=target;F.logisticsWithdrawal=false;F.peacetimeReturn=true;F.lastActionDay=state.world.day;warLogisticsState().history.push({day:state.world.day,type:'peacetime_return',formationId:F.id,text:`${F.name} returns toward ${worldLocation(target)?.name||target} for peacetime garrison duty.`});return true
+}
+function warLogisticsCivilProvision(F,L){
+ if(warLogisticsAtWar(F.faction))return false;const held=warFactionSettlements(F.faction),friendly=held.some(x=>x.id===F.location);L.source=friendly?F.location:(warLogisticsPeacetimeDestination(F)||F.location);L.routeIntegrity=friendly?100:85;L.routeStatus='civil provisioning';L.foodDays=Math.max(L.foodDays,6);L.equipmentReserve=Math.max(L.equipmentReserve,20);L.medicalReserve=Math.max(L.medicalReserve,16);L.shortageDays=0;F.supplyDays=L.foodDays;return true
+}
 function warLogisticsFormationTick(){
  for(const F of warActiveFormations()){
-  const L=warEnsureLogisticsFormation(F),source=warLogisticsSupplySource(F);if(source)warLogisticsDeliver(F,source);else if(!warLogisticsAtWar(F.faction)){L.source=F.location;L.routeIntegrity=70;L.routeStatus='civil provisioning';L.foodDays=Math.max(L.foodDays,6)}else{L.source=null;L.routeIntegrity=0;L.routeStatus='cut'}warLogisticsFormationConsumption(F);warLogisticsForceWithdrawal(F)
+  const L=warEnsureLogisticsFormation(F);warLogisticsPeacetimeDisposition(F);const source=warLogisticsSupplySource(F);if(source)warLogisticsDeliver(F,source);else if(warLogisticsAtWar(F.faction)){L.source=null;L.routeIntegrity=0;L.routeStatus='cut'}
+  if(!warLogisticsAtWar(F.faction))warLogisticsCivilProvision(F,L);warLogisticsFormationConsumption(F);if(!warLogisticsAtWar(F.faction)){L.shortageDays=0;F.supplyDays=L.foodDays}else warLogisticsForceWithdrawal(F)
  }
 }
 function warLogisticsDailyTick(){

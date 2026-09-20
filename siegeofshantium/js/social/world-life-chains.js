@@ -205,7 +205,7 @@ function companionSocialConcreteLine(r,m,npc,tr,choice,contract=null){
  const place=worldLocation(r.locId)?.name||'town',ref=npc?.name||(tr?travelerReferenceForCompanion(tr,m.id):'the contact');
  if(choice==='agree'){
   if(r.type==='avoid')return `${m.name} says, “Thank you. If ${ref} is here, I’d rather know which street they’re on so I can take another one.”`;
-  if(npc){const role=npc.role?`the ${String(npc.role).toLowerCase()}`:'someone local';return `${m.name} says, “I want a little time with ${npc.name}. ${role} knows ${place} better than we do, and I don’t want every conversation here to begin with a favor.”`}
+  if(npc){const role=npc.role?String(npc.role).toLowerCase():'';const lines=[`${m.name} says, “I think I’ll spend a little time with ${npc.name}. ${role?`The ${role}`:'They'} know${role?'s':''} ${place} well, and I enjoy the company.”`,`${m.name} says, “I’m going to see ${npc.name} for a while. It’s good to have someone familiar to talk to when we’re in ${place}.”`,`${m.name} says, “I might stop by and see ${npc.name}. We’ve had some good conversations here.”`];return lines[Math.abs((state.world.day||0)+m.name.length+npc.name.length)%lines.length]}
   if(tr)return `${m.name} says, “I know ${ref} from the road. I’d like to hear where they’ve been since we last crossed paths.”`;
   return `${m.name} says, “Good. I’ll find them before we leave ${place}.”`;
  }

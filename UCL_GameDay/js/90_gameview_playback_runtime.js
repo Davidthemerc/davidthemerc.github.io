@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.51 — build fragment: 90_gameview_playback_runtime.js
+/* UCL GameDay v0.5.58 — build fragment: 90_gameview_playback_runtime.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function gvPruneCorrelation(now=Date.now()){
@@ -948,7 +948,10 @@ async function gvPresentStatCorrection(evt){
   if(value)value.textContent=`${lost.toFixed(2)} FPTS`;
   if(impact)impact.textContent='';
   if(detail)detail.textContent=evt?.removedPriorEvent?'PRIOR PLAY REMOVED':(evt?.correctionReason||'Sleeper scoring revision');
-  if(context&&Number.isFinite(Number(evt?.leftScore))&&Number.isFinite(Number(evt?.rightScore)))context.textContent=`UPDATED SCORE ${Number(evt.leftScore).toFixed(2)}–${Number(evt.rightScore).toFixed(2)}`;
+  if(context){
+    if(gvIsAllTeamsMode())context.textContent='LEAGUE-WIDE GAMEVIEW';
+    else if(evt?.leftScore!=null&&evt?.rightScore!=null&&Number.isFinite(Number(evt.leftScore))&&Number.isFinite(Number(evt.rightScore)))context.textContent=`UPDATED SCORE ${Number(evt.leftScore).toFixed(2)}–${Number(evt.rightScore).toFixed(2)}`;
+  }
   if(pop){pop.classList.add('stat-correction');pop.hidden=false;pop.animate([{opacity:0,transform:'translate(-50%,-50%) scale(.8)'},{opacity:1,transform:'translate(-50%,-50%) scale(1)'}],{duration:300,easing:'ease-out',fill:'forwards'});}
   if($('#gvStatus'))$('#gvStatus').textContent='STAT CORRECTION';
   await gvSleep(1700);
@@ -1133,14 +1136,17 @@ function render(){bindWatchControls();bindGameViewTeamControls();if(currentView=
 
 function selectableTeamIds(){const sel=$('#teamSelect');return sel?[...sel.options].map(o=>String(o.value)).filter(Boolean):rosters.map(r=>String(r.roster_id))}
 function cycleSelectedTeam(step=1){
-  const ids=selectableTeamIds();if(!ids.length)return;const current=String($('#teamSelect')?.value||ids[0]),idx=Math.max(0,ids.indexOf(current)),next=ids[(idx+step+ids.length)%ids.length];selectPreferredTeam(next);if(currentView==='gameview')renderGameView()
+  const ids=selectableTeamIds();if(!ids.length)return;
+  if(currentView==='gameview'&&gvIsAllTeamsMode()){gvSetAllTeamsMode(false);if(currentView==='gameview')renderGameView();return}
+  const current=String($('#teamSelect')?.value||ids[0]),idx=Math.max(0,ids.indexOf(current)),next=ids[(idx+step+ids.length)%ids.length];selectPreferredTeam(next);if(currentView==='gameview')renderGameView()
 }
 function gvTeamPickerRender(){
   const menu=$('#gvTeamPickerMenu'),label=$('#gvViewingTeamLabel'),btn=$('#gvViewingTeamBtn');if(!menu)return;
-  const current=String($('#teamSelect')?.value||'');
-  if(label)label.textContent=teamName(rosterFor(current));
-  menu.innerHTML=selectableTeamIds().map(rid=>{
-    const roster=rosterFor(rid),name=teamName(roster),active=String(rid)===current;
+  const current=String($('#teamSelect')?.value||''),all=gvIsAllTeamsMode();
+  if(label)label.textContent=all?'All Teams':teamName(rosterFor(current));
+  const allButton=`<button type="button" role="option" aria-selected="${all?'true':'false'}" data-gv-all-teams="1" class="${all?'active':''}">All Teams</button>`;
+  menu.innerHTML=allButton+selectableTeamIds().map(rid=>{
+    const roster=rosterFor(rid),name=teamName(roster),active=!all&&String(rid)===current;
     return `<button type="button" role="option" aria-selected="${active?'true':'false'}" data-gv-team-id="${esc(String(rid))}" class="${active?'active':''}">${esc(name)}</button>`;
   }).join('');
   if(btn)btn.setAttribute('aria-expanded',menu.hidden?'false':'true');

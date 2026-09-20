@@ -200,6 +200,7 @@ async function _syncSeasonDataImpl(showStatus=false){
     }
     persistRuntimeCache();
 
+    if(typeof refreshPublicAchievements==='function')void refreshPublicAchievements({force:showStatus,rerender:true});
     renderSeasonSyncViews();
 
     if(showStatus){

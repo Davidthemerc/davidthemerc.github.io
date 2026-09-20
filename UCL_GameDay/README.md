@@ -1,6 +1,67 @@
-# UCL GameDay v0.5.51 — Modular Package
+# UCL GameDay v0.5.58 — Modular Package
 
-## v0.5.51 — GitHub Companion + Packaged Notification Audio
+## v0.5.58 — All Teams Startup Fix
+
+- Fixes the v0.5.57 startup crash: `gameViewAllTeamsMode` no longer reads `storage` before `storage` is initialized.
+- The bootstrap declaration is again a safe `false` default.
+- The saved All Teams preference is restored later in the normal startup path, after the shared storage helper exists and before initial controls/rendering.
+- Retains the v0.5.57 All Teams cleanup: hidden matchup score/opportunity UI, neutral idle field, and null-score protection.
+- Retains named Companion/GameDay tab reuse, host-aware Companion routing, current-week NFL activity selection, and strict playback protections.
+
+## v0.5.58 — All Teams Cleanup
+
+- Restores the saved All Teams preference on reload instead of only writing it to storage.
+- Retains v0.5.56 behavior that hides Meaningful Starters / estimated opportunity in All Teams and restores it in individual-team mode.
+- Clears lingering NFL end-zone labels/colors after All Teams plays and returns the idle field to neutral `UCL` / `ALL TEAMS` presentation.
+- All Teams no longer derives matchup-specific lead/edge context from the selected matchup.
+- Hardened stat-correction score checks so intentional All Teams `null` scores cannot become a misleading `0–0` display.
+- All Teams remains starter-only by design; bench-player activity is not added to the league-wide feed.
+- Retains scoreless All Teams presentation, named Companion/GameDay tab reuse, host-aware Companion routing, current-week NFL activity selection, and strict playback protections.
+
+## v0.5.58 — Clean All Teams GameView
+
+- The entire estimated-opportunity / meaningful-starters panel is hidden whenever All Teams GameView is selected.
+- Switching back to an individual team restores the panel and recalculates that matchup's opportunity normally.
+- All Teams remains scoreless and league-wide; individual play entries still identify the relevant UCL team/player.
+- Retains v0.5.55 score suppression, host-aware Companion routing, named-tab reuse, current-week NFL activity selection, and strict playback protections.
+
+## v0.5.58 — Scoreless All Teams GameView
+
+- All Teams GameView no longer displays the score of the currently selected individual UCL matchup.
+- Its GameView scorebar now identifies `ALL TEAMS` / `LEAGUE-WIDE GAMEVIEW` and leaves both numeric score fields blank.
+- All Teams session score snapshots are intrinsically scoreless (`null`/`null`) so downstream GameView events cannot accidentally inherit one matchup's score.
+- Stat-correction presentation in All Teams mode uses `LEAGUE-WIDE GAMEVIEW` rather than an individual matchup score.
+- Individual-team GameView behavior is unchanged; selecting a team immediately restores that matchup's normal names and scores.
+- Retains host-aware Companion routing, Companion/GameDay named-tab reuse, current-week NFL activity selection, and strict playback protections.
+
+## v0.5.58 — Companion ↔ GameDay Tab Reuse
+
+- GameDay names its browsing context `UCLGameDay` immediately from the document head.
+- The Companion navigation link now targets the stable `UCLCompanion` browsing context instead of `_blank`.
+- Removed `noopener noreferrer` from this named navigation because modern browser behavior can treat a non-empty named target as `_blank` when `noopener` is applied, defeating tab reuse.
+- Existing host-aware Companion routing is unchanged: Netlify GameDay routes to Netlify Companion, GitHub Pages routes to GitHub Companion, and other/local hosts retain the GitHub fallback.
+- Retains v0.5.53 All Teams GameView and current-week NFL activity selection.
+
+## v0.5.58 — All Teams GameView + Week-Correct Activity
+
+- Added **All Teams** to the GameView team picker.
+- All Teams uses its own league-week GameView session and snapshots all eight UCL rosters, so newly accepted starter plays across all four matchups enter one chronological feed/playback queue.
+- All Teams does not replace the primary team selection elsewhere in GameDay.
+- Feed entries identify the UCL fantasy team when the event carries a roster ID.
+- Fixed the estimated-starters-active/opportunity calculation selecting the first NFL game for a team from the full-season schedule. It now selects the game matching the current NFL week.
+- This specifically prevents a completed prior-week game (for example BUF-HOU Week 1) from making a currently live Week 2 team appear finished.
+- Existing lifecycle authority, stat-first validation, dedupe, strict playback dispatch, notification sound, and host-aware Companion behavior are retained.
+
+## v0.5.58 — Host-Aware Companion Link
+
+- GameDay on `*.netlify.app` opens Companion at `https://ucl-companion.netlify.app/`.
+- GameDay on `*.github.io` opens Companion at `https://davidthemerc.github.io/UCL_Companion/`.
+- Local files, localhost, custom domains, and other hosts default to GitHub Pages.
+- Companion still opens in a new tab with `noopener noreferrer`.
+- The packaged notification MP3 remains a real modular asset.
+- No scoring, GameView playback, NFL lifecycle, or notification logic changed.
+
+## v0.5.58 — GitHub Companion + Packaged Notification Audio
 
 - Companion now opens `https://davidthemerc.github.io/UCL_Companion/` in a new tab.
 - The modular package now includes the original notification MP3 at `assets/audio/ucl_notification.mp3`.
@@ -9,7 +70,7 @@
 - Notification enable/disable, volume, serialization, and the 1-second quiet interval are unchanged.
 - Package size is now 20 files; the existing placeholder `.keep` files remain in place.
 
-## v0.5.51 — Strict Playback Dispatch
+## v0.5.58 — Strict Playback Dispatch
 
 - Fixes a renderer-level duplicate where one already-built GameView event could animate twice.
 - Automatic playback now claims each queue/event ID exactly once before animation begins.
@@ -21,7 +82,7 @@
 - Explicit Replay bypasses automatic dispatch claims/tombstones and remains intentionally replayable.
 - Stat/event ingestion and reconciliation dedupe are unchanged.
 
-## v0.5.51 — ESPN Final-State Authority
+## v0.5.58 — ESPN Final-State Authority
 
 - ESPN enrichment now captures NFL game lifecycle status in addition to kickoff time.
 - ESPN status refreshes every 30 seconds instead of inheriting the six-hour kickoff cache cadence.
@@ -32,7 +93,7 @@
 - Kickoff/stat heuristics run only when neither ESPN nor Sleeper provides a known lifecycle state.
 - Existing v0.5.48 injury badges are unchanged.
 
-## v0.5.51 — NFL Game Lifecycle + Injury Badges
+## v0.5.58 — NFL Game Lifecycle + Injury Badges
 
 - Explicit NFL game status now controls the Live Lineups currently-playing state:
   - PRE / scheduled -> not currently playing
@@ -47,7 +108,7 @@
   - other non-Active designations = gray
 - Generic healthy `Active` remains hidden.
 
-## v0.5.51 — Notification Settings Scope Fix
+## v0.5.58 — Notification Settings Scope Fix
 
 - Fixed the remaining `ensureNotificationSettingsControls is not defined` startup error.
 - Root cause: the binder was defined inside GameDay's main IIFE, while two settings-init hooks run after that IIFE closes.
@@ -55,14 +116,14 @@
 - Outside-IIFE hooks now invoke the exported global safely with optional chaining.
 - All v0.5.45/v0.5.46 features are retained unchanged.
 
-## v0.5.51 — Notification Settings Startup Fix
+## v0.5.58 — Notification Settings Startup Fix
 
 - Fixed `ReferenceError: ensureNotificationSettingsControls is not defined`.
 - Moved the notification-settings binder into the normal UI module so it is defined before startup code can invoke it.
 - Preserved the intentional cross-fragment `async function loadPlayers()` continuation between playback runtime and startup.
 - All v0.5.45 features remain intact: semantic GameView dedupe/tombstones, compact field, injury designations, notification toggle/volume, and serialized audio.
 
-## v0.5.51
+## v0.5.58
 
 - Strengthened GameView duplicate protection with semantic football-play fingerprints.
 - Added playback tombstones so an already-rendering/recently-rendered inferred play cannot animate again.
@@ -73,7 +134,7 @@
 - Added persistent Notification Volume control.
 - Existing one-sound-at-a-time gate and 1-second post-audio quiet period remain active.
 
-## v0.5.51 — Serialized Audio Gate
+## v0.5.58 — Serialized Audio Gate
 
 - Added a global audio gate for all GameDay sounds.
 - Only one app sound can play at a time.
@@ -85,7 +146,7 @@
 - `stopBasicSounds()` clears both active and pending audio safely.
 - v0.5.43 major-event notification rules and GameView deduplication are retained.
 
-## v0.5.51 — GameView Deduplication + Major Event Notification
+## v0.5.58 — GameView Deduplication + Major Event Notification
 
 - Added a semantic GameView dedupe layer at both the persistent feed boundary and runtime playback queue.
 - Equivalent events within a tight 5-second window are treated as one football play, preventing stat-first/correlation/reconciliation copies from rendering repeatedly.
@@ -98,7 +159,7 @@
 - Replay playback does not retrigger the live major-event notification.
 - The supplied notification audio is embedded byte-for-byte in the sound module so both standalone and modular builds use the same sound without adding a package dependency.
 
-## v0.5.51 — Compact GameView Nav + Scores Navigation
+## v0.5.58 — Compact GameView Nav + Scores Navigation
 
 - Main-nav `UCL GameView` label shortened to `GameView`.
 - Added light outer spacing around each Scores matchup card.
@@ -108,7 +169,7 @@
 - Keyboard activation remains supported for matchup cards and team links.
 - v0.5.41 horizontal nav scrolling, white-on-blue Scores styling, and v0.5.40 stat-first safeguards are retained.
 
-## v0.5.51 — Scrollable Navigation + Score Styling
+## v0.5.58 — Scrollable Navigation + Score Styling
 
 - Main navigation stays on one row and scrolls horizontally instead of compressing when Testing Area is enabled.
 - Supports touch swipe and trackpad horizontal scrolling with an unobtrusive hidden scrollbar.
@@ -116,7 +177,7 @@
 - Scores view uses white text on blue cards, matching the selected-score visual language on GameDay.
 - v0.5.40 stat-first anti-ghost and negative-momentum fixes are retained.
 
-## v0.5.51 — Scores View + Stat-First Hardening
+## v0.5.58 — Scores View + Stat-First Hardening
 
 ### Navigation
 - Main-nav `UCL Companion` label shortened to `Companion`; URL/behavior unchanged.
@@ -136,7 +197,7 @@
 - Corrections, reconciliation-only movements, unresolved team-score bookkeeping, and bench activity remain excluded.
 - Correlated events use their per-roster fantasy impacts when available.
 
-## v0.5.51 — GameDay Renderer Regression Fix
+## v0.5.58 — GameDay Renderer Regression Fix
 
 v0.5.38's GameDay lineup renderer edit unintentionally removed two adjacent helper functions from the modular source:
 - `renderEvents()` — caused `ReferenceError: renderEvents is not defined` during `render()`.
@@ -146,7 +207,7 @@ Both helpers are restored without rolling back the v0.5.38 compact stat lines, p
 
 Validation now includes explicit definition/reference checks for renderer helpers touched by neighboring source edits.
 
-## v0.5.51 — Compact Stats, Player-to-GameView Navigation, Weekly Momentum Continuity
+## v0.5.58 — Compact Stats, Player-to-GameView Navigation, Weekly Momentum Continuity
 
 ### GameDay stat lines
 - Zero-value stat categories are hidden.
@@ -168,7 +229,7 @@ Momentum now represents the weekly matchup story rather than resetting at each s
 - session history remains selectable;
 - simulation sessions continue using the same momentum engine.
 
-## v0.5.51 — Immediate Stat Plays + Ghost-Play Rejection
+## v0.5.58 — Immediate Stat Plays + Ghost-Play Rejection
 
 Live GameView no longer waits for Sleeper `players_points` before constructing ordinary plays. Raw player stat deltas are again the immediate play trigger.
 
@@ -188,7 +249,7 @@ Later FPTS movement is supporting score information only and does not create a s
 
 Recovery/away intervals remain conservative because multiple plays may be aggregated while the app was not actively polling.
 
-## v0.5.51 — Live Reconciliation Runtime Fix
+## v0.5.58 — Live Reconciliation Runtime Fix
 
 Restores the `gvBuildStatFirstEvent()` helper that was accidentally removed during the v0.5.33 FPTS-confirmation rewrite but remained required by `gvDeltaEvents()`.
 
@@ -196,7 +257,7 @@ Also restores `gvReconciliationState()` as a compatibility/diagnostic helper bac
 
 No rollback of the v0.5.33 safeguards: ordinary stat fragments are still held pending until FPTS confirmation, while decisive major events retain the fast path.
 
-## v0.5.51 — Matchup-Bound GameView Feed
+## v0.5.58 — Matchup-Bound GameView Feed
 
 Changing the viewed team in GameView now immediately switches the active GameView session to that team's current UCL matchup.
 
@@ -206,13 +267,13 @@ The previous matchup session is saved before switching, the new matchup session 
 
 Simulation-only volatile feed entries are also filtered to the selected matchup so they cannot bleed into another team's GameView feed.
 
-## v0.5.51 — Saved NFL Activity Collapse State
+## v0.5.58 — Saved NFL Activity Collapse State
 
 The Testing Area's NFL Game Activity card is now a collapsible native details panel.
 
 For first-time users it starts collapsed. Opening or closing the panel saves that preference in local storage, and the saved state is restored the next time GameDay loads.
 
-## v0.5.51 — FPTS-Confirmed Live Play Safeguards
+## v0.5.58 — FPTS-Confirmed Live Play Safeguards
 
 Live GameView no longer commits ordinary plays from tiny raw scoring-stat fragments alone.
 
@@ -224,7 +285,7 @@ Discrete major scoring evidence such as touchdowns, interceptions, fumbles lost,
 
 Bench players remain excluded from GameView.
 
-## v0.5.51 — Authoritative Kickoff-Time Layer
+## v0.5.58 — Authoritative Kickoff-Time Layer
 
 The active-game clock system no longer assumes Sleeper's season schedule contains kickoff timestamps. Sleeper remains the source for week/team pairings, while kickoff times are resolved through a separate layer.
 
@@ -234,7 +295,7 @@ The built-in Week 1 table guarantees NE @ SEA resolves to `2026-09-10T00:20:00Z`
 
 Testing Area diagnostics now report the kickoff source (`schedule-field`, `espn-kickoff`, `known-2026`, or `unavailable`) so a missing-clock regression is visible immediately.
 
-## v0.5.51 — First-Render Active-State Ordering
+## v0.5.58 — First-Render Active-State Ordering
 
 Startup now uses the exact same full `sync()` path as the manual Refresh Live button immediately, before any optional prerequisite hydration pass is allowed to delay it.
 
@@ -244,7 +305,7 @@ After the first full sync, GameDay immediately re-evaluates active NFL teams, st
 
 Testing Area NFL Game Activity now evaluates each schedule row independently. An active NE or SEA game no longer causes every NE/SEA game in the full-season schedule list to display as active.
 
-## v0.5.51 — Startup Player-Team Hydration
+## v0.5.58 — Startup Player-Team Hydration
 
 GameDay no longer treats a cached player record as fully resolved unless it contains a usable NFL team code. Records with missing/blank/FA team data remain eligible for hydration from Sleeper.
 
@@ -252,7 +313,7 @@ GameDay no longer treats a cached player record as fully resolved unless it cont
 
 Initial startup now performs an active-game prerequisite pass before the first live sync-driven active-state result: it refreshes the NFL schedule and resolves any referenced players whose team metadata is still unusable, then re-renders active status. Manual Refresh Live should no longer be required merely to populate player→NFL-team mappings.
 
-## v0.5.51 — Automatic Active-Game Evaluation
+## v0.5.58 — Automatic Active-Game Evaluation
 
 Active NFL lineup highlighting now evaluates immediately during app startup using whatever schedule/stat cache is already available. It no longer waits for the user to press Refresh Live before the first visual active-state pass.
 
@@ -260,7 +321,7 @@ A lightweight local timer re-evaluates active-game state every 30 seconds withou
 
 Successful Sleeper syncs explicitly refresh active-game UI again after the latest schedule and stat data is loaded, and the offline/saved-data path does the same after rendering.
 
-## v0.5.51 — True Kickoff-Time Active-Game Fallback
+## v0.5.58 — True Kickoff-Time Active-Game Fallback
 
 The NFL schedule loader now preserves the complete schedule payload instead of discarding every row that does not pass an exact current-week field match. Wrapper response shapes (`games` / `schedule`) are also accepted.
 
@@ -270,7 +331,7 @@ The NFL schedule cache key is bumped to v4 so previously cached, pre-filtered sc
 
 The secondary GameView schedule cache no longer pre-filters by exact week before its data can be used.
 
-## v0.5.51 — Active Players, Game Pressure, Replay Reachability
+## v0.5.58 — Active Players, Game Pressure, Replay Reachability
 
 Active NFL highlighting now treats recent Live Debug player activity as a direct source, not just an indirect heartbeat. A detected player stat change also marks the known opponent NFL team active, so both sides of an in-progress game receive the yellow lineup treatment.
 
@@ -278,7 +339,7 @@ Game Pressure now consumes the same stat-first GameView scoring events that popu
 
 Replay controls now have an explicit touch/click hit target, higher stacking order, and overflow protection across portrait, short-height, and narrow layouts so the oldest replay button cannot be covered by the field/feed layout.
 
-## v0.5.51 — Active-Game Fallback + First-Replay Repair
+## v0.5.58 — Active-Game Fallback + First-Replay Repair
 
 Live NFL team activity is now seeded directly from the same player stat-delta path that powers Live Debug. If Live Debug sees a real weekly stat change, that player's NFL team immediately receives the live-stat heartbeat used for yellow lineup highlighting.
 
@@ -286,7 +347,7 @@ Schedule team lookup is also more tolerant when a current-week filtered schedule
 
 Replayable GameView plays and bursts are now archived when they enter the canonical feed, not only after animation completion. Replay buttons are shown only when an actual replay snapshot exists, preventing the first feed item's Replay control from appearing clickable without a valid replay source.
 
-## v0.5.51 — Live-Stat Active Games + Shared Team Selection
+## v0.5.58 — Live-Stat Active Games + Shared Team Selection
 
 NFL active-player highlighting no longer depends entirely on Sleeper's schedule endpoint. When weekly NFL stats change for any player or D/ST on a team, GameDay records a 10-minute live-stat heartbeat for that NFL team. That heartbeat is now the primary active-game signal (except an explicit final status), so every lineup player on the same NFL team receives the yellow active-game treatment while the heartbeat is fresh. Schedule/status remains a fallback.
 
@@ -294,7 +355,7 @@ Live Debug now lists schedule-backed activity and stats-only heartbeat activity,
 
 GameDay and GameView now share the same selected roster more strictly. Clicking a GameDay matchup card synchronizes `#teamSelect` to a roster in that matchup, and entering GameView re-validates the selected roster against the featured matchup so the team being viewed carries across instead of drifting to a stale selection.
 
-## v0.5.51 — Stat-First Live Scoring + Active-Game Timezone Fix
+## v0.5.58 — Stat-First Live Scoring + Active-Game Timezone Fix
 
 GameView no longer waits for Sleeper `players_points` before showing a started-player scoring play. Scoring-relevant raw stat deltas are interpreted immediately with the league's UCL scoring settings and create the GameView event at once. Non-scoring/derived stat changes remain diagnostic only.
 

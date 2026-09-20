@@ -510,7 +510,7 @@ const SOS_PERF_PROFILE_TARGETS=[
  ['showSettlementPolitics','Settlement Politics'],['showRegionalPolitics','Regional Politics'],
  ['showFactionOverview','Faction Overview'],['showOpenWorldSettlementTownLife','Town Life'],
  ['advanceWorldDays','Advance World Day'],['openWorldMapHTML','Regional Map Build'],['spawnRoadNetworkHTML','Spawn Road Overlay'],
- ['flushCampaignSaveNow','Save Flush'],['load','Campaign Load']
+ ['flushCampaignSaveNow','Save Flush'],['load','Campaign Load (one-time)']
 ];
 function installSOSPerformanceHooks(){
  let memo=0,profile=0;
@@ -652,7 +652,7 @@ function sanitizeLoadedCampaignState(){
 function prepareLoadedCampaign(candidate){
  const warnings=[],loadPerf=(name,fn)=>typeof sosPerfRun==='function'?sosPerfRun(name,fn):fn();
  // Work on a fresh object so a failed compatibility pass cannot damage the parsed source.
- state=loadPerf('Campaign Load — Clone State',()=>JSON.parse(JSON.stringify(candidate)));if(state.mode==='siege')state.mode='legacy_siege';combat=null;townNavStack=[];townNavCurrent=null;townNavRestoring=false;
+ state=loadPerf('Campaign Load — Clone State',()=>typeof structuredClone==='function'?structuredClone(candidate):JSON.parse(JSON.stringify(candidate)));if(state.mode==='siege')state.mode='legacy_siege';combat=null;townNavStack=[];townNavCurrent=null;townNavRestoring=false;
  const compacted=loadPerf('Campaign Load — Initial Sanitize',()=>sanitizeLoadedCampaignState());if(compacted)warnings.push(SOSText("core_town_save_load.prepareLoadedCampaign.001",compacted,compacted===1?'':'s'));
  if(typeof migrateCumulativeXpModel==='function'&&migrateCumulativeXpModel())warnings.push('Advancement XP converted to cumulative progression without changing Guardian level.');
  if(migrateLegacyWeaponInstance())warnings.push(SOSText("core_town_save_load.prepareLoadedCampaign.002"));

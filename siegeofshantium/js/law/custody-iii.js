@@ -89,7 +89,7 @@ function resolveLawJudgment(mode='accept'){
  if(pay)state.gold=Math.max(0,state.gold-pay);if(days)advanceWorldDays(days,`${lawProceedingName(d)} sentence in ${d.location}`);
  if(outcome==='dismissed'){L.bounties[d.id]=0;L.restitution[d.id]=0;L.heat[d.id]=Math.max(0,lawHeat(d.id)-6);delete L.warrants[d.id];adjustJurisdictionRep(d.id,1,'case dismissed after hearing')}
  else{L.bounties[d.id]=0;L.restitution[d.id]=0;L.heat[d.id]=outcome==='reduced'?2:1;delete L.warrants[d.id];adjustJurisdictionRep(d.id,mode==='mitigate'?1:0,`${lawProceedingName(d)} resolved`)}
- d.stage='resolved';d.outcome=outcome;d.resolvedDay=state.world.day;C.history.push({day:state.world.day,type:'judgment',id:d.id,outcome,days,pay,severity:d.severity});C.history=C.history.slice(-80);C.activeDetention=null;lawDetentionReleaseToSettlement(d.id);state.guardian.hp=Math.max(1,Math.round(state.guardian.hp||1));lawCustodyHistory(`${d.authority} resolved ${state.name}'s case in ${d.location}: ${outcome}.`,'info',{type:'judgment',outcome});save();actionResult(`${lawProceedingName(d)} Resolved`,`${text}<br><br>You are released in ${esc(d.location)}. The active warrant for this case is closed.`,'info',renderOpenWorld)
+ d.stage='resolved';d.outcome=outcome;d.resolvedDay=state.world.day;C.history.push({day:state.world.day,type:'judgment',id:d.id,outcome,days,pay,severity:d.severity});C.history=C.history.slice(-80);C.activeDetention=null;lawDetentionReleaseToSettlement(d.id);state.guardian.hp=Math.max(1,Math.round(state.guardian.hp||1));lawCustodyHistory(`${d.authority} resolved ${state.name}'s case in ${d.location}: ${outcome}.`,'info',{type:'judgment',outcome});save();actionResult(`${lawProceedingName(d)} Resolved`,`${text}\n\nYou are released in ${esc(d.location)}. The active warrant for this case is closed.`,'info',renderOpenWorld)
 }
 
 // Local-law screen modernization: preserve the existing crime ledger while surfacing
@@ -139,3 +139,27 @@ function prisonerCardHTML(p,scope='party'){
 // the custody case UI first.
 const SOS_RENDER_OPEN_WORLD_166=renderOpenWorld;
 renderOpenWorld=function(){if(activeLawDetention())return showLawDetention();return SOS_RENDER_OPEN_WORLD_166.apply(this,arguments)};
+
+// v1.6.66.22.9 — Guardian military deterrence and disciplined civil confrontation.
+function guardianLawMilitaryPosture(id=state.world.location){
+ if(id!=='shantium'||typeof guardianArrestDoctrine!=='function')return null;
+ const D=guardianArrestDoctrine(id);if(!D?.active)return null;
+ const severity=lawChargeSeverity(id),n=D.localStrength||0,general=!!D.general;
+ let posture='interpose';
+ if(n>=480&&general)posture='formal_summons';
+ else if(n>=320)posture='formal_summons';
+ else if(n>=160)posture='negotiated_custody';
+ if(severity>=5&&posture==='formal_summons'&&n<480)posture='negotiated_custody';
+ return{...D,severity,posture};
+}
+function showGuardianLawConfrontation(id,onEntered,posture){
+ const p=jurisdictionRule(id),b=localBounty(id),D=posture,general=D.general,commander=general?`${general.rank} ${general.name}`:'the senior Guardian officer present';
+ const strong=D.posture==='formal_summons';
+ const lead=strong?`${p.authority} does not attempt to seize the Guardian in the face of ${D.localStrength} Guardian soldiers available in Shantium. A formal demand is delivered instead.`:`The arrest party is met by Guardian soldiers before it can take the Guardian into custody. ${commander} makes clear that a forced seizure will not be permitted.`;
+ overlay(`<div class="dialog large"><h2>${strong?'Formal Summons':'Arrest Confrontation'}</h2><div class="warning notice"><b>${esc(p.authority)} • active warrant</b><br>${esc(lead)}</div><div class="card compact"><div class="stat-row"><span>Guardian troops available in Shantium</span><b>${D.localStrength}</b></div>${general?`<div class="stat-row"><span>Senior commander</span><b>${esc(general.rank)} ${esc(general.name)}</b></div>`:''}<p>${general?`${esc(general.name)} orders the troops to remain disciplined: warn first, block any forced seizure, and use only the force required to repel an attempt. The Cantonment is not to turn a warrant into a wider war unless the government escalates or the Guardian orders it.`:'Guardian officers form their soldiers between the authority and the Guardian. They will not stand aside for a forced arrest.'}</p></div><div class="choice-list"><button id="guardianLawNegotiate"><b>Answer Through Formal Negotiation</b><small>Require the authority to deal with the Guardian through counsel, the Steward, and military escort rather than physical seizure.</small></button><button id="guardianLawStandDown"><b>Order the Soldiers to Stand Down and Submit Voluntarily</b><small>The Guardian may personally order the military not to resist this arrest.</small></button><button id="guardianLawRefuse"><b>Refuse the Demand</b><small>The Guardian remains under military protection. The warrant remains active and the political confrontation deepens.</small></button></div></div>`,true);
+ $('#guardianLawNegotiate').onclick=()=>{lawCustodyHistory(`${p.authority} delivers its warrant through formal negotiation after the Guardian military refuses a forcible arrest.`,'info',{type:'military_deterrence',id,strength:D.localStrength});adjustJurisdictionRep(id,-1,'Guardian military protection complicated execution of a warrant');clearLawEntryState(id);save();return actionResult('Physical Arrest Averted',`${esc(p.authority)} does not attempt to force the issue. The warrant remains active, but further proceedings must begin through a summons, negotiation, or a deliberate government escalation.`,'info',()=>typeof onEntered==='function'?onEntered():renderOpenWorld())};
+ $('#guardianLawStandDown').onclick=()=>{lawCustodyHistory(`${state.name} personally orders Guardian soldiers to stand down and submits voluntarily to ${p.authority}.`,'info',{type:'guardian_stand_down',id});return beginLawDetention(id,'Guardian-ordered voluntary surrender')};
+ $('#guardianLawRefuse').onclick=()=>{lawCustodyHistory(`Guardian troops refuse a forcible arrest by ${p.authority}; the warrant remains unresolved.`,'info',{type:'military_interposition',id,strength:D.localStrength});adjustJurisdictionRep(id,-2,'Guardian military interposed against an arrest attempt');clearLawEntryState(id);save();return actionResult('Guardian Troops Interpose',`${esc(commander)} keeps the troops in place. ${esc(p.authority)} must withdraw, negotiate, or consciously escalate the confrontation. The warrant remains active.`,'bad',()=>typeof onEntered==='function'?onEntered():renderOpenWorld())};return true;
+}
+const SOS_MAYBE_LAW_CHECKPOINT_2269=maybeLawCheckpoint;
+maybeLawCheckpoint=function(id=state.world.location,onEntered=null){const D=guardianLawMilitaryPosture(id);if(D)return showGuardianLawConfrontation(id,onEntered,D);return SOS_MAYBE_LAW_CHECKPOINT_2269(id,onEntered)};

@@ -314,7 +314,6 @@ if($('#worldTownLife'))$('#worldTownLife').onclick=()=>navigateTownMenu(SOSText(
  $('#menuBtn').onclick=gameMenu;
  wireWorldMapPan();
  if(state.world.pendingContractFailures?.length)setTimeout(()=>{if(!modal)showPendingContractFailureNotice()},0);
- if(typeof maybeTriggerPoliticalRetaliation==='function')setTimeout(()=>{if(!modal)maybeTriggerPoliticalRetaliation()},0);
  setTimeout(()=>{const l=document.getElementById(SOSText("openworld_ui_map_actions.renderOpenWorld.017"));if(l)l.scrollTop=l.scrollHeight},0);
 }
 
@@ -387,3 +386,5 @@ function roadEventContext(from,to,escort=false){
  return {from,to,escort,security,route,plan,region,ambushVariant,campPrep,injuryRisk,danger:clamp((60-security)/100+.08+route.encounterMod-(plan.mode==='safer'?.10:0)-(campPrep?.08:0)+injuryRisk,.05,.78)}
 }
 function roadEventChance(ctx){return clamp(.24+ctx.danger-(ctx.escort?.06:0)+(ctx.route.status==='open'?.05:0),.18,.78)}
+/* v1.6.66.22.17 — install Guardian Government render hook after renderOpenWorld exists */
+if(typeof installGuardianGovernmentRenderHook==='function')installGuardianGovernmentRenderHook();

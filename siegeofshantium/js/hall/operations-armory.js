@@ -86,7 +86,7 @@ function homeArmoryPurchaseWeapons(maxBudget){
  const summary=bought.map(r=>`${r.it.name} (${r.price}g${r.fit?`, best fit ${ownerName(r.fit.oid)} ${r.fit.delta>=0?'+':''}${r.fit.delta}`:''})`).join('; ');
  recordWorldHistory(`${S.headGuard.name} purchased weapons for Guardian Hall: ${summary}.`,'good','home');
  save();
- actionResult('Armory Purchase Complete',`${S.headGuard.name} spent ${spent} of the authorized ${ceiling} Hall gold and added ${bought.length} weapon${bought.length===1?'':'s'} to the Hall Armory.<br><br>${esc(summary)}`,'good',showHomeArmory)
+ actionResult('Armory Purchase Complete',`${S.headGuard.name} spent ${spent} of the authorized ${ceiling} Hall gold and added ${bought.length} weapon${bought.length===1?'':'s'} to the Hall Armory.\n\n${esc(summary)}`,'good',showHomeArmory)
 }
 function homeArmoryIssueTo(id,ownerId){
  const it=item(id),o=ownerFor(ownerId);if(!it||!o||it.slot!=='weapon'||!homeArmoryRemove(id,1))return showHomeArmory();

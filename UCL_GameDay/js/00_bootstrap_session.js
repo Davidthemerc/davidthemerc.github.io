@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.51 — build fragment: 00_bootstrap_session.js
+/* UCL GameDay v0.5.58 — build fragment: 00_bootstrap_session.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 
@@ -25,7 +25,7 @@ window.addEventListener('unhandledrejection',e=>{
 });
 
 'use strict';
-const VERSION='0.5.51',LEAGUE_ID='1386066375474180096',API='https://api.sleeper.app/v1',POLL_MS=15000;
+const VERSION='0.5.58',LEAGUE_ID='1386066375474180096',API='https://api.sleeper.app/v1',POLL_MS=15000;
 const THEMES={
  'UCL Blue':['#102a56','#2f65ad','#173d73','#eef3f9'],Forest:['#183d2b','#2e7653','#24563f','#eef5f0'],Purple:['#35265f','#7558b5','#513b86','#f2eff8'],Crimson:['#5b1f2b','#a53c50','#7d2939','#f8eff1'],Orange:['#5a3416','#c26b27','#84491e','#faf2eb'],Slate:['#273342','#5a6b7e','#3f4d5e','#f0f3f6'],Gold:['#4e3d13','#af861d','#735b19','#f8f4e8'],'Ice Blue':['#16465a','#2b95b8','#21738f','#edf7fa']
 };
@@ -143,7 +143,7 @@ const gvStatFirstReconciliation=new Map();
 const GV_FPTS_CONFIRM_WINDOW_MS=45000;
 const gvPendingStatCandidates=new Map();
 
-// v0.5.51: immediate stat-first play capture with a small-correction rejection layer.
+// v0.5.58: immediate stat-first play capture with a small-correction rejection layer.
 const GV_STAT_REJECTION_WINDOW_MS=15000;
 const GV_SMALL_YARDAGE_CORRECTION_MAX=4;
 const gvRecentAcceptedStatPlays=new Map();
@@ -152,21 +152,33 @@ const gvRecentAcceptedStatPlays=new Map();
 const GAMEVIEW_SESSION_KEY='ucl-gameday-gameview-session-v1';
 let gameViewSession=null;
 let clearingLocalAppData=false;
+const GAMEVIEW_ALL_TEAMS_PREF_KEY='ucl-gameday-gameview-all-teams';
+let gameViewAllTeamsMode=false;
+function gvIsAllTeamsMode(){return !!gameViewAllTeamsMode}
+function gvSetAllTeamsMode(enabled){
+  gameViewAllTeamsMode=!!enabled;
+  storage.set(GAMEVIEW_ALL_TEAMS_PREF_KEY,gameViewAllTeamsMode?'on':'off');
+  gvSwitchMatchupSession();
+}
 
 function gvCurrentWeekKey(){
   const season=String(nflState?.season||new Date().getFullYear());
   const type=String(nflState?.season_type||'regular');
   const week=Number(nflState?.week||1);
+  if(gvIsAllTeamsMode())return `${season}:${type}:week-${week}:all-teams`;
   const pair=chosenPair?.();
   const ids=pair?.rows?.map(r=>String(r.roster_id)).sort()||[];
   return `${season}:${type}:week-${week}:${ids.join('-vs-')}`;
 }
 function gvSelectedRosterIds(){
+  if(gvIsAllTeamsMode())return rosters.map(r=>String(r.roster_id));
   const pair=chosenPair?.();return pair?.rows?.map(r=>String(r.roster_id))||[];
 }
 function gvMatchupScoreSnapshot(){
-  const pair=chosenPair?.();if(!pair)return null;
-  const rows=pair.rows||[],byRoster={},statsByPlayer={};
+  const pair=chosenPair?.();
+  const rows=gvIsAllTeamsMode()?rosters:(pair?.rows||[]);
+  if(!rows.length)return null;
+  const byRoster={},statsByPlayer={};
   for(const r of rows){
     const starterIds=new Set((r.starters||[]).filter(Boolean).map(String));
     const allPlayerPoints={...(r.players_points||{})},starterPoints={};
@@ -188,6 +200,7 @@ function gvMatchupScoreSnapshot(){
   return {capturedAt:Date.now(),weekKey:gvCurrentWeekKey(),byRoster,statsByPlayer};
 }
 function gvSessionScoreLine(snapshot){
+  if(gvIsAllTeamsMode())return {leftScore:null,rightScore:null};
   const ids=gvSelectedRosterIds(),left=ids[0],right=ids[1];
   const a=snapshot?.byRoster?.[left]?.points||0,b=snapshot?.byRoster?.[right]?.points||0;
   return {leftScore:a,rightScore:b};

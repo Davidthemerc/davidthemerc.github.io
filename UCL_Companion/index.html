@@ -158,7 +158,7 @@
       <span class="home-gameday-kicker">UCL GAMEDAY</span>
       <div><h3>Follow the league live</h3><p>Open UCL GameDay for the live fantasy game-day experience.</p></div>
     </div>
-    <a class="home-gameday-action" href="https://davidthemerc.github.io/UCL_GameDay/" target="_blank" rel="noopener noreferrer">Open UCL GameDay →</a>
+    <a class="home-gameday-action" href="#" data-gameday-link target="UCLGameDay" target="_blank" rel="noopener noreferrer">Open UCL GameDay →</a>
   </section>
 
   <div class="home-secondary-grid">
@@ -561,7 +561,7 @@
     </div>
   </div>
 
-  <a class="season-gameday-live" id="seasonGameDayLiveBanner" href="https://davidthemerc.github.io/UCL_GameDay/" target="_blank" rel="noopener noreferrer" hidden>
+  <a class="season-gameday-live" id="seasonGameDayLiveBanner" href="#" data-gameday-link target="UCLGameDay" target="_blank" rel="noopener noreferrer" hidden>
     <span class="season-gameday-live-dot" aria-hidden="true"></span>
     <span class="season-gameday-live-copy"><b>UCL GameDay is live</b><small id="seasonGameDayLiveDetail">NFL action is in progress.</small></span>
     <span class="season-gameday-live-action">Open GameDay →</span>
@@ -572,6 +572,7 @@
     <button type="button" data-command-tab="season" data-command-section="seasonManagement">Team Management</button>
     <button type="button" data-command-tab="season" data-command-section="seasonLeague">Around the League</button>
     <button type="button" data-command-tab="season" data-command-section="seasonPostseason">Postseason</button>
+    <button type="button" data-command-tab="season" data-command-section="seasonAchievements">Achievements</button>
     <button type="button" data-command-tab="season" data-command-section="seasonRecords">Records</button>
   </nav>
 
@@ -648,7 +649,7 @@
     </div>
     <div class="weekly-report-subhead matchup-pos-head">Season Positional Context</div>
     <div class="matchup-pos-context" id="matchupPosContext"></div>
-    <div class="matchup-center-footnote">Season Positional Context uses finalized 2026 starter scoring, not live weekly projections.</div>
+    <div class="matchup-center-footnote">Season Positional Context averages completed 2026 fantasy weeks only. The active week is excluded until it becomes historical; RB/WR totals represent the full starting position unit.</div>
   </section>
 
   <section class="season-card">
@@ -727,6 +728,23 @@
   
 
       </div>
+  </section>
+
+  <section class="season-group" id="seasonAchievements">
+    <div class="season-group-head">
+      <div><span>ACHIEVEMENTS</span><h2>Achievement Points Standings</h2></div>
+      <span class="season-group-note">Publicly revealed achievements only</span>
+    </div>
+    <div class="season-group-body">
+      <section class="season-card public-achievements-center">
+        <div class="season-card-head">
+          <h3>Achievement Points Standings</h3>
+          <div class="public-achievements-head-actions"><span id="publicAchievementStatus">Loading public achievement data…</span><button type="button" class="btn ghost" id="publicAchievementRetryBtn" hidden>Retry</button></div>
+        </div>
+        <div class="public-achievement-standings" id="publicAchievementStandings"></div>
+        <div class="public-achievement-detail" id="publicAchievementDetail" aria-live="polite"></div>
+      </section>
+    </div>
   </section>
 
   <section class="season-group" id="seasonRecords">
@@ -1064,6 +1082,29 @@
 <script src="js/season/history-news.js"></script>
 <script src="js/season/playoffs-achievements.js"></script>
 <script src="js/season/trade-center.js"></script>
+<script src="js/season/public-achievements.js"></script>
 <script src="js/ui/season.js"></script>
 <script src="js/core/sync.js"></script>
-<script src="js/core/bootstrap.js"></script></body></html>
+<script src="js/core/bootstrap.js"></script>
+<script>
+(function(){
+  try{ if(!window.name) window.name='UCLCompanion'; }catch(e){}
+  const NETLIFY_GAMEDAY_URL='https://ucl-gameday.netlify.app/';
+  const GITHUB_GAMEDAY_URL='https://davidthemerc.github.io/UCL_GameDay/';
+  window.gameDayUrl=function(){
+    const host=String(window.location.hostname||'').toLowerCase();
+    if(host==='netlify.app'||host.endsWith('.netlify.app'))return NETLIFY_GAMEDAY_URL;
+    if(host==='github.io'||host.endsWith('.github.io'))return GITHUB_GAMEDAY_URL;
+    return GITHUB_GAMEDAY_URL;
+  };
+  function applyGameDayLinks(root=document){
+    const url=window.gameDayUrl();
+    root.querySelectorAll('[data-gameday-link]').forEach(link=>{link.href=url;});
+  }
+  window.applyGameDayLinks=applyGameDayLinks;
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>applyGameDayLinks());
+  else applyGameDayLinks();
+})();
+</script>
+
+</body></html>

@@ -80,9 +80,44 @@ function settlementPopulationAttractiveness(locId,role=''){
  if(role.includes('farmer')||role.includes('seed')||role.includes('miller'))s+=(locId==='briarlake'?15:0);
  return s
 }
+// v1.6.66.10.9 — Named-resident migration follows prosperity and opportunity without
+// draining small settlements or allowing capitals to absorb the whole social world.
+function settlementNamedResidentBand(locId){
+ const loc=worldLocation(locId),capital=!!regionalCapitalDef?.(locId),tier=String(loc?.settlementTier||loc?.type||'settlement').toLowerCase();
+ if(capital||tier==='city')return {floor:5,target:8,cap:12};
+ if(tier==='town')return {floor:3,target:5,cap:7};
+ return {floor:2,target:3,cap:5}
+}
+const SOSNamedResidentCountCache={day:null,counts:null};
+const SOSMigrationOpportunityCache={day:null,values:new Map()};
+function invalidateNamedResidentCountCache(){SOSNamedResidentCountCache.day=null;SOSNamedResidentCountCache.counts=null;SOSMigrationOpportunityCache.day=null;SOSMigrationOpportunityCache.values.clear()}
+function namedResidentCountSnapshot(){
+ if(SOSNamedResidentCountCache.day===state.world.day&&SOSNamedResidentCountCache.counts)return SOSNamedResidentCountCache.counts;
+ const counts=Object.create(null);for(const [home,list] of Object.entries(SETTLEMENT_NPCS))for(const npc of list){const r=npcResidenceRecord(npc.id),loc=r?.current||home;counts[loc]=(counts[loc]||0)+1}
+ SOSNamedResidentCountCache.day=state.world.day;SOSNamedResidentCountCache.counts=counts;return counts
+}
+function settlementNamedResidentCount(locId){return namedResidentCountSnapshot()[locId]||0}
+function settlementMigrationOpportunity(locId,role=''){
+ if(SOSMigrationOpportunityCache.day!==state.world.day){SOSMigrationOpportunityCache.day=state.world.day;SOSMigrationOpportunityCache.values.clear()}
+ const key=`${locId}|${String(role||'').toLowerCase()}`;if(SOSMigrationOpportunityCache.values.has(key))return SOSMigrationOpportunityCache.values.get(key);
+ const base=settlementPopulationAttractiveness(locId,role),band=settlementNamedResidentBand(locId),count=settlementNamedResidentCount(locId),ss=settlementState(locId);
+ if(count>=band.cap){SOSMigrationOpportunityCache.values.set(key,-9999);return -9999}
+ let score=base;
+ // Empty seats and missing trades make struggling places viable destinations too.
+ if(count<band.floor)score+=42+(band.floor-count)*12;
+ else if(count<band.target)score+=18+(band.target-count)*6;
+ else score-=Math.max(0,count-band.target)*10;
+ // Prosperous hubs remain attractive, but their pull tapers well before the cap.
+ if(ss.prosperity>=70)score+=Math.min(10,(ss.prosperity-70)*.25);
+ SOSMigrationOpportunityCache.values.set(key,score);return score
+}
 function populationDestinationsForNpc(npc){
- const home=npcHomeLocation(npc.id),unlocked=state.world.unlockedRegions||['shantium'],pool=unlocked.flatMap(r=>regionalSettlements(r)).filter(l=>l.id!==npcPermanentLocation(npc.id,home)&&!l.hidden);
- return pool.sort((a,b)=>settlementPopulationAttractiveness(b.id,npc.role)-settlementPopulationAttractiveness(a.id,npc.role))
+ const home=npcHomeLocation(npc.id),current=npcPermanentLocation(npc.id,home),unlocked=state.world.unlockedRegions||['shantium'],pool=unlocked.flatMap(r=>regionalSettlements(r)).filter(l=>l.id!==current&&!l.hidden&&settlementMigrationOpportunity(l.id,npc.role)>-9000);
+ return pool.sort((a,b)=>settlementMigrationOpportunity(b.id,npc.role)-settlementMigrationOpportunity(a.id,npc.role))
+}
+function choosePopulationDestination(npc,dests){
+ if(!dests.length)return null;const top=dests.slice(0,Math.min(6,dests.length)),weights=top.map(x=>Math.max(1,settlementMigrationOpportunity(x.id,npc.role)-settlementMigrationOpportunity(top[top.length-1].id,npc.role)+6)),total=weights.reduce((a,b)=>a+b,0);let roll=Math.random()*total;
+ for(let i=0;i<top.length;i++){roll-=weights[i];if(roll<=0)return top[i]}return top[0]
 }
 function relocationReason(npc,from,to){
  const fromS=settlementState(from),toS=settlementState(to),role=String(npc.role||'').toLowerCase();
@@ -95,7 +130,7 @@ function relocationReason(npc,from,to){
 }
 function relocateSettlementNpc(npcId,to,reason='opportunity',permanent=true){
  const P=populationMovementState(),r=npcResidenceRecord(npcId),npc=settlementNpc(r?.home||to,npcId);if(!r||!npc||!state.world.settlements?.[to])return null;
- const from=r.current;r.current=to;r.status=permanent?'relocated':SOSText("settlements_problems_stories.relocateSettlementNpc.001");r.sinceDay=state.world.day;r.reason=reason;r.history.push({day:state.world.day,from,to,reason,permanent});r.history=r.history.slice(-12);
+ const from=r.current;r.current=to;const countCache=SOSNamedResidentCountCache.day===state.world.day?SOSNamedResidentCountCache.counts:null;if(countCache){countCache[from]=Math.max(0,(countCache[from]||0)-1);countCache[to]=(countCache[to]||0)+1}SOSMigrationOpportunityCache.day=null;SOSMigrationOpportunityCache.values.clear();r.status=permanent?'relocated':SOSText("settlements_problems_stories.relocateSettlementNpc.001");r.sinceDay=state.world.day;r.reason=reason;r.history.push({day:state.world.day,from,to,reason,permanent});r.history=r.history.slice(-12);
  if(permanent&&state.world.npcMovements?.[npcId])delete state.world.npcMovements[npcId];
  const text=SOSText("settlements_problems_stories.relocateSettlementNpc.002",npc.name,permanent?'moves':'establishes a temporary base',worldLocation(from).name,worldLocation(to).name,reason);
  P.history.push({day:state.world.day,type:'npc_move',npcId,from,to,reason,permanent,text});P.history=P.history.slice(-100);recordWorldHistory(text,'info',SOSText("settlements_problems_stories.relocateSettlementNpc.003"));if(permanent&&((npcRelationshipState(npc.id).familiarity||0)>=4||chance(.45))){const source={kind:'npc',npc,weight:(npcRelationshipState(npc.id).familiarity||3)+2};createRelationshipGeneratedContract(to,source,true)}
@@ -103,9 +138,18 @@ function relocateSettlementNpc(npcId,to,reason='opportunity',permanent=true){
  return r
 }
 function maybeRelocateSettlementNpc(){
- const all=Object.values(SETTLEMENT_NPCS).flat(),eligible=all.filter(n=>{const r=npcResidenceRecord(n.id);return r&&state.world.day-(r.sinceDay||1)>=12});
- if(!eligible.length||!chance(.12))return null;const npc=pick(eligible),r=npcResidenceRecord(npc.id),dests=populationDestinationsForNpc(npc),to=dests[0];if(!to)return null;
- const currentScore=settlementPopulationAttractiveness(r.current,npc.role),newScore=settlementPopulationAttractiveness(to.id,npc.role);if(newScore<currentScore+10&&!chance(.25))return null;
+ const all=Object.values(SETTLEMENT_NPCS).flat();
+ // If a settlement has fallen below its representative floor, an available resident
+ // elsewhere may take an open trade/home there before normal migration is considered.
+ const settlements=(state.world.unlockedRegions||['shantium']).flatMap(r=>regionalSettlements(r)).filter(x=>!x.hidden),deficits=settlements.filter(x=>settlementNamedResidentCount(x.id)<settlementNamedResidentBand(x.id).floor);
+ if(deficits.length&&chance(.45)){const to=pick(deficits),donors=all.filter(n=>{const r=npcResidenceRecord(n.id);return r&&state.world.day-(r.sinceDay||1)>=12&&settlementNamedResidentCount(r.current)>settlementNamedResidentBand(r.current).target});if(donors.length){const npc=pick(donors),r=npcResidenceRecord(npc.id);return relocateSettlementNpc(npc.id,to.id,settlementState(to.id).prosperity<45?'an open trade and affordable place to settle':'a fresh opportunity',true)}}
+ const eligible=all.filter(n=>{const r=npcResidenceRecord(n.id);if(!r||state.world.day-(r.sinceDay||1)<12)return false;const band=settlementNamedResidentBand(r.current),count=settlementNamedResidentCount(r.current);return count>band.floor});
+ if(!eligible.length||!chance(.12))return null;
+ // Residents of struggling places feel more pressure to move, but social/population floors win.
+ const weighted=[];for(const n of eligible){const r=npcResidenceRecord(n.id),ss=settlementState(r.current),band=settlementNamedResidentBand(r.current),count=settlementNamedResidentCount(r.current);let w=1+Math.max(0,(50-(ss.prosperity||50))/12)+Math.max(0,(45-(ss.security||50))/18);if(count<=band.target)w*=.45;for(let i=0;i<Math.max(1,Math.round(w));i++)weighted.push(n)}
+ const npc=pick(weighted),r=npcResidenceRecord(npc.id),dests=populationDestinationsForNpc(npc),to=choosePopulationDestination(npc,dests);if(!to)return null;
+ const currentScore=settlementPopulationAttractiveness(r.current,npc.role),newScore=settlementMigrationOpportunity(to.id,npc.role),fromBand=settlementNamedResidentBand(r.current),fromCount=settlementNamedResidentCount(r.current);
+ if(fromCount<=fromBand.target&&newScore<currentScore+16&&!chance(.12))return null;if(newScore<currentScore+6&&!chance(.20))return null;
  return relocateSettlementNpc(npc.id,to.id,relocationReason(npc,r.current,to.id),true)
 }
 function ensureDisplacedHouseholds(){
@@ -115,7 +159,7 @@ function ensureDisplacedHouseholds(){
  return P.households
 }
 function householdDestination(h){
- const pool=(state.world.unlockedRegions||['shantium']).flatMap(r=>regionalSettlements(r)).filter(l=>l.id!==h.current&&!l.hidden).sort((a,b)=>settlementPopulationAttractiveness(b.id)-settlementPopulationAttractiveness(a.id));return pool[0]||null
+ const pool=(state.world.unlockedRegions||['shantium']).flatMap(r=>regionalSettlements(r)).filter(l=>l.id!==h.current&&!l.hidden).sort((a,b)=>settlementMigrationOpportunity(b.id)-settlementMigrationOpportunity(a.id));if(!pool.length)return null;const under=pool.filter(x=>settlementNamedResidentCount(x.id)<settlementNamedResidentBand(x.id).target);return pick((under.length?under:pool).slice(0,Math.min(5,(under.length?under:pool).length)))||pool[0]
 }
 function moveHousehold(h,to,reason){
  const P=populationMovementState(),from=h.current;h.current=to;h.status=to===h.home?'returned home':'resettled';h.sinceDay=state.world.day;h.history.push({day:state.world.day,from,to,reason});h.history=h.history.slice(-10);
@@ -128,7 +172,7 @@ function maybeMoveHousehold(){
 }
 function maybeEstablishTravelerBase(){
  const R=travelerRegistryState(),cands=Object.values(R.records).filter(r=>!r.settledAt&&(r.social?.familiarity||0)>=3&&((r.contractsCompleted||0)>=1||(r.helped||0)>=2));if(!cands.length||!chance(.10))return null;
- const r=pick(cands),regions=r.regions?.length?r.regions:(state.world.unlockedRegions||['shantium']),region=pick(regions),to=regionalSettlements(region).sort((a,b)=>settlementPopulationAttractiveness(b.id)-settlementPopulationAttractiveness(a.id))[0];if(!to)return null;
+ const r=pick(cands),regions=r.regions?.length?r.regions:(state.world.unlockedRegions||['shantium']),region=pick(regions),to=choosePopulationDestination({id:r.id,role:r.kind},regionalSettlements(region).filter(x=>!x.hidden).sort((a,b)=>settlementMigrationOpportunity(b.id,r.kind)-settlementMigrationOpportunity(a.id,r.kind)));if(!to)return null;
  r.professionShift=r.professionShift||(r.kind==='merchant'?'regional factor':r.kind==='mercenary'?'licensed escort company':r.kind==='refugees'?'settled households':SOSText("settlements_problems_stories.maybeEstablishTravelerBase.001"));const changed=typeof establishTravelerBase==='function'?establishTravelerBase(r,to.id,SOSText("settlements_problems_stories.maybeEstablishTravelerBase.002",to.name)):false;if(!changed)return null;const text=SOSText("settlements_problems_stories.maybeEstablishTravelerBase.003",r.name,to.name);recordWorldHistory(text,'good',SOSText("settlements_problems_stories.maybeEstablishTravelerBase.004"));return r
 }
 function populationMovementDailyTick(){

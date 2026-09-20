@@ -44,6 +44,44 @@ function prisonerReleaseCriminalIII(p,returnHall=false){
  save();back()
 }
 
+
+// v1.6.66.10.8 — Local authorities determine whether a handover is lawful.
+// Capture is custody, not a conviction.  Known outlaw provenance and recorded
+// evidence support detention; ordinary faction/company affiliation does not.
+function prisonerAuthorityAssessmentIII(p,settlementId){
+ const n=Math.max(1,Math.floor(Number(p?.count)||1)),text=`${p?.faction||''} ${p?.source||''} ${p?.captureKind||''}`.toLowerCase();
+ const known=prisonerCriminalIII(p)||['bandits','raiders'].includes(String(p?.captureKind||'').toLowerCase())||p?.wanted===true||Number(p?.crimeEvidence||0)>=2;
+ const suspected=!known&&(p?.wanted==='suspected'||Number(p?.crimeEvidence||0)===1||/suspect|smuggl|poacher|thiev|stolen/.test(text));
+ const authority=jurisdictionRule?.(settlementId)?.authority||majorFaction(settlementControl(settlementId)||'')?.short||settlementControl(settlementId)||'local authorities';
+ if(known){const per=18+Math.abs(String(p?.source||p?.faction||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0))%13;return {outcome:'accepted',n,bounty:n*per,authority,reason:p?.wanted===true?'standing warrants and local records':prisonerCriminalIII(p)||['bandits','raiders'].includes(String(p?.captureKind||'').toLowerCase())?'their outlaw record and the circumstances of capture':'the evidence delivered with them'}}
+ if(suspected)return {outcome:'investigate',n,bounty:0,authority,reason:'enough cause to hold them for questioning, but not enough to treat them as convicted criminals'};
+ return {outcome:'released',n,bounty:0,authority,reason:'no warrant, outlaw record, or charge the watch can substantiate'}
+}
+function prisonerAuthorityThanksIII(a){
+ const lines=['“Much obliged, Guardian. We’ll take them from here.”','“Thank you, Guardian. We’ve been wanting these ones off the road.”','“Good work bringing them in alive, Guardian. We’ll see to the rest.”','“These ones are known to us. Thank you, Guardian.”'];
+ return lines[Math.abs((a.n||1)+(state.world?.day||0))%lines.length]
+}
+function noteQuestionableHandoverIII(settlementId,n){
+ state.world.authorityQuestionableHandovers=state.world.authorityQuestionableHandovers||{};const q=state.world.authorityQuestionableHandovers[settlementId]||0;state.world.authorityQuestionableHandovers[settlementId]=q+Math.max(1,n||1);
+ const before=Math.floor(q/6),after=Math.floor(state.world.authorityQuestionableHandovers[settlementId]/6);if(after>before){changeLocalReputation(settlementId,-1,'repeatedly delivered people against whom the authorities could establish no charge');return ' The watch is becoming noticeably less patient with the Hall’s unsupported prisoner deliveries.'}return ''
+}
+function authorityHandoverOneIII(p,settlementId,returnHall=false){
+ const a=prisonerAuthorityAssessmentIII(p,settlementId),back=()=>returnHall?showHomePrisoners():showPrisoners(),n=a.n,place=worldLocation(settlementId)?.name||settlementId;
+ if(a.outcome==='accepted'){
+  if(a.bounty)gainGold(a.bounty);const control=settlementControl(settlementId);if(control)state.world.factionStanding[control]=(state.world.factionStanding[control]||0)+Math.max(1,Math.ceil(n/5));state.reputation+=Math.max(1,Math.ceil(n/5));resolveNamedPrisonerLifecycle(p,'handover');state.prisoners=state.prisoners.filter(x=>x.id!==p.id);
+  recordWorldHistory(`${n} ${p.faction||'captured'} prisoner${n===1?' was':'s were'} accepted by the authorities in ${place}. A ${a.bounty} gold bounty was paid after their status was confirmed.`,'good','prisoners');save();
+  return actionResult('Prisoners Accepted',`The watch recognizes ${n===1?'the prisoner':'the prisoners'} from ${p.source||p.faction||'the captured company'} and takes ${n===1?'them':'them'} into custody. ${prisonerAuthorityThanksIII(a)}
+
+Bounty paid: ${a.bounty} gold.`,'good',back)
+ }
+ if(a.outcome==='investigate'){
+  resolveNamedPrisonerLifecycle(p,'handover');state.prisoners=state.prisoners.filter(x=>x.id!==p.id);recordWorldHistory(`${n} ${p.faction||'captured'} prisoner${n===1?' was':'s were'} accepted temporarily by the ${place} authorities for questioning; no bounty was paid.`,'info','prisoners');save();
+  return actionResult('Held for Questioning',`The watch has enough cause to keep ${n===1?'the prisoner':'the group'} for questioning, but makes no finding yet. “We’ll look into it, Guardian.” No bounty is paid.`,'info',back)
+ }
+ resolveNamedPrisonerLifecycle(p,'release');state.prisoners=state.prisoners.filter(x=>x.id!==p.id);if(state.relations[p.faction]!=null)state.relations[p.faction]++;const warning=noteQuestionableHandoverIII(settlementId,n);recordWorldHistory(`${n} ${p.faction||'captured'} prisoner${n===1?' was':'s were'} presented to the authorities in ${place}, but no lawful charge could be established and ${n===1?'the prisoner was':'they were'} released.`,'info','prisoners');save();
+ return actionResult('No Charges Found',`The watch can find no charge against ${n===1?'this person':'these people'}. “We’ve nothing to hold ${n===1?'them':'these people'} on, Guardian.” ${n===1?'The prisoner is':'They are'} released. No bounty is paid.${warning}`,'info',back)
+}
+
 // Preserve all modern custody/jurisdiction accounting, but intercept the revised outcomes.
 const SOS_PRISONER_ACTION_16229_BASE=prisonerAction;
 prisonerAction=function(id,action,returnHall=false){
@@ -52,6 +90,7 @@ prisonerAction=function(id,action,returnHall=false){
  if(action==='exchange'&&!prisonerExchangeEligibleIII(p))return returnHall?showHomePrisoners():showPrisoners();
  if(action==='ransom'&&!prisonerRansomEligibleIII(p))return returnHall?showHomePrisoners():showPrisoners();
  if(action==='release'&&isOpenWorld()&&prisonerCriminalIII(p))return prisonerReleaseCriminalIII(p,returnHall);
+ if(action==='handover'&&isOpenWorld()){const physical=playerPhysicalContext?.();if(physical?.type==='settlement'&&physical.settlementId)return authorityHandoverOneIII(p,physical.settlementId,returnHall)}
  return SOS_PRISONER_ACTION_16229_BASE(id,action,returnHall)
 };
 

@@ -2212,6 +2212,25 @@ body.live-season-build.post-draft-mode #teamView .strategy-history-box{display:n
 .nr-external-link:hover,.nc-external-link:hover{text-decoration:underline}
 
 
-/* v1.10.22 compact live box-score lines */
+/* v1.10.24 compact live box-score lines */
 .live-stat-line{display:block!important;margin-top:2px;color:var(--ink)!important;font-size:10px!important;font-weight:700!important;line-height:1.25!important;white-space:normal;}
 .matchup-pos-player.right .live-stat-line{text-align:right;}
+
+
+/* v1.10.28 — limited public Achievement standings */
+.public-achievements-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
+.public-achievements-head-actions>span{color:var(--muted);font-weight:700;text-align:right}
+.public-achievement-standings{display:grid;gap:7px;margin-top:8px}
+.public-achievement-team{width:100%;border:1px solid var(--line);background:var(--card,#fff);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;text-align:left;cursor:pointer;color:inherit;box-shadow:none}
+.public-achievement-team:hover{border-color:var(--navy);transform:none}
+.public-achievement-team.active{border-color:var(--navy);box-shadow:inset 3px 0 0 var(--navy)}
+.public-achievement-team-name{font-weight:900;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.public-achievement-team-score{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;font-size:12px;font-weight:800}
+.public-achievement-team-score b{font-size:14px}.public-achievement-team-score .cp{color:#7a4ca0}
+.public-achievement-detail{margin-top:10px;min-height:92px;border-top:1px solid var(--line);padding-top:10px}
+.public-achievement-detail-head{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:8px}.public-achievement-detail-head h3{margin:0}.public-achievement-detail-head span{color:var(--muted);font-weight:700}
+.public-achievement-list{display:grid;gap:8px}.public-achievement-unlock{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--card,#fff)}
+.public-achievement-unlock-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.public-achievement-unlock-head b{font-size:14px}.public-achievement-value{font-weight:900;white-space:nowrap}.public-achievement-value.cp{color:#7a4ca0}
+.public-achievement-unlock p{margin:5px 0 7px;line-height:1.45}.public-achievement-meta{display:flex;gap:7px;flex-wrap:wrap;color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase}
+.public-achievement-empty,.public-achievement-error{padding:14px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-weight:700}.public-achievement-error{border-style:solid}
+@media(max-width:700px){.public-achievement-team{grid-template-columns:1fr}.public-achievement-team-score{justify-content:flex-start}.public-achievement-detail-head{align-items:flex-start;flex-direction:column}.public-achievement-unlock-head{gap:6px}.public-achievements-head-actions{align-items:flex-end;flex-direction:column}}

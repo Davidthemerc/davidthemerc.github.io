@@ -393,9 +393,9 @@ function showRegionTravel(){modalRouteEnter(SOSText("world_road_travel.showRegio
 }
 function finalizeInterRegionJourney(connection,from,dest){
  ensureWorldState();if(!connection||!dest||!worldLocation(dest))return false;
- const newRegion=locationRegion(dest),scoutShift=reduceScoutingForRegionChange();unlockRegion(newRegion);
- relocatePlayerParty(dest,{inside:!!state.world.settlements?.[dest],field:!state.world.settlements?.[dest],clearTravel:true});
- if(scoutShift.before!==scoutShift.after)recordWorldHistory(`Regional scouting reset: ${scoutShift.before} → ${scoutShift.after}. Fresh reconnaissance is needed in ${regionDef(newRegion).name}.`,'info','travel');
+ const newRegion=locationRegion(dest),scoutShift=reduceScoutingForRegionChange(newRegion);unlockRegion(newRegion);
+ relocatePlayerParty(dest,{inside:!!state.world.settlements?.[dest],field:!state.world.settlements?.[dest],clearTravel:true});if(state.world.settlements?.[dest]&&typeof guardianHeldSettlementArrivalMusic==='function')guardianHeldSettlementArrivalMusic(dest);
+ if(scoutShift.after>0)recordWorldHistory(`Arrived in ${regionDef(newRegion).name} with ${scoutShift.after} points of current regional knowledge.`,'info','travel');
  const last=state.world.regionHistory?.[state.world.regionHistory.length-1],duplicate=last&&last.day===state.world.day&&last.from===locationRegion(from)&&last.to===newRegion&&last.via===connection.name;
  if(!duplicate){state.world.regionHistory.push({day:state.world.day,from:locationRegion(from),to:newRegion,via:connection.name});state.world.regionHistory=state.world.regionHistory.slice(-30)}
  ensureMapView().lastLocation=null;
@@ -437,7 +437,7 @@ function recoverStaleDirectTravelPlan(){
 }
 function attemptPlayerPartySettlementReentry(dest=state.world.location){
  if(!playerPartyInField()||dest!==state.world.location||!state.world.settlements?.[dest])return renderOpenWorld();
- const finish=()=>{playerPartyClearFieldPosition();state.world.settlementVisits[dest]=(state.world.settlementVisits[dest]||0)+1;save();renderOpenWorld()};
+ const finish=()=>{playerPartyClearFieldPosition();state.world.settlementVisits[dest]=(state.world.settlementVisits[dest]||0)+1;if(typeof guardianHeldSettlementArrivalMusic==='function')guardianHeldSettlementArrivalMusic(dest);save();renderOpenWorld()};
  if(typeof showSettlementLawArrival==='function'&&lawArrivalNeedsDecision(dest)){showSettlementLawArrival(dest,finish);return}
  finish()
 }
@@ -448,6 +448,23 @@ function attemptWorldTravel(dest){
  const spawnTrip=locationRegion(from)==='spawn'&&locationRegion(dest)==='spawn';
  const go=(mode,days)=>spawnTrip?commitSpawnUrbanTravel(from,dest,mode,profile):commitWorldTravelChoice(from,dest,mode,days,profile);
  $('#travelDirect').onclick=()=>go('direct',scoutingTravelDays(opts.direct.days));$('#travelSafer').onclick=()=>go('safer',scoutingTravelDays(opts.safer.days));$('#travelStay').onclick=()=>{if(worldLifePendingTravel())clearWorldLifePendingTravel();save();closeOverlay();renderOpenWorld()};
+}
+
+function mountedShortTravelClock(){
+ ensureWorldState();const T=state.world.mountedShortTravelClock;
+ if(!T||typeof T!=='object'||T.day!==state.world.day)state.world.mountedShortTravelClock={day:state.world.day,usedHalf:false};
+ return state.world.mountedShortTravelClock
+}
+function mountedShortTravelEligible(days){return Number(days)===1&&typeof mountPartyFullyMounted==='function'&&mountPartyFullyMounted()}
+function beginMountedShortJourney(from,dest,profile=null){
+ const T=mountedShortTravelClock(),advance=!!T.usedHalf;
+ if(advance){
+  try{advanceWorldDays(1,`Mounted travel from ${worldLocation(from).name} to ${worldLocation(dest).name}`)}catch(err){console.error('[Road Travel] daily simulation failed during mounted short journey',err)}
+  state.world.mountedShortTravelClock={day:state.world.day,usedHalf:false}
+ }else{T.usedHalf=true;save()}
+ try{if(typeof recoveryTravelStrainTick==='function')recoveryTravelStrainTick(`${worldLocation(from).name} → ${worldLocation(dest).name}`)}catch(err){console.error('[Road Travel] mounted short-journey strain tick failed',err)}
+ const finish=()=>beginWorldJourney(from,dest,0);
+ try{maybeRoadEvent(from,dest,false,finish)}catch(err){console.error('[Road Travel] road event failed during mounted short journey; continuing journey',err);finish()}
 }
 
 function commitWorldTravelChoice(from,dest,mode,days,profile=null){
@@ -466,13 +483,17 @@ function commitWorldTravelChoice(from,dest,mode,days,profile=null){
  state.world.routeTravelHistory=state.world.routeTravelHistory.slice(-40);
  safe('departure sound',()=>{if(typeof sfxWorld==='function')sfxWorld('depart')});
  safe('close travel dialog',()=>closeOverlay());
+ if(mountedShortTravelEligible(totalDays)){
+  state.world.travelPlan.mountedHalfDay=true;state.world.travelPlan.remainingDays=.5;save();
+  return beginMountedShortJourney(from,dest,profile)
+ }
  return beginWorldJourney(from,dest,totalDays)
 }
 
 function beginWorldJourney(from,dest,remaining){
  ensureWorldState();
  if(state.world.travelPlan&&state.world.travelPlan.mode!=='regional'){state.world.travelPlan.remainingDays=Math.max(0,Number(remaining)||0);save()}
- if(remaining<=0){relocatePlayerParty(dest,{inside:!!state.world.settlements?.[dest],field:!state.world.settlements?.[dest],clearTravel:true});if(dest==='shantium'&&from!=='shantium')homePrepareHomecomingBriefing();state.world.travelPlan=null;state.world.settlementVisits[dest]=(state.world.settlementVisits[dest]||0)+1;if(worldLocation(dest).hidden){const XS=explorationSiteState(dest);XS.visits++;XS.lastVisit=state.world.day}if(state.world.settlements[dest])createSettlementEvent(dest,false);log(SOSText("world_road_travel.beginWorldJourney.001",state.world.day,worldLocation(dest).name),'info');if(state.world.settlements[dest])SOSServices.companions.noteSharedEvent('settlement',SOSText("world_road_travel.beginWorldJourney.002",worldLocation(dest).name));checkWorldQuestArrival();checkAdventureStoryArrival();checkFactionQuestProgress();checkPersonalRequests();save();const finishArrival=()=>{if(state.world.settlements[dest])playerPartyClearFieldPosition();if(worldLifePendingTravel()){if(continueWorldLifeTravel())return}if(checkCompanionStories()){save();return}renderOpenWorld();return handleFactionArrival(dest,renderOpenWorld)};if(state.world.settlements[dest]&&typeof showSettlementLawArrival==='function'&&lawArrivalNeedsDecision(dest)){showSettlementLawArrival(dest,finishArrival);return}return finishArrival()}
+ if(remaining<=0){relocatePlayerParty(dest,{inside:!!state.world.settlements?.[dest],field:!state.world.settlements?.[dest],clearTravel:true});if(state.world.settlements?.[dest]&&typeof guardianHeldSettlementArrivalMusic==='function')guardianHeldSettlementArrivalMusic(dest);if(dest==='shantium'&&from!=='shantium')homePrepareHomecomingBriefing();state.world.travelPlan=null;state.world.settlementVisits[dest]=(state.world.settlementVisits[dest]||0)+1;if(worldLocation(dest).hidden){const XS=explorationSiteState(dest);XS.visits++;XS.lastVisit=state.world.day}if(state.world.settlements[dest])createSettlementEvent(dest,false);log(SOSText("world_road_travel.beginWorldJourney.001",state.world.day,worldLocation(dest).name),'info');if(state.world.settlements[dest])SOSServices.companions.noteSharedEvent('settlement',SOSText("world_road_travel.beginWorldJourney.002",worldLocation(dest).name));checkWorldQuestArrival();checkAdventureStoryArrival();checkFactionQuestProgress();checkPersonalRequests();save();const finishArrival=()=>{if(state.world.settlements[dest])playerPartyClearFieldPosition();if(worldLifePendingTravel()){if(continueWorldLifeTravel())return}if(checkCompanionStories()){save();return}renderOpenWorld();return handleFactionArrival(dest,renderOpenWorld)};if(state.world.settlements[dest]&&typeof showSettlementLawArrival==='function'&&lawArrivalNeedsDecision(dest)){showSettlementLawArrival(dest,finishArrival);return}return finishArrival()}
  try{advanceWorldDays(1,SOSText("world_road_travel.beginWorldJourney.003",worldLocation(from).name,worldLocation(dest).name))}catch(err){console.error('[Road Travel] daily simulation failed during journey; preserving travel transaction',err)}
  try{if(typeof recoveryTravelStrainTick==='function')recoveryTravelStrainTick(`${worldLocation(from).name} → ${worldLocation(dest).name}`)}catch(err){console.error('[Road Travel] strain tick failed',err)}
  if(state.world.travelPlan&&state.world.travelPlan.mode!=='regional'){state.world.travelPlan.remainingDays=Math.max(0,remaining-1);save()}

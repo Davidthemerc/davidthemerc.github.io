@@ -74,8 +74,8 @@ function homeDailyTick(){
  if(!isOpenWorld())return;const perf=(name,fn)=>typeof sosPerfRun==='function'?sosPerfRun(name,fn):fn();ensureHomeBase();const h=state.world.homeBase,L=h.logistics;
  homeSecretPassageDailyTick();
  homeMedicalAidDailyTick();
- const infirmaryLevel=homeUpgradeLevel('infirmary'),quartersLevel=homeUpgradeLevel('quarters');if(infirmaryLevel){for(const m of partyMembers(false))if(!state.party.active.includes(m.id)){m.hp=Math.min(allyMaxHP(m),m.hp+Math.max(4,Math.round(allyMaxHP(m)*(.10+infirmaryLevel*.03))));m.stamina=Math.min(allyMaxStamina(m),m.stamina+12+infirmaryLevel*5)}}
- if(quartersLevel&&state.world.day%Math.max(2,4-quartersLevel)===0){for(const m of partyMembers(false))if(!state.party.active.includes(m.id))SOSServices.companions.adjustTrust(m.id,1)}
+ const infirmaryLevel=homeUpgradeLevel('infirmary'),quartersLevel=homeUpgradeLevel('quarters'),hallPartyMembers=(infirmaryLevel||quartersLevel)?partyMembers(false):[];if(infirmaryLevel){for(const m of hallPartyMembers)if(!state.party.active.includes(m.id)){m.hp=Math.min(allyMaxHP(m),m.hp+Math.max(4,Math.round(allyMaxHP(m)*(.10+infirmaryLevel*.03))));m.stamina=Math.min(allyMaxStamina(m),m.stamina+12+infirmaryLevel*5)}}
+ if(quartersLevel&&state.world.day%Math.max(2,4-quartersLevel)===0){for(const m of hallPartyMembers)if(!state.party.active.includes(m.id))SOSServices.companions.adjustTrust(m.id,1)}
  perf('Guardian Hall — Staff & Artisan',()=>{perf('Hall Staff & Artisan — Staff',()=>homeStaffDailyTick());perf('Hall Staff & Artisan — Artisan',()=>homeArtisanDailyTick())});
  perf('Guardian Hall — Security & Finance',()=>{perf('Hall Security & Finance — Security',()=>homeSecurityDailyTick());perf('Hall Security & Finance — Finance',()=>homeFinanceDailyTick())});
  const s=L.supplies,crisisFood=homeHallEmployeeCrisisFoodUse();

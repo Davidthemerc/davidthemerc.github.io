@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.51 — build fragment: 20_data_persistence_ui.js
+/* UCL GameDay v0.5.58 — build fragment: 20_data_persistence_ui.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 
@@ -193,6 +193,20 @@ async function refreshNflKickoffSchedule(force=false){
 }
 loadNflKickoffCache();
 loadNflKickoffCache();
+
+const UCL_COMPANION_NETLIFY_URL='https://ucl-companion.netlify.app/';
+const UCL_COMPANION_GITHUB_URL='https://davidthemerc.github.io/UCL_Companion/';
+function companionUrlForCurrentHost(){
+  const host=String(window.location?.hostname||'').toLowerCase();
+  if(host==='netlify.app'||host.endsWith('.netlify.app'))return UCL_COMPANION_NETLIFY_URL;
+  if(host==='github.io'||host.endsWith('.github.io'))return UCL_COMPANION_GITHUB_URL;
+  return UCL_COMPANION_GITHUB_URL;
+}
+function applyHostAwareCompanionLink(){
+  const link=$('#companionLink');
+  if(link)link.href=companionUrlForCurrentHost();
+}
+document.addEventListener('DOMContentLoaded',applyHostAwareCompanionLink);
 
 function nflScheduleKickoffMs(game){
   const candidates=[

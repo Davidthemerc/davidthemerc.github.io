@@ -2867,3 +2867,9 @@ button>span>b+small,
 
 /* v1.6.66.9.29 — bounded collapsible recovery subsections */
 .caravan-missing-mounts{margin-top:12px}.caravan-missing-mounts>summary{cursor:pointer;padding:7px 4px;list-style-position:inside}.caravan-missing-mounts>.details-body{margin-top:8px;padding-top:8px;border-top:1px solid rgba(80,65,45,.25)}
+
+/* v1.6.66.10.17 — narrative/dialogue breathing room */
+.action-result-body{display:flex;flex-direction:column;gap:12px;margin:8px 0 14px}
+.action-result-body p{margin:0;line-height:1.5}
+.dialog .narrative-block,.dialog .dialogue-block{margin:12px 0;line-height:1.5}
+.dialog .narrative-block + .narrative-block,.dialog .dialogue-block + .dialogue-block,.dialog .narrative-block + .dialogue-block,.dialog .dialogue-block + .narrative-block{margin-top:14px}

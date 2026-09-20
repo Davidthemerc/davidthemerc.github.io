@@ -1790,7 +1790,7 @@ const SOS_LANGUAGE=Object.freeze({
   "politics_faction_social.attemptNpcPoliticalEndorsement.013":'Public Endorsement',
   // -- showNpcPoliticalConversation --
   "politics_faction_social.showNpcPoliticalConversation.001":'showNpcPoliticalConversation',
-  "politics_faction_social.showNpcPoliticalConversation.002":(v0,v1,v2,v3,v4,v5,v6,v7)=>`<h2>${v0} — Local Politics</h2><div class="notice"><b>${v1}: ${v2} ${v3}</b><br>${v4}</div><p>${v5} is ${v6} toward you. Familiarity and personal opinion affect how seriously they will take a request for public support.</p><div class="choice-list"><button id="npcPoliticsWhy">Ask Why</button>${v7}</div><div class="dialog-footer"><button id="npcPoliticsBack">Back to Conversation</button></div>`,
+  "politics_faction_social.showNpcPoliticalConversation.002":(v0,v1,v2,v3,v4,v5,v6,v7)=>`<h2>${v0} — Local Politics</h2><div class="notice"><b>${v1}: ${v2} ${v3}</b><br>${v4}</div><p>${v5} is ${v6} toward you.</p><div class="choice-list"><button id="npcPoliticsWhy">Ask Why</button>${v7}</div><div class="dialog-footer"><button id="npcPoliticsBack">Back to Conversation</button></div>`,
   "politics_faction_social.showNpcPoliticalConversation.003":(v0)=>`${v0} on Local Politics`,
   // -- showLocalPoliticalPeople --
   "politics_faction_social.showLocalPoliticalPeople.001":'showLocalPoliticalPeople',

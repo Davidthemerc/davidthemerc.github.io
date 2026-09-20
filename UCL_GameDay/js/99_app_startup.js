@@ -1,4 +1,4 @@
-/* UCL GameDay v0.5.51 — build fragment: 99_app_startup.js
+/* UCL GameDay v0.5.58 — build fragment: 99_app_startup.js
    This file is concatenated in manifest order into the app's single lexical scope.
    It is intentionally not loaded independently in the browser. */
 function loadPlayers(forceApi=false){
@@ -116,8 +116,16 @@ document.addEventListener('click',e=>{
     return;
   }
 
+  const gvAllTeamsChoice=e.target.closest?.('[data-gv-all-teams]');
+  if(gvAllTeamsChoice){
+    gvSetAllTeamsMode(true);
+    gvTeamPickerClose();
+    if(currentView==='gameview')renderGameView();
+    return;
+  }
   const gvTeamChoice=e.target.closest?.('[data-gv-team-id]');
   if(gvTeamChoice){
+    if(gvIsAllTeamsMode())gvSetAllTeamsMode(false);
     selectPreferredTeam(gvTeamChoice.dataset.gvTeamId);
     gvTeamPickerClose();
     if(currentView==='gameview')renderGameView();
@@ -236,6 +244,7 @@ $('#importSaveDataFile').onchange=e=>{const file=e.target.files?.[0];if(file)imp
 $('#simStart').onclick=startSimulation;$('#simPause').onclick=toggleSimulationPause;$('#simStop').onclick=stopSimulation;
 $('#liveLoadingToggle').onchange=e=>setLiveLoading(!!e.target.checked);
 $('#testingAreaVisibleToggle').onchange=e=>setTestingAreaVisible(!!e.target.checked);
+gameViewAllTeamsMode=storage.get(GAMEVIEW_ALL_TEAMS_PREF_KEY,'off')==='on';
 $('#simSpeed').value=storage.get('ucl-gameday-sim-speed','20');
 $('#simStyle').value=storage.get('ucl-gameday-sim-style','chaos');
 const savedSimScenario=normalizeSimulationScenarioId(storage.get('ucl-gameday-sim-scenario','full'));

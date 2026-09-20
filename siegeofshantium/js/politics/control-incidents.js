@@ -57,20 +57,47 @@ function expireTreaties(){
  ensurePoliticalState();for(const t of Object.values(state.world.politics.treaties)){if(t.status==='active'&&state.world.day>t.expiresDay){t.status='expired';politicalHistory(SOSText("politics_control_incidents.expireTreaties.001",t.label,t.a,t.b),'info')}}
 }
 function factionsOpposedPolitically(a,b){const t=activeTreaty(a,b);if(t&&['nonaggression','road_access','trade'].includes(t.type))return false;return factionRelation(a,b)<=-4}
+// v1.6.66.22.6 — Formal handovers use the same political contest the player can actually see and influence.
+// `politicalPressure()` is a broad strategic-power score: it also counts physical faction presence,
+// temporary evidence, civic organization and an incumbency bonus.  Using it as the handover vote/lead
+// test let a heavily garrisoned incumbent silently veto a challenger that visibly led the political
+// picture and the settlement's explicit pressure track.  Keep that strategic score for the rest of
+// politics, but use the persistent settlement pressure track for control handovers.
+function politicalHandoverMetrics(locId){
+ const ps=politicalSettlement(locId),current=settlementControl(locId),visibleLead=localPoliticalLeader(locId),challenger=visibleLead?.faction||null;
+ const rows=Object.keys(OPEN_WORLD_FACTIONS).map(f=>({f,pressure:Number(ps.pressure?.[f]||0)})).sort((a,b)=>b.pressure-a.pressure),pressureLead=rows[0]||{f:current,pressure:0},incumbentPressure=Number(ps.pressure?.[current]||0),autonomyMargin=Math.max(2,Math.round((ps.autonomy||0)/4));
+ return{ps,current,visibleLead,challenger,pressureLead,incumbentPressure,autonomyMargin,challengerPressure:challenger?Number(ps.pressure?.[challenger]||0):0,lean:challenger?settlementLeanScore(locId,challenger):0}
+}
 function politicalHandoverQualification(locId,q){
- const ps=politicalSettlement(locId),status=politicalStatus(locId),current=settlementControl(locId),challenger=q?.challenger,expected=q?.current;
+ const status=politicalStatus(locId),m=politicalHandoverMetrics(locId),challenger=q?.challenger,expected=q?.current;
  if(!q||!challenger||!expected)return{qualified:false,status,reason:'missing handover state'};
- if(current!==expected)return{qualified:false,status,reason:'formal control changed'};
- const visibleLead=localPoliticalLeader(locId),visibleChallenger=visibleLead?.faction||null;
- if(status.topFaction!==challenger)return{qualified:false,status,reason:'challenger no longer leads political pressure'};
- if(visibleChallenger!==challenger)return{qualified:false,status,reason:'challenger no longer leads the visible political picture'};
- const defense=politicalPressure(locId,expected)+Math.round(ps.autonomy/2),lean=settlementLeanScore(locId,challenger);
- const qualified=status.topPressure>=10&&lean>=7&&status.topPressure>=defense+2;
- return{qualified,status,defense,lean,visibleLead,reason:qualified?'qualified':'handover thresholds no longer met'}
+ if(m.current!==expected)return{qualified:false,status,reason:'formal control changed'};
+ if(m.visibleLead?.faction!==challenger)return{qualified:false,status,reason:'challenger no longer leads the visible political picture'};
+ if(m.pressureLead.f!==challenger)return{qualified:false,status,reason:'challenger no longer leads settlement political pressure'};
+ const qualified=m.challengerPressure>=10&&m.lean>=7&&m.challengerPressure>=m.incumbentPressure+m.autonomyMargin;
+ return{qualified,status,defense:m.incumbentPressure+m.autonomyMargin,lean:m.lean,visibleLead:m.visibleLead,challengerPressure:m.challengerPressure,reason:qualified?'qualified':'handover thresholds no longer met'}
 }
 function cancelStalePoliticalHandover(locId,q,reason='the political lead no longer holds'){
  const ps=politicalSettlement(locId);if(!q||ps.pending?.id!==q.id)return false;
  politicalHistory(`${worldLocation(locId).name}: ${majorFaction(q.challenger).short} loses the sustained political lead; the threatened handover recedes (${reason}).`,'info');ps.pending=null;return true
+}
+// v1.6.66.22.4 — A pending handover is a world-state clock, not a regional-activity clock.
+// Advance it at most once per world day wherever the Guardian happens to be.
+function advancePoliticalHandoverClock(locId){
+ const ps=politicalSettlement(locId),q=ps.pending;if(!q)return false;
+ const check=politicalHandoverQualification(locId,q);
+ if(!check.qualified)return cancelStalePoliticalHandover(locId,q,check.reason);
+ if(q.guardianLastStand)return false;
+ const today=state.world.day;
+ // Mature-save repair: retain the original creation day and never count the same day twice.
+ if(!Number.isFinite(q.createdDay))q.createdDay=today-Math.max(0,(q.sustainDays||1)-1);
+ if(!Number.isFinite(q.lastQualifiedDay))q.lastQualifiedDay=q.createdDay;
+ if(q.lastQualifiedDay<today){q.sustainDays=Math.max(1,q.sustainDays||1)+(today-q.lastQualifiedDay);q.lastQualifiedDay=today}
+ if((q.sustainDays||1)>=(q.requiredDays||4)){
+  if(guardianPoliticalLastStandEligible(locId,q.current))return queueGuardianPoliticalLastStand(locId,q);
+  completeAutomaticPoliticalTransfer(locId,q);return true
+ }
+ return false
 }
 function guardianPoliticalLastStandEligible(locId,current){
  const e=typeof guardianPublicEndorsement==='function'?guardianPublicEndorsement():null;
@@ -99,25 +126,33 @@ function resolveGuardianPoliticalLastStand(locId,intervene){
 function queueGuardianPoliticalLastStand(locId,q){const check=politicalHandoverQualification(locId,q);if(!check.qualified){cancelStalePoliticalHandover(locId,q,check.reason);return false}q.guardianLastStand=true;q.guardianLastStandDay=state.world.day;setTimeout(()=>{const ps=politicalSettlement(locId);if(ps.pending?.id!==q.id||!ps.pending.guardianLastStand)return;const live=politicalHandoverQualification(locId,ps.pending);if(!live.qualified){cancelStalePoliticalHandover(locId,ps.pending,live.reason);return}showGuardianPoliticalLastStand(locId)},0);return true}
 function evaluatePoliticalShift(locId,perfStats=null){
  const now=()=>typeof sosPerfNow==='function'?sosPerfNow():performance.now();let t=now(),ps=politicalSettlement(locId),status=politicalStatus(locId,perfStats);if(perfStats)perfStats.status+=now()-t;
- t=now();const blocked=!!ps.pending||state.world.day<(ps.transitionUntilDay||0)||state.world.day-(ps.lastShiftDay||0)<8||status.topFaction===status.control;if(perfStats)perfStats.eligibility=(perfStats.eligibility||0)+now()-t;if(blocked)return;
- const challenger=status.topFaction;t=now();const pressure=status.topPressure,defense=politicalPressure(locId,status.control)+Math.round(ps.autonomy/2);if(perfStats)perfStats.pressure+=now()-t;if(pressure<10||pressure<defense+2)return;
- t=now();const lean=settlementLeanScore(locId,challenger);if(perfStats)perfStats.lean+=now()-t;if(lean<7)return;
- // The visible Political Lead is expensive to calculate. It is only relevant once the
- // cheaper takeover thresholds have qualified, so defer it until a handover could actually begin.
- t=now();const visibleLead=localPoliticalLeader(locId);if(perfStats)perfStats.visibleLead=(perfStats.visibleLead||0)+now()-t;if(visibleLead?.faction!==challenger)return;
- t=now();ps.pending={id:uid(),kind:'automatic_handover',challenger,current:status.control,createdDay:state.world.day,sustainDays:1,requiredDays:4,lastQualifiedDay:state.world.day,reason:`${majorFaction(challenger).name} has established a political lead. If it holds for four consecutive days, control will pass automatically.`};recordWorldNews(`${worldLocation(locId).name}: ${majorFaction(challenger).short} has established a political lead; the local government faces a possible handover if that lead holds.`,'info');if(perfStats)perfStats.transition+=now()-t
+ t=now();const blocked=!!ps.pending||state.world.day<(ps.transitionUntilDay||0)||state.world.day-(ps.lastShiftDay||0)<8;if(perfStats)perfStats.eligibility=(perfStats.eligibility||0)+now()-t;if(blocked)return;
+ // Handover creation must agree with the visible Political Lead and the settlement's persistent
+ // pressure track.  Do not use the broader strategic-power score here: incumbency/presence in that
+ // score previously prevented a valid pending handover from ever being created.
+ t=now();const m=politicalHandoverMetrics(locId),challenger=m.challenger;if(perfStats)perfStats.pressure+=now()-t;if(!challenger||challenger===m.current)return;
+ if(m.pressureLead.f!==challenger||m.challengerPressure<10||m.challengerPressure<m.incumbentPressure+m.autonomyMargin)return;
+ t=now();if(perfStats)perfStats.lean+=now()-t;if(m.lean<7)return;
+ t=now();ps.pending={id:uid(),kind:'automatic_handover',challenger,current:m.current,createdDay:state.world.day,sustainDays:1,requiredDays:4,lastQualifiedDay:state.world.day,reason:`${majorFaction(challenger).name} has established a political lead. If it holds for four consecutive days, control will pass automatically.`};recordWorldNews(`${worldLocation(locId).name}: ${majorFaction(challenger).short} has established a political lead; the local government faces a possible handover if that lead holds.`,'info');if(perfStats)perfStats.transition+=now()-t
 }
+
 function resolvePoliticalShift(locId,choice){return showSettlementPolitics(locId)}
 
 
 function localPoliticalProfilesSorted(locId){
  return localPoliticalFactions(locId).map(f=>localPoliticalProfile(locId,f)).sort((a,b)=>b.overall-a.overall)
 }
+// v1.6.66.22.12 — The player-facing Political Lead is the faction actually leading the
+// settlement's persistent political-pressure contest.  Profile/lean scores remain important
+// context, but capped secondary metrics must not turn a real pressure lead into a false tie.
 function localPoliticalLeader(locId){
- return localPoliticalProfilesSorted(locId)[0]||null
+ const ps=politicalSettlement(locId),profiles=localPoliticalProfilesSorted(locId);
+ const ranked=Object.keys(OPEN_WORLD_FACTIONS).map(f=>({f,pressure:Number(ps.pressure?.[f]||0)})).sort((a,b)=>b.pressure-a.pressure);
+ const top=ranked[0];if(!top||top.pressure<=0)return profiles[0]||null;
+ return profiles.find(p=>p.faction===top.f)||localPoliticalProfile(locId,top.f)||null
 }
 function localPoliticalGlanceRowsHTML(locId,mode='display'){
- const s=politicalStatus(locId),profiles=localPoliticalProfilesSorted(locId),lead=profiles[0]?.faction||null,maxScore=Math.max(1,...profiles.map(p=>Math.max(0,p.overall||0)));
+ const s=politicalStatus(locId),profiles=localPoliticalProfilesSorted(locId),lead=localPoliticalLeader(locId)?.faction||null,maxScore=Math.max(1,...profiles.map(p=>Math.max(0,p.overall||0)));
  return profiles.map(p=>{
   const standing=state.world.factionStanding[p.faction]||0,control=p.faction===s.control,dominant=p.faction===lead,pct=clamp(Math.round((Math.max(0,p.overall||0)/maxScore)*100),4,100),tier=pct>=75?'strong':pct>=45?'medium':'weak';
   const tag=[dominant?'POLITICAL LEAD':'',control?'FORMAL CONTROL':''].filter(Boolean).join(' • ');
@@ -140,7 +175,7 @@ function showSettlementPolitics(locId=state.world.location){modalRouteEnter(SOST
  if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration('Settlement Politics — State & Leadership',now()-t);
  t=now();const glance=localPoliticalGlanceRowsHTML(locId,'situation');if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration('Settlement Politics — Faction Glance',now()-t);
  t=now();
- overlay(SOSText("politics_control_incidents.showSettlementPolitics.002",esc(loc.name),locationRegion(locId)==='redstone'?redstonePolicyNoticeHTML(locId):'',locationRegion(locId)==='redstone'?`<div class="notice compact"><b>Authority precedent:</b> ${esc(sengiaPrecedentLabel(locId))}<br><button id="politicsAuthority">Orders & Jurisdiction</button><button id="politicsSecurity">Military & Security</button></div>`:'',esc(politicalStatusLabel(locId)),esc(ps.leader),esc(ps.style),esc(s.control),lead?` • Political lead: <b>${esc(majorFaction(lead.faction).short)}</b> (${lead.overall})`:'',ps.autonomy,esc(rr.controller),rr.openness,rr.toll?` • Toll ${rr.toll}g`:'',esc(politicalProtectionLabel(protection)),protection,politicalCapital(locId,s.control).toFixed(1),politicalDebt(locId,s.control).toFixed(1),glance,politicalTransitionStatus(locId)?`<div class="notice compact"><b>${esc(politicalTransitionStatus(locId))}</b><br>A new control challenge cannot begin until the transition period ends.</div>`:'',s.pending?`<div class="warning notice"><b>Political Handover Developing</b><br>${esc(s.pending.reason||`${majorFaction(s.pending.challenger).name} is sustaining a political lead.`)}<br><small>${s.pending.guardianLastStand?'The Guardian has an immediate opportunity to intervene.':`Lead held ${s.pending.sustainDays||1}/${s.pending.requiredDays||4} days.`}</small></div>`:'') ,true);
+ overlay(SOSText("politics_control_incidents.showSettlementPolitics.002",esc(loc.name),locationRegion(locId)==='redstone'?redstonePolicyNoticeHTML(locId):'',locationRegion(locId)==='redstone'?`<div class="notice compact"><b>Authority precedent:</b> ${esc(sengiaPrecedentLabel(locId))}<br><button id="politicsAuthority">Orders & Jurisdiction</button><button id="politicsSecurity">Military & Security</button></div>`:'',esc(politicalStatusLabel(locId)),esc(ps.leader),esc(ps.style),esc(s.control),lead?` • Political lead: <b>${esc(majorFaction(lead.faction).short)}</b> (${lead.overall})`:'',ps.autonomy,esc(rr.controller),rr.openness,rr.toll?` • Toll ${rr.toll}g`:'',esc(politicalProtectionLabel(protection)),protection,politicalCapital(locId,s.control).toFixed(1),politicalDebt(locId,s.control).toFixed(1),glance,politicalTransitionStatus(locId)?`<div class="notice compact"><b>${esc(politicalTransitionStatus(locId))}</b><br>A new control challenge cannot begin until the transition period ends.</div>`:'',politicalHandoverNoticeHTML(locId)) ,true);
  if(typeof sosPerfRecordDuration==='function')sosPerfRecordDuration('Settlement Politics — Render',now()-t);
  document.querySelectorAll('[data-politicalsituationfaction]').forEach(b=>b.onclick=()=>navigateTownMenu(SOSText("politics_control_incidents.showSettlementPolitics.003"),{locId,focusFaction:b.dataset.politicalsituationfaction}));
  $('#politicalActivities').onclick=()=>navigateTownMenu(SOSText("politics_control_incidents.showSettlementPolitics.004"),{locId});
@@ -182,12 +217,7 @@ function simulatePoliticalDay(){
   perf('Politics Simulation — Control Shifts',()=>{
    const now=()=>typeof performance!=='undefined'&&performance.now?performance.now():Date.now();let evalMs=0,sustainMs=0,pressureProfile=null;
    if(typeof beginPoliticalPressureReadCache==='function')beginPoliticalPressureReadCache();
-   try{for(const loc of locs){const ps=politicalSettlement(loc.id),te=now();evaluatePoliticalShift(loc.id);evalMs+=now()-te;const q=ps.pending;if(!q)continue;const ts=now(),check=politicalHandoverQualification(loc.id,q);
-    if(!check.qualified){cancelStalePoliticalHandover(loc.id,q,check.reason);sustainMs+=now()-ts;continue}
-    if(q.guardianLastStand){sustainMs+=now()-ts;continue}
-    if(q.lastQualifiedDay!==state.world.day){q.sustainDays=(q.sustainDays||1)+1;q.lastQualifiedDay=state.world.day}
-    if((q.sustainDays||1)>=(q.requiredDays||4)){if(guardianPoliticalLastStandEligible(loc.id,q.current))queueGuardianPoliticalLastStand(loc.id,q);else completeAutomaticPoliticalTransfer(loc.id,q)}
-    sustainMs+=now()-ts;
+   try{for(const loc of locs){const ps=politicalSettlement(loc.id),te=now();evaluatePoliticalShift(loc.id);evalMs+=now()-te;if(!ps.pending)continue;const ts=now();advancePoliticalHandoverClock(loc.id);sustainMs+=now()-ts;
    }}finally{if(typeof endPoliticalPressureReadCache==='function')pressureProfile=endPoliticalPressureReadCache()}
    if(typeof sosPerfRecordDuration==='function'){sosPerfRecordDuration('Control Shifts — Candidate Evaluation',evalMs);sosPerfRecordDuration('Control Shifts — Sustained Lead',sustainMs);if(pressureProfile){sosPerfRecordDuration('Control Shifts — Pressure Evidence',pressureProfile.evidence);sosPerfRecordDuration('Control Shifts — Pressure Shared Reads',pressureProfile.shared)}}
   });
@@ -208,6 +238,14 @@ function politicalLongCampaignMaintenance(locId){
 }
 function politicalTransitionStatus(locId){
  const ps=politicalSettlement(locId),left=Math.max(0,(ps.transitionUntilDay||0)-state.world.day);return left?SOSText("politics_control_incidents.politicalTransitionStatus.001",left,left===1?'':'s'):null
+}
+// v1.6.66.22.4 — Render the control countdown from the authoritative pending handover itself.
+function politicalHandoverNoticeHTML(locId){
+ const q=politicalSettlement(locId).pending;if(!q)return '';
+ const faction=majorFaction(q.challenger),required=Math.max(1,q.requiredDays||4),held=Math.max(1,Math.min(required,q.sustainDays||1)),left=Math.max(0,required-held);
+ if(q.guardianLastStand)return `<div class="warning notice"><b>Political Handover Imminent</b><br>${esc(faction.name)} is poised to take formal control.<br><small>The Guardian has an immediate opportunity to intervene.</small></div>`;
+ const when=left===1?'1 more day':`${left} more days`;
+ return `<div class="warning notice"><b>Political Handover Developing</b><br>If ${esc(faction.short)} holds its political lead, it will take formal control in <b>${when}</b>.<br><small>Lead held ${held}/${required} consecutive days.</small></div>`
 }
 function stabilizePoliticalTransfer(locId,oldControl,newControl){
  const ps=politicalSettlement(locId);ps.lastShiftDay=state.world.day;ps.transitionUntilDay=state.world.day+8;

@@ -10,6 +10,7 @@ function renderSeasonGameDayLiveBanner(){
 const SEASON_LAZY_GROUPS={
   seasonManagement(roster,oppRoster,mine,opp){renderWaiverCenter(roster);},
   seasonPostseason(roster,oppRoster,mine,opp){renderPlayoffMachine();renderStandingsAndPlayoffRace();void ensureRemainingRegularSeasonSchedule();},
+  seasonAchievements(roster,oppRoster,mine,opp){if(typeof renderPublicAchievements==='function')renderPublicAchievements();},
   seasonRecords(roster,oppRoster,mine,opp){renderRivalryContext(roster,oppRoster);renderHistoryBridge();if(roster&&oppRoster)void ensureRivalryApiHistory(roster,oppRoster);}
 };
 let seasonLazyObserver=null;

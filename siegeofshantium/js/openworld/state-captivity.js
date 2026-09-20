@@ -15,6 +15,7 @@ function repairWorldLifeState(){
 function ensureWorldState(){
  if(!state.world)state.world=defaultWorldState();
  state.scouting=clamp(Math.round(Number(state.scouting)||0),0,7);
+ ensureRegionalScoutingState();
  ensureWorldIntegrationState(state.world);
  const d=defaultWorldState();
  if(!state.world.companions)state.world.companions=d.companions;if(!state.world.region)state.world.region=locationRegion(state.world.location);if(!Array.isArray(state.world.unlockedRegions))state.world.unlockedRegions=['shantium'];if(!state.world.unlockedRegions.includes(locationRegion(state.world.location)))state.world.unlockedRegions.push(locationRegion(state.world.location));if(!Array.isArray(state.world.regionHistory))state.world.regionHistory=[];
@@ -225,10 +226,57 @@ function syncOpenWorldProgress(){
  state.maxRounds=12;
  state.roundActions=2;
 }
-function scoutingLevel(){return clamp(Math.round(Number(state.scouting)||0),0,7)}
-function gainScouting(amount=1){state.scouting=clamp(scoutingLevel()+Math.max(0,Math.round(Number(amount)||0)),0,7);return state.scouting}
-function decayScoutingDaily(){const n=scoutingLevel();if(n<=0)return 0;state.scouting=Math.max(0,n-(n>=6?2:1));return state.scouting}
-function reduceScoutingForRegionChange(){const before=scoutingLevel();state.scouting=before<=1?0:Math.floor(before*.25);return {before,after:state.scouting}}
+// Regional scouting knowledge. The legacy state.scouting value remains the active-region value
+// so existing skill checks continue to work without knowing about the regional ledger.
+function ensureRegionalScoutingState(){
+ if(!state?.world)return null;const w=state.world,day=w.day||1,reg=locationRegion(w.location||'shantium');
+ if(!w.regionalScouting||typeof w.regionalScouting!=='object')w.regionalScouting={regions:{},currentRegion:reg};
+ if(!w.regionalScouting.regions||typeof w.regionalScouting.regions!=='object')w.regionalScouting.regions={};
+ const R=w.regionalScouting.regions;
+ if(!R[reg])R[reg]={score:clamp(Math.round(Number(state.scouting)||0),0,7),lastRefreshDay:day,lastPresentDay:day,enteredDay:day,appliedIntel:{}};
+ for(const x of Object.values(R)){x.score=clamp(Math.round(Number(x.score)||0),0,7);if(!x.appliedIntel||typeof x.appliedIntel!=='object')x.appliedIntel={};if(!Number.isFinite(x.lastRefreshDay))x.lastRefreshDay=day;if(!Number.isFinite(x.lastPresentDay))x.lastPresentDay=day}
+ w.regionalScouting.currentRegion=reg;state.scouting=R[reg].score;return w.regionalScouting
+}
+function regionalScoutingRecord(region=currentWorldRegion()){
+ const S=ensureRegionalScoutingState(),day=state.world.day||1;if(!S)return null;
+ if(!S.regions[region])S.regions[region]={score:0,lastRefreshDay:day,lastPresentDay:region===currentWorldRegion()?day:0,enteredDay:region===currentWorldRegion()?day:null,appliedIntel:{}};
+ return S.regions[region]
+}
+function scoutingLevel(){const r=regionalScoutingRecord();if(r)state.scouting=r.score;return clamp(Math.round(Number(state.scouting)||0),0,7)}
+function gainRegionalScouting(region,amount=1,refresh=true){const r=regionalScoutingRecord(region);if(!r)return 0;amount=Math.max(0,Math.round(Number(amount)||0));r.score=clamp(r.score+amount,0,7);if(refresh&&amount>0)r.lastRefreshDay=state.world.day;if(region===currentWorldRegion())state.scouting=r.score;return r.score}
+function gainScouting(amount=1){return gainRegionalScouting(currentWorldRegion(),amount,true)}
+function activateRegionalScoutingIntel(region){
+ const r=regionalScoutingRecord(region);if(!r||typeof activeWorldIntel!=='function')return 0;let gained=0,day=state.world.day;
+ // Reports remain useful while remote for normal travel times, but very old reports do not wait forever.
+ for(const i of activeWorldIntel({region})){
+   const value=clamp(Math.round(Number(i.meta?.scoutingValue)||0),0,3);if(!value)continue;
+   const received=i.updatedDay||i.createdDay||day;if(day-received>45)continue;if((r.appliedIntel[i.id]||0)>=received)continue;
+   r.appliedIntel[i.id]=received;gained+=value;
+ }
+ if(gained){r.score=clamp(r.score+gained,0,7);r.lastRefreshDay=day;if(region===currentWorldRegion())state.scouting=r.score}
+ return gained
+}
+function decayScoutingDaily(){
+ const S=ensureRegionalScoutingState();if(!S)return 0;const day=state.world.day,here=currentWorldRegion();
+ for(const [region,r] of Object.entries(S.regions)){
+   if(r.score<=0)continue;
+   if(region===here){r.lastPresentDay=day;const age=Math.max(0,day-(r.lastRefreshDay||day));let loss=0;
+     // Fresh knowledge holds for about a week. Initial staleness is gentle, then accelerates.
+     if(age===7)loss=1;else if(age>=8&&age<=10)loss=(age%2===0?1:0);else if(age>=11)loss=age>=16?2:1;
+     if(loss)r.score=Math.max(0,r.score-loss);
+   }else{
+     const away=Math.max(0,day-(r.lastPresentDay||day));let loss=0;
+     // Once the Guardian has been outside a region for roughly three days, firsthand knowledge fades quickly.
+     if(away===3)loss=1;else if(away>3)loss=away>=7?2:1;
+     if(loss)r.score=Math.max(0,r.score-loss);
+   }
+ }
+ state.scouting=regionalScoutingRecord(here).score;return state.scouting
+}
+function reduceScoutingForRegionChange(newRegion=null){
+ const S=ensureRegionalScoutingState(),old=S.currentRegion||currentWorldRegion(),before=regionalScoutingRecord(old).score,day=state.world.day;
+ const target=newRegion||currentWorldRegion();const nr=regionalScoutingRecord(target);nr.enteredDay=day;nr.lastPresentDay=day;S.currentRegion=target;state.scouting=nr.score;activateRegionalScoutingIntel(target);state.scouting=nr.score;return {before,after:state.scouting,from:old,to:target}
+}
 function scoutingTravelDays(base){base=Math.max(0,Math.round(base||0));const s=scoutingLevel();let days=base;if(base>1&&s>=3){const reduction=s>=7&&base>=5?2:s>=4?1:0;days=Math.max(1,base-reduction)}if(typeof mountAdjustedTravelDays==='function')days=mountAdjustedTravelDays(days);return days}
 function worldTravelDays(from,to){
  if(from===to)return 0;const ra=locationRegion(from),rb=locationRegion(to);
@@ -272,7 +320,7 @@ function advanceWorldDays(days,reason=SOSText("openworld_state_captivity.advance
      perf('Conflict & Settlements — Settlement Life',()=>simulateSettlementLife());
    });
    perf('Day Tick — Social & Regional Life',()=>{
-     perf('Social — Town Life & Population',()=>{townLifeDailyTick();populationMovementDailyTick()});
+     perf('Social — Town Life & Population',()=>{perf('Town Life & Population — Town Life',()=>townLifeDailyTick());perf('Town Life & Population — Population Movement',()=>populationMovementDailyTick())});
      perf('Social — Relationships & NPC Life',()=>{perf('Relationships & NPC Life — Relationship Contracts',()=>relationshipContractDailyTick());perf('Relationships & NPC Life — Social Life',()=>socialLifeDailyTick());perf('Relationships & NPC Life — Social Chains',()=>socialChainDailyTick());perf('Relationships & NPC Life — Companion Social',()=>companionNpcSocialDailyTick())});
      perf('Social — Regional Civic & Economy',()=>{redstoneCivicDailyTick();redstoneAuthorityDailyTick();sengiaEconomyDailyTick();sengiaSecurityDailyTick();sengiaRegionalConsequenceDailyTick();if(typeof spawnEconomyDailyTick==='function')spawnEconomyDailyTick()});
      perf('Social — Consolidation & Supply',()=>{perf('Social — World Consolidation',()=>consolidateWorldSystems());perf('Social — Regional Network',()=>simulateRegionalNetworkDay());perf('Social — Cross-Region Supply',()=>crossRegionSupplyPressure())});

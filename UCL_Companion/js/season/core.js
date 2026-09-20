@@ -360,22 +360,34 @@ function normalizedMatchupSlots(roster,matchup=null,playerCache=null){
 }
 
 function finalizedStarterPositionAverages(rosterId){
-  const totals={QB:0,RB:0,WR:0,TE:0,K:0,DEF:0},counts={QB:0,RB:0,WR:0,TE:0,K:0,DEF:0};
+  const positions=['QB','RB','WR','TE','K','DEF'];
+  const totals=Object.fromEntries(positions.map(pos=>[pos,0]));
+  const counts=Object.fromEntries(positions.map(pos=>[pos,0]));
+  const weeks=Object.fromEntries(positions.map(pos=>[pos,0]));
   for(const [weekKey,list] of Object.entries(seasonMatchupsByWeek||{})){
     const week=Number(weekKey);
     if(!isWeekFinalForHistory(week))continue;
     const m=(list||[]).find(x=>String(x.roster_id)===String(rosterId));
     if(!m)continue;
-    const ids=(m.starters||[]).filter(Boolean);
-    for(const id of ids){
-      const p=sleeperRosterPlayer(id),pos=p.pos;
-      if(!(pos in totals))continue;
-      const pts=matchupPlayerPoints(m,id);
-      totals[pos]+=pts;counts[pos]++;
+    const roster=leagueRosters.find(r=>String(r.roster_id)===String(rosterId));
+    if(!roster)continue;
+    const weekTotals=Object.fromEntries(positions.map(pos=>[pos,0]));
+    const weekCounts=Object.fromEntries(positions.map(pos=>[pos,0]));
+    for(const starter of normalizedMatchupSlots(roster,m)){
+      let pos=String(starter.slot||'').toUpperCase();
+      if(pos==='FLEX')pos=String(starter.player?.pos||'').toUpperCase();
+      if(pos==='DST')pos='DEF';
+      if(!positions.includes(pos))continue;
+      weekTotals[pos]+=matchupPlayerPoints(m,starter.id);
+      weekCounts[pos]++;
+    }
+    for(const pos of positions){
+      if(!weekCounts[pos])continue;
+      totals[pos]+=weekTotals[pos]; counts[pos]+=weekCounts[pos]; weeks[pos]++;
     }
   }
   const out={};
-  for(const pos of Object.keys(totals))out[pos]=counts[pos]?totals[pos]/counts[pos]:null;
+  for(const pos of positions)out[pos]={avg:weeks[pos]?totals[pos]/weeks[pos]:null,weeks:weeks[pos],starterSamples:counts[pos]};
   return out;
 }
 function currentZeroPointStarters(roster,matchup){
@@ -434,12 +446,12 @@ function positionalMatchupContext(roster,oppRoster){
   if(!roster||!oppRoster)return [];
   const mine=finalizedStarterPositionAverages(roster.roster_id),theirs=finalizedStarterPositionAverages(oppRoster.roster_id);
   return ['QB','RB','WR','TE','K','DEF'].map(pos=>{
-    const a=mine[pos],b=theirs[pos];
-    if(a==null&&b==null)return null;
-    const diff=(a??0)-(b??0);
-    const cls=Math.abs(diff)<2?'':diff>0?'edge-me':'edge-opp';
-    return {pos,a,b,diff,cls};
-  }).filter(Boolean);
+    const a=mine[pos]?.avg??null,b=theirs[pos]?.avg??null;
+    const comparable=a!=null&&b!=null;
+    const diff=comparable?a-b:null;
+    const cls=!comparable||Math.abs(diff)<2?'':diff>0?'edge-me':'edge-opp';
+    return {pos,a,b,diff,cls,aWeeks:mine[pos]?.weeks||0,bWeeks:theirs[pos]?.weeks||0,comparable};
+  }).filter(x=>x.a!=null||x.b!=null);
 }
 function benchThreatRequiredMultiplier(benchPos,starter){
   const pos=String(benchPos||'').toUpperCase();
@@ -605,9 +617,9 @@ function renderMatchupIntelligence(roster,oppRoster,mine,opp){
 
   const ctx=oppRoster?positionalMatchupContext(roster,oppRoster):[];
   pos.innerHTML=ctx.length?ctx.map(x=>`<div class="matchup-pos-context-card ${x.cls}">
-    <span>${x.pos} finalized avg</span>
+    <span>${x.pos} finalized avg • ${Math.min(x.aWeeks,x.bWeeks)} wk${Math.min(x.aWeeks,x.bWeeks)===1?'':'s'}</span>
     <b>${x.a==null?'—':x.a.toFixed(1)} vs ${x.b==null?'—':x.b.toFixed(1)}</b>
-    <small>${Math.abs(x.diff)<2?'Roughly even historical starter output':x.diff>0?'Your finalized starter output has the edge':'Opponent finalized starter output has the edge'}</small>
+    <small>${!x.comparable?'Not enough comparable finalized data':Math.abs(x.diff)<2?'Roughly even historical starter output':x.diff>0?'Your finalized starter output has the edge':'Opponent finalized starter output has the edge'}</small>
   </div>`).join(''):'<div class="empty">Not enough finalized positional scoring data yet.</div>';
   analyticsCard?.classList.toggle('compact-empty',!ctx.length);
 }

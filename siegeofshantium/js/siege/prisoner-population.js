@@ -122,15 +122,24 @@ function showHomePrisonerAffiliation(cls,faction){
  overlay(`<h2>${esc(faction)} — ${esc(HOME_PRISONER_COHORTS[cls]?.label||'Custody')}</h2><div class="notice compact"><b>${n} prisoners</b> • ${rows.length} historical admission record${rows.length===1?'':'s'} consolidated into one management population.</div><h3>Origins</h3>${src||'<p class="muted">No origin records.</p>'}<h3>Current Status</h3><div class="stat-row"><span>Assigned through persistent work crews</span><b>${work} / ${n}</b></div><div class="choice-list compact"><button id="popAffCrews">Manage Work Crews</button><button id="popAffRelease">Release This Population</button>${canExchange?'<button id="popAffExchange">Exchange This Population</button>':''}${canRansom?'<button id="popAffRansom">Ransom This Population</button>':''}<button id="popAffHandoverOne">Hand Over 1 Prisoner</button>${n>=5?'<button id="popAffHandoverFive">Hand Over 5 Prisoners</button>':''}<button id="popAffHandover">Hand Over This Population</button></div><p class="compact muted">These actions apply to the consolidated population while preserving the effects attached to its underlying custody records.</p><div class="dialog-footer"><button id="popAffBack">Back to Cohort</button></div>`,true);
  if($('#popAffCrews'))$('#popAffCrews').onclick=showHomePrisonerCrews;$('#popAffRelease').onclick=()=>homePrisonerPopulationAction(cls,faction,'release');if($('#popAffExchange'))$('#popAffExchange').onclick=()=>homePrisonerPopulationAction(cls,faction,'exchange');if($('#popAffRansom'))$('#popAffRansom').onclick=()=>homePrisonerPopulationAction(cls,faction,'ransom');$('#popAffHandoverOne').onclick=()=>homePrisonerTurnOverAmount(cls,faction,1);if($('#popAffHandoverFive'))$('#popAffHandoverFive').onclick=()=>homePrisonerTurnOverAmount(cls,faction,5);$('#popAffHandover').onclick=()=>homePrisonerPopulationAction(cls,faction,'handover');$('#popAffBack').onclick=()=>guardianHallRouteBack(()=>showHomePrisonerCohort(cls))
 }
+
+function homePrisonerAuthorityResolveRows(departed,faction){
+ const settlementId='shantium',place=worldLocation(settlementId)?.name||'Shantium',summary={accepted:0,investigate:0,released:0,bounty:0};
+ for(const p of departed){const a=prisonerAuthorityAssessmentIII(p,settlementId),n=Math.max(1,p.count||1);summary[a.outcome]+=n;if(a.outcome==='accepted'){summary.bounty+=a.bounty;const control=settlementControl(settlementId);if(control)state.world.factionStanding[control]=(state.world.factionStanding[control]||0)+Math.max(1,Math.ceil(n/5));state.reputation+=Math.max(1,Math.ceil(n/5));resolveNamedPrisonerLifecycle(p,'handover')}else if(a.outcome==='investigate')resolveNamedPrisonerLifecycle(p,'handover');else{resolveNamedPrisonerLifecycle(p,'release');if(state.relations[p.faction]!=null)state.relations[p.faction]++}}
+ if(summary.bounty)gainGold(summary.bounty);let warning='';if(summary.released)warning=noteQuestionableHandoverIII(settlementId,summary.released);
+ const parts=[];if(summary.accepted)parts.push(`${summary.accepted} recognized by the watch and taken into custody${summary.bounty?` (${summary.bounty} gold bounty)`:''}`);if(summary.investigate)parts.push(`${summary.investigate} held for questioning`);if(summary.released)parts.push(`${summary.released} released after no charge could be established`);
+ recordWorldHistory(`${departed.reduce((a,p)=>a+Math.max(0,p.count||0),0)} ${faction} prisoners were presented to the ${place} authorities: ${parts.join('; ')}.`,'info','prisoners');
+ return {summary,text:`The watch receives the prisoners and sorts out who they can lawfully hold. ${parts.join('. ')}.${summary.accepted?` ${prisonerAuthorityThanksIII({n:summary.accepted})}`:''}${warning}`} 
+}
+
 function homePrisonerTurnOverAmount(cls,faction,amount){
  amount=Math.max(1,Math.floor(Number(amount)||1));const rows=homePrisonerAffiliationBackingRows(cls,faction);let left=Math.min(amount,homePrisonerCountRows(rows)),moved=0;if(!left)return showHomePrisonerAffiliation(cls,faction);
  const departed=[];
  for(const prisoner of rows){if(left<=0)break;const count=Math.max(0,Math.floor(Number(prisoner.count)||0)),take=Math.min(left,count);if(!take)continue;departed.push({...prisoner,count:take});prisoner.count=count-take;left-=take;moved+=take}
  state.prisoners=state.prisoners.filter(x=>(Number(x.count)||0)>0);
  homePrisonerPopulationDepartureHistory(departed,'handover');
- const authority=settlementControl('shantium')||'Shantium';state.world.factionStanding[authority]=(state.world.factionStanding[authority]||0)+Math.max(1,Math.ceil(moved/5));state.reputation+=Math.max(1,Math.ceil(moved/5));
- recordWorldHistory(`${moved} ${faction} prisoner${moved===1?' was':'s were'} transferred from Guardian Hall custody to ${majorFaction(authority)?.short||authority} authorities.`,'info','home');save();
- return actionResult('Prisoner Transfer Complete',`${moved} prisoner${moved===1?' has':'s have'} been turned over to the authorities. Guardian Hall now holds ${hallPrisonerCount()} prisoner${hallPrisonerCount()===1?'':'s'}.`,'good',()=>showHomePrisonerAffiliation(cls,faction))
+ const verdict=homePrisonerAuthorityResolveRows(departed,faction);save();
+ return actionResult('Authorities Review the Prisoners',`${verdict.text}\n\nGuardian Hall now holds ${hallPrisonerCount()} prisoner${hallPrisonerCount()===1?'':'s'}.`,verdict.summary.accepted?'good':'info',()=>showHomePrisonerAffiliation(cls,faction))
 }
 function homePrisonerPopulationDepartureHistory(rows,action){
  const P=homePrisonerPopulationState(),label={release:'Released from Guardian Hall',exchange:'Exchanged from Guardian Hall',ransom:'Ransomed from Guardian Hall',handover:'Handed to Shantium authority'}[action]||'Departed Guardian Hall';
@@ -154,10 +163,10 @@ function homePrisonerPopulationAction(cls,faction,action){
  }else if(action==='ransom'){
   gainGold(total*18);state.world.factionStanding.Mercenaries=(state.world.factionStanding.Mercenaries||0)+groupCount;
  }else if(action==='handover'){
-  const fac=faction==='Redstone'?'Coalition':'Shantium';state.world.factionStanding[fac]=(state.world.factionStanding[fac]||0)+2*groupCount;state.reputation+=groupCount;
+  const verdict=homePrisonerAuthorityResolveRows(rows.map(p=>({...p})),faction);state.prisoners=state.prisoners.filter(p=>!ids.has(p.id));save();return actionResult('Authorities Review the Prisoners',verdict.text,verdict.summary.accepted?'good':'info',()=>showHomePrisonerCohort(cls))
  }
  state.prisoners=state.prisoners.filter(p=>!ids.has(p.id));
- recordWorldHistory(`${total} ${faction} prisoner${total===1?'':'s'} ${action==='release'?'were released':action==='exchange'?'were exchanged':action==='ransom'?'were ransomed':'were handed over to Shantium authorities'} as a consolidated Hall population.`,'info','home');
+ recordWorldHistory(`${total} ${faction} prisoner${total===1?'':'s'} ${action==='release'?'were released':action==='exchange'?'were exchanged':'were ransomed'} as a consolidated Hall population.`,'info','home');
  save();showHomePrisonerCohort(cls)
 }
 
