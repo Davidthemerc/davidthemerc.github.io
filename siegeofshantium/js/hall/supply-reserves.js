@@ -1,8 +1,8 @@
 /* v1.6.66.9.11 — Stable Supplies, Predictive Logistics & Emergency Reserves */
-const HOME_RESERVE_STORAGE_CAPACITY=[0,30,70,120];
+const HOME_RESERVE_STORAGE_CAPACITY=[0,30,70,120,150];
 const HOME_SUPPLY_DAILY_BURN={food:0,household:.5,medical:.2,guard:2,hospitality:.34,stable:1};
 HOME_LOGISTICS_POLICIES.abundant={name:'Abundant',target:94,cost:104,interval:5,reserveTarget:45,forecastDays:5,desc:'Keeps routine stores near full and maintains a substantial emergency reserve. The Logistics Master orders ahead of expected caravan travel time.'};
-HOME_LOGISTICS_POLICIES.strategic={name:'Strategic Reserve',target:98,cost:138,interval:4,reserveTarget:90,forecastDays:8,desc:'Maximum peacetime resilience. The Hall deliberately carries deep protected reserves so an ordinary delayed or missed caravan should not create a shortage.'};
+HOME_LOGISTICS_POLICIES.strategic={name:'Strategic Reserve',target:98,cost:138,interval:4,reserveTarget:'capacity',forecastDays:8,desc:'Maximum peacetime resilience. The Hall deliberately fills its installed protected reserve capacity so an ordinary delayed or missed caravan should not create a shortage.'};
 function ensureHomeSupplyReserves(){
  ensureHomeBase();const L=state.world.homeBase.logistics;
  if(L.supplies.stable==null)L.supplies.stable=hallStableLevel()?82:0;
@@ -13,9 +13,9 @@ function ensureHomeSupplyReserves(){
  return L
 }
 function homeReserveStorageLevel(){return homeUpgradeLevel('reserveStorage')}
-function homeReserveCapacity(){return HOME_RESERVE_STORAGE_CAPACITY[Math.min(3,homeReserveStorageLevel())]||0}
+function homeReserveCapacity(){return HOME_RESERVE_STORAGE_CAPACITY[Math.min(4,homeReserveStorageLevel())]||0}
 function homeReserveTotal(){const L=ensureHomeSupplyReserves();return Object.values(L.reserve).reduce((n,v)=>n+(Number(v)||0),0)}
-function homeReserveTargetPerKind(){const p=homeLogisticsPolicy();return Math.min(homeReserveCapacity(),Number(p.reserveTarget)||0)}
+function homeReserveTargetPerKind(){const p=homeLogisticsPolicy(),cap=homeReserveCapacity();return p.reserveTarget==='capacity'?cap:Math.min(cap,Number(p.reserveTarget)||0)}
 function homeSupplyAverage(){const s=ensureHomeSupplyReserves().supplies,vals=Object.entries(s).filter(([k])=>k!=='stable'||hallStableLevel()).map(([,v])=>v);return Math.round(vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length))}
 function homeSupplyProjected(kind,days){
  const L=ensureHomeSupplyReserves(),burn=kind==='stable'?homeStableSupplyDailyUse():HOME_SUPPLY_DAILY_BURN[kind]||0;
@@ -24,7 +24,7 @@ function homeSupplyProjected(kind,days){
 function homeSupplyNeed(){
  const L=ensureHomeSupplyReserves(),p=homeLogisticsPolicy(),shipment=L.shipmentId?state.world.parties.find(x=>x.id===L.shipmentId):null,lead=Math.max(Number(p.forecastDays)||2,shipment?.travelLeft||0);
  const active=Object.keys(L.supplies).filter(k=>k!=='stable'||hallStableLevel());
- return active.some(k=>homeSupplyProjected(k,lead)<p.target-10)||(Number(p.reserveTarget)||0)>0&&active.some(k=>(L.reserve[k]||0)<Math.min(homeReserveCapacity(),p.reserveTarget)*.75)
+ return active.some(k=>homeSupplyProjected(k,lead)<p.target-10)||homeReserveTargetPerKind()>0&&active.some(k=>(L.reserve[k]||0)<homeReserveTargetPerKind()*.75)
 }
 function homeReserveDraw(kind,desiredFloor=20){
  const L=ensureHomeSupplyReserves(),have=L.supplies[kind]||0,need=Math.max(0,desiredFloor-have),take=Math.min(need,L.reserve[kind]||0);
@@ -36,7 +36,7 @@ function homeReserveProtectDaily(){
  for(const k of Object.keys(L.supplies))if(k!=='stable'||hallStableLevel())homeReserveDraw(k,floor)
 }
 function homeApplySupplyDeliveryUnified(amount=24,source='routine'){
- const L=ensureHomeSupplyReserves(),p=homeLogisticsPolicy(),cap=homeReserveCapacity(),rt=Math.min(cap,Number(p.reserveTarget)||0),added={};
+ const L=ensureHomeSupplyReserves(),p=homeLogisticsPolicy(),cap=homeReserveCapacity(),rt=homeReserveTargetPerKind(),added={};
  for(const k of Object.keys(L.supplies)){
    if(k==='stable'&&!hallStableLevel())continue;
    const before=(L.supplies[k]||0)+(L.reserve[k]||0),workingNeed=Math.max(0,Math.min(100,p.target)-L.supplies[k]),toWorking=Math.min(amount,workingNeed);

@@ -32,12 +32,12 @@ function showHomeGuestGroupInfo(recordId){
    ${esc(r.kind||'traveling group')} • ${esc(r.faction||'Independent')}</div>
    ${i?.summary?`<p>${esc(i.summary)}</p>`:''}
    <h3>Members</h3>
-   <div class="guest-group-members">${(i?.members||[]).map(m=>`<div class="stat-row"><span><b>${esc(m.name)}</b><small>${esc(m.role||'member')}${m.age==='child'?' • child':''}${memberStatus(m)}</small></span></div>`).join('')||'<p class="muted">No detailed member list is known.</p>'}</div>
+   <div class="guest-group-members">${(i?.members||[]).map(m=>`<div class="stat-row"><span><b>${esc(m.name)}</b> — <small>${esc(m.role||'member')}${m.age==='child'?' • child':''}${memberStatus(m)}</small></span></div>`).join('')||'<p class="muted">No detailed member list is known.</p>'}</div>
    <h3>What We Know</h3>
    <div class="notice compact"><b>${esc(where.text||'Current whereabouts uncertain.')}</b><br>
    Meetings ${r.meetings||0} • Helped ${r.helped||0} • Completed jobs ${r.contractsCompleted||0} • Favors ${travelerFavorState(r)}</div>
    <h3>Recent History</h3>
-   ${hist.map(x=>`<div class="card compact"><b>Day ${x.day}</b><br>${esc(x.detail||x.event||'Recorded contact')}</div>`).join('')||'<p class="muted">No detailed relationship history has been recorded.</p>'}
+   ${hist.map(x=>`<div class="card compact"><b>Day ${x.day}</b> — ${esc(x.detail||x.event||'Recorded contact')}</div>`).join('')||'<p class="muted">No detailed relationship history has been recorded.</p>'}
    <div class="dialog-footer"><button id="guestGroupInfoBack">Back to Guest Quarters</button></div>`,true);
  $('#guestGroupInfoBack').onclick=()=>guardianHallRouteBack(showHomeGuestQuarters)
 }

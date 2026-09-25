@@ -267,8 +267,8 @@ function resolveCapitalSecurityZones(){
 }function partyStrength(p){
  const t=worldPartyType(p.kind),avg=((t?.size?.[0]||2)+(t?.size?.[1]||4))/2,level=Math.max(1,p.combatLevel||1);
  const quality={bandits:.15,raiders:.35,merchant:-.5,refugees:-1,spawn:0,mercenary:1.1,coalition:1.4,bluestone:1.8,redstone:2.1}[p.kind]||0;
- const deployment=p.securityDeployment?1.4:0,capital=capitalDefenseSupportForParty(p);
- return avg+quality+Math.min(4,(level-1)*.42)+deployment+capital
+ const deployment=p.securityDeployment?1.4:0,capital=capitalDefenseSupportForParty(p),escort=Math.max(0,Number(p.escortStrength)||0)*.55;
+ return avg+quality+Math.min(4,(level-1)*.42)+deployment+capital+escort
 }
 function factionsOpposed(a,b){
  if(OPEN_WORLD_FACTIONS[a]&&OPEN_WORLD_FACTIONS[b])return factionsOpposedPolitically(a,b);
@@ -520,6 +520,7 @@ function namedGroupSentenceName(name){
 function resolvePartyVsParty(a,b,bonusA=0,bonusB=0){
  const sa=partyStrength(a)+Math.random()*3+(bonusA||0),sb=partyStrength(b)+Math.random()*3+(bonusB||0);
  const winner=sa>=sb?a:b,loser=winner===a?b:a;
+ const escorted=a?.militaryEscortFormationId?a:b?.militaryEscortFormationId?b:null;if(escorted&&typeof homeProcurementMilitaryEscortBattle==='function')homeProcurementMilitaryEscortBattle(escorted,escorted===a?b:a,winner===escorted);
  const lostContract=loser.questId?activeQuest(loser.questId):null;if(loser.tradeProcurementCaravan)homeTradeProcurementLost(loser,`${winner.name} defeated the procurement caravan near ${worldLocation(winner.location||winner.destination).name}.`);if(loser.homeCommercialCaravan&&typeof homeCommercialCaravanLost==='function')homeCommercialCaravanLost(loser,`${winner.name} defeated the commercial caravan near ${worldLocation(winner.location||winner.destination).name}.`);
  if(loser.securityDeployment){const M=sengiaSecurityState(),d=M.deployments.find(x=>x.partyId===loser.id&&x.status==='moving');if(d){d.status='lost';d.endedDay=state.world.day;recordSengiaSecurity(SOSText("world_regions_security.resolvePartyVsParty.001",loser.name,worldLocation(d.to).name),'bad')}}
  if(lostContract?.spotContract&&!['hunt','recovery'].includes(lostContract.type)){

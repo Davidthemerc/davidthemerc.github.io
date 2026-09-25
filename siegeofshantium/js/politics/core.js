@@ -185,7 +185,7 @@ function ensureLocalPoliticalLeadership(locId,injuriesAlreadyRefreshed=false){
  for(const faction of leadershipFactions){
   const eligible=byFaction.get(faction)||[];if((eligible[0]?.a?.support||0)>=3)continue;
   let candidate=eligible[0];if(!candidate){if(!fallbackPool)fallbackPool=[...rows].sort((a,b)=>roleScore(b.n.role)-roleScore(a.n.role)||(a.a?.support||0)-(b.a?.support||0));candidate=fallbackPool.find(x=>(x.a?.support||0)<=2)||fallbackPool[0]}
-  if(candidate){setNpcFactionAlignment(candidate.n.id,faction,3,`${majorFaction(faction).short} elevated ${candidate.n.name} as a visible local political representative in ${worldLocation(locId).name}.`);candidate.a.public=true;candidate.a.localPoliticalLeaderLoc=locId;candidate.a.localPoliticalLeaderSince=state.world.day;if(!byFaction.has(faction))byFaction.set(faction,[]);byFaction.get(faction).unshift(candidate)}
+  if(candidate){setNpcFactionAlignment(candidate.n.id,faction,3,`${majorFaction(faction).short} elevated ${candidate.n.name} as a visible local political representative in ${worldLocation(locId).name}.`);candidate.a.public=true;candidate.a.localPoliticalLeaderLoc=locId;candidate.a.localPoliticalLeaderSince=state.world.day;candidate.a.localPoliticalLeaderFaction=faction;if(!byFaction.has(faction))byFaction.set(faction,[]);byFaction.get(faction).unshift(candidate)}
  }
  rec('Local Leadership — Representative Maintenance',t)
 }

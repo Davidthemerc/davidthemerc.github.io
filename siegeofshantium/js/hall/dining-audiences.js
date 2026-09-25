@@ -130,7 +130,7 @@ showHomeVisitors=function(){
  modalRouteEnter('showHomeVisitors',Array.from(arguments));guardianHallRouteEnter('showHomeVisitors',[]);ensureHomeBase();
  const A=state.world.homeBase.audiences,q=A.queue,recent=A.history.slice(-8).reverse();
  const rows=q.map(v=>{homeAudienceProfileDefaults(v);const waiting=Math.max(0,state.world.day-v.arrivedDay);return `<div class="audience-row"><div><span class="audience-type-badge">${homeAudienceTypeLabel(v)}</span><b>${esc(v.name)}</b><small>${esc(homeAudienceShortPurpose(v))}<br>${esc(v.urgency)} urgency • ${esc(v.importance)} matter${v.returning?' • recognized returning caller':''}<br>Waiting ${waiting} day${waiting===1?'':'s'} • expected to leave after Day ${v.expiresDay}</small>${v.hallConnection?`<div class="hall-life-connection">${esc(v.hallConnection)}</div>`:''}</div><div class="audience-row-actions"><button data-audience="${v.id}">Receive Visitor</button></div></div>`}).join('')||'<div class="notice muted">Nobody is currently waiting for the Guardian.</div>';
- const history=recent.map(r=>`<div class="card compact"><b>Day ${r.day}</b><br>${esc(r.text)}</div>`).join('')||'<p class="muted">No audience record yet.</p>';
+ const history=recent.map(r=>`<div class="card compact"><b>Day ${r.day}</b> — ${esc(r.text)}</div>`).join('')||'<p class="muted">No audience record yet.</p>';
  overlay(`<h2>Guardian Hall — Audiences & Visitors</h2><p>People arrive at the Hall for different reasons. Review who is waiting, why they came, and decide how much of the Hall’s time or authority to give them.</p>
    <div class="hall-social-dashboard">
      <div><small>Waiting</small><b>${q.length}</b><span>currently at the Hall</span></div>
