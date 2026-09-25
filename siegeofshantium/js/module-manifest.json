@@ -1,8 +1,8 @@
 {
   "game": "Siege of Shantium",
-  "version": "1.6.66.36.1",
+  "version": "1.6.66.36.2",
   "architecture": "modular-source-of-truth",
-  "standalone": "Siege of Shantium v1.6.66.34 Standalone.html",
+  "standalone": "Siege of Shantium v1.6.66.36.2 Standalone.html",
   "modules": [
     "core/language.js",
     "core/services.js",
@@ -22,6 +22,7 @@
     "politics/guardian-political-competition.js",
     "politics/guardian-government.js",
     "politics/guardian-regional-power.js",
+    "politics/guardian-politics-music.js",
     "social/travelers-contacts.js",
     "social/world-life-chains.js",
     "social/relationship-contracts.js",
