@@ -154,20 +154,21 @@ async function _syncSeasonDataImpl(showStatus=false){
       }
     }
 
-    // A completed week may already be present in the runtime/API cache from
-    // while that week was still live. Refresh the most recently finalized week
-    // from Sleeper instead of treating "present" as "final". This also picks up
-    // official stat corrections and prevents News/median/history from freezing
-    // an old in-progress score indefinitely.
+    // Finalized historical weeks may have been cached while they were still
+    // live. Refresh every completed week from Sleeper so reconstructed standings,
+    // weekly movement, medians and News use the same official totals as Sleeper's
+    // current standings. Refreshing only the latest completed week leaves older
+    // stale snapshots in the cumulative PF/tiebreaker calculation.
     if(finalizedThrough>=1){
-      const finalizedWeek=finalizedThrough;
-      const finalizedRes=await sleeperGetSafe(`/league/${SLEEPER_LEAGUE_ID}/matchups/${finalizedWeek}`,{
-        ttlMs:0,force:true,fallback:seasonMatchupsByWeek[finalizedWeek]||[],label:`Week ${finalizedWeek} finalized matchups`
-      });
-      if(finalizedRes.ok){
-        seasonMatchupsByWeek[finalizedWeek]=dedupeMatchupList(finalizedRes.value);
-      }else{
-        failures.push(finalizedRes.label);
+      const finalizedWeeks=Array.from({length:finalizedThrough},(_,i)=>i+1);
+      const finalizedResults=await Promise.all(finalizedWeeks.map(finalizedWeek=>
+        sleeperGetSafe(`/league/${SLEEPER_LEAGUE_ID}/matchups/${finalizedWeek}`,{
+          ttlMs:0,force:true,fallback:seasonMatchupsByWeek[finalizedWeek]||[],label:`Week ${finalizedWeek} finalized matchups`
+        }).then(r=>({week:finalizedWeek,...r}))
+      ));
+      for(const r of finalizedResults){
+        if(r.ok)seasonMatchupsByWeek[r.week]=dedupeMatchupList(r.value);
+        else failures.push(r.label);
       }
     }
     seasonMatchupsByWeek[week]=dedupeMatchupList(currentMatchups);
